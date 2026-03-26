@@ -3411,8 +3411,7 @@ SW\uc6b0\uc218(AI\ucef4\uacf5): \ud559\uc5c5\ud0d0\uad6c\uc5ed\ub7c9 60%(\ud559\
     }
   }
   async function generateAIReportPF(data, apiKey) {
-    let modelName = "gemini-2.5-pro";
-    let endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+    const models = ["gemini-2.0-pro-exp-02-05", "gemini-1.5-pro", "gemini-1.5-flash"];
     const uniCriteria = universityEvalCriteria[data.university] || { factors: "" };
     const prompt = `당신은 대한민국 대학 입시 분석 전문가이자 매우 엄격하고 비판적인 시각을 가진 입학사정관입니다.
 다음 학생의 수시 지원 결과(합격 또는 불합격)를 바탕으로, 해당 대학 및 학과의 구체적인 '평가 주안점'에 비추어 그 원인을 매우 냉철하고 엄격하게 분석하여 리포트를 작성하세요.
@@ -3447,42 +3446,40 @@ ${uniCriteria.factors}
 
 형식: 마크다운(Markdown) 형식을 사용하며, 가독성을 극대화하여 전문적인 보고서 형태로 작성하십시오.`;
 
-    let response = await fetchWithRetry(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-    });
-    
-    // 503 오류가 지속될 경우 gemini-1.5-flash로 폴백
-    if (!response.ok && response.status === 503) {
-      console.log("Gemini 2.5 Pro 트래픽 과부하. Gemini 1.5 Flash로 전환하여 재시도합니다...");
-      modelName = "gemini-1.5-flash";
-      endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
-      response = await fetchWithRetry(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-      });
-    }
+    for (const modelName of models) {
+      console.log(`[PF Report] ${modelName} 모델로 분석 시도 중...`);
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+      
+      try {
+        const response = await fetchWithRetry(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        });
 
-    if (!response.ok) {
-      const errData = await response.json().catch(() => ({}));
-      throw new Error(`API 요청 실패 (${response.status}): ${errData.error?.message || response.statusText}`);
+        if (response.ok) {
+          const res = await response.json();
+          const text = res.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (text) return text;
+        } else {
+          console.warn(`[PF Report] ${modelName} 실패 (상태 코드: ${response.status}). 다음 모델로 전환을 고려합니다.`);
+        }
+      } catch (e) {
+        console.error(`[PF Report] ${modelName} 오류: ${e.message}`);
+      }
     }
-    const res = await response.json();
-    return res.candidates?.[0]?.content?.parts?.[0]?.text || "AI \uc751\ub2f5 \uc624\ub958";
+    throw new Error("모든 AI 모델 요청에 실패했습니다. API 키 또는 네트워크 상태를 확인해주세요.");
   }
 
   async function generateAIReport(data) {
-    const modelName = "gemini-2.5-pro";
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${data.apiKey}`;
+    const models = ["gemini-2.0-pro-exp-02-05", "gemini-1.5-pro", "gemini-1.5-flash"];
     const uniCriteria = universityEvalCriteria[data.university];
     const weights = uniCriteria?.weights || { academic: 0.33, career: 0.33, community: 0.34 };
-    const competencyNames = uniCriteria ? uniCriteria.competencies : { academic: "\ud559\uc5c5\uc5ed\ub7c9", career: "\uc9c4\ub85c\uc5ed\ub7c9", community: "\uacf5\ub3d9\uccb4\uc5ed\ub7c9" };
+    const competencyNames = uniCriteria ? uniCriteria.competencies : { academic: "학업역량", career: "진로역량", community: "공동체역량" };
 
     let profileInfo = "";
     if (data.name || data.grade) {
-      profileInfo = (data.grade ? data.grade + "\ud559\ub144 " : "") + (data.class ? data.class + "\ubc18 " : "") + (data.number ? data.number + "\ubc88 " : "") + (data.name || "\ud559\uc0dd");
+      profileInfo = (data.grade ? data.grade + "학년 " : "") + (data.class ? data.class + "반 " : "") + (data.number ? data.number + "번 " : "") + (data.name || "학생");
     }
 
     const promptText = `당신은 대한민국 대학 입시설계 전문가이자 매우 까다롭고 엄격한 입학사정관 AI입니다.
@@ -3553,24 +3550,30 @@ ${uniCriteria ? uniCriteria.factors : "일반적인 학생부종합전형 평가
         }
       }
     };
-    let response = await fetchWithRetry(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(requestBody) });
-    
-    // 503 오류가 지속될 경우 gemini-1.5-flash로 폴백
-    if (!response.ok && response.status === 503) {
-      console.log("Gemini 2.5 Pro 트래픽 과부하. Gemini 1.5 Flash로 전환하여 재시도합니다...");
-      modelName = "gemini-1.5-flash";
-      endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${data.apiKey}`;
-      response = await fetchWithRetry(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(requestBody) });
-    }
 
-    if (!response.ok) {
-      const errData = await response.json().catch(() => ({}));
-      throw new Error(`API 요청 실패 (${response.status}): ${errData.error?.message || response.statusText}`);
+    for (const modelName of models) {
+      console.log(`[AI Report] ${modelName} 모델로 분석 시도 중...`);
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${data.apiKey}`;
+      
+      try {
+        const response = await fetchWithRetry(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(requestBody)
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          const generatedText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (generatedText) return generatedText;
+        } else {
+          console.warn(`[AI Report] ${modelName} 실패 (상태 코드: ${response.status}). 다음 모델로 전환을 고려합니다.`);
+        }
+      } catch (e) {
+        console.error(`[AI Report] ${modelName} 오류: ${e.message}`);
+      }
     }
-    const result = await response.json();
-    const generatedText = result.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!generatedText) throw new Error("AI 응답 오류");
-    return generatedText;
+    throw new Error("모든 AI 모델 요청에 실패했습니다. API 키 또는 네트워크 상태를 확인해주세요.");
   }
 
   function cleanAIJsonResponse(text) {
