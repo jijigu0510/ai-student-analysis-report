@@ -1115,10 +1115,24 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (error) {
       console.error(error);
       const errBox = document.createElement("div");
-      errBox.style.cssText = "color:var(--error-color);padding:20px;";
-      errBox.innerHTML = "<h3>\ubd84\uc11d \uc911 \uc624\ub958\uac00 \ubc1c\uc0dd\ud588\uc2b5\ub2c8\ub2e4.</h3><p>" + error.message + "</p><p>API \ud0a4\uc758 \uc720\ud6a8\uc131\uc744 \ud655\uc778\ud558\uc138\uc694.</p>";
+      errBox.style.cssText = "color:var(--error-color);padding:20px;background:rgba(255, 71, 87, 0.05);border-radius:12px;border:1px solid rgba(255, 71, 87, 0.2);";
+      errBox.innerHTML = `
+        <h3 style="margin-top:0;display:flex;align-items:center;gap:8px;">
+          <span style="font-size:1.4rem;">⚠️</span> 분석 중 오류가 발생했습니다
+        </h3>
+        <div style="white-space: pre-wrap; background:rgba(0,0,0,0.2); padding:15px; border-radius:8px; font-family:monospace; font-size:0.9rem; margin-bottom:15px; border:1px solid rgba(255,255,255,0.1); line-height:1.5;">${error.message}</div>
+        <div style="display:flex;gap:10px;">
+          <button type="button" onclick="navigator.clipboard.writeText(\`${error.message.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`).then(() => alert('오류 로그가 복사되었습니다.'))" 
+            style="background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.2);padding:8px 15px;border-radius:6px;cursor:pointer;font-size:0.85rem;">
+            📋 오류 로그 복사하기
+          </button>
+          <a href="https://aistudio.google.com/app/apikey" target="_blank" 
+            style="background:var(--accent-primary);color:#fff;text-decoration:none;padding:8px 15px;border-radius:6px;font-size:0.85rem;font-weight:600;">
+            🔑 API 키 확인 (AI Studio)
+          </a>
+        </div>
+      `;
 
-      // dashboardViewer\ub97c \ube44\uc6b0\uc9c0 \uc54a\uace0, \ubcc4\ub3c4\uc758 reportViewer\ub97c \ud65c\uc6a9\ud574 \uc5d0\ub7ec \ud45c\uc2dc
       document.getElementById("dashboardViewer").classList.add("hidden");
       reportViewer.innerHTML = "";
       reportViewer.appendChild(errBox);
@@ -1394,7 +1408,16 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       } catch (err) {
         console.error(err);
-        pfReportViewer.innerHTML = `<div style='color:var(--error-color);padding:20px;'><h3>\ubd84\uc11d \uc624\ub958</h3><p>${err.message}</p></div>`;
+        pfReportViewer.innerHTML = `
+          <div style='color:var(--error-color);padding:20px;background:rgba(255, 71, 87, 0.05);border-radius:12px;border:1px solid rgba(255, 71, 87, 0.2);'>
+            <h3 style="margin-top:0;">⚠️ 분석 실패</h3>
+            <div style="white-space: pre-wrap; background:rgba(0,0,0,0.2); padding:15px; border-radius:8px; font-family:monospace; font-size:0.9rem; margin-bottom:15px; border:1px solid rgba(255,255,255,0.1); line-height:1.5;">${err.message}</div>
+            <button type="button" onclick="navigator.clipboard.writeText(\`${err.message.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`).then(() => alert('오류 로그가 복사되었습니다.'))" 
+              style="background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.2);padding:8px 15px;border-radius:6px;cursor:pointer;font-size:0.85rem;">
+              📋 오류 로그 복사하기
+            </button>
+          </div>
+        `;
         pfReportViewer.classList.remove("hidden");
       } finally {
         pfLoadingState.classList.add("hidden");
@@ -3386,23 +3409,30 @@ SW\uc6b0\uc218(AI\ucef4\uacf5): \ud559\uc5c5\ud0d0\uad6c\uc5ed\ub7c9 60%(\ud559\
 
   async function fetchWithRetry(url, options, maxRetries = 3) {
     let retries = 0;
+    const timeout = options.timeout || 60000; // 60초 기본 타임아웃
     while (true) {
+      const controller = new AbortController();
+      const id = setTimeout(() => controller.abort(), timeout);
       try {
-        const response = await fetch(url, options);
+        const response = await fetch(url, { ...options, signal: controller.signal });
+        clearTimeout(id);
         if (response.ok) return response;
+        
+        // 503(서버 과부하) 또는 429(할당량 초과)는 재시도 대상
         if ((response.status === 503 || response.status === 429) && retries < maxRetries) {
           retries++;
           const waitTime = Math.pow(2, retries) * 1000 + Math.random() * 1000;
-          console.log(`API ${response.status} Error. Retrying (${retries}/${maxRetries}) in ${Math.round(waitTime)}ms...`);
+          console.warn(`API ${response.status} Error. Retrying (${retries}/${maxRetries}) in ${Math.round(waitTime)}ms...`);
           await new Promise(r => setTimeout(r, waitTime));
           continue;
         }
         return response;
       } catch (e) {
+        clearTimeout(id);
         if (retries < maxRetries) {
           retries++;
           const waitTime = Math.pow(2, retries) * 1000 + Math.random() * 1000;
-          console.log(`Network Error. Retrying (${retries}/${maxRetries}) in ${Math.round(waitTime)}ms...`);
+          console.warn(`Network/Timeout Error (${e.name}). Retrying (${retries}/${maxRetries}) in ${Math.round(waitTime)}ms...`);
           await new Promise(r => setTimeout(r, waitTime));
           continue;
         }
@@ -3411,7 +3441,8 @@ SW\uc6b0\uc218(AI\ucef4\uacf5): \ud559\uc5c5\ud0d0\uad6c\uc5ed\ub7c9 60%(\ud559\
     }
   }
   async function generateAIReportPF(data, apiKey) {
-    const models = ["gemini-2.0-pro-exp-02-05", "gemini-1.5-pro", "gemini-1.5-flash"];
+    const modelsToTry = ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.0-flash"];
+    const attemptLogs = [];
     const uniCriteria = universityEvalCriteria[data.university] || { factors: "" };
     const prompt = `당신은 대한민국 대학 입시 분석 전문가이자 매우 엄격하고 비판적인 시각을 가진 입학사정관입니다.
 다음 학생의 수시 지원 결과(합격 또는 불합격)를 바탕으로, 해당 대학 및 학과의 구체적인 '평가 주안점'에 비추어 그 원인을 매우 냉철하고 엄격하게 분석하여 리포트를 작성하세요.
@@ -3446,40 +3477,47 @@ ${uniCriteria.factors}
 
 형식: 마크다운(Markdown) 형식을 사용하며, 가독성을 극대화하여 전문적인 보고서 형태로 작성하십시오.`;
 
-    for (const modelName of models) {
-      console.log(`[PF Report] ${modelName} 모델로 분석 시도 중...`);
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
-      
+    for (const model of modelsToTry) {
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
       try {
+        console.log(`Attempting AI Analysis with ${model}...`);
         const response = await fetchWithRetry(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+          timeout: 40000 // 모델당 40초 타임아웃
         });
 
         if (response.ok) {
           const res = await response.json();
-          const text = res.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (text) return text;
+          return res.candidates?.[0]?.content?.parts?.[0]?.text || "AI 응답 오류 (Empty Content)";
         } else {
-          console.warn(`[PF Report] ${modelName} 실패 (상태 코드: ${response.status}). 다음 모델로 전환을 고려합니다.`);
+          const errData = await response.json().catch(() => ({}));
+          const status = response.status;
+          const msg = errData.error?.message || response.statusText;
+          console.error(`${model} Failed:`, status, msg);
+          attemptLogs.push(`${model}: Error ${status} (${msg})`);
+          if (status === 401 || status === 403) break; // 키 오류면 중단
         }
       } catch (e) {
-        console.error(`[PF Report] ${modelName} 오류: ${e.message}`);
+        console.error(`${model} Exception:`, e.message);
+        attemptLogs.push(`${model}: Exception (${e.message})`);
       }
     }
-    throw new Error("모든 AI 모델 요청에 실패했습니다. API 키 또는 네트워크 상태를 확인해주세요.");
+
+    throw new Error(`모든 AI 모델 요청에 실패했습니다.\n- 시도 이력:\n${attemptLogs.join('\n')}\n\nAPI 키 유효성이나 할당량(Quota), 네트워크 상태를 확인해 주세요.`);
   }
 
   async function generateAIReport(data) {
-    const models = ["gemini-2.0-pro-exp-02-05", "gemini-1.5-pro", "gemini-1.5-flash"];
+    const modelsToTry = ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.0-flash"];
+    const attemptLogs = [];
     const uniCriteria = universityEvalCriteria[data.university];
     const weights = uniCriteria?.weights || { academic: 0.33, career: 0.33, community: 0.34 };
-    const competencyNames = uniCriteria ? uniCriteria.competencies : { academic: "학업역량", career: "진로역량", community: "공동체역량" };
+    const competencyNames = uniCriteria ? uniCriteria.competencies : { academic: "\ud559\uc5c5\uc5ed\ub7c9", career: "\uc9c4\ub85c\uc5ed\ub7c9", community: "\uacf5\ub3d9\uccb4\uc5ed\ub7c9" };
 
     let profileInfo = "";
     if (data.name || data.grade) {
-      profileInfo = (data.grade ? data.grade + "학년 " : "") + (data.class ? data.class + "반 " : "") + (data.number ? data.number + "번 " : "") + (data.name || "학생");
+      profileInfo = (data.grade ? data.grade + "\ud559\ub144 " : "") + (data.class ? data.class + "\ubc18 " : "") + (data.number ? data.number + "\ubc88 " : "") + (data.name || "\ud559\uc0dd");
     }
 
     const promptText = `당신은 대한민국 대학 입시설계 전문가이자 매우 까다롭고 엄격한 입학사정관 AI입니다.
@@ -3551,29 +3589,41 @@ ${uniCriteria ? uniCriteria.factors : "일반적인 학생부종합전형 평가
       }
     };
 
-    for (const modelName of models) {
-      console.log(`[AI Report] ${modelName} 모델로 분석 시도 중...`);
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${data.apiKey}`;
-      
+    for (const model of modelsToTry) {
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${data.apiKey}`;
       try {
+        console.log(`Attempting AI Analysis with ${model}...`);
         const response = await fetchWithRetry(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(requestBody)
+          body: JSON.stringify(requestBody),
+          timeout: 50000 // JSON 응답은 시간이 더 걸릴 수 있으므로 50초
         });
 
         if (response.ok) {
           const result = await response.json();
           const generatedText = result.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (generatedText) return generatedText;
+          if (!generatedText) {
+            console.warn(`${model} returned empty text.`);
+            attemptLogs.push(`${model}: Empty Response`);
+            continue;
+          }
+          return generatedText;
         } else {
-          console.warn(`[AI Report] ${modelName} 실패 (상태 코드: ${response.status}). 다음 모델로 전환을 고려합니다.`);
+          const errData = await response.json().catch(() => ({}));
+          const status = response.status;
+          const msg = errData.error?.message || response.statusText;
+          console.error(`${model} Failed:`, status, msg);
+          attemptLogs.push(`${model}: Error ${status} (${msg})`);
+          if (status === 401 || status === 403) break; // 키 오류면 중단
         }
       } catch (e) {
-        console.error(`[AI Report] ${modelName} 오류: ${e.message}`);
+        console.error(`${model} Exception:`, e.message);
+        attemptLogs.push(`${model}: Exception (${e.message})`);
       }
     }
-    throw new Error("모든 AI 모델 요청에 실패했습니다. API 키 또는 네트워크 상태를 확인해주세요.");
+
+    throw new Error(`모든 AI 모델 요청에 실패했습니다.\n- 시도 이력:\n${attemptLogs.join('\n')}\n\nAPI 키 유효성이나 할당량(Quota), 네트워크 상태를 확인해 주세요.\n(특히 429 에러는 현재 할당량이 모두 소진된 상태입니다.)`);
   }
 
   function cleanAIJsonResponse(text) {
