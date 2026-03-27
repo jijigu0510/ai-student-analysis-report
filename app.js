@@ -720,7 +720,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  function extractCourseData(jsonData, targetName) {
+  function extractCourseData(jsonData, targetName, silent = false) {
     const tgt = targetName.replace(/\s+/g, "");
     console.log(`[extractCourseData] Starting extraction for student: "${tgt}"`);
 
@@ -740,7 +740,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (headerRowIdx === -1) {
       console.error("[extractCourseData] Name column (성명/이름) not found in the first 15 rows.");
-      alert("\uc774\uc218\uacfc\ubaa9 \ud30c\uc77c\uc5d0\uc11c \uc131\uba85 \uc5f4\uc744 \ucc3e\uc744 \uc218 \uc5c6\uc2b5\ub2c8\ub2e4.");
+      if (!silent) alert("이수과목 파일에서 성명 열을 찾을 수 없습니다.");
       return;
     }
 
@@ -817,12 +817,12 @@ document.addEventListener("DOMContentLoaded", () => {
     if (extractedCourses.length > 0) {
       if (coursesInput) coursesInput.value = extractedCourses.join(", ");
       const avgLabel = totalCredits > 0
-        ? "\uac00\uc911\ud3c9\uade0 " + (totalWeightedSum / totalCredits).toFixed(2) + "\ub4f1\uae09"
-        : "\ub4f1\uae09 \uc0b0\ucd9c \ubd88\uac00";
-      alert("'" + targetName + "' \ud559\uc0dd\uc758 \uc774\uc218\uacfc\ubaa9 " + extractedCourses.length + "\uac1c \ucd94\ucd9c \uc644\ub8cc. (" + avgLabel + ")");
+        ? "가중평균 " + (totalWeightedSum / totalCredits).toFixed(2) + "등급"
+        : "등급 산출 불가";
+      if (!silent) alert("'" + targetName + "' 학생의 이수과목 " + extractedCourses.length + "개 추출 완료. (" + avgLabel + ")");
     } else {
       if (coursesInput) coursesInput.value = "";
-      alert("\ud574\ub2f9 \ud30c\uc77c\uc5d0\uc11c '" + targetName + "' \ud559\uc0dd\uc758 \ub370\uc774\ud130\ub97c \ucc3e\uc744 \uc218 \uc5c6\uc2b5\ub2c8\ub2e4.");
+      if (!silent) alert("해당 파일에서 '" + targetName + "' 학생의 데이터를 찾을 수 없습니다.");
     }
     const agInput = document.getElementById("average-grade");
     const afInput = document.getElementById("average-formula");
@@ -1082,6 +1082,9 @@ document.addEventListener("DOMContentLoaded", () => {
         const overallText = document.getElementById("overallText");
         overallText.prepend(formulaDiv);
       }
+      // ── 대학별 서류평가 기준 패널 렌더링 ──
+      renderUniCriteria(formData.university, document.getElementById("uniCriteriaPanel"));
+
       const bindModal = (btnId, title, compData) => {
         const btn = document.getElementById(btnId);
         if (!btn) return;
@@ -1360,7 +1363,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
       try {
         const report = await generateAIReportPF(promptData, apiKey);
-        pfReportViewer.innerHTML = marked.parse(report);
+
+        // ── 합불합 리포트 앞에 대학별 서류평가 기준 패널 삽입 ──
+        const pfCriteriaEl = document.createElement("div");
+        pfCriteriaEl.id = "pfUniCriteriaPanel";
+        pfReportViewer.innerHTML = "";
+        pfReportViewer.appendChild(pfCriteriaEl);
+        renderUniCriteria(s.univ, pfCriteriaEl);
+
+        // 리포트 본문
+        const pfReportContent = document.createElement("div");
+        pfReportContent.className = "markdown-body";
+        pfReportContent.innerHTML = marked.parse(report);
+        pfReportViewer.appendChild(pfReportContent);
+
         pfReportViewer.classList.remove("hidden");
         document.getElementById("pf-pdfAction")?.classList.remove("hidden");
         
@@ -3566,7 +3582,7 @@ ${uniCriteria ? uniCriteria.factors : "일반적인 학생부종합전형 평가
       contents: [{ parts: [{ text: promptText }] }],
       generationConfig: {
         temperature: 0.7,
-        maxOutputTokens: 8192,
+        maxOutputTokens: 16384,
         responseMimeType: "application/json",
         responseSchema: {
           type: "OBJECT",
@@ -3633,25 +3649,233 @@ ${uniCriteria ? uniCriteria.factors : "일반적인 학생부종합전형 평가
     if (jsonString.startsWith("```")) {
       const match = jsonString.match(/^```(?:json)?\s*([\s\S]*?)\s*```/);
       if (match) jsonString = match[1].trim();
+      else jsonString = jsonString.replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, '').trim();
     }
 
-    // 2. 가장 바깥쪽 {} 찾기 (불필요한 텍스트 제거)
+    // 2. 가장 바깥쪽 { } 찾기 (불필요한 앞뒤 텍스트 제거)
     const startIdx = jsonString.indexOf('{');
+    if (startIdx !== -1) {
+      jsonString = jsonString.substring(startIdx);
+    }
     const endIdx = jsonString.lastIndexOf('}');
-    if (startIdx !== -1 && endIdx !== -1 && endIdx >= startIdx) {
-      jsonString = jsonString.substring(startIdx, endIdx + 1);
+    if (endIdx !== -1) {
+      jsonString = jsonString.substring(0, endIdx + 1);
     }
 
-    // 3. JSON 구조 보정: 따옴표 내부의 실제 줄바꿈을 \n으로 치환
-    jsonString = jsonString.replace(/"([^"]*?)"/gs, (match, p1) => {
-      return '"' + p1.replace(/\n/g, '\\n').replace(/\r/g, '\\r') + '"';
-    });
+    // 3. 잘린 JSON 자동 복구: 괄호/대괄호 균형 맞추기
+    try {
+      JSON.parse(jsonString);
+      return jsonString; // 이미 유효하면 그대로 반환
+    } catch (e) {
+      // 잘린 경우 복구 시도
+      jsonString = repairTruncatedJson(jsonString);
+    }
 
     return jsonString;
   }
 
+  function repairTruncatedJson(jsonString) {
+    // 열린 문자열 닫기, 미완성 키-값 쌍 제거, 괄호 균형 맞추기
+    const stack = [];
+    let inString = false;
+    let escape = false;
+    let lastValidEnd = 0;
+    let repaired = '';
+
+    for (let i = 0; i < jsonString.length; i++) {
+      const ch = jsonString[i];
+
+      if (escape) {
+        escape = false;
+        repaired += ch;
+        continue;
+      }
+      if (ch === '\\' && inString) {
+        escape = true;
+        repaired += ch;
+        continue;
+      }
+      if (ch === '"') {
+        inString = !inString;
+        repaired += ch;
+        if (!inString) lastValidEnd = repaired.length;
+        continue;
+      }
+      if (inString) {
+        // 문자열 안의 제어문자 이스케이프
+        if (ch === '\n') { repaired += '\\n'; continue; }
+        if (ch === '\r') { repaired += '\\r'; continue; }
+        if (ch === '\t') { repaired += '\\t'; continue; }
+        repaired += ch;
+        continue;
+      }
+      // 구조 추적
+      if (ch === '{' || ch === '[') {
+        stack.push(ch);
+      } else if (ch === '}' || ch === ']') {
+        if (stack.length > 0) stack.pop();
+        lastValidEnd = repaired.length + 1;
+      }
+      repaired += ch;
+    }
+
+    // 열린 문자열 강제 닫기
+    if (inString) {
+      repaired += '"';
+    }
+
+    // 불완전한 마지막 항목 제거 후 괄호 닫기
+    // 마지막 완전한 속성 뒤까지만 사용
+    let closing = repaired;
+    // 후행 쉼표 제거
+    closing = closing.replace(/,\s*$/, '');
+    // 미완성 키 제거 (마지막이 "key": 로 끝나는 경우)
+    closing = closing.replace(/,?\s*"[^"]*"\s*:\s*$/, '');
+    closing = closing.replace(/,\s*$/, '');
+
+    // 남은 열린 괄호 닫기
+    const closingStack = [];
+    let ins = false;
+    let esc = false;
+    for (const c of closing) {
+      if (esc) { esc = false; continue; }
+      if (c === '\\' && ins) { esc = true; continue; }
+      if (c === '"') { ins = !ins; continue; }
+      if (ins) continue;
+      if (c === '{') closingStack.push('}');
+      else if (c === '[') closingStack.push(']');
+      else if (c === '}' || c === ']') closingStack.pop();
+    }
+    while (closingStack.length > 0) {
+      closing += closingStack.pop();
+    }
+
+    return closing;
+  }
+
   // -------------------------------------------------------------------------
-  // Iframe-based Printing Helper (FIX for empty PDF)
+  // 대학별 서류평가 기준 패널 렌더링
+  // -------------------------------------------------------------------------
+  function renderUniCriteria(universityName, targetEl) {
+    if (!targetEl) return;
+    const criteria = universityEvalCriteria[universityName];
+    if (!criteria) {
+      targetEl.style.display = "none";
+      return;
+    }
+
+    const { factors, competencies, weights } = criteria;
+
+    // ── 반영 비율 바 ──
+    const wAca  = Math.round((weights.academic  || 0) * 100);
+    const wCar  = Math.round((weights.career    || 0) * 100);
+    const wCom  = Math.round((weights.community || 0) * 100);
+
+    // ── factors 텍스트를 HTML로 변환 (색상 하이라이트) ──
+    // HTML 태그 내부(style 속성 등)를 건드리지 않고 텍스트 노드에만 정규식 적용
+    function applyToText(html, regex, replacer) {
+      return html.replace(/(<[^>]+>)|([^<]+)/g, (m, tag, txt) =>
+        tag ? tag : (txt ? txt.replace(regex, replacer) : m));
+    }
+
+    function factorsToHtml(text) {
+      return text.trim().split("\n").map(line => {
+        let l = line;
+
+        // 1. [제목 줄] 파란색 헤더
+        l = l.replace(/^\[(.+)\]$/, '<span style="color:#7cb9ff;font-weight:700;font-size:0.95rem;">[$1]</span>');
+
+        // 2. ■ / ▲ / ● / ✓ / ⭐ 등 강조 항목
+        l = l.replace(/^(■|▲|●|▼|✓|⭐|🔵|🔴|📊|✔)\s(.+)/, (_, sym, rest) =>
+          `<span style="color:#f0b429;font-weight:700;">${sym}</span> <span style="font-weight:600;color:#e0e0e0;">${rest}</span>`);
+
+        // 3. 숫자. 항목 (1. 2. 3.)
+        l = l.replace(/^(\d+)\.\s(.+)/, (_, n, rest) =>
+          `<span style="color:#96d6b0;font-weight:700;">${n}.</span> ${rest}`);
+
+        // 4. 들여쓰기 - 항목
+        l = l.replace(/^(\s{3,})(-.+)/, (_, sp, rest) =>
+          `${sp}<span style="color:#b0c4de;">${rest}</span>`);
+
+        // 5. % 숫자 파란색 강조 — HTML 태그 내부는 건드리지 않음
+        l = applyToText(l, /(\d+)%/g,
+          '<span style="color:#61b3ff;font-weight:700;background:rgba(97,179,255,0.15);padding:1px 5px;border-radius:3px;">$1%</span>');
+
+        // 6. 괄호 속 설명 연회색 — HTML 태그 내부는 건드리지 않음
+        l = applyToText(l, /\(([^)]+)\)/g,
+          '<span style="color:#aaa;">($1)</span>');
+
+        return `<div style="line-height:1.7;min-height:1.2em;">${l}</div>`;
+      }).join("");
+    }
+
+    // ── 역량 배지 ──
+    const badgeStyle = (color, bg) =>
+      `display:inline-block;padding:2px 10px;border-radius:12px;font-size:0.82rem;font-weight:700;color:${color};background:${bg};margin-right:4px;margin-bottom:4px;`;
+
+    const compRows = [
+      { label: "학업역량", pct: wAca,  desc: competencies.academic,
+        badge: badgeStyle("#fff","rgba(97,179,255,0.35)"), icon:"📚" },
+      { label: "진로역량", pct: wCar,  desc: competencies.career,
+        badge: badgeStyle("#fff","rgba(150,214,176,0.35)"), icon:"🎯" },
+      { label: "공동체역량", pct: wCom, desc: competencies.community,
+        badge: badgeStyle("#fff","rgba(240,180,41,0.30)"), icon:"🤝" },
+    ];
+
+    const compHtml = compRows.map(r => `
+      <div style="margin-bottom:0.8rem;padding:0.6rem 1rem;background:rgba(255,255,255,0.04);border-radius:8px;border-left:3px solid rgba(255,255,255,0.15);">
+        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.3rem;flex-wrap:wrap;">
+          <span style="${r.badge}">${r.icon} ${r.label}</span>
+          <span style="color:#61b3ff;font-weight:800;font-size:1rem;">${r.pct}%</span>
+          <div style="flex:1;min-width:80px;height:6px;background:rgba(255,255,255,0.1);border-radius:3px;overflow:hidden;">
+            <div style="width:${r.pct}%;height:100%;background:linear-gradient(90deg,#61b3ff,#96d6b0);border-radius:3px;"></div>
+          </div>
+        </div>
+        <div style="font-size:0.82rem;color:#b0c4de;line-height:1.5;">${r.desc}</div>
+      </div>`).join("");
+
+    targetEl.innerHTML = `
+      <div style="
+        background: linear-gradient(135deg, rgba(30,40,70,0.95) 0%, rgba(20,30,60,0.95) 100%);
+        border: 1px solid rgba(97,179,255,0.25);
+        border-radius: 14px;
+        padding: 1.2rem 1.5rem;
+        margin-bottom: 1.2rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      ">
+        <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:1rem;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:0.8rem;">
+          <span style="font-size:1.2rem;">🏫</span>
+          <h4 style="margin:0;font-size:1rem;font-weight:700;color:#96baff;">
+            ${universityName} 서류평가 기준 &amp; 반영 비율
+          </h4>
+        </div>
+
+        <!-- 역량별 반영비율 -->
+        <div style="margin-bottom:1rem;">
+          ${compHtml}
+        </div>
+
+        <!-- 평가 기준 상세 (접기/펼치기) -->
+        <details style="cursor:pointer;">
+          <summary style="
+            font-size:0.88rem; font-weight:600; color:#7cb9ff;
+            list-style:none; display:flex; align-items:center; gap:0.4rem;
+            user-select:none;
+          ">
+            <span>▶</span> 평가 주안점 상세 보기
+          </summary>
+          <div style="
+            margin-top:0.8rem; padding:0.8rem 1rem;
+            background:rgba(0,0,0,0.2); border-radius:8px;
+            font-size:0.82rem; color:#ccc; line-height:1.8;
+            max-height:320px; overflow-y:auto;
+          ">
+            ${factorsToHtml(factors)}
+          </div>
+        </details>
+      </div>`;
+    targetEl.style.display = "block";
+  }
   // -------------------------------------------------------------------------
   function printWithIframe(htmlContent) {
     const iframe = document.createElement('iframe');
@@ -3856,6 +4080,26 @@ ${uniCriteria ? uniCriteria.factors : "일반적인 학생부종합전형 평가
       pfDetails = await StorageManager.load("pfDetails") || { grades: [], subjects: [], creatives: [], behaviors: [] };
 
       console.log("All data loaded from storage.");
+
+      // 4. Restore last-selected student
+      const savedConfig = JSON.parse(localStorage.getItem("appConfigState") || "{}");
+      const lastStudent = savedConfig.selectedStudent;
+      if (lastStudent && studentSelect) {
+        // Find the option matching the last selected student name
+        const matchingOpt = Array.from(studentSelect.options).find(o => o.value === lastStudent);
+        if (matchingOpt) {
+          studentSelect.value = lastStudent;
+          // Auto-fill grade/class/number fields
+          if (gradeInput) gradeInput.value = matchingOpt.dataset.grade || "";
+          if (classInput) classInput.value = matchingOpt.dataset.class || "";
+          if (numberInput) numberInput.value = matchingOpt.dataset.number || "";
+          if (nameInput) nameInput.value = lastStudent;
+          // Re-extract course and batch data for this student (silent: no alerts)
+          if (globalCourseJson) extractCourseData(globalCourseJson, lastStudent, true);
+          if (globalBatchJsons.length > 0) extractBatchData(globalBatchJsons, lastStudent);
+          console.log("[loadAllData] Restored last selected student:", lastStudent);
+        }
+      }
     } catch (e) {
       console.error("Error loading persisted data:", e);
     }
@@ -3867,7 +4111,8 @@ ${uniCriteria ? uniCriteria.factors : "일반적인 학생부종합전형 평가
       pfApiKey: (document.getElementById("pf-api-key") || { value: "" }).value.trim(),
       university: universitySelect ? universitySelect.value : "",
       category: categorySelect ? categorySelect.value : "",
-      major: majorSelect ? majorSelect.value : ""
+      major: majorSelect ? majorSelect.value : "",
+      selectedStudent: studentSelect ? studentSelect.value : ""
     };
     localStorage.setItem("appConfigState", JSON.stringify(config));
   }
