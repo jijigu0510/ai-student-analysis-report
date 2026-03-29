@@ -59,26 +59,35 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  // Tab switching logic
+  // Tab switching logic (3-tab)
   const tabIndividual = document.getElementById("tab-individual");
   const tabPassFail = document.getElementById("tab-passfail");
+  const tabSetech = document.getElementById("tab-setech");
   const viewIndividual = document.getElementById("view-individual");
   const viewPassFail = document.getElementById("view-passfail");
+  const viewSetech = document.getElementById("view-setech");
 
-  if (tabIndividual && tabPassFail && viewIndividual && viewPassFail) {
-    const switchTab = (activeTab, inactiveTab, activeView, inactiveView) => {
-      activeTab.classList.add("active");
-      inactiveTab.classList.remove("active");
+  const allTabs = [tabIndividual, tabPassFail, tabSetech].filter(Boolean);
+  const allViews = [viewIndividual, viewPassFail, viewSetech].filter(Boolean);
+
+  function switchTabTo(activeTab, activeView) {
+    allTabs.forEach(t => t.classList.remove("active"));
+    allViews.forEach(v => {
+      v.classList.add("hidden");
+      v.classList.remove("active");
+      v.style.display = "none";
+    });
+    if (activeTab) activeTab.classList.add("active");
+    if (activeView) {
       activeView.classList.remove("hidden");
       activeView.classList.add("active");
       activeView.style.display = "grid";
-      inactiveView.classList.add("hidden");
-      inactiveView.classList.remove("active");
-      inactiveView.style.display = "none";
-    };
-    tabIndividual.addEventListener("click", () => switchTab(tabIndividual, tabPassFail, viewIndividual, viewPassFail));
-    tabPassFail.addEventListener("click", () => switchTab(tabPassFail, tabIndividual, viewPassFail, viewIndividual));
+    }
   }
+
+  if (tabIndividual) tabIndividual.addEventListener("click", () => switchTabTo(tabIndividual, viewIndividual));
+  if (tabPassFail) tabPassFail.addEventListener("click", () => switchTabTo(tabPassFail, viewPassFail));
+  if (tabSetech) tabSetech.addEventListener("click", () => switchTabTo(tabSetech, viewSetech));
 
   const pfResultsUpload = document.getElementById("pf-results-upload");
   const pfStudentSelect = document.getElementById("pf-student-select");
@@ -4164,6 +4173,345 @@ ${uniCriteria ? uniCriteria.factors : "일반적인 학생부종합전형 평가
     await loadAllData();
     loadState();
   })();
+
+  // =========================================================
+  // 세특 분석 탭 — 드롭다운 연동 (기존 universityData 재사용)
+  // =========================================================
+  const stUniversitySelect = document.getElementById("st-university");
+  const stCategorySelect   = document.getElementById("st-category");
+  const stMajorSelect      = document.getElementById("st-major");
+
+  if (stUniversitySelect && universityData) {
+    for (const uni of Object.keys(universityData)) {
+      const opt = document.createElement("option");
+      opt.value = uni; opt.textContent = uni;
+      stUniversitySelect.appendChild(opt);
+    }
+
+    stUniversitySelect.addEventListener("change", () => {
+      const uni = stUniversitySelect.value;
+      const ud  = universityData[uni];
+      stCategorySelect.innerHTML = "<option value='' disabled selected>계열을 선택하세요</option>";
+      stMajorSelect.innerHTML    = "<option value='' disabled selected>학과를 선택하세요</option>";
+      if (!ud) return;
+      const cats = Object.keys(ud);
+      if (cats.length === 1 && cats[0] === "\uac1c\uc124\ud559\uacfc") {
+        const o = document.createElement("option");
+        o.value = "\uac1c\uc124\ud559\uacfc"; o.textContent = "\uc804\uccb4";
+        stCategorySelect.appendChild(o);
+        stCategorySelect.value = "\uac1c\uc124\ud559\uacfc";
+        ud["\uac1c\uc124\ud559\uacfc"].forEach(m => {
+          const mo = document.createElement("option");
+          mo.value = m; mo.textContent = m;
+          stMajorSelect.appendChild(mo);
+        });
+      } else {
+        cats.forEach(cat => {
+          const o = document.createElement("option");
+          o.value = cat; o.textContent = cat;
+          stCategorySelect.appendChild(o);
+        });
+      }
+    });
+
+    stCategorySelect.addEventListener("change", () => {
+      const uni = stUniversitySelect.value;
+      const cat = stCategorySelect.value;
+      const ud  = universityData[uni];
+      stMajorSelect.innerHTML = "<option value='' disabled selected>\ud559\uacfc\ub97c \uc120\ud0dd\ud558\uc138\uc694</option>";
+      if (!ud || !ud[cat]) return;
+      ud[cat].forEach(m => {
+        const o = document.createElement("option");
+        o.value = m; o.textContent = m;
+        stMajorSelect.appendChild(o);
+      });
+    });
+  }
+
+  // =========================================================
+  // 대학별 학생부종합전형 특성 맵
+  // =========================================================
+  const univSetechProfile = {
+    "\uc11c\uc6b8\ub300\ud559\uad50":   "\uc11c\uc6b8\ub300\ub294 \ud559\uc5c5\uc801 \ud0c1\uc6d4\uc131, \uc9c0\uc801 \ud638\uae30\uc2ec, \uc790\uae30\uc8fc\ub3c4\uc801 \ud0d0\uad6c\ub97c \ub9e4\uc6b0 \uc911\uc2dc\ud569\ub2c8\ub2e4. \ub2e8\uc21c \uc9c0\uc2dd \uc2b5\ub4dd\uc744 \ub118\uc5b4 '\uc65c?'\ub97c \uc2a4\uc2a4\ub85c \uc9c8\ubb38\ud558\uace0 \uc2ec\ud654 \ud0d0\uad6c\ud55c \ud754\uc801\uc774 \uc138\ud2b9\uc5d0 \ub4dc\ub7ec\ub098\uc57c \ud569\ub2c8\ub2e4.",
+    "\uc5f0\uc138\ub300\ud559\uad50":   "\uc5f0\uc138\ub300\ub294 \ud559\uc5c5\uc5ed\ub7c9\uacfc \ud568\uaed8 \uacf5\ub3d9\uccb4 \uae30\uc5ec, \uc778\uc131\uc744 \uade0\ud615 \uc788\uac8c \ud3c9\uac00\ud569\ub2c8\ub2e4. \ud611\ub825 \uacbd\ud5d8\u00b7\uc0ac\ud68c\uc801 \uad00\uc2ec\uc774 \ub4dc\ub7ec\ub098\ub294 \uc138\ud2b9\uc774 \uc720\ub9ac\ud569\ub2c8\ub2e4.",
+    "\uace0\ub824\ub300\ud559\uad50":   "\uace0\ub824\ub300\ub294 \uc804\uacf5 \uad00\ub828 \uc9c0\uc801 \ud0d0\uad6c\uc2ec, \uc790\uae30\uc8fc\ub3c4 \ud559\uc2b5 \ub2a5\ub825, \ub3c4\uc804 \uc815\uc2e0\uc744 \uc911\uc2dc\ud569\ub2c8\ub2e4.",
+    "\ud55c\uc591\ub300\ud559\uad50":   "\ud55c\uc591\ub300(\ud559\uc0dd\ubd80\uc885\ud569)\ub294 \ud559\uc0dd\uc774 \uc2a4\uc2a4\ub85c \ubb38\uc81c\ub97c \ubc1c\uacac\ud558\uace0 \ud574\uacb0\ud558\ub294 \uacfc\uc815, \uc804\uacf5 \uad00\ub828 \ud65c\ub3d9\uc758 \uad6c\uccb4\uc131\uc744 \ubd05\ub2c8\ub2e4.",
+    "\uc11c\uac15\ub300\ud559\uad50":   "\uc11c\uac15\ub300\ub294 \ud559\ubb38\uc801 \uae4a\uc774\uc640 \ub17c\ub9ac\uc801 \uc0ac\uace0\ub97c \uac15\uc870\ud569\ub2c8\ub2e4. \uac1c\ub150 \uc774\ud574\ub97c \ub118\uc5b4 \ub3c5\ucc3d\uc801 \uc2dc\uac01\uc774 \ub4dc\ub7ec\ub098\uc57c \ud569\ub2c8\ub2e4.",
+    "\uc131\uade0\uad00\ub300\ud559\uad50": "\uc131\uade0\uad00\ub300\ub294 \uc778\uc758\uc608\uc9c0 \uc778\uc131 \uc694\uc18c\uc640 \ud559\uc5c5\u00b7\uc9c4\ub85c \uc5ed\ub7c9\uc744 \ud1b5\ud569 \ud3c9\uac00\ud569\ub2c8\ub2e4.",
+    "\uc911\uc559\ub300\ud559\uad50":   "\uc911\uc559\ub300\ub294 \uc804\uacf5 \ud0d0\uc0c9 \uad6c\uccb4\uc131\uc558 \ud559\uc5c5 \uc131\uc2e4\uc131, \uc0ac\ud68c\uc801 \ucc45\uc784\uac10\uc744 \ubd05\ub2c8\ub2e4.",
+    "\uacbd\ud76c\ub300\ud559\uad50":   "\uacbd\ud76c\ub300\ub294 \ubb38\ud654\u00b7\ud3c9\ud654 \uac00\uce58\uc640 \uc5f0\uacc4\ud55c \uc735\ud569\uc801 \uc0ac\uace0, \uc9c4\ub85c \ud0d0\uc0c9 \ub178\ub825\uc744 \uc911\uc2dc\ud569\ub2c8\ub2e4.",
+    "\ud55c\uad6d\uc678\uad6d\uc5b4\ub300\ud559\uad50": "\ud55c\uad6d\uc678\ub300\ub294 \uc5b8\uc5b4\uc801 \uac10\uc218\uc131\u00b7\uae00\ub85c\ubc8c \uc5ed\ub7c9\uacfc \uc778\ubb38\ud559\uc801 \ud1b5\ucc30\uc774 \ub4dc\ub7ec\ub098\ub294 \uc138\ud2b9\uc774 \uc720\ub9ac\ud569\ub2c8\ub2e4.",
+    "\ubd80\uc0b0\ub300\ud559\uad50":   "\ubd80\uc0b0\ub300\ub294 \uc804\uacf5 \uc801\ud569\uc131, \ud559\uc5c5 \uc131\uc2e4\uc131, \uacf5\ub3d9\uccb4\u00b7\ub098\ub204\uc74c \ud65c\ub3d9\uc744 \uade0\ud615 \uc788\uac8c \ubd05\ub2c8\ub2e4.",
+    "\uacbd\ubd81\ub300\ud559\uad50":   "\uacbd\ubd81\ub300\ub294 \uc804\uacf5 \uad00\ub828 \ud0d0\uad6c \uacbd\ud5d8\uacfc \ud559\uc5c5 \uc6b0\uc218\uc131, \uc9c0\uc5ed\uc0ac\ud68c \uae30\uc5ec \uc758\uc9c0\ub97c \uc911\uc2dc\ud569\ub2c8\ub2e4.",
+    "\uc804\ub0a8\ub300\ud559\uad50":   "\uc804\ub0a8\ub300\ub294 \ud559\uc5c5 \uc5ed\ub7c9\uacfc \ud568\uaed8 \ubd09\uc0ac\u00b7\uacf5\ub3d9\uccb4 \uc758\uc2dd, \uc804\uacf5 \ud0d0\uad6c \ub178\ub825\uc744 \ubd05\ub2c8\ub2e4.",
+    "\ucda9\ub0a8\ub300\ud559\uad590":   "\ucda9\ub0a8\ub300\ub294 \ud559\uc5c5 \uc5f4\uc815, \uc804\uacf5 \uad00\ub828 \uacbd\ud5d8\uc758 \uad6c\uccb4\uc131, \uacf5\ub3d9\uccb4 \uc5ed\ub7c9\uc744 \ud3c9\uac00\ud569\ub2c8\ub2e4.",
+    "\ucda9\ubd81\ub300\ud559\uad50":   "\ucda9\ubd81\ub300\ub294 \ud559\uc5c5 \uc131\uc2e4\uc131, \ud0d0\uad6c \ud65c\ub3d9\uc758 \uc790\uae30\uc8fc\ub3c4\uc131, \uc9c4\ub85c \ubaa9\ud45c\uc758 \uba85\ud655\uc131\uc744 \ubd05\ub2c8\ub2e4.",
+    "\uac74\uad6d\ub300\ud559\uad50":   "\uac74\uad6d\ub300\ub294 \uc804\uacf5 \uad00\ub828 \ucc3d\uc758\uc801 \ud0d0\uad6c, \ubb38\uc81c\ud574\uacb0\ub2a5\ub825, \ud611\ub825\uc744 \uc911\uc2dc\ud569\ub2c8\ub2e4.",
+    "\ub3d9\uad6d\ub300\ud559\uad50":   "\ub3d9\uad6d\ub300\ub294 \uc778\uc131\u00b7\uc790\uae30\uc131\ucc30\uacfc \ud568\uaed8 \uc804\uacf5 \ud0d0\uad6c \ud65c\ub3d9\uc758 \uad6c\uccb4\uc131\uc744 \ubd05\ub2c8\ub2e4.",
+    "\ud64d\uc775\ub300\ud559\uad50":   "\ud64d\uc775\ub300\ub294 \ucc3d\uc758\uc131\u00b7\uc608\uc220\uc801 \uac10\uc218\uc131(\uc608\uccb4\ub2a5)\uacfc \ud559\uc5c5 \uc5ed\ub7c9\uc744 \ud568\uaed8 \ubd05\ub2c8\ub2e4.",
+    "\uc544\uc8fc\ub300\ud559\uad50":   "\uc544\uc8fc\ub300\ub294 \ub17c\ub9ac\uc801 \uc0ac\uace0\u00b7\ubb38\uc81c\ud574\uacb0\ub2a5\ub825\uacfc \uc804\uacf5 \uc801\ud569\uc131\uc744 \uc911\uc2dc\ud569\ub2c8\ub2e4.",
+    "\uc778\ud558\ub300\ud559\uad50":   "\uc778\ud558\ub300\ub294 \uc218\ud559\u00b7\uacfc\ud559 \uad50\uacfc \ud0d0\uad6c \uae4a\uc774\uc640 \ucc3d\uc758\uc801 \ub3c4\uc804\uc744 \ubd05\ub2c8\ub2e4.",
+    "\uc11c\uc6b8\uc2dc\ub9bd\ub300\ud559\uad50": "\uc11c\uc6b8\uc2dc\ub9bd\ub300\ub294 \uc9c0\uc5ed\uc0ac\ud68c \uc5f0\uacc4\uc131\u00b7\uacf5\uacf5 \uac00\uce58 \uc778\uc2dd\uacfc \ud559\uc5c5 \uc5ed\ub7c9\uc744 \ubd05\ub2c8\ub2e4.",
+    "\uc778\ucc9c\ub300\ud559\uad50":   "\uc778\ucc9c\ub300\ub294 \uc804\uacf5 \ud0d0\uad6c \ub3d9\uae30\uc758 \uc9c4\uc815\uc131, \ud559\uc5c5 \uc131\uc2e4\uc131, \ud611\ub825 \uacbd\ud5d8\uc744 \ubd05\ub2c8\ub2e4.",
+    "\uad11\uc6b4\ub300\ud559\uad50":   "\uad11\uc6b4\ub300\ub294 \uc804\uc790\u00b7\uc18c\ud504\ud2b8\uc6e8\uc5b4 \uc911\uc2ec\uc73c\ub85c \uc804\uacf5 \ud0d0\uad6c\uc640 \uc218\ud559\u00b7\uacfc\ud559 \uc2e4\ub825\uc744 \uc911\uc2dc\ud569\ub2c8\ub2e4.",
+    "\uacbd\uae30\ub300\ud559\uad50":   "\uacbd\uae30\ub300\ub294 \uc804\uacf5 \uad00\ub828 \uacbd\ud5d8\uc758 \uad6c\uccb4\uc131\uacfc \uc790\uae30\uc8fc\ub3c4\uc801 \ud0d0\uad6c\ub97c \ubd05\ub2c8\ub2e4.",
+    "\uac00\ud1a8\ub9ad\ub300\ud559\uad50": "\uac00\ud1a8\ub9ad\ub300\ub294 \uc778\uc131\u00b7\ubd09\uc0ac \uc815\uc2e0\uacfc \uc804\uacf5 \ud0d0\uad6c \ub178\ub825, \uacf5\ub3d9\uccb4 \uc5ed\ub7c9\uc744 \uade0\ud615 \uc788\uac8c \ubd05\ub2c8\ub2e4."
+  };
+
+  // =========================================================
+  // 세특 분석 — Gemini API 호출
+  // =========================================================
+  async function generateSetechReport(fd) {
+    const defaultWeights = { academic: 0.40, career: 0.40, community: 0.20 };
+    const defaultCompetencies = {
+      academic: "학업역량: 학업 우수성·태도, 탐구력·지적호기심, 전공관련교과역량",
+      career: "진로역량: 전공(계열)적합성, 진로탐색노력, 전공관련활동 심화도",
+      community: "공동체역량: 협력·소통, 나눔·배려·리더십"
+    };
+
+    const uniCriteria = universityEvalCriteria[fd.university];
+    const univProfile = uniCriteria ? uniCriteria.factors : (univSetechProfile[fd.university] || "학생부종합전형의 일반적 기준(학업역량·진로역량·공동체역량)에 따라 평가합니다.");
+    const weights = uniCriteria?.weights || defaultWeights;
+    const comps = uniCriteria?.competencies || defaultCompetencies;
+    
+    // 계산된 만점
+    const maxAca = Math.round(weights.academic * 100);
+    const maxCar = Math.round(weights.career * 100);
+    const maxCom = Math.round(weights.community * 100);
+
+    const prompt = `당신은 대한민국 최고의 대학입학사정관 전문가입니다.
+다음 학생이 지원하는 대학·학과의 학생부종합전형 기준에 따라, 교사가 작성한 세부능력 및 특기사항(세특)을 엄격하게 평가해 주세요.
+
+[대학·계열·학과]
+대학: ${fd.university} / 계열: ${fd.category} / 학과: ${fd.major}${fd.subjectName ? " / 과목: " + fd.subjectName : ""}
+
+[해당 대학 학생부종합전형 특성 및 평가 주안점]
+${univProfile}
+
+[평가 기준 및 배점]
+해당 대학의 실제 평가 배점을 적용하여 총점 100점 만점으로 평가합니다.
+1. 학업역량 (최대 ${maxAca}점): ${comps.academic}
+2. 진로역량 (최대 ${maxCar}점): ${comps.career}
+3. 공동체역량 (최대 ${maxCom}점): ${comps.community}
+
+[세특 원문]
+${fd.content}
+
+[주의사항]
+- 반드시 JSON만 출력하고, 코드 블록(\`\`\`json)이나 마크다운 기호 없이 순수 JSON 텍스트만 리턴하세요.
+- JSON 문자열 내부 줄바꿈은 반드시 이스케이프 문자 '\\n'을 사용하고, 기호(")는 '\\"'로 이스케이프 하세요.
+- **[핵심] 2026 학교생활기록부 기재요령 준수**:
+  1. 기재 금지: 학생·학부모(친인척)의 성명/직장명/신상정보, 공인어학시험 성적, 교외 수상실적, 모의고사/수능 성적.
+  2. 기재 금지: K-MOOC, KOCW, 소논문(R&E), 학회지, 도서 출간, 발명특허, 특정 대학명/기관명/상호명/강사명.
+  3. 객관적 사실 기반: 학교 수업 중의 수행평가, 발표, 토론 등 정규 교육과정 내의 관찰된 내용만 작성. 과장된 미사여구나 감정적 서술 배제.
+  4. 어투: 문장의 끝은 반드시 객관적인 명사형 종결어미(~함, ~모습을 보임, ~을 파악함, ~을 탐구함 등)를 사용할 것.
+- 세특이 짧거나 내용이 빈약할 경우 낮은 점수를 부여하고 구체적 이유를 작성하세요.
+- rewriteSuggestion은 원문 내용과 위 기재요령을 완벽하게 반영하여 대학 평가에 가장 유리하게 다듬어진 세특 전문을 작성하세요(300자 이상).
+- 점수가 일치해야 합니다 (totalScore = academicScore + careerScore + communityScore).
+
+출력 JSON 형식:
+{"totalScore":<0-100>,"academicScore":<0-${maxAca}>,"careerScore":<0-${maxCar}>,"communityScore":<0-${maxCom}>,"scoreJustification":"<마크다운 소제목 구분 산출근거>","strengths":"<블릿문 3~5개>","improvements":"<블릿문 3~5개 + 구체적 이유>","rewriteSuggestion":"<개선된 세특 전문>"}`;
+
+    const body = {
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      generationConfig: { 
+        temperature: 0.35, 
+        maxOutputTokens: 8192,
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "OBJECT",
+          properties: {
+            totalScore: { type: "INTEGER" },
+            academicScore: { type: "INTEGER" },
+            careerScore: { type: "INTEGER" },
+            communityScore: { type: "INTEGER" },
+            scoreJustification: { type: "STRING" },
+            strengths: { type: "STRING" },
+            improvements: { type: "STRING" },
+            rewriteSuggestion: { type: "STRING" }
+          },
+          required: [
+            "totalScore", "academicScore", "careerScore", "communityScore",
+            "scoreJustification", "strengths", "improvements", "rewriteSuggestion"
+          ]
+        }
+      }
+    };
+
+    const modelsToTry = [
+      "gemini-2.5-pro",
+      "gemini-2.5-flash",
+      "gemini-2.0-flash"
+    ];
+
+    let lastErr;
+    let attemptCount = 0;
+
+    for (const model of modelsToTry) {
+      attemptCount++;
+      const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${fd.apiKey}`;
+      
+      try {
+        const controller = new AbortController();
+        // 25초 타임아웃 
+        const timeoutId = setTimeout(() => controller.abort(), 25000);
+
+        const res = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+
+        if (!res.ok) {
+          const errBody = await res.json().catch(() => ({}));
+          const msg = errBody?.error?.message || res.statusText;
+          throw new Error(`API Error (${model}): ` + msg);
+        }
+        
+        const data = await res.json();
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text) return text;
+        throw new Error(`Empty response from ${model}`);
+        
+      } catch (err) {
+        lastErr = err;
+        console.warn(`[Fallback] Model ${model} failed or timed out:`, err.name === 'AbortError' ? 'Timeout' : err.message);
+        
+        if (attemptCount < modelsToTry.length) {
+          // 다음 모델 시도 전 1.5초 대기
+          await new Promise(r => setTimeout(r, 1500));
+        }
+      }
+    }
+    
+    throw lastErr || new Error("모든 AI 모델 호출에 실패했거나 시간이 초과되었습니다.");
+  }
+
+  // =========================================================
+  // 세특 분석 — 결과 렌더링
+  // =========================================================
+  function renderSetechResult(data) {
+    const dash = document.getElementById("st-dashboard");
+    if (!dash) return;
+
+    document.getElementById("st-totalScore").textContent    = data.totalScore    ?? "-";
+    document.getElementById("st-academicScore").textContent = data.academicScore ?? "-";
+    document.getElementById("st-careerScore").textContent   = data.careerScore   ?? "-";
+    document.getElementById("st-communityScore").textContent= data.communityScore?? "-";
+
+    const scoreEl = document.getElementById("st-totalScore");
+    const score = parseInt(data.totalScore) || 0;
+    scoreEl.style.color = score >= 80 ? "#4ade80" : score >= 60 ? "#facc15" : "#f87171";
+
+    document.getElementById("st-scoreJustification").innerHTML = marked.parse(data.scoreJustification || "");
+    document.getElementById("st-strengths").innerHTML          = marked.parse(data.strengths           || "");
+    document.getElementById("st-improvements").innerHTML       = marked.parse(data.improvements        || "");
+    document.getElementById("st-rewrite").innerHTML            = marked.parse(data.rewriteSuggestion   || "");
+
+    const modalMap = {
+      "st-btnAca": { title: "\ud559\uc5c5\uc5ed\ub7c9",   score: data.academicScore,  note: "40\uc810 \ub9cc\uc810" },
+      "st-btnCar": { title: "\uc9c4\ub85c\uc5ed\ub7c9",   score: data.careerScore,    note: "40\uc810 \ub9cc\uc810" },
+      "st-btnCom": { title: "\uacf5\ub3d9\uccb4\uc5ed\ub7c9", score: data.communityScore, note: "20\uc810 \ub9cc\uc810" }
+    };
+    Object.entries(modalMap).forEach(([btnId, info]) => {
+      const btn = document.getElementById(btnId);
+      if (!btn) return;
+      btn.onclick = () => {
+        const bodyHtml =
+          `<div style="background:rgba(255,255,255,0.05);padding:15px;border-radius:8px;margin-bottom:1rem;border-left:4px solid var(--accent-primary)">` +
+          `<h4 style="margin:0 0 8px;color:#96baff">${info.title} (${info.note})</h4>` +
+          `<p style="margin:0;font-size:1.4rem;font-weight:700;color:#fff">${info.score ?? "-"}\uc810</p>` +
+          `</div>` +
+          marked.parse(data.scoreJustification || "") +
+          `<hr style="margin:1rem 0;border-color:var(--glass-border)">` +
+          `<h4 style="color:#96baff">\uac1c\uc120 \uc81c\uc548</h4>` +
+          marked.parse(data.improvements || "");
+        document.getElementById("modalTitle").textContent = info.title + " \uc0c1\uc138 \ubd84\uc11d";
+        document.getElementById("modalBody").innerHTML = bodyHtml;
+        document.getElementById("analysisModal").classList.remove("hidden");
+      };
+    });
+
+    const stModal = document.getElementById("analysisModal");
+    const stModalCloseBtn = document.getElementById("modalCloseBtn");
+    if (stModal && stModalCloseBtn) {
+      stModalCloseBtn.onclick = () => stModal.classList.add("hidden");
+      stModal.onclick = (e) => {
+        if (e.target === stModal) stModal.classList.add("hidden");
+      };
+    }
+
+    dash.classList.remove("hidden");
+  }
+
+  // =========================================================
+  // 세특 분석 — 폼 제출 처리
+  // =========================================================
+  const setechForm     = document.getElementById("setechForm");
+  const stAnalyzeBtn   = document.getElementById("st-analyzeBtn");
+  const stEmptyState   = document.getElementById("st-emptyState");
+  const stLoadingState = document.getElementById("st-loadingState");
+  const stDashboardEl  = document.getElementById("st-dashboard");
+
+  if (setechForm) {
+    setechForm.addEventListener("submit", async function(e) {
+      e.preventDefault();
+
+      const fd = {
+        apiKey:      document.getElementById("st-api-key").value.trim(),
+        university:  stUniversitySelect ? stUniversitySelect.value : "",
+        category:    stCategorySelect   ? stCategorySelect.value   : "",
+        major:       stMajorSelect      ? stMajorSelect.value      : "",
+        subjectName: document.getElementById("st-subject-name").value.trim(),
+        content:     document.getElementById("st-content").value.trim()
+      };
+
+      if (!fd.apiKey)                  { alert("API \ud0a4\ub97c \uc785\ub825\ud558\uc138\uc694."); return; }
+      if (!fd.university || !fd.major) { alert("\ub300\ud559\uacfc \ud559\uacfc\ub97c \uc120\ud0dd\ud558\uc138\uc694."); return; }
+      if (!fd.content)                 { alert("\uc138\ud2b9 \ub0b4\uc6a9\uc744 \uc785\ub825\ud558\uc138\uc694."); return; }
+
+      stEmptyState.classList.add("hidden");
+      stDashboardEl.classList.add("hidden");
+      stLoadingState.classList.remove("hidden");
+      stAnalyzeBtn.disabled = true;
+      stAnalyzeBtn.innerHTML = "<span class='spinner' style='width:20px;height:20px;border-width:2px;margin:0;'></span> AI \ubd84\uc11d \uc911...";
+
+      try {
+        const raw = await generateSetechReport(fd);
+        let parsed;
+        try {
+          const cleanedText = raw.replace(/```json/gi, "").replace(/```/g, "").trim();
+          parsed = JSON.parse(cleanedText);
+        } catch (parseErr) {
+          console.error("JSON Parse Error:", parseErr);
+          const errPosMatch = parseErr.message.match(/position (\d+)/);
+          let errContext = "";
+          if (errPosMatch && errPosMatch[1]) {
+             const pos = parseInt(errPosMatch[1]);
+             errContext = "\n에러 발생 부분: " + raw.substring(Math.max(0, pos - 30), pos + 30);
+          }
+          throw new Error("AI 응답 파싱 실패 (" + parseErr.message + ").\n" + errContext + "\n\n(원문 앞 600자: " + raw.substring(0, 600) + ")");
+        }
+        stLoadingState.classList.add("hidden");
+        renderSetechResult(parsed);
+        if (window.innerWidth <= 992) {
+          document.getElementById("st-resultContainer")?.scrollIntoView({ behavior: "smooth" });
+        }
+      } catch (err) {
+        stLoadingState.classList.add("hidden");
+        stEmptyState.classList.remove("hidden");
+        alert("\ubd84\uc11d \uc911 \uc624\ub958\uac00 \ubc1c\uc0dd\ud588\uc2b5\ub2c8\ub2e4:\n" + err.message);
+      } finally {
+        stAnalyzeBtn.disabled = false;
+        stAnalyzeBtn.innerHTML = "<span class='btn-text'>AI \uc138\ud2b9 \ubd84\uc11d \ubc0f \ud3c9\uac00</span><span class='btn-icon'>\u2726</span>";
+      }
+    });
+  }
+
 });
+
 
 

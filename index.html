@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>부안고등학교 학생부 Ai 분석 프로그램</title>
+  <title>부안고등학교 학생부 AI 분석 프로그램</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -17,9 +17,12 @@
     <div class="glow-orb orb-1"></div>
     <div class="glow-orb orb-2"></div>
   </div>
-  <header class="header">
-    <div class="container">
-      <h1><span class="gradient-text">부안고등학교</span> 학생부 Ai 분석 프로그램</h1>
+  <header class="header" style="position: relative; overflow: hidden;">
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.12; pointer-events: none; z-index: 0;">
+      <img src="부안고등학교%20로고.png" alt="부안고 워터마크" style="height: 140px; width: auto; filter: grayscale(100%);">
+    </div>
+    <div class="container" style="position: relative; z-index: 1;">
+      <h1><span class="gradient-text">부안고등학교</span> 학생부 AI 분석 프로그램</h1>
       <p>학생의 생기부 데이터를 분석하여 최적의 지원 전략을 제시합니다.</p>
       <div id="globalAlert" role="alert" class="global-alert hidden" aria-live="polite" style="margin-top:0.75rem; padding:0.75rem 1rem; border-radius:8px; display:none; font-weight:600; position:relative;">
         <span id="globalAlertMessage"></span>
@@ -35,6 +38,7 @@
     <nav class="app-tabs">
       <button id="tab-individual" class="tab-btn active">개인 분석</button>
       <button id="tab-passfail" class="tab-btn">합불합 분석(결과기반)</button>
+      <button id="tab-setech" class="tab-btn">✏️ 세특 분석</button>
     </nav>
   </div>
   <main id="view-individual" class="main-container container view-section active">
@@ -298,6 +302,127 @@
       </div>
     </section>
   </main>
+  <!-- ===== 세특 분석 탭 뷰 ===== -->
+  <main id="view-setech" class="main-container container view-section hidden" style="display:none;">
+    <section class="glass-panel form-section">
+      <h2 class="section-title">✏️ 세특(세부능력 및 특기사항) 분석</h2>
+      <form id="setechForm">
+        <!-- API 키 -->
+        <div class="form-group">
+          <label for="st-api-key">Google Gemini API Key <span class="label-desc">(필수)</span></label>
+          <input type="password" id="st-api-key" placeholder="Gemini API 키를 입력하세요..." required
+            style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.75rem 1rem;width:100%;">
+        </div>
+        <!-- 대학 / 계열 / 학과 -->
+        <div class="form-group-row-3">
+          <div class="form-group">
+            <label for="st-university">목표 대학</label>
+            <select id="st-university" required>
+              <option value="" disabled selected>대학을 선택하세요</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="st-category">계열</label>
+            <select id="st-category" required>
+              <option value="" disabled selected>계열을 선택하세요</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="st-major">지원 학과</label>
+            <select id="st-major" required>
+              <option value="" disabled selected>학과를 선택하세요</option>
+            </select>
+          </div>
+        </div>
+        <!-- 과목명 -->
+        <div class="form-group">
+          <label for="st-subject-name">과목명 <span class="label-desc">(선택)</span></label>
+          <input type="text" id="st-subject-name" placeholder="예: 수학I, 생명과학II, 영어 등"
+            style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.75rem 1rem;width:100%;">
+        </div>
+        <!-- 세특 텍스트 -->
+        <div class="form-group">
+          <label for="st-content">세특 내용 <span class="label-desc">(교사가 작성한 내용을 그대로 붙여넣으세요)</span></label>
+          <textarea id="st-content" rows="10"
+            placeholder="예) 미적분의 극한 개념을 학습하면서 수렴과 발산의 의미를 탐구하고, 실생활에서 극한이 활용되는 사례를 스스로 조사하여 발표함. ..."
+            required
+            style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.75rem 1rem;width:100%;resize:vertical;min-height:200px;"></textarea>
+        </div>
+        <button type="submit" class="btn-primary" id="st-analyzeBtn">
+          <span class="btn-text">AI 세특 분석 및 평가</span>
+          <span class="btn-icon">✦</span>
+        </button>
+      </form>
+    </section>
+    <section class="glass-panel result-section">
+      <h2 class="section-title">세특 평가 리포트</h2>
+      <div class="result-container" id="st-resultContainer">
+        <div class="empty-state" id="st-emptyState">
+          <div class="empty-icon">📝</div>
+          <p>왼쪽에서 대학·학과를 선택하고<br>세특 내용을 입력한 후 분석 버튼을 클릭하세요.</p>
+        </div>
+        <div class="loading-state hidden" id="st-loadingState">
+          <div class="spinner"></div>
+          <div class="loading-text">
+            <span>AI가 세특을 심층 분석 중입니다</span>
+            <span class="dots">...</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill"></div></div>
+        </div>
+        <!-- 결과 대시보드 -->
+        <div id="st-dashboard" class="hidden">
+          <!-- 총점 -->
+          <div class="dashboard-header">
+            <div class="total-score-box">
+              <span class="score-label">세특 종합 점수</span>
+              <span class="score-value" id="st-totalScore">0</span>
+              <div class="score-divider"></div>
+              <span class="score-sub">100점 만점 AI 평가</span>
+            </div>
+          </div>
+          <!-- 영역별 점수 카드 -->
+          <div class="competency-cards" style="margin-top:1.5rem;">
+            <div class="comp-card" data-comp="academic">
+              <h4>학업역량 <small style="font-size:0.75rem;color:var(--text-secondary)">(40점)</small></h4>
+              <div class="comp-score" id="st-academicScore">-</div>
+              <button class="btn-detail" type="button" id="st-btnAca">상세 보기</button>
+            </div>
+            <div class="comp-card" data-comp="career">
+              <h4>진로역량 <small style="font-size:0.75rem;color:var(--text-secondary)">(40점)</small></h4>
+              <div class="comp-score" id="st-careerScore">-</div>
+              <button class="btn-detail" type="button" id="st-btnCar">상세 보기</button>
+            </div>
+            <div class="comp-card" data-comp="community">
+              <h4>공동체역량 <small style="font-size:0.75rem;color:var(--text-secondary)">(20점)</small></h4>
+              <div class="comp-score" id="st-communityScore">-</div>
+              <button class="btn-detail" type="button" id="st-btnCom">상세 보기</button>
+            </div>
+          </div>
+          <!-- 산출 근거 -->
+          <div class="overall-evaluation" style="margin-top:1.5rem;">
+            <h3>📊 점수 산출 근거</h3>
+            <div id="st-scoreJustification" class="markdown-body"></div>
+          </div>
+          <!-- 강점 -->
+          <div class="overall-evaluation" style="margin-top:1rem;">
+            <h3>✅ 강점 분석</h3>
+            <div id="st-strengths" class="markdown-body"></div>
+          </div>
+          <!-- 개선 사항 -->
+          <div class="overall-evaluation" style="margin-top:1rem;">
+            <h3>⚠️ 개선이 필요한 부분</h3>
+            <div id="st-improvements" class="markdown-body"></div>
+          </div>
+          <!-- 개선 예시 -->
+          <div class="overall-evaluation" style="margin-top:1rem;">
+            <h3>💡 개선된 세특 예시</h3>
+            <div id="st-rewrite" class="markdown-body" style="background:rgba(150,186,255,0.08);padding:1rem;border-radius:8px;border-left:4px solid var(--accent-primary);"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
   <div id="analysisModal" class="modal-overlay hidden">
     <div class="modal-container glass-panel">
       <div class="modal-header">
@@ -316,7 +441,7 @@
       </div>
     </div>
   </footer>
-  <script src="app.js"></script>
+  <script src="app.js?v=5"></script>
   <!-- 인쇄용 히든 컨테이너 -->
   <div id="print-area" class="print-only"></div>
 </body>
