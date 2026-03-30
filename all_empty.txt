@@ -1,0 +1,2 @@
+﻿Row 184 [백예찬] Univ:전주비전대학교 Type:특별전형(정원내) => empty final stage
+Row 185 [백예찬] Univ:서영대학교 Type:특별전형(정원외) => empty final stage

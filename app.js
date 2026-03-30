@@ -123,7 +123,7 @@ document.addEventListener("DOMContentLoaded", () => {
               const rCol = h.findIndex(c => {
                 if(!c) return false;
                 const s = String(c).replace(/\s+/g, "");
-                return s.includes("\ucd5c\uc9d5\ub2e8\uacc4") || s.includes("\ud569\uaca9\uc5ec\ubd80") || s.includes("\uacb0\uacfc") || s.includes("\ud569\ubd88") || s.includes("\ud310\uc815") || s.includes("\uc0c1\ud0dc");
+                return s.includes("\ucd5c\uc885\ub2e8\uacc4") || s.includes("\ud569\uaca9\uc5ec\ubd80") || s.includes("\uacb0\uacfc") || s.includes("\ud569\ubd88") || s.includes("\ud310\uc815") || s.includes("\uc0c1\ud0dc");
               });
               const tCol = h.findIndex(c => {
                 if(!c) return false;
