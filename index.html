@@ -93,13 +93,12 @@
             </select>
           </div>
         </div>
+        <input type="hidden" id="courses">
+        <input type="hidden" id="achievement-only">
+        <!-- 이수 과목 상세 표 영역 -->
         <div class="form-group">
-          <label for="courses">이수 과목 현황 <span class="label-desc">(파일 업로드하면 자동으로 추출됨)</span></label>
-          <textarea id="courses" rows="2" placeholder="예: 수학I, 수학II, 영어, 한국사, 물리I, 화학II" required></textarea>
-        </div>
-        <div class="form-group">
-          <label for="achievement-only">성취도(등급 미산출) 과목 현황</label>
-          <textarea id="achievement-only" rows="2" readonly placeholder="이수과목 파일 업로드 시 성취도(A, B, C 등) 과목 자동 추출 (P 제외)" style="background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-primary); border-radius: 8px; padding: 0.75rem 1rem; width: 100%; resize: vertical; min-height: 80px;"></textarea>
+          <label>이수 과목 및 성적 상세 <span class="label-desc">(파일 업로드 시 자동 추출)</span></label>
+          <div id="course-table-container" class="course-table-container"></div>
         </div>
         <div class="form-group">
           <label>교과 평균 등급 및 산출식</label>
@@ -114,15 +113,30 @@
         </div>
         <div class="form-group">
           <label for="subject-records">교과 세특 (과목별능력 및 특기사항)</label>
-          <textarea id="subject-records" rows="4" placeholder="각 과목에서 이수한 세부능력 및 특기사항을 입력하세요..."></textarea>
+          <input type="hidden" id="subject-records">
+          <div id="ind-trigger-subject" class="detail-modal-trigger" onclick="openPfDetailModal('교과 세특', 'subject-records')">
+            <span class="trigger-name">내용 확인하기</span>
+            <span class="status-text">미로드</span>
+            <span class="trigger-icon">➔</span>
+          </div>
         </div>
         <div class="form-group">
           <label for="creative-activities">창체특기 (자율/동아리/봉사/진로)</label>
-          <textarea id="creative-activities" rows="4" placeholder="창의적 체험활동 자율·동아리·봉사·진로 특기사항을 입력하세요..."></textarea>
+          <input type="hidden" id="creative-activities">
+          <div id="ind-trigger-creative" class="detail-modal-trigger" onclick="openPfDetailModal('창체 특기', 'creative-activities')">
+            <span class="trigger-name">내용 확인하기</span>
+            <span class="status-text">미로드</span>
+            <span class="trigger-icon">➔</span>
+          </div>
         </div>
         <div class="form-group">
           <label for="behavioral-records">행동특성 (행동특성 및 종합의견)</label>
-          <textarea id="behavioral-records" rows="3" placeholder="행동특성 및 종합의견을 입력하세요..."></textarea>
+          <input type="hidden" id="behavioral-records">
+          <div id="ind-trigger-behavior" class="detail-modal-trigger" onclick="openPfDetailModal('행동특성 및 종합의견', 'behavioral-records')">
+            <span class="trigger-name">내용 확인하기</span>
+            <span class="status-text">미로드</span>
+            <span class="trigger-icon">➔</span>
+          </div>
         </div>
         <button type="submit" class="btn-primary" id="analyzeBtn">
           <span class="btn-text">AI 심층 분석하기</span>
@@ -237,29 +251,55 @@
         <div id="pf-student-details" style="margin-top: 2rem; display: none;">
           <h3 style="font-size: 1.1rem; color: #96baff; margin-bottom: 1rem; padding-left: 0.5rem; border-left: 4px solid var(--accent-primary);">생기부 데이터 추출 결과 확인</h3>
           <div class="details-grid">
-            <div class="details-card">
+            <div class="details-card full-width">
               <label>이수 과목 및 성적</label>
-              <textarea id="pf-detail-grades" readonly placeholder="성적 데이터가 없습니다."></textarea>
+              <input type="hidden" id="pf-detail-grades">
+              <div id="pf-course-table-container" class="course-table-container"></div>
             </div>
             <div class="details-card">
               <label>일반 과목 세특</label>
-              <textarea id="pf-detail-subject" readonly placeholder="일반 교과 세특 데이터가 없습니다."></textarea>
+              <input type="hidden" id="pf-detail-subject">
+              <div id="pf-trigger-subject" class="detail-modal-trigger" onclick="openPfDetailModal('일반 과목 세특', 'pf-detail-subject')">
+                <span class="trigger-name">내용 확인하기</span>
+                <span class="status-text">미로드</span>
+                <span class="trigger-icon">➔</span>
+              </div>
             </div>
             <div class="details-card">
               <label>진로 선택 세특</label>
-              <textarea id="pf-detail-career" readonly placeholder="진로선택 교과 세특 데이터가 없습니다."></textarea>
+              <input type="hidden" id="pf-detail-career">
+              <div id="pf-trigger-career" class="detail-modal-trigger" onclick="openPfDetailModal('진로 선택 세특', 'pf-detail-career')">
+                <span class="trigger-name">내용 확인하기</span>
+                <span class="status-text">미로드</span>
+                <span class="trigger-icon">➔</span>
+              </div>
             </div>
             <div class="details-card">
               <label>음미체 세특</label>
-              <textarea id="pf-detail-arts" readonly placeholder="음미체 교과 세특 데이터가 없습니다."></textarea>
+              <input type="hidden" id="pf-detail-arts">
+              <div id="pf-trigger-arts" class="detail-modal-trigger" onclick="openPfDetailModal('음미체 세특', 'pf-detail-arts')">
+                <span class="trigger-name">내용 확인하기</span>
+                <span class="status-text">미로드</span>
+                <span class="trigger-icon">➔</span>
+              </div>
             </div>
             <div class="details-card">
               <label>창의적 체험활동</label>
-              <textarea id="pf-detail-creative" readonly placeholder="창의적 체험활동 데이터가 없습니다."></textarea>
+              <input type="hidden" id="pf-detail-creative">
+              <div id="pf-trigger-creative" class="detail-modal-trigger" onclick="openPfDetailModal('창의적 체험활동', 'pf-detail-creative')">
+                <span class="trigger-name">내용 확인하기</span>
+                <span class="status-text">미로드</span>
+                <span class="trigger-icon">➔</span>
+              </div>
             </div>
             <div class="details-card">
               <label>행동특성 및 종합의견</label>
-              <textarea id="pf-detail-behavior" readonly placeholder="행동특성 및 종합의견 데이터가 없습니다."></textarea>
+              <input type="hidden" id="pf-detail-behavior">
+              <div id="pf-trigger-behavior" class="detail-modal-trigger" onclick="openPfDetailModal('행동특성 및 종합의견', 'pf-detail-behavior')">
+                <span class="trigger-name">내용 확인하기</span>
+                <span class="status-text">미로드</span>
+                <span class="trigger-icon">➔</span>
+              </div>
             </div>
           </div>
         </div>
@@ -334,11 +374,39 @@
             </select>
           </div>
         </div>
-        <!-- 과목명 -->
-        <div class="form-group">
-          <label for="st-subject-name">과목명 <span class="label-desc">(선택)</span></label>
-          <input type="text" id="st-subject-name" placeholder="예: 수학I, 생명과학II, 영어 등"
-            style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.75rem 1rem;width:100%;">
+        <!-- 교육과정 및 계열 -->
+        <div class="form-group-row">
+          <div class="form-group">
+            <label for="st-curriculum">교육과정</label>
+            <select id="st-curriculum"
+              style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.75rem 1rem;width:100%;">
+              <option value="">교육과정 선택</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="st-subject-category">계열(구분)</label>
+            <select id="st-subject-category"
+              style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.75rem 1rem;width:100%;">
+              <option value="">계열 선택</option>
+            </select>
+          </div>
+        </div>
+        <!-- 선택구분 및 과목명 -->
+        <div class="form-group-row">
+          <div class="form-group">
+            <label for="st-selection">선택 구분</label>
+            <select id="st-selection"
+              style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.75rem 1rem;width:100%;">
+              <option value="">선택 구분 선택</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="st-subject-name">과목명</label>
+            <select id="st-subject-name"
+              style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.75rem 1rem;width:100%;">
+              <option value="">과목 선택</option>
+            </select>
+          </div>
         </div>
         <!-- 세특 텍스트 -->
         <div class="form-group">

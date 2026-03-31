@@ -164,7 +164,8 @@ body {
   border-bottom-color: var(--accent-primary);
 }
 
-.view-section.hidden {
+.view-section.hidden,
+.hidden {
   display: none !important;
 }
 
@@ -970,6 +971,10 @@ textarea::-webkit-scrollbar-thumb {
   margin-top: 1.5rem;
 }
 
+.details-card.full-width {
+  grid-column: span 2;
+}
+
 .details-card {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--panel-border);
@@ -998,6 +1003,64 @@ textarea::-webkit-scrollbar-thumb {
   gap: 0.5rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+
+/* Modal 트리거 버튼 스타일 */
+.detail-modal-trigger {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--panel-border);
+  color: var(--text-secondary);
+  padding: 0.85rem 1.25rem;
+  border-radius: 8px;
+  cursor: not-allowed;
+  text-align: left;
+  transition: all 0.3s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.95rem;
+  opacity: 0.5;
+  user-select: none;
+}
+
+.detail-modal-trigger.active {
+  opacity: 1;
+  cursor: pointer;
+  background: rgba(124, 131, 253, 0.1);
+  border-color: rgba(124, 131, 253, 0.3);
+  color: #fff;
+  user-select: auto;
+}
+
+.detail-modal-trigger.active:hover {
+  background: rgba(124, 131, 253, 0.2);
+  border-color: var(--accent-primary);
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.detail-modal-trigger .trigger-icon {
+  font-size: 1.1rem;
+  opacity: 0.5;
+  transition: transform 0.3s ease;
+}
+
+.detail-modal-trigger.active:hover .trigger-icon {
+  opacity: 1;
+  transform: scale(1.2);
+}
+
+.detail-modal-trigger .status-text {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.detail-modal-trigger.active .status-text {
+  background: rgba(40, 167, 69, 0.2);
+  color: #2ecc71;
 }
 
 .details-card label::before {
@@ -1032,3 +1095,70 @@ textarea::-webkit-scrollbar-thumb {
     grid-template-columns: 1fr;
   }
 }
+/* =============== Course Table =============== */
+.course-table-container {
+  margin-top: 1rem;
+  margin-bottom: 1.5rem;
+  max-height: 320px;
+  overflow-y: auto;
+  overflow-x: auto;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--panel-border);
+}
+
+.course-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  text-align: left;
+}
+
+.course-table th {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+  font-weight: 600;
+  padding: 0.75rem 1rem;
+  border-bottom: 2px solid var(--panel-border);
+  white-space: nowrap;
+}
+
+.course-table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--panel-border);
+  color: var(--text-primary);
+}
+
+.course-table tr:last-child td {
+  border-bottom: none;
+}
+
+.course-table tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.badge-grade {
+  display: inline-block;
+  padding: 0.25rem 0.6rem;
+  border-radius: 12px;
+  background: var(--accent-gradient);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.8rem;
+  box-shadow: 0 2px 8px rgba(124, 131, 253, 0.3);
+}
+
+.badge-achieve {
+  display: inline-block;
+  padding: 0.25rem 0.6rem;
+  border-radius: 12px;
+  background: rgba(150, 186, 255, 0.15);
+  color: #96baff;
+  font-weight: 600;
+  font-size: 0.8rem;
+  border: 1px solid rgba(150, 186, 255, 0.3);
+}
+
+.grade-1 { background: linear-gradient(135deg, #FFD700, #FFA500); }
+.grade-2 { background: linear-gradient(135deg, #C0C0C0, #A9A9A9); }
+.grade-3 { background: linear-gradient(135deg, #CD7F32, #8B4513); }

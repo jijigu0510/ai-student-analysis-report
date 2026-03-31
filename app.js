@@ -1,5 +1,43 @@
 
 document.addEventListener("DOMContentLoaded", () => {
+  // Global error handler for debugging
+  window.onerror = function(message, source, lineno, colno, error) {
+    console.error("Global Error:", message, "at", source, ":", lineno);
+    // Don't alert for every small thing, but for major script errors
+    if (message.includes("renderCourseTable") || message.includes("extractCourseData")) {
+      alert("데이터 처리 중 오류 발생: " + message + " (line " + lineno + ")");
+    }
+    return false;
+  };
+
+  // --- 모달 전역 닫기 로직 ---
+  const globalModal = document.getElementById("analysisModal");
+  const globalModalCloseBtn = document.getElementById("modalCloseBtn");
+  if (globalModal && globalModalCloseBtn) {
+    globalModalCloseBtn.onclick = () => globalModal.classList.add("hidden");
+    globalModal.onclick = (e) => {
+      if (e.target === globalModal) globalModal.classList.add("hidden");
+    };
+  }
+
+  // --- Pass/Fail 상세 모달 오픈 함수 (전역) ---
+  window.openPfDetailModal = function(title, inputId) {
+    const el = document.getElementById(inputId);
+    const content = el ? el.value : "";
+    const modalTitle = document.getElementById("modalTitle");
+    const modalBody = document.getElementById("modalBody");
+    const modalOverlay = document.getElementById("analysisModal");
+    
+    if (modalTitle) modalTitle.innerText = title;
+    if (modalBody) {
+      if (!content || content.includes("데이터 없음") || content.includes("찾을 수 없습니다") || content.trim() === "") {
+        modalBody.innerHTML = "<div style='text-align:center; padding:3rem; color:var(--text-secondary);'><span style='font-size:3rem; display:block; margin-bottom:1rem;'>ℹ️</span>해당 학생의 상세 데이터가 추출되지 않았습니다.</div>";
+      } else {
+        modalBody.innerHTML = `<div style='white-space: pre-wrap; line-height:1.8; font-size:1.05rem;'>${content}</div>`;
+      }
+    }
+    if (modalOverlay) modalOverlay.classList.remove("hidden");
+  };
   // -------------------------------------------------------------------------
   // Storage Manager (IndexedDB & LocalStorage)
   // -------------------------------------------------------------------------
@@ -202,6 +240,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const categorySelect = document.getElementById("category");
   const excelUpload = document.getElementById("excel-upload");
   const studentSelect = document.getElementById("student-select");
+  let currentStudentSubjects = []; // 이수 과목명 저장용 (세특 추출 참고용)
   const gradeInput = document.getElementById("student-grade");
   const classInput = document.getElementById("student-class");
   const numberInput = document.getElementById("student-number");
@@ -325,6 +364,17 @@ document.addEventListener("DOMContentLoaded", () => {
       "\uc790\uc5f0\uacfc\ud559\ub300\ud559": ["\uc218\ud559\uacfc", "\ud1b5\uacc4\ud559\uacfc", "\ubb3c\ub9ac\ud559\uacfc", "\uc0dd\uba85\uacfc\ud559\uacfc", "\ud658\uacbd\uc6d0\uc608\ud559\uacfc", "\uc735\ud569\uc751\uc6a9\ud654\ud559\uacfc"],
       "\uc790\uc720/\ucca8\ub2e8\uc735\ud569\ud559\ubd80": ["\uc790\uc720\uc804\uacf5\ud559\ubd80(\uc778\ubb38/\uc790\uc5f0)", "\ucca8\ub2e8\uc735\ud569\ud559\ubd80(\uc735\ud569\ubc14\uc774\uc624\ud5ec\uc2a4\uc804\uacf5, \ucca8\ub2e8\uc778\uacf5\uc9c0\ub2a5\uc804\uacf5, \uc9c0\ub2a5\ud615\ubc18\ub3c4\uccb4\uc804\uacf5)"],
       "\uc608\uc220\uccb4\uc721\ub300\ud559": ["\uc74c\uc545\ud559\uacfc", "\ub514\uc790\uc778\ud559\uacfc(\uc2dc\uac01/\uc0b0\uc5c5\ub514\uc790\uc778\uc804\uacf5)", "\uc870\uac01\ud559\uacfc", "\uc2a4\ud3ec\uce20\uacfc\ud559\uacfc"]
+    },
+    "서울과학기술대학교": {
+      "공과대학": ["기계시스템공학부(지능형로봇전공, 미래자동차전공)", "기계공학과", "안전공학과", "신소재공학과", "건설시스템공학과", "건축학부(건축공학전공, 건축학전공)", "자유전공학부(공과대학)"],
+      "정보통신대학": ["전기정보공학과", "전자공학과", "스마트ICT융합공학과", "컴퓨터공학과", "자유전공학부(정보통신대학)"],
+      "에너지바이오대학": ["화공생명공학과", "환경공학과", "식품생명공학과", "정밀화학과", "안경광학과", "스포츠과학과", "바이오메디컬학과(신설)", "자유전공학부(에너지바이오대학)"],
+      "조형대학": ["디자인학과(산업디자인전공, 시각디자인전공)", "도예학과", "금속공예디자인학과", "조형예술학과"],
+      "인문사회대학": ["행정학과", "영어영문학과", "문예창작학과", "자유전공학부(인문사회대학)"],
+      "기술경영융합대학": ["산업공학과(산업정보시스템전공)", "산업공학과(ITM전공)", "MSDE학과", "경영학과(경영학전공)", "경영학과(글로벌테크노경영전공)", "자유전공학부(기술경영융합대학)"],
+      "창의융합대학": ["인공지능응용학과", "지능형반도체공학과", "미래에너지융합학과", "자유전공학부(창의융합대학)"],
+      "미래융합대학": ["융합기계공학과", "건설환경융합공학과", "헬스피트니스학과", "문화예술학과", "영어과", "벤처경영학과", "정보통신융합공학과", "자유전공학부(미래융합대학)"],
+      "교양대학": ["ST자유전공학부"]
     },
     "\ub3d9\uad6d\ub300\ud559\uad50": {
       "불교대학": ["불교학부", "문화유산학과"],
@@ -686,6 +736,15 @@ document.addEventListener("DOMContentLoaded", () => {
       if (nameInput) nameInput.value = selected.value || "";
       const targetName = nameInput.value.trim();
       if (targetName) {
+        // Clear course table first when changing students
+        const tableContainer = document.getElementById("course-table-container");
+        if (tableContainer) tableContainer.innerHTML = "";
+
+        // Reset individual tab triggers
+        ["ind-trigger-subject", "ind-trigger-creative", "ind-trigger-behavior"].forEach(id => {
+          updateTriggerState(id, false);
+        });
+
         if (globalCourseJson) extractCourseData(globalCourseJson, targetName);
         if (globalBatchJsons.length > 0) extractBatchData(globalBatchJsons, targetName);
         
@@ -711,7 +770,6 @@ document.addEventListener("DOMContentLoaded", () => {
       reader.onload = async function (evt) {
         try {
           const workbook = XLSX.read(new Uint8Array(evt.target.result), { type: "array" });
-          // \ubaa8\ub4e0 \uc2dc\ud2b8 \ud1b5\ud569
           const allRows = [];
           for (const sheetName of workbook.SheetNames) {
             const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1 });
@@ -720,10 +778,16 @@ document.addEventListener("DOMContentLoaded", () => {
           globalCourseJson = allRows;
           await StorageManager.save("globalCourseJson", globalCourseJson);
           const targetName = nameInput ? nameInput.value.trim() : "";
-          if (targetName) { extractCourseData(globalCourseJson, targetName); }
-          else { alert("\uc774\uc218\uacfc\ubaa9 \ud30c\uc77c\uc774 \ubd88\ub7ec\uc640\uc84c\uc2b5\ub2c8\ub2e4. \uba3c\uc800 \ud559\uc0dd\uc744 \uc120\ud0dd\ud558\uc2dc\uba74 \uc774\uc218\uacfc\ubaa9\uc774 \uc790\ub3d9 \ucd94\ucd9c\ub429\ub2c8\ub2e4."); }
+          if (targetName) { 
+            extractCourseData(globalCourseJson, targetName); 
+          } else { 
+            alert("이수과목 파일이 불러와졌습니다. 먼저 학생을 선택하시면 이수과목이 자동 추출됩니다."); 
+          }
           saveState();
-        } catch (error) { console.error(error); alert("\ud30c\uc77c \uc77d\ub294 \uc911 \uc624\ub958\uac00 \ubc1c\uc0dd\ud588\uc2b5\ub2c8\ub2e4."); }
+        } catch (error) { 
+          console.error("Course file read error:", error); 
+          alert("이수과목 파일 읽는 중 오류 발생:\n" + error.message + "\n\n파일 형식이 올바른지 확인해주세요."); 
+        }
       };
       reader.readAsArrayBuffer(file);
     });
@@ -733,7 +797,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const tgt = targetName.replace(/\s+/g, "");
     console.log(`[extractCourseData] Starting extraction for student: "${tgt}"`);
 
-    // \ud5e4\ub354 \ud589 \ud0d0\uc0c9 (\uc131\uba85 \uc140 \uae30\uc900)
+    // 헤더 행 탐색 (성명 셀 기준)
     let headerRowIdx = -1, nameCol = -1;
     let gradeYearCol = -1, termCol = -1;
     let subjectCol = -1, subjectCol2 = -1, creditCol = -1, gradeCol = -1, achieveCol = -1;
@@ -742,7 +806,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!jsonData[i]) continue;
       for (let j = 0; j < jsonData[i].length; j++) {
         const cell = String(jsonData[i][j] || "").replace(/\s+/g, "");
-        if (cell === "\uc131\uba85" || cell === "\uc774\ub984") { nameCol = j; headerRowIdx = i; break; }
+        if (cell === "성명" || cell === "이름") { nameCol = j; headerRowIdx = i; break; }
       }
       if (headerRowIdx !== -1) break;
     }
@@ -753,47 +817,50 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // \ud5e4\ub354 \ud589\uc5d0\uc11c \uceec\ub7fc \ud0d0\uc9c0
+    // 헤더 행에서 컬럼 탐지
     const headerRow = jsonData[headerRowIdx] || [];
     for (let j = 0; j < headerRow.length; j++) {
       const cell = String(headerRow[j] || "").replace(/\s+/g, "");
       if (!cell) continue;
-      if (gradeYearCol === -1 && (cell === "\ud559\ub144" || cell.endsWith("\ud559\ub144"))) gradeYearCol = j;
-      if (termCol === -1 && (cell === "\ud559\uae30" || cell.endsWith("\ud559\uae30"))) termCol = j;
-      if (cell === "\uacfc\ubaa9" || cell === "\uad50\uacfc\ubaa9" || cell === "\uad50\uacfc\ubaa9\uba85" || cell === "\uacfc\ubaa9\uba85" || cell === "\uc774\uc218\uacfc\ubaa9") subjectCol = j;
-      else if (subjectCol2 === -1 && (cell === "\uad50\uacfc" || cell === "\uacfc\ubaa9\uad70" || cell === "\uad50\uacfc\uad70" || cell === "\uad50\uacfc\uc601\uc5ed")) subjectCol2 = j;
-      if (creditCol === -1 && (cell === "\ub2e8\uc704\uc218" || cell === "\ub2e8\uc704" || cell === "\uc774\uc218\ub2e8\uc704" || cell.endsWith("\ub2e8\uc704\uc218"))) creditCol = j;
-      // \uc11d\ucc28\ub4f1\uae09: \uac00\uc7a5 \uc624\ub978\ucabd(\ub9c8\uc9c0\ub9c9) \uceec\ub7fc \uc6b0\uc120
-      if (cell === "\uc11d\ucc28\ub4f1\uae09" || cell.endsWith("\uc11d\ucc28\ub4f1\uae09")) gradeCol = j;
-      else if (gradeCol === -1 && (cell === "\ub4f1\uae09" || cell.endsWith("\ub4f1\uae09"))) gradeCol = j;
-      if (achieveCol === -1 && cell.includes("\uc131\ucde8\ub3c4")) achieveCol = j;
+      if (gradeYearCol === -1 && (cell === "학년" || cell.includes("학년"))) gradeYearCol = j;
+      if (termCol === -1 && (cell === "학기" || cell.includes("학기"))) termCol = j;
+      
+      //과목 컬럼: '과목', '교과목', '과목명' 등 포함
+      if (subjectCol === -1 && (cell.includes("과목") || cell.includes("교과목"))) subjectCol = j;
+      else if (subjectCol2 === -1 && (cell.includes("교과") || cell.includes("과목군") || cell.includes("교과군"))) subjectCol2 = j;
+      
+      //단위수 컬럼: '단위', '단위수', '이수단위' 등
+      if (creditCol === -1 && (cell.includes("단위") || cell.includes("단위수"))) creditCol = j;
+      
+      //등급 컬럼: '등급', '석차등급', '성적' 등
+      if (gradeCol === -1 && (cell.includes("등급") || cell.includes("석차등급") || cell === "성적")) gradeCol = j;
+      
+      //성취도 컬럼
+      if (achieveCol === -1 && cell.includes("성취도")) achieveCol = j;
     }
-    // \uc704\uce58 \uae30\ubc18 \ud3f4\ubc31 (NEIS \ud45c\uc900: \ubc88\ud638|\uc131\uba85|\ud559\ub144|\ud559\uae30|\uad50\uacfc\uad70|\uacfc\ubaa9|\ub2e8\uc704\uc218|...|\uc11d\ucc28\ub4f1\uae09)
-    if (subjectCol === -1 && headerRow.length >= 6) { subjectCol = 5; console.log("[extractCourseData] subjectCol fallback to 5"); }
-    if (creditCol === -1 && headerRow.length >= 7) { creditCol = 6; console.log("[extractCourseData] creditCol fallback to 6"); }
-    if (gradeCol === -1 && headerRow.length >= 10) { gradeCol = 9; console.log("[extractCourseData] gradeCol fallback to 9"); }
+    // 위치 기반 폴백
+    if (subjectCol === -1 && headerRow.length >= 6) subjectCol = 5;
+    if (creditCol === -1 && headerRow.length >= 7) creditCol = 6;
+    if (gradeCol === -1 && headerRow.length >= 10) gradeCol = 9;
 
-    console.log(`[extractCourseData] Detected columns -> subject: ${subjectCol}, subject2: ${subjectCol2}, credit: ${creditCol}, grade: ${gradeCol}, achieve: ${achieveCol}`);
     const dataStartIndex = headerRowIdx + 1;
     const extractedCourses = [], achieveOnlyCourses = [];
+    const courseDetails = []; // 상세 데이터 수집 (표 렌더링용)
     let totalWeightedSum = 0, totalCredits = 0, currentStudent = "";
 
     for (let i = dataStartIndex; i < jsonData.length; i++) {
       const row = jsonData[i]; if (!row) continue;
-      // \ubcd1\ud569\uc140 \ud328\ud134: \uc131\uba85\uc774 \uc788\uc744 \ub54c\ub9cc \uac31\uc2e0, \uc5c6\uc73c\uba74 \uc9c1\uc804 \ud559\uc0dd \uc720\uc9c0
       const cn = String(row[nameCol] || "").replace(/\s+/g, "");
       if (cn) currentStudent = cn;
       if (!currentStudent || currentStudent !== tgt) continue;
 
-      // \uacfc\ubaa9\uba85 \ucd94\ucd9c
       let subject = subjectCol !== -1 ? String(row[subjectCol] || "").trim() : "";
       if (!subject && subjectCol2 !== -1) subject = String(row[subjectCol2] || "").trim();
       if (!subject || subject === "undefined") continue;
-      if (subject.includes("\ud3c9\uade0") || subject.includes("\ud569\uacc4") || subject.includes("\uc18c\uacc4")) continue;
-      if (subject === "\uacc4") continue;
+      if (subject.includes("평균") || subject.includes("합계") || subject.includes("소계")) continue;
+      if (subject === "계") continue;
       extractedCourses.push(subject);
 
-      // \ub2e8\uc704\uc218 \ucd94\ucd9c
       let credit = 0;
       if (creditCol !== -1 && row[creditCol] != null) {
         const cm = String(row[creditCol]).match(/\d+(\.\d+)?/);
@@ -801,28 +868,40 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       if (credit <= 0) credit = 1;
 
-      // \uc11d\ucc28\ub4f1\uae09 \u2014 \uc21c\uc218 \uc22b\uc790(1~9)\ub9cc \uacc4\uc0b0\uc5d0 \ud3ec\ud568, P\ub294 \uc81c\uc678
       let gradeVal = NaN;
+      let rawGrade = "";
       if (gradeCol !== -1 && row[gradeCol] != null) {
-        const grStr = String(row[gradeCol]).trim();
-        const isP = /^[Pp]$/.test(grStr) || (grStr.toUpperCase().includes("P") && !/\d/.test(grStr));
+        rawGrade = String(row[gradeCol]).trim();
+        const isP = /^[Pp]$/.test(rawGrade) || (rawGrade.toUpperCase().includes("P") && !/\d/.test(rawGrade));
         if (!isP) {
-          const gm = grStr.match(/^(\d+)(\.\d+)?$/);
-          if (gm) gradeVal = parseFloat(grStr);
+          const gm = rawGrade.match(/^(\d+)(\.\d+)?$/);
+          if (gm) gradeVal = parseFloat(rawGrade);
         }
       }
+
+      const achieve = achieveCol !== -1 ? String(row[achieveCol] || "").trim() : "";
 
       if (!isNaN(gradeVal) && gradeVal >= 1 && gradeVal <= 9) {
         totalWeightedSum += credit * gradeVal;
         totalCredits += credit;
+        courseDetails.push({ subject, grade: gradeVal, credit, type: 'grade' });
       } else {
-        const achieve = achieveCol !== -1 ? String(row[achieveCol] || "").trim() : "";
-        if (achieve && achieve.toUpperCase() !== "P") achieveOnlyCourses.push(subject + "(" + achieve + ")");
+        if (achieve && achieve.toUpperCase() !== "P") {
+          achieveOnlyCourses.push(subject + "(" + achieve + ")");
+          courseDetails.push({ subject, grade: achieve, credit, type: 'achieve' });
+        }
       }
     }
 
-    // \uacb0\uacfc \ubc18\uc601
+    // Update global subject list for reference in other tabs/extractions
+    window.currentStudentSubjects = Array.from(new Set(extractedCourses));
+
+    // 결과 반영
     const coursesInput = document.getElementById("courses");
+    const agInput = document.getElementById("average-grade");
+    const afInput = document.getElementById("average-formula");
+    const aoInput = document.getElementById("achievement-only");
+
     if (extractedCourses.length > 0) {
       if (coursesInput) coursesInput.value = extractedCourses.join(", ");
       const avgLabel = totalCredits > 0
@@ -831,19 +910,85 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!silent) alert("'" + targetName + "' 학생의 이수과목 " + extractedCourses.length + "개 추출 완료. (" + avgLabel + ")");
     } else {
       if (coursesInput) coursesInput.value = "";
+      if (aoInput) aoInput.value = "해당 없음";
+      renderCourseTable([]); // Clear the table if no courses found
       if (!silent) alert("해당 파일에서 '" + targetName + "' 학생의 데이터를 찾을 수 없습니다.");
     }
-    const agInput = document.getElementById("average-grade");
-    const afInput = document.getElementById("average-formula");
+
     if (totalCredits > 0) {
-      if (agInput) agInput.value = (totalWeightedSum / totalCredits).toFixed(2) + " \ub4f1\uae09";
-      if (afInput) afInput.value = "\u03a3(" + totalWeightedSum.toFixed(1) + ") / " + totalCredits + "\ub2e8\uc704";
+      if (agInput) agInput.value = (totalWeightedSum / totalCredits).toFixed(2) + " 등급";
+      if (afInput) afInput.value = "Σ(" + totalWeightedSum.toFixed(1) + ") / " + totalCredits + "단위";
     } else {
-      if (agInput) agInput.value = "\ub4f1\uae09 \uc5c6\uc74c";
-      if (afInput) afInput.value = "\uc131\ucde8\ub3c4(A, B, C) \uc804\uc6a9 \uacfc\ubaa9 \ub4f1\uc73c\ub85c \uc0b0\ucd9c \ubd88\uac00";
+      if (agInput) agInput.value = "등급 없음";
+      if (afInput) afInput.value = "성취도(A, B, C) 전용 과목 등으로 산출 불가";
     }
-    const aoInput = document.getElementById("achievement-only");
-    if (aoInput) aoInput.value = achieveOnlyCourses.length > 0 ? achieveOnlyCourses.join(", ") : "\ud574\ub2f9 \uc5c6\uc74c";
+
+    if (aoInput) aoInput.value = achieveOnlyCourses.length > 0 ? achieveOnlyCourses.join(", ") : "해당 없음";
+
+    // 표 렌더링 호출
+    renderCourseTable(courseDetails);
+  }
+
+  /**
+   * 이수 과목 상세 표를 렌더링합니다.
+   */
+  function renderCourseTable(details, containerId = "course-table-container") {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    if (!details || details.length === 0) {
+      container.innerHTML = `
+        <div style="text-align: center; padding: 2rem; color: var(--text-secondary); background: rgba(255,255,255,0.05); border-radius: 12px; border: 1px dashed var(--panel-border);">
+          <p>이수 과목 데이터를 찾을 수 없습니다.</p>
+          <p style="font-size: 0.8rem; margin-top: 0.5rem;">과목명, 단위수, 등급 컬럼이 포함된 엑셀 파일을 업로드해주세요.</p>
+        </div>
+      `;
+      return;
+    }
+
+    let html = `
+      <table class="course-table">
+        <thead>
+          <tr>
+            <th>과목명</th>
+            <th>단위수</th>
+            <th>등급/성취도</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+    details.forEach(item => {
+      const badgeClass = item.type === 'grade' ? `badge-grade grade-${Math.floor(item.grade)}` : 'badge-achieve';
+      html += `
+        <tr>
+          <td>${item.subject}</td>
+          <td>${item.credit}</td>
+          <td><span class="${badgeClass}">${item.grade}</span></td>
+        </tr>
+      `;
+    });
+
+    html += `
+        </tbody>
+      </table>
+    `;
+
+    container.innerHTML = html;
+  }
+
+
+  function updateTriggerState(triggerId, hasData) {
+    const trigger = document.getElementById(triggerId);
+    if (!trigger) return;
+    const statusText = trigger.querySelector(".status-text");
+    if (hasData) {
+      trigger.classList.add("active");
+      if (statusText) statusText.innerText = "로드됨";
+    } else {
+      trigger.classList.remove("active");
+      if (statusText) statusText.innerText = "미로드";
+    }
   }
 
   if (batchExcelUpload) {
@@ -979,22 +1124,36 @@ document.addEventListener("DOMContentLoaded", () => {
       let extractedText = [];
 
       if (detectedType === "subject") {
+        const sjMap = new Map();
         for (let i = dataStartIndex; i < jsonData.length; i++) {
           const row = jsonData[i]; if (!row) continue;
           const cn = String(row[nameCol] || "").replace(/\s+/g, "");
           if (cn) currentStudent = cn;
           if (!currentStudent || currentStudent !== tgt) continue;
-          const subj = subjCol !== -1 ? String(row[subjCol] || "").trim() : "";
+          const subj = subjCol !== -1 ? String(row[subjCol] || "").trim() : "기타";
           const detail = String(row[detailCol] || "").trim();
-          if (detail && detail.length > 2) extractedText.push(subj ? "[" + subj + "]\n" + detail : detail);
+          if (detail && detail.length > 2) {
+            if (!sjMap.has(subj)) sjMap.set(subj, []);
+            sjMap.get(subj).push(detail);
+          }
         }
-        if (extractedText.length > 0)
-          subjectInput.value = subjectInput.value
-            ? subjectInput.value + "\n\n" + extractedText.join("\n\n")
-            : extractedText.join("\n\n");
+        const results = [];
+        sjMap.forEach((details, subj) => {
+          let combined = details.map(d => d.trim()).join(" ");
+          // Apply reference splitting anyway for robustness
+          if (window.currentStudentSubjects && window.currentStudentSubjects.length > 0) {
+            const escapedSubjs = window.currentStudentSubjects.map(s => s.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'));
+            const pattern = new RegExp(`(${escapedSubjs.join('|')})\\s*:`, 'g');
+            combined = combined.replace(pattern, (match, p1, offset) => (offset === 0) ? match : "\n\n" + match);
+          }
+          results.push(subj !== "기타" ? subj + ": " + combined : combined);
+        });
+        if (results.length > 0) {
+          subjectInput.value = subjectInput.value ? subjectInput.value + "\n\n" + results.join("\n\n") : results.join("\n\n");
+        }
 
       } else if (detectedType === "creative") {
-        const ag = { "\uc790\uc728": [], "\ub3d9\uc544\ub9ac": [], "\ubd09\uc0ac": [], "\uc9c4\ub85c": [], "\uae30\ud0c0": [] };
+        const ag = { "자율": [], "동아리": [], "봉사": [], "진로": [], "기타": [] };
         for (let i = dataStartIndex; i < jsonData.length; i++) {
           const row = jsonData[i]; if (!row) continue;
           const cn = String(row[nameCol] || "").replace(/\s+/g, "");
@@ -1003,40 +1162,53 @@ document.addEventListener("DOMContentLoaded", () => {
           const area = areaCol !== -1 ? String(row[areaCol] || "").trim() : "";
           const detail = String(row[detailCol] || "").trim();
           if (!detail || detail.length <= 2) continue;
-          if (area.includes("\uc790\uc728")) ag["\uc790\uc728"].push(detail);
-          else if (area.includes("\ub3d9\uc544\ub9ac")) ag["\ub3d9\uc544\ub9ac"].push(detail);
-          else if (area.includes("\ubd09\uc0ac")) ag["\ubd09\uc0ac"].push(detail);
-          else if (area.includes("\uc9c4\ub85c")) ag["\uc9c4\ub85c"].push(detail);
-          else if (area) ag["\uae30\ud0c0"].push("[" + area + "]\n" + detail);
-          else ag["\uae30\ud0c0"].push(detail);
+          
+          if (area.includes("자율")) ag["자율"].push(detail);
+          else if (area.includes("동아리")) ag["동아리"].push(detail);
+          else if (area.includes("봉사")) ag["봉사"].push(detail);
+          else if (area.includes("진로")) ag["진로"].push(detail);
+          else ag["기타"].push(detail);
         }
         let rt = [];
-        if (ag["\uc790\uc728"].length > 0) rt.push("[\uc790\uc728]\n" + ag["\uc790\uc728"].join("\n\n"));
-        if (ag["\ub3d9\uc544\ub9ac"].length > 0) rt.push("[\ub3d9\uc544\ub9ac]\n" + ag["\ub3d9\uc544\ub9ac"].join("\n\n"));
-        if (ag["\ubd09\uc0ac"].length > 0) rt.push("[\ubd09\uc0ac]\n" + ag["\ubd09\uc0ac"].join("\n\n"));
-        if (ag["\uc9c4\ub85c"].length > 0) rt.push("[\uc9c4\ub85c]\n" + ag["\uc9c4\ub85c"].join("\n\n"));
-        if (ag["\uae30\ud0c0"].length > 0) rt.push(ag["\uae30\ud0c0"].join("\n\n"));
+        if (ag["자율"].length > 0) rt.push("[자율]\n" + ag["자율"].map(d => d.trim()).join(" "));
+        if (ag["동아리"].length > 0) rt.push("[동아리]\n" + ag["동아리"].map(d => d.trim()).join(" "));
+        if (ag["봉사"].length > 0) rt.push("[봉사]\n" + ag["봉사"].map(d => d.trim()).join(" "));
+        if (ag["진로"].length > 0) rt.push("[진로]\n" + ag["진로"].map(d => d.trim()).join(" "));
+        if (ag["기타"].length > 0) rt.push(ag["기타"].map(d => d.trim()).join(" "));
         if (rt.length > 0)
           creativeInput.value = creativeInput.value
             ? creativeInput.value + "\n\n" + rt.join("\n\n")
             : rt.join("\n\n");
 
       } else { // behavior
+        const gdMap = new Map();
         for (let i = dataStartIndex; i < jsonData.length; i++) {
           const row = jsonData[i]; if (!row) continue;
           const cn = String(row[nameCol] || "").replace(/\s+/g, "");
           if (cn) currentStudent = cn;
           if (!currentStudent || currentStudent !== tgt) continue;
-          const gd = gradeYearCol !== -1 ? String(row[gradeYearCol] || "").trim() : "";
+          const gd = gradeYearCol !== -1 ? String(row[gradeYearCol] || "").trim() : "기타";
           const detail = String(row[detailCol] || "").trim();
-          if (detail && detail.length > 2) extractedText.push(gd ? "[" + gd + "\ud559\uae30]\n" + detail : detail);
+          if (detail && detail.length > 2) {
+            if (!gdMap.has(gd)) gdMap.set(gd, []);
+            gdMap.get(gd).push(detail);
+          }
         }
-        if (extractedText.length > 0)
-          behaviorInput.value = behaviorInput.value
-            ? behaviorInput.value + "\n\n" + extractedText.join("\n\n")
-            : extractedText.join("\n\n");
+        const bRes = [];
+        gdMap.forEach((details, gd) => {
+          const combined = details.map(d => d.trim()).join(" ");
+          bRes.push(gd !== "기타" ? `[${gd}학년]\n${combined}` : combined);
+        });
+        if (bRes.length > 0) {
+          behaviorInput.value = behaviorInput.value ? behaviorInput.value + "\n\n" + bRes.join("\n\n") : bRes.join("\n\n");
+        }
       }
     }
+    
+    // Update individual tab triggers
+    updateTriggerState("ind-trigger-subject", !!(subjectInput && subjectInput.value));
+    updateTriggerState("ind-trigger-creative", !!(creativeInput && creativeInput.value));
+    updateTriggerState("ind-trigger-behavior", !!(behaviorInput && behaviorInput.value));
   }
 
   evalForm.addEventListener("submit", async function (e) {
@@ -1177,6 +1349,9 @@ document.addEventListener("DOMContentLoaded", () => {
         const el = document.getElementById(id);
         if (el) el.value = "데이터를 불러오는 중...";
       });
+
+      const pfTableContainer = document.getElementById("pf-course-table-container");
+      if (pfTableContainer) pfTableContainer.innerHTML = "";
       
       updatePfStudentDetails(s.name);
     });
@@ -1257,79 +1432,142 @@ document.addEventListener("DOMContentLoaded", () => {
 
     console.log(`[PF] Summary - Grades: ${gRows.length}, Subjects: ${sRows.length}, Creative: ${cRows.length}, Behavior: ${bRows.length}`);
 
+    // Reset all triggers first
+    ["pf-trigger-subject", "pf-trigger-career", "pf-trigger-arts", "pf-trigger-creative", "pf-trigger-behavior"].forEach(id => {
+      updateTriggerState(id, false);
+    });
+
+    const pfCourseDetails = [];
     const gradeEl = document.getElementById("pf-detail-grades");
     if (gradeEl) {
       gradeEl.value = gRows.length ? gRows.map(r => {
-        const sub = getVal(r, ["\uacfc\ubaa9\uba85", "\uacfc\ubaa9"]);
-        const grdRaw = getVal(r, ["\uc11d\ucc28\ub4f1\uae09(\uc218\uac15\uc790\uc218)", "\uc131\ucde8\ub3c4(\uc218\uac15\uc790\uc218)", "\ub4f1\uae09", "\uc131\ucde8\ub3c4"]);
+        const sub = getVal(r, ["과목명", "교과목명", "과목"]);
+        const grdRaw = getVal(r, ["석차등급(수강자수)", "성취도(수강자수)", "등급", "성취도", "석차등급"]);
+        const creditRaw = getVal(r, ["단위수", "이수단위", "단위"]);
+        
         // Extract only the part before '(' if it exists, e.g., '2' from '2(118)'
         const grd = String(grdRaw).split('(')[0].trim() || "-";
-        return `${sub || "\uacfc\ubaa9\ubbf8\uc0c1"}: ${grd}`;
-      }).join(", ") : "\ub370\uc774\ud130 \uc5c6\uc74c";
+        const credit = parseFloat(String(creditRaw).match(/\d+(\.\d+)?/)?.[0] || "0") || 1;
+        
+        // Determine type for badge
+        const isGrade = /^[1-9]$/.test(grd);
+        pfCourseDetails.push({ 
+          subject: sub || "과목미상", 
+          grade: grd, 
+          credit: credit, 
+          type: isGrade ? 'grade' : 'achieve' 
+        });
+
+        return `${sub || "과목미상"}: ${grd}`;
+      }).join(", ") : "데이터 없음";
     }
+    renderCourseTable(pfCourseDetails, "pf-course-table-container");
+    // Update global subject list for reference
+    currentStudentSubjects = pfCourseDetails.map(d => d.subject).filter(s => s && s !== "과목미상");
 
     const subEl = document.getElementById("pf-detail-subject");
     if (subEl) {
-      subEl.value = sRows.length ? sRows.map(r => getVal(r, ["\uc138\ubd80\ub2a5\ub825 \ubc0f \ud2b9\uae30\uc0ac\ud56d", "\ud2b9\uae30\uc0ac\ud56d"])).filter(v => v).join("\n") : "\ub370\uc774\ud130 \uc5c6\uc74c";
+      const sjMap = new Map();
+      sRows.forEach(r => {
+        const sj = getVal(r, ["과목명", "교과목명", "과목"]) || "기타";
+        const dt = getVal(r, ["세부능력 및 특기사항", "특기사항"]);
+        if (dt) {
+          if (!sjMap.has(sj)) sjMap.set(sj, []);
+          sjMap.get(sj).push(dt);
+        }
+      });
+      const resArr = [];
+      sjMap.forEach((details, subj) => {
+        let combined = details.map(d => d.trim()).join(" ");
+        if (window.currentStudentSubjects && window.currentStudentSubjects.length > 0) {
+          const escapedSubjs = window.currentStudentSubjects.map(s => s.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'));
+          const pattern = new RegExp(`(${escapedSubjs.join('|')})\\s*:`, 'g');
+          combined = combined.replace(pattern, (m, p, o) => (o === 0) ? m : "\n\n" + m);
+        }
+        resArr.push(subj !== "기타" ? subj + ": " + combined : combined);
+      });
+      subEl.value = resArr.join("\n\n") || "데이터 없음";
+      updateTriggerState("pf-trigger-subject", !!resArr.length);
     }
 
     const careerEl = document.getElementById("pf-detail-career");
     if (careerEl) {
-      careerEl.value = sRows.length ? sRows.map(r => getVal(r, ["\uc9c4\ub85c\uc120\ud0dd \uc138\ubd80\ub2a5\ub825 \ubc0f \ud2b9\uae30\uc0ac\ud56d"])).filter(v => v).join("\n") : "\ub370\uc774\ud130 \uc5c6\uc74c";
+      subEl.value = ""; // Clear for reuse of logic or just join
+      const cVal = sRows.length ? sRows.map(r => getVal(r, ["진로선택 세부능력 및 특기사항"])).filter(v => v).map(v => v.trim()).join(" ") : "";
+      careerEl.value = cVal || "데이터 없음";
+      updateTriggerState("pf-trigger-career", !!cVal);
     }
 
     const artsEl = document.getElementById("pf-detail-arts");
     if (artsEl) {
-      artsEl.value = sRows.length ? sRows.map(r => getVal(r, ["\uc74c\ubbf8\uccb4 \uc138\ubd80\ub2a5\ub825 \ubc0f \ud2b9\uae30\uc0ac\ud56d"])).filter(v => v).join("\n") : "\ub370\uc774\ud130 \uc5c6\uc74c";
+      const aVal = sRows.length ? sRows.map(r => getVal(r, ["음미체 세부능력 및 특기사항"])).filter(v => v).map(v => v.trim()).join(" ") : "";
+      artsEl.value = aVal || "데이터 없음";
+      updateTriggerState("pf-trigger-arts", !!aVal);
     }
 
     const creativeEl = document.getElementById("pf-detail-creative");
     if (creativeEl) {
-      creativeEl.value = cRows.length ? cRows.map(r => {
-        const grade = getVal(r, ["\ud559\ub144"]) || "?";
-        const area = getVal(r, ["\uc601\uc5ed"]);
-        const detail = getVal(r, ["\ud2b9\uae30\uc0ac\ud56d"]);
-        
-        if (area && detail) {
-           return `[${grade}\ud559\ub144]-[${area}]\n${detail}`;
-        }
-        
-        // Fallback for activity-header layout
-        let text = "";
-        const areas = ["\uc790\uc728\ud65c\ub3d9", "\ub3d9\uc544\ub9ac\ud65c\ub3d9", "\ubcf4\uc0ac\ud65c\ub3d9", "\uc9c4\ub85c\ud65c\ub3d9"];
-        areas.forEach(a => {
-           const val = getVal(r, [a]);
-           if (val) text += `[${grade}\ud559\ub144]-[${a}]\n${val}\n`;
+      const creMap = new Map();
+      if (cRows.length) {
+        cRows.forEach(r => {
+          const grade = getVal(r, ["학년"]) || "?";
+          const area = getVal(r, ["영역"]);
+          const detail = getVal(r, ["특기사항"]);
+          if (area && detail) {
+            const key = `[${grade}학년]-[${area}]`;
+            if (!creMap.has(key)) creMap.set(key, []);
+            creMap.get(key).push(detail);
+          } else {
+            const areas = ["자율활동", "동아리활동", "봉사활동", "진로활동"];
+            areas.forEach(a => {
+              const v = getVal(r, [a]);
+              if (v) {
+                const key = `[${grade}학년]-[${a}]`;
+                if (!creMap.has(key)) creMap.set(key, []);
+                creMap.get(key).push(v);
+              }
+            });
+          }
         });
-        return text.trim();
-      }).filter(v => v).join("\n\n") : "\ub370\uc774\ud130 \uc5c6\uc74c";
+      }
+      const cRes = [];
+      creMap.forEach((details, key) => {
+        cRes.push(key + "\n" + details.map(d => d.trim()).join(" "));
+      });
+      creativeEl.value = cRes.join("\n\n") || "데이터 없음";
+      updateTriggerState("pf-trigger-creative", !!cRes.length);
     }
 
     const behaviorEl = document.getElementById("pf-detail-behavior");
     if (behaviorEl) {
-      if (!bRows.length) {
-        behaviorEl.value = `[\ub514\ubc84\uae45] "${studentName}" \ud559\uc0dd\uc744 \ucc3e\uc744 \uc218 \uc5c6\uc2b5\ub2c8\ub2e4. (${pfDetails.behaviors.length}\uac1c\uc758 \ub370\uc774\ud130 \ub85c\ub4dc\ub428. \ud574\ub2f9 \ubc18 \ud30c\uc77c\uc744 \ubaa8\ub450 \uc5c5\ub85c\ub4dc \ud588\ub2e0\uc9c0 \ud655\uc778\ud574\uc8fc\uc138\uc694.)`;
-      } else {
-        behaviorEl.value = bRows.map(r => {
-          const grade = getVal(r, ["\ud559\ub144"]) || "?";
-          // Aggressive header lookup
-          let detail = getVal(r, ["\ud589\ub3d9\ud2b9\uc131 \ubc0f \uc911\ud569\uc758\uacac", "\ud2b9\uae30\uc0ac\ud56d", "\uc758\uacac", "\ub0b4\uc6a9", "\uc885\ud569\uc758\uacac"]);
+      const behMap = new Map();
+      if (bRows.length) {
+        bRows.forEach(r => {
+          const grade = getVal(r, ["학년"]) || "?";
+          let detail = getVal(r, ["행동특성 및 종합의견", "특기사항", "의견", "내용", "종합의견"]);
           if (!detail) {
             const keys = Object.keys(r);
-            const key = keys.find(k => k.includes("\uc758\uacac") || k.includes("\ud589\ub3d9"));
+            const key = keys.find(k => k.includes("의견") || k.includes("행동"));
             if (key) detail = r[key];
           }
           if (!detail) {
-            // Final fallback: longest string in the row (behavior records are typically long)
             const vals = Object.values(r).filter(v => typeof v === 'string');
             vals.sort((a,b) => b.length - a.length);
             if (vals.length > 0 && vals[0].length > 20) detail = vals[0];
           }
-          
-          if (!detail) return `[\ub514\ubc84\uae45] ${grade}\ud559\ub144 \ub370\uc774\ud130\ub294 \ucc3e\uc558\uc73c\ub098 '\ud589\ub3d9\ud2b9\uc131' \ud5e4\ub354\ub97c \ub9e4\uce6d\ud560 \uc218 \uc5c6\uc2b5\ub2c8\ub2e4. (\ud5e4\ub354 \ubaa9\ub84d: ${Object.keys(r).join(", ")})`;
-          return `[${grade}\ud559\ub144]\n${detail}`;
-        }).filter(v => v).join("\n\n");
+          if (detail) {
+            const key = `[${grade}학년]`;
+            if (!behMap.has(key)) behMap.set(key, []);
+            behMap.get(key).push(detail);
+          }
+        });
       }
+      const bResArr = [];
+      behMap.forEach((details, grade) => {
+        bResArr.push(grade + "\n" + details.map(d => d.trim()).join(" "));
+      });
+      behaviorEl.value = bResArr.join("\n\n") || "데이터 없음";
+      updateTriggerState("pf-trigger-behavior", !!bResArr.length);
     }
   }
 
@@ -1735,10 +1973,11 @@ document.addEventListener("DOMContentLoaded", () => {
    \u203b \uba74\uc811 \uc5b8\uc5b4: \uc804 \uacfc\uc815 \ud55c\uad6d\uc5b4\ub85c\ub9cc \uc9c4\ud589 (\uc678\uad6d\uc5b4 \ub2a5\ub825 \ud3c9\uac00 \uc544\ub2d8)
    \u203b \uacf5\ud1b5 \uc9c8\ubb38 \uc5c6\uc74c \u2014 \ud559\uc0dd\ubd80 \ub0b4\uc6a9 \uae30\ubc18 \uac1c\uc778\ubcc4 \ub9de\ucda4 \uc9c8\ubb38
    \u203b \uc8fc\uc548\uc810: \uc11c\ub958(\uc0dd\uae30\ubd80) \uc9c4\uc704 \ud655\uc778 + \ub17c\ub9ac\uc801 \uc0ac\uace0\ub825 + \uc18c\ud1b5 \ub2a5\ub825 + \uc804\uacf5 \uad00\uc2ec\ub3c4
+   \u203b \uc8fc\uc548\uc810: \uc11c\ub958(\uc0dd\uae30\ubd80) \uc9c4\ud704 \ud655\uc778 + \ub17c\ub9ac\uc801 \uc0ac\uace0\ub825 + \uc18c\ud1b5 \ub2a5\ub825 + \uc804\uacf5 \uad00\uc2ec\ub3c4
 
 \u25a0 \ud0c1\uc6d4\uc131 \ud310\ub2e8 \uae30\uc900 (\uc785\ud559\uc0ac\uc815\uad00 \uad00\uc810)
    - \uad50\uacfc \uac04 \uc9c0\uc2dd\uc758 \uc804\uc774(Transference): \ud55c \uacfc\ubaa9\uc5d0\uc11c \ubc30\uc6b4 \uac1c\ub150\uc744 \ub2e4\ub978 \uacfc\ubaa9\uc774\ub098 \ubd84\uc57c\uc5d0 \uc5f0\uacb0\u00b7\uc801\uc6a9
-   - \uc790\uae30\uc8fc\ub3c4\uc801 \uc2ec\ud654 \ud0d0\uad6c: \uad50\uacfc\uc11c \ub0b4\uc6a9\uc744 \ub118\uc5b4 \uc2a4\uc2a4\ub85c \uc8fc\uc81c\ub97c \uc124\uc815\ud558\uace0 \uae4a\uc774 \uc788\uac8c \ud0d0\uad6c\ud55c \uacfc\uc815
+   - \uc790\uae30\uc8fc\ub3c4\uc801 \uc2ec\ud654 \ud0d0\uad6c: \uad50\uacfc\uc11c \ub0b4\uc6a9\uc744 \ub118\uc5b4 \uc2a4\uc2a4\ub85c \uc8fc\uc81c\ub97c \uc124\uc815\ud558\uace0 \uae4a\uc774 \uc788\uac8c \ud0d0\uad6c\ud558\ub294 \uacfc\uc815
    - \uc8fc\ub3c4\uc801 \ub9ac\ub354\uc2ed: \ub2e8\uccb4 \ud65c\ub3d9\uc5d0\uc11c \uac08\ub4f1 \ud574\uacb0\u00b7\ubaa9\ud45c \ub2ec\uc131\uc744 \uc704\ud574 \uc8fc\ub3c4\uc801 \uc5ed\ud560\uc744 \uc218\ud589\ud55c \uad6c\uccb4\uc801 \uacbd\ud5d8
    - \ud559\uc0dd\ubd80 \uc804\uccb4\ub97c \uc720\uae30\uc801\uc73c\ub85c \uc5f0\uacb0\ud558\uc5ec \uc77c\uad00\uc131\u00b7\uc9c4\uc815\uc131\uc744 \ud655\uc778
 
@@ -1836,7 +2075,40 @@ document.addEventListener("DOMContentLoaded", () => {
         },
         weights: { academic: 0.35, career: 0.40, community: 0.25 } // \uba74\uc811\ud615 \uae30\uc900
       },
-      "\uac74\uad6d\ub300\ud559\uad50": {
+      "서울과학기술대학교": {
+        factors: `
+[서울과학기술대학교 2026학년도 학생부종합전형 평가 기준]
+
+■ 서류평가 방법 및 절차
+- 다수 평가자 독립평가: 2인 독립 평가, 차이 발생 시 재평가(객관성 확보)
+- 블라인드 평가: 성명, 고교명 등 모든 개인정보 블라인드 처리
+- 학교폭력 조치사항: 공동체 역량 감점 또는 전 항목 최저등급 부여 등 엄격 반영
+- 선발 방식: 서류 100%로 1단계 3배수 선발 후 면접 진행
+
+■ 서류평가 요소 및 반영 비율 (총점 1,000점)
+1. 진로역량 (45% / 450점): 전공(계열) 관련 교과 이수 노력, 성취도, 진로 탐색 활동과 경험
+2. 학업역량 (35% / 350점): 전반적 학업성취도, 자발적 학업태도, 지적 호기심 기반 탐구력
+3. 공동체역량 (20% / 200점): 협업/소통능력, 나눔/배려, 성실성/규칙준수, 리더십
+
+■ 서류평가 핵심 주안점
+- '계열적합성' 중시: 학과명과 일치하는 활동보다 넓은 의미의 계열 관련 역량(수학/과학적 탐구 등) 강조
+- 결과보다 '과정' 중심: 활동 실적보다 준비 과정, 노력, 성장을 입체적으로 평가
+- 내신 성적의 질적 평가: 단순 등급 하락보다 환경, 이수 단위, 원점수, 세특 등 종합 분석
+- 주도성 평가: 거창한 직책보다 작은 역할 내에서의 책임감과 주도성을 높게 평가
+- 횡단 평가: 교과/비교과를 분리하지 않고 모든 내용을 연계하여 종합적으로 꿰뚫어 봄
+
+■ 모집단위별 특별 주안점
+- 바이오메디컬학과(신설): 생명과학/화학 등 기초 과학 충실도, 의학적 문제/신약개발에 대한 학문적 호기심, 다학제적 소통 능력
+- 자유전공학부(ST자유전공 등): 전공의 벽을 넘나드는 융합적 사고, 기초 학문을 폭넓게 수용할 수 있는 학업적 유연성
+`,
+        competencies: {
+          academic: "학업역량 (35%): 전반적 학업성취도 및 발전 정도, 자발적 학업 태도, 지적 호기심 기반의 문제해결 및 탐구력",
+          career: "진로역량 (45%): 전공(계열) 관련 교과 이수 노력 및 성취 수준, 진로 탐색 과정에서의 활동/경험의 질과 계열적합성",
+          community: "공동체역량 (20%): 협업/소통능력, 나눔/배려 태도, 성실성/규칙준수(출결), 리더십 및 구성원 상호작용 내 주도성"
+        },
+        weights: { academic: 0.35, career: 0.45, community: 0.20 }
+      },
+      "건국대학교": {
         factors: `
 [\uac74\uad6d\ub300\ud559\uad50 2026\ud559\ub144\ub3c4 \ud559\uc0dd\ubd80\uc885\ud569\uc804\ud615 \ud3c9\uac00 \uae30\uc900 \u2014 \uac00\uc774\ub4dc\ubd81(KU\uc790\uae30\ucd94\ucc9c) \ubc18\uc601]
 
@@ -3470,14 +3742,14 @@ SW\uc6b0\uc218(AI\ucef4\uacf5): \ud559\uc5c5\ud0d0\uad6c\uc5ed\ub7c9 60%(\ud559\
     const attemptLogs = [];
     const uniCriteria = universityEvalCriteria[data.university] || { factors: "" };
     const prompt = `당신은 대한민국 대학 입시 분석 전문가이자 매우 엄격하고 비판적인 시각을 가진 입학사정관입니다.
-다음 학생의 수시 지원 결과(합격 또는 불합격)를 바탕으로, 해당 대학 및 학과의 구체적인 '평가 주안점'에 비추어 그 원인을 매우 냉철하고 엄격하게 분석하여 리포트를 작성하세요.
+다음 학생의 수시 지원 결과(합격 또는 불합격)를 '2015 개정 교육과정 핵심역량 기반 학생부종합전형 평가지표' 및 해당 대학의 구체적인 '평가 주안점'에 비추어 그 원인을 매우 냉철하고 엄격하게 분석하여 리포트를 작성하세요.
 
-[강조 지침]
+[강조 및 감점 지침]
 1. 분석 및 리포트 작성 시 학생의 실명이나 특정 가능한 정보를 노출하지 마십시오 (대신 '학생', '지원자', '본 학생부' 등으로 지칭).
 2. 근거 없는 낙관론이나 단순한 칭찬은 배제하고, 철저히 데이터(성적, 이수과목, 활동 기록)에 기반하여 분석하십시오.
-3. 대학별 평가 기준에서 제시하는 '핵심 권장과목' 및 '권장과목'의 이수 여부와 성취도를 가장 우선적으로 체크하십시오.
-4. 불합격의 경우, 생기부의 어떤 부분(교과 성적의 구멍, 활동의 깊이 부족, 전공 관련성 결여 등)이 결정적인 결격 사유가 되었는지 날카롭게 지적하십시오.
-5. 합격의 경우에도 운이 좋았다는 표현보다는, 대학이 높게 평가했을 '압도적인 강점'을 대학 평가 요소(학업, 진로, 공동체 등)와 연결하여 분석하십시오.
+3. 대학별 평가 기준에서 제시하는 '핵심 권장과목' 및 '권장과목'의 이수 여부와 성취도를 가장 우선적으로 체크하십시오. 과목 선택의 위계가 맞지 않거나 필수 과목이 누락되었다면 강력하게 비판하십시오.
+4. 불합격의 경우, 생기부의 어떤 부분(교과 성적의 구멍, 활동의 깊이 부족, 2015 개정 교육과정 핵심역량 증빙 실패 등)이 결정적인 결격 사유가 되었는지 날카롭게 지적하십시오.
+5. 합격의 경우에도 운이 좋았다는 표현보다는, 대학이 높게 평가했을 '압도적인 강점(탐구력, 전공관련 교과 성취도 등)'을 2015 개정 교육과정 핵심역량과 연결하여 분석하십시오.
 
 [학생 지원 정보]
 대학: ${data.university}
@@ -3496,8 +3768,8 @@ SW\uc6b0\uc218(AI\ucef4\uacf5): \ud559\uc5c5\ud0d0\uad6c\uc5ed\ub7c9 60%(\ud559\
 ${uniCriteria.factors}
 
 [리포트 작성 항목]
-1. [냉철한 원인 분석] 통계적 데이터(등급)와 생기부 텍스트를 종합하여, ${data.result === '합격' ? '합격' : '불합격'}의 핵심적인 원인을 3가지 이상의 구체적인 논거로 제시하십시오.
-2. [대학 평가 요소별 매칭] 해당 대학의 평가 요소(학업역량, 진로역량, 공동체역량 등)별로 학생의 기록이 어떻게 부합하거나 미달했는지 엄격하게 대조 분석하십시오.
+1. [냉철한 원인 분석] 통계적 데이터(등급)와 2015 개정 교육과정 평가지표를 종합하여, ${data.result === '합격' ? '합격' : '불합격'}의 핵심적인 원인을 3가지 이상의 구체적인 논거로 제시하십시오.
+2. [대학 평가 요소별 매칭] 해당 대학의 평가 요소(학업역량, 진로역량, 공동체역량)별로 2015 개정 교육과정 가이드북의 세부 지표(탐구력, 성취도 추이, 협업능력 등)를 기준으로 학생의 기록이 어떻게 부합하거나 미달했는지 엄격하게 대조 분석하십시오.
 3. [냉정한 사후 대안] ${data.result === '합격' ? '대학 입학 후 학업 시 유의점 및 성공 요인 유지 방안' : '만약 시간을 되돌린다면, 생기부의 어떤 부분을 어떻게 보완했어야 합격 가능했을지'}에 대해 구체적인 로드맵을 제안하십시오.
 
 형식: 마크다운(Markdown) 형식을 사용하며, 가독성을 극대화하여 전문적인 보고서 형태로 작성하십시오.`;
@@ -3546,14 +3818,19 @@ ${uniCriteria.factors}
     }
 
     const promptText = `당신은 대한민국 대학 입시설계 전문가이자 매우 까다롭고 엄격한 입학사정관 AI입니다.
-다음 학생의 학교생활기록부 데이터를 종합 분석하여 지원 대학 및 학과의 합격 가능성 리포트를 JSON으로 작성하세요.
+다음 학생의 학교생활기록부 데이터를 '2015 개정 교육과정 핵심역량 기반 학생부종합전형 평가지표'에 따라 종합 분석하여 지원 대학 및 학과의 합격 가능성 리포트를 JSON으로 작성하세요.
 
-[엄격한 평가 지침]
+[엄격한 평가 및 감점 지침]
 1. 모든 평가는 해당 대학/학과의 구체적인 '평가 주안점'과 '핵심/권장 이수과목' 가이드를 최우선 기준으로 삼습니다.
 2. 성적 등급뿐만 아니라 원점수, 표준편차, 수강자 수, 그리고 특히 '전공 및 계열 관련 과목의 성취도'를 매우 엄격하게 평가하십시오.
-3. 세부능력 및 특기사항에서 단순한 활동의 나열이 아닌, '자기주도적 탐구 역량'과 '지적 호기심의 깊이'를 날카롭게 파헤쳐 평가하십시오.
-4. 공동체 역량 분석 시에도 단순히 착하다는 평가가 아닌, 구체적인 협력 사례와 리더십, 성실성(출결 등)을 바탕으로 냉정하게 배점을 부여하십시오.
-5. 점수(score) 부여 시 90점 이상은 대한민국 최상위권 수준의 압도적 성취가 확인될 때만 부여하며, 보통 수준은 70~80점, 부족함이 보이면 과감히 60점 이하를 점수화하십시오.
+3. 세부능력 및 특기사항에서 단순한 활동의 나열이 아닌, '자기주도적 탐구 역량'과 '지적 호기심의 깊이'를 날카롭게 파헤쳐 평가하십시오. 근거가 부족하면 과감히 최하점을 부여하십시오.
+4. 공동체 역량 분석 시에도 단순히 착하다는 평가가 아닌, 구체적인 협력 사례와 리더십, 성실성(출결 등)을 바탕으로 냉정하게 배점을 부여하십시오. 출결상 미비점이 있다면 강력하게 감점하십시오.
+5. 점수(score) 부여 시 90점 이상은 대한민국 최상위권 수준의 압도적 성취(전국구 수준의 탁월성)가 확인될 때만 부여하며, 보통 수준은 70~80점, 부족함이 보이거나 평범한 수준은 과감히 60점 이하를 점수화하십시오. 칭찬보다는 보완점을 중심으로 매섭게 평가하십시오.
+
+[2015 개정 교육과정 핵심 평가지표 적용]
+- 학업역량: 학업성취도(추이), 학업태도(자기주도성), 탐구력(지식 융합 및 문제해결)
+- 진로역량: 전공 관련 교과 이수 노력(위계 준수), 전공 관련 교과 성취도, 진로 탐색 활동의 진정성
+- 공동체역량: 협업과 소통능력, 나눔과 배려, 성실성과 규칙준수(출결), 리더십
 
 [학생 정보]
 목표 대학: ${data.university}
@@ -3582,7 +3859,7 @@ ${uniCriteria ? uniCriteria.factors : "일반적인 학생부종합전형 평가
 3. ${competencyNames.community} (반영 비율: ${(weights.community * 100).toFixed(0)}%): 협업, 나눔, 배려, 성실성(특히 출결 및 비주요과목 태도)을 실제 사례 기반으로 평가.
 
 [JSON 응답 전문 포맷 준수]
-반드시 지정된 JSON 스키마를 따르며, 특히 'overallEvaluation'은 최소 800자 이상의 매우 상세하고 깊이 있는 분석 리포트 형태로 작성하십시오.
+반드시 지정된 JSON 스키마를 따르며, 특히 'overallEvaluation'은 최소 1000자 이상의 매우 상세하고 날카로운 분석 리포트 형태로 작성하십시오.
 각 항목의 evaluation 및 scoreJustification 필드 역시 단순 나열이 아닌, 데이터(성적, 세특, 활동)에 기반한 사정관의 매서운 시각과 근거를 담아 전문적인 분석 내용을 가급적 상세하게 기술하십시오.
 또한, 각 역량별 'evidence' 배열에는 분석의 근거가 된 학생부 기록 내용을 최소 5개에서 7개 이상 아주 구체적으로 추출하여 포함하십시오.
 무엇보다, 각 역량별 'calculationFormula' 필드에는 해당 점수가 어떻게 산출되었는지 (예: 내신 성취도 40% + 탐구 깊이 40% + 전공 관련성 20% 등)를 구체적인 산식 형태로 명시하십시오.`;
@@ -3622,7 +3899,7 @@ ${uniCriteria ? uniCriteria.factors : "일반적인 학생부종합전형 평가
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(requestBody),
-          timeout: 50000 // JSON 응답은 시간이 더 걸릴 수 있으므로 50초
+          timeout: 50000
         });
 
         if (response.ok) {
@@ -3640,7 +3917,7 @@ ${uniCriteria ? uniCriteria.factors : "일반적인 학생부종합전형 평가
           const msg = errData.error?.message || response.statusText;
           console.error(`${model} Failed:`, status, msg);
           attemptLogs.push(`${model}: Error ${status} (${msg})`);
-          if (status === 401 || status === 403) break; // 키 오류면 중단
+          if (status === 401 || status === 403) break;
         }
       } catch (e) {
         console.error(`${model} Exception:`, e.message);
@@ -4175,11 +4452,157 @@ ${uniCriteria ? uniCriteria.factors : "일반적인 학생부종합전형 평가
   })();
 
   // =========================================================
-  // 세특 분석 탭 — 드롭다운 연동 (기존 universityData 재사용)
+  // 세특 분석 탭 — 계층적 과목 선택 드롭다운 (교육과정 > 계열 > 선택 > 과목)
   // =========================================================
   const stUniversitySelect = document.getElementById("st-university");
   const stCategorySelect   = document.getElementById("st-category");
   const stMajorSelect      = document.getElementById("st-major");
+  
+  const stCurriculumSelect = document.getElementById("st-curriculum");
+  const stSubCategorySelect = document.getElementById("st-subject-category");
+  const stSelectionSelect  = document.getElementById("st-selection");
+  const stSubjectSelect    = document.getElementById("st-subject-name");
+
+  const subjectHierarchy = {
+    "2015 개정": {
+      "사회과": {
+        "공통 과목": ["통합사회", "한국사"],
+        "진로 선택": ["사회문제 탐구", "여행지리", "고전과 윤리"],
+        "일반 선택": ["사회문화", "정치와법", "경제", "세계지리", "한국지리", "생활과 윤리", "윤리와 사상", "세계사", "동아시아사"]
+      },
+      "수학과": {
+        "공통 과목": ["수학"],
+        "진로 선택": ["기하", "실용 수학", "경제 수학", "수학과제 탐구", "기본 수학", "인공지능 수학"],
+        "일반 선택": ["수학Ⅰ", "수학Ⅱ", "미적분", "확률과 통계"]
+      },
+      "과학과": {
+        "공통 과목": ["통합과학", "과학탐구실험"],
+        "진로 선택": ["물리학Ⅱ", "화학Ⅱ", "생명과학Ⅱ", "지구과학Ⅱ", "생활과 과학", "과학사", "융합과학"],
+        "일반 선택": ["물리학Ⅰ", "화학Ⅰ", "생명과학Ⅰ", "지구과학Ⅰ"]
+      },
+      "영어과": {
+        "공통 과목": ["영어"],
+        "진로 선택": ["실용 영어", "영어권 문화", "영미 문학 읽기", "진로 영어"],
+        "일반 선택": ["영어Ⅰ", "영어Ⅱ", "영어 회화", "영어 독해와 작문"]
+      },
+      "정보 및 제2외국어과": {
+        "진로 선택": ["인공지능 기초", "일본어Ⅱ", "중국어Ⅱ", "한문Ⅱ"],
+        "일반 선택": ["정보", "일본어Ⅰ", "중국어Ⅰ", "한문Ⅰ"]
+      },
+      "예체능과": {
+        "진로 선택": ["스포츠 생활", "체육탐구", "음악 연주", "음악 감상과 비평", "미술 창작", "미술 감상과 비평"],
+        "일반 선택": ["체육", "운동과 건강", "음악", "미술"]
+      },
+      "교양과": {
+        "일반 선택": ["철학", "논리학", "심리학", "교육학", "종교학", "진로와 직업", "보건", "환경", "실용경제", "논술"]
+      },
+      "국어과": {
+        "공통 과목": ["국어"],
+        "진로 선택": ["실용 국어", "심화 국어", "고전 읽기"],
+        "일반 선택": ["독서", "문학", "화법과 작문", "언어와 매체"]
+      }
+    },
+    "2022 개정": {
+      "사회과": {
+        "융합 선택": ["여행지리", "역사로 탐구하는 현대 세계", "사회문제 탐구", "금융과 경제생활", "윤리문제 탐구", "기후변화와 지속가능한 세계"],
+        "공통 과목": ["한국사1", "한국사2", "통합사회1", "통합사회2"],
+        "진로 선택": ["한국지리 탐구", "도시의 미래 탐구", "동아시아 역사 기행", "정치", "법과 사회", "경제", "윤리와 사상", "인문학과 윤리", "국제 관계의 이해"],
+        "일반 선택": ["세계시민과 지리", "세계사", "사회와 문화", "현대사회와 윤리"]
+      },
+      "수학과": {
+        "융합 선택": ["수학과 문화", "실용 통계", "수학과제 탐구"],
+        "공통 과목": ["공통수학1", "공통수학2", "기본수학1", "기본수학2"],
+        "진로 선택": ["기하", "미적분Ⅱ", "경제 수학", "인공지능 수학", "직무 수학"],
+        "일반 선택": ["대수", "미적분Ⅰ", "확률과 통계"]
+      },
+      "과학과": {
+        "공통 과목": ["통합과학1", "통합과학2", "과학탐구실험1", "과학탐구실험2"],
+        "진로 선택": ["역학과 에너지", "전자기와 양자", "물질과 에너지", "화학 반응의 세계", "세포와 물질대사", "생물의 유전", "지구시스템과학", "행성우주과학"],
+        "일반 선택": ["물리학", "화학", "생명과학", "지구과학"]
+      },
+      "영어과": {
+        "융합 선택": ["실생활 영어 회화", "미디어 영어", "세계 문화와 영어"],
+        "공통 과목": ["공통영어1", "공통영어2", "기본영어1", "기본영어2"],
+        "진로 선택": ["영미 문학 읽기", "영어 발표와 토론", "심화 영어", "심화 영어 독해와 작문", "직무 영어"],
+        "일반 선택": ["영어Ⅰ", "영어Ⅱ", "영어 독해와 작문"]
+      },
+      "정보 및 제2외국어과": {
+        "융합 선택": ["소프트웨어와 생활", "일본 문화", "중국 문화", "언어생활과 한자"],
+        "진로 선택": ["인공지능 기초", "데이터 과학", "일본어 회화", "중국어 회화", "심화 일본어", "심화 중국어", "한문 고전 읽기"],
+        "일반 선택": ["정보", "일본어", "중국어", "한문"]
+      },
+      "예체능과": {
+        "융합 선택": ["스포츠 생활1", "음악과 미디어", "미술과 매체"],
+        "진로 선택": ["운동과 건강", "스포츠 문화", "스포츠 과학", "음악 연주와 창작", "음악 감상과 비평", "미술 창작", "미술 감상과 비평"],
+        "일반 선택": ["체육1", "체육2", "음악", "미술"]
+      },
+      "교양과": {
+        "융합 선택": ["인간과 경제활동", "논술"],
+        "진로 선택": ["인간과 철학", "논리와 사고", "인간과 심리", "교육의 이해", "삶과 종교", "보건"],
+        "일반 선택": ["진로와 직업", "생태와 환경"]
+      },
+      "국어과": {
+        "융합 선택": ["독서 토론과 글쓰기", "매체 의사소통", "언어생활 탐구"],
+        "공통 과목": ["공통국어1", "공통국어2"],
+        "진로 선택": ["주제 탐구 독서", "문학과 영상", "직무 의사소통"],
+        "일반 선택": ["화법과 언어", "독서와 작문", "문학"]
+      }
+    }
+  };
+
+  if (stCurriculumSelect) {
+    // 1. 교육과정 초기화
+    Object.keys(subjectHierarchy).forEach(cur => {
+      const opt = document.createElement("option");
+      opt.value = cur; opt.textContent = cur;
+      stCurriculumSelect.appendChild(opt);
+    });
+
+    // 2. 교육과정 변경 시 계열 업데이트
+    stCurriculumSelect.addEventListener("change", () => {
+      const cur = stCurriculumSelect.value;
+      stSubCategorySelect.innerHTML = "<option value=''>계열 선택</option>";
+      stSelectionSelect.innerHTML   = "<option value=''>선택 구분 선택</option>";
+      stSubjectSelect.innerHTML     = "<option value=''>과목 선택</option>";
+      
+      if (!cur) return;
+      Object.keys(subjectHierarchy[cur]).forEach(cat => {
+        const opt = document.createElement("option");
+        opt.value = cat; opt.textContent = cat;
+        stSubCategorySelect.appendChild(opt);
+      });
+    });
+
+    // 3. 계열 변경 시 선택구분 업데이트
+    stSubCategorySelect.addEventListener("change", () => {
+      const cur = stCurriculumSelect.value;
+      const cat = stSubCategorySelect.value;
+      stSelectionSelect.innerHTML = "<option value=''>선택 구분 선택</option>";
+      stSubjectSelect.innerHTML   = "<option value=''>과목 선택</option>";
+      
+      if (!cur || !cat) return;
+      Object.keys(subjectHierarchy[cur][cat]).forEach(sel => {
+        const opt = document.createElement("option");
+        opt.value = sel; opt.textContent = sel;
+        stSelectionSelect.appendChild(opt);
+      });
+    });
+
+    // 4. 선택구분 변경 시 과목 업데이트
+    stSelectionSelect.addEventListener("change", () => {
+      const cur = stCurriculumSelect.value;
+      const cat = stSubCategorySelect.value;
+      const sel = stSelectionSelect.value;
+      stSubjectSelect.innerHTML = "<option value=''>과목 선택</option>";
+      
+      if (!cur || !cat || !sel) return;
+      subjectHierarchy[cur][cat][sel].forEach(sub => {
+        const opt = document.createElement("option");
+        opt.value = sub; opt.textContent = sub;
+        stSubjectSelect.appendChild(opt);
+      });
+    });
+  }
 
   if (stUniversitySelect && universityData) {
     for (const uni of Object.keys(universityData)) {
@@ -4232,9 +4655,9 @@ ${uniCriteria ? uniCriteria.factors : "일반적인 학생부종합전형 평가
   // 대학별 학생부종합전형 특성 맵
   // =========================================================
   const univSetechProfile = {
-    "\uc11c\uc6b8\ub300\ud559\uad50":   "\uc11c\uc6b8\ub300\ub294 \ud559\uc5c5\uc801 \ud0c1\uc6d4\uc131, \uc9c0\uc801 \ud638\uae30\uc2ec, \uc790\uae30\uc8fc\ub3c4\uc801 \ud0d0\uad6c\ub97c \ub9e4\uc6b0 \uc911\uc2dc\ud569\ub2c8\ub2e4. \ub2e8\uc21c \uc9c0\uc2dd \uc2b5\ub4dd\uc744 \ub118\uc5b4 '\uc65c?'\ub97c \uc2a4\uc2a4\ub85c \uc9c8\ubb38\ud558\uace0 \uc2ec\ud654 \ud0d0\uad6c\ud55c \ud754\uc801\uc774 \uc138\ud2b9\uc5d0 \ub4dc\ub7ec\ub098\uc57c \ud569\ub2c8\ub2e4.",
+    "서울대학교":   "서울대는 학업적 탁월성(성취도 추이), 자기주도적 탐구 역량(호기심/심화탐구), 전공 관련 과목 이수 노력(위계 준수)을 매우 중시합니다. 2015 개정 교육과정의 '학업역량'과 '진로역량'의 최고 수준 증명이 핵심입니다.",
     "\uc5f0\uc138\ub300\ud559\uad50":   "\uc5f0\uc138\ub300\ub294 \ud559\uc5c5\uc5ed\ub7c9\uacfc \ud568\uaed8 \uacf5\ub3d9\uccb4 \uae30\uc5ec, \uc778\uc131\uc744 \uade0\ud615 \uc788\uac8c \ud3c9\uac00\ud569\ub2c8\ub2e4. \ud611\ub825 \uacbd\ud5d8\u00b7\uc0ac\ud68c\uc801 \uad00\uc2ec\uc774 \ub4dc\ub7ec\ub098\ub294 \uc138\ud2b9\uc774 \uc720\ub9ac\ud569\ub2c8\ub2e4.",
-    "\uace0\ub824\ub300\ud559\uad50":   "\uace0\ub824\ub300\ub294 \uc804\uacf5 \uad00\ub828 \uc9c0\uc801 \ud0d0\uad6c\uc2ec, \uc790\uae30\uc8fc\ub3c4 \ud559\uc2b5 \ub2a5\ub825, \ub3c4\uc804 \uc815\uc2e0\uc744 \uc911\uc2dc\ud569\ub2c8\ub2e4.",
+    "고려대학교":   "고려대는 자기주도적 학습 능력과 전공 관련 탐구의 깊이, 공동체 내에서의 역할을 중시합니다. 학업역량(탐구력)과 진로역량(전공교과 성취도)의 유기적 결합을 매섭게 평가합니다.",
     "\ud55c\uc591\ub300\ud559\uad50":   "\ud55c\uc591\ub300(\ud559\uc0dd\ubd80\uc885\ud569)\ub294 \ud559\uc0dd\uc774 \uc2a4\uc2a4\ub85c \ubb38\uc81c\ub97c \ubc1c\uacac\ud558\uace0 \ud574\uacb0\ud558\ub294 \uacfc\uc815, \uc804\uacf5 \uad00\ub828 \ud65c\ub3d9\uc758 \uad6c\uccb4\uc131\uc744 \ubd05\ub2c8\ub2e4.",
     "\uc11c\uac15\ub300\ud559\uad50":   "\uc11c\uac15\ub300\ub294 \ud559\ubb38\uc801 \uae4a\uc774\uc640 \ub17c\ub9ac\uc801 \uc0ac\uace0\ub97c \uac15\uc870\ud569\ub2c8\ub2e4. \uac1c\ub150 \uc774\ud574\ub97c \ub118\uc5b4 \ub3c5\ucc3d\uc801 \uc2dc\uac01\uc774 \ub4dc\ub7ec\ub098\uc57c \ud569\ub2c8\ub2e4.",
     "\uc131\uade0\uad00\ub300\ud559\uad50": "\uc131\uade0\uad00\ub300\ub294 \uc778\uc758\uc608\uc9c0 \uc778\uc131 \uc694\uc18c\uc640 \ud559\uc5c5\u00b7\uc9c4\ub85c \uc5ed\ub7c9\uc744 \ud1b5\ud569 \ud3c9\uac00\ud569\ub2c8\ub2e4.",
@@ -4255,7 +4678,8 @@ ${uniCriteria ? uniCriteria.factors : "일반적인 학생부종합전형 평가
     "\uc778\ucc9c\ub300\ud559\uad50":   "\uc778\ucc9c\ub300\ub294 \uc804\uacf5 \ud0d0\uad6c \ub3d9\uae30\uc758 \uc9c4\uc815\uc131, \ud559\uc5c5 \uc131\uc2e4\uc131, \ud611\ub825 \uacbd\ud5d8\uc744 \ubd05\ub2c8\ub2e4.",
     "\uad11\uc6b4\ub300\ud559\uad50":   "\uad11\uc6b4\ub300\ub294 \uc804\uc790\u00b7\uc18c\ud504\ud2b8\uc6e8\uc5b4 \uc911\uc2ec\uc73c\ub85c \uc804\uacf5 \ud0d0\uad6c\uc640 \uc218\ud559\u00b7\uacfc\ud559 \uc2e4\ub825\uc744 \uc911\uc2dc\ud569\ub2c8\ub2e4.",
     "\uacbd\uae30\ub300\ud559\uad50":   "\uacbd\uae30\ub300\ub294 \uc804\uacf5 \uad00\ub828 \uacbd\ud5d8\uc758 \uad6c\uccb4\uc131\uacfc \uc790\uae30\uc8fc\ub3c4\uc801 \ud0d0\uad6c\ub97c \ubd05\ub2c8\ub2e4.",
-    "\uac00\ud1a8\ub9ad\ub300\ud559\uad50": "\uac00\ud1a8\ub9ad\ub300\ub294 \uc778\uc131\u00b7\ubd09\uc0ac \uc815\uc2e0\uacfc \uc804\uacf5 \ud0d0\uad6c \ub178\ub825, \uacf5\ub3d9\uccb4 \uc5ed\ub7c9\uc744 \uade0\ud615 \uc788\uac8c \ubd05\ub2c8\ub2e4."
+    "서울과학기술대학교": "서울과기대는 '계열적합성'을 최우선으로 하며, 바이오메디컬은 기초과학 융합역량을, 자유전공은 학업적 유연성과 융합적 사고를 중점 평가합니다. 과정 중심의 자기주도적 성장이 세특에 구체적으로 드러나야 합니다.",
+    "가톨릭대학교": "가톨릭대는 인성·봉사 정신과 전공 탐구 노력, 공동체 역량을 균형 있게 봅니다."
   };
 
   // =========================================================
@@ -4280,7 +4704,7 @@ ${uniCriteria ? uniCriteria.factors : "일반적인 학생부종합전형 평가
     const maxCom = Math.round(weights.community * 100);
 
     const prompt = `당신은 대한민국 최고의 대학입학사정관 전문가입니다.
-다음 학생이 지원하는 대학·학과의 학생부종합전형 기준에 따라, 교사가 작성한 세부능력 및 특기사항(세특)을 엄격하게 평가해 주세요.
+다음 학생이 지원하는 대학·학과의 학생부종합전형 기준에 따라, 교사가 작성한 세부능력 및 특기사항(세특)을 '2015 개정 교육과정 핵심역량 가이드북'의 지표를 기준으로 매우 엄격하게 평가해 주세요.
 
 [대학·계열·학과]
 대학: ${fd.university} / 계열: ${fd.category} / 학과: ${fd.major}${fd.subjectName ? " / 과목: " + fd.subjectName : ""}
@@ -4290,23 +4714,22 @@ ${univProfile}
 
 [평가 기준 및 배점]
 해당 대학의 실제 평가 배점을 적용하여 총점 100점 만점으로 평가합니다.
-1. 학업역량 (최대 ${maxAca}점): ${comps.academic}
-2. 진로역량 (최대 ${maxCar}점): ${comps.career}
-3. 공동체역량 (최대 ${maxCom}점): ${comps.community}
+1. 학업역량 (최대 ${maxAca}점): ${comps.academic} (학업성취도, 학업태도, 탐구력 중심)
+2. 진로역량 (최대 ${maxCar}점): ${comps.career} (전공교과 이수노력 및 성취도, 진로탐색활동 중심)
+3. 공동체역량 (최대 ${maxCom}점): ${comps.community} (협합/소통, 나눔/배려, 성실성, 리더십 중심)
 
 [세특 원문]
 ${fd.content}
 
-[주의사항]
-- 반드시 JSON만 출력하고, 코드 블록(\`\`\`json)이나 마크다운 기호 없이 순수 JSON 텍스트만 리턴하세요.
-- JSON 문자열 내부 줄바꿈은 반드시 이스케이프 문자 '\\n'을 사용하고, 기호(")는 '\\"'로 이스케이프 하세요.
+[엄격한 평가 및 감점 주의사항]
+- **[핵심] 2015 개정 교육과정 평가지표 준수**: 단순 활동 나열이나 미사여구는 점수를 부여하지 않습니다. 지적 호기심의 '발현-과정-결과'가 논리적으로 증명될 때만 고득점을 부여하세요.
 - **[핵심] 2026 학교생활기록부 기재요령 준수**:
   1. 기재 금지: 학생·학부모(친인척)의 성명/직장명/신상정보, 공인어학시험 성적, 교외 수상실적, 모의고사/수능 성적.
   2. 기재 금지: K-MOOC, KOCW, 소논문(R&E), 학회지, 도서 출간, 발명특허, 특정 대학명/기관명/상호명/강사명.
   3. 객관적 사실 기반: 학교 수업 중의 수행평가, 발표, 토론 등 정규 교육과정 내의 관찰된 내용만 작성. 과장된 미사여구나 감정적 서술 배제.
-  4. 어투: 문장의 끝은 반드시 객관적인 명사형 종결어미(~함, ~모습을 보임, ~을 파악함, ~을 탐구함 등)를 사용할 것.
-- 세특이 짧거나 내용이 빈약할 경우 낮은 점수를 부여하고 구체적 이유를 작성하세요.
-- rewriteSuggestion은 원문 내용과 위 기재요령을 완벽하게 반영하여 대학 평가에 가장 유리하게 다듬어진 세특 전문을 작성하세요(300자 이상).
+  4. 어투: 문장의 끝은 반드시 객관적인 명사형 종결어미(~함, ~모습을 보임, ~을 파악함, ~을 탐구함 등)를 사용할 것. 어투가 맞지 않으면 'improvements'에 강력하게 지적하세요.
+- 세특이 짧거나 내용이 빈약할 경우 냉정하게 낮은 점수를 부여하고 구체적 이유를 작성하세요.
+- rewriteSuggestion은 원문 내용과 위 기재요령을 완벽하게 반영하여 대학 평가에 가장 유리하게 다듬어진 세특 전문을 작성하세요(명사형 어미 준수, 300자 이상). 2015 가이드북의 '탁월성' 지표가 드러나도록 문장을 구성하세요.
 - 점수가 일치해야 합니다 (totalScore = academicScore + careerScore + communityScore).
 
 출력 JSON 형식:
