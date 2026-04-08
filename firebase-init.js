@@ -16,7 +16,8 @@
     appId: "1:194782601446:web:2384c5cfa70ca5d6585b27"
   };
 
-  console.log("Firebase Init: Starting v3...");
+  console.log("Firebase Init: Starting v3 (Internal Logging Enabled)...");
+  firebase.database.enableLogging(true);
 
   // Firebase 앱 초기화 (중복 방지)
   if (!firebase.apps.length) {
