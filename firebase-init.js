@@ -16,7 +16,7 @@
     appId: "1:194782601446:web:2384c5cfa70ca5d6585b27"
   };
 
-  console.log("Firebase Init: Starting...");
+  console.log("Firebase Init: Starting v3...");
 
   // Firebase 앱 초기화 (중복 방지)
   if (!firebase.apps.length) {
@@ -27,8 +27,8 @@
   // Analytics 초기화 (선택)
   try { firebase.analytics(); } catch (_) {}
 
-  // ── Database 초기화 (지역 문제 해결을 위해 URL 명시) ──────────
-  const db = firebase.database("https://buan-highschool-program-default-rtdb.asia-southeast1.firebasedatabase.app/");
+  // ── Database 초기화 (config에 URL이 포함되어 있습니다) ──────────
+  const db = firebase.database();
   console.log("Firebase Database: Instance target ->", db.ref().toString());
 
   // 연결 상태 모니터링
