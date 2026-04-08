@@ -27,7 +27,9 @@
   // Analytics 초기화 (선택)
   try { firebase.analytics(); } catch (_) {}
 
-  const db = firebase.database();
+  // ── Database 초기화 (지역 문제 해결을 위해 URL 명시) ──────────
+  const db = firebase.database("https://buan-highschool-program-default-rtdb.asia-southeast1.firebasedatabase.app/");
+  console.log("Firebase Database: Instance target ->", db.ref().toString());
 
   // 연결 상태 모니터링
   db.ref(".info/connected").on("value", (snap) => {
