@@ -65,7 +65,10 @@
   db.ref('sessions').on('value', snap => {
     const count = snap.numChildren();
     console.log("Firebase: Online count updated ->", count);
-    if (elOnline) elOnline.textContent = fmt(count) + '명';
+    if (elOnline) {
+        elOnline.style.border = "1px solid red"; // DEBUG
+        elOnline.textContent = "[DB] " + fmt(count) + '명';
+    }
   });
 
   // ── 방문 횟수 기록 ─────────────────────────────────────────
@@ -90,7 +93,10 @@
   dayRef.on('value', snap => {
     const val = snap.val();
     console.log("Firebase: Today visits ->", val);
-    if (elToday) elToday.textContent = fmt(val);
+    if (elToday) {
+        elToday.style.border = "1px solid blue"; // DEBUG
+        elToday.textContent = "[DB] " + fmt(val);
+    }
   }, err => {
     console.error("Firebase Error (Daily Listen):", err);
   });
@@ -99,7 +105,10 @@
   totalRef.on('value', snap => {
     const val = snap.val();
     console.log("Firebase: Total visits ->", val);
-    if (elTotal) elTotal.textContent = fmt(val);
+    if (elTotal) {
+        elTotal.style.border = "1px solid green"; // DEBUG
+        elTotal.textContent = "[DB] " + fmt(val);
+    }
   }, err => {
     console.error("Firebase Error (Total Listen):", err);
   });
