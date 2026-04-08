@@ -119,13 +119,210 @@ document.addEventListener("DOMContentLoaded", () => {
     if (activeView) {
       activeView.classList.remove("hidden");
       activeView.classList.add("active");
-      activeView.style.display = "grid";
+      activeView.style.display = (activeView.id === "view-csat") ? "block" : "grid";
+    }
+
+    // Sidebar Interview Settings Visibility
+    const sidebarIvSettings = document.getElementById("sidebar-interview-settings");
+    if (sidebarIvSettings) {
+      if (activeTab && activeTab.id === "tab-interview") {
+        sidebarIvSettings.classList.remove("hidden");
+        // Sync student select options from main individual tab
+        const ivStudentSelect = document.getElementById("iv-student-select");
+        const mainStudentSelect = document.getElementById("student-select");
+        if (ivStudentSelect && mainStudentSelect && mainStudentSelect.options.length > 1) {
+          if (ivStudentSelect.options.length !== mainStudentSelect.options.length) {
+            ivStudentSelect.innerHTML = mainStudentSelect.innerHTML;
+          }
+        }
+      } else {
+        sidebarIvSettings.classList.add("hidden");
+      }
     }
   }
 
   if (tabIndividual) tabIndividual.addEventListener("click", () => switchTabTo(tabIndividual, viewIndividual));
   if (tabPassFail) tabPassFail.addEventListener("click", () => switchTabTo(tabPassFail, viewPassFail));
   if (tabSetech) tabSetech.addEventListener("click", () => switchTabTo(tabSetech, viewSetech));
+  
+  const tabCsat = document.getElementById("tab-csat");
+  const viewCsat = document.getElementById("view-csat");
+  if (tabCsat) allTabs.push(tabCsat);
+  if (viewCsat) allViews.push(viewCsat);
+  
+  if (tabCsat) tabCsat.addEventListener("click", () => {
+    switchTabTo(tabCsat, viewCsat);
+    if (typeof window.initCsatChart === "function") window.initCsatChart();
+  });
+
+  const tabInterview = document.getElementById("tab-interview");
+  const viewInterview = document.getElementById("view-interview");
+  if (tabInterview) allTabs.push(tabInterview);
+  if (viewInterview) allViews.push(viewInterview);
+
+  if (tabInterview) tabInterview.addEventListener("click", () => {
+    switchTabTo(tabInterview, viewInterview);
+  });
+
+  // --- Tab Container Toggle Logic ---
+  const toggleTabsBtn = document.getElementById("toggle-tabs-btn");
+  const showTabsBtn = document.getElementById("show-tabs-btn");
+  const mainTabsContainer = document.getElementById("main-tabs-container");
+
+  if (toggleTabsBtn && mainTabsContainer && showTabsBtn) {
+    toggleTabsBtn.addEventListener("click", () => {
+      mainTabsContainer.style.display = "none";
+      showTabsBtn.style.display = "block";
+    });
+    
+    showTabsBtn.addEventListener("click", () => {
+      mainTabsContainer.style.display = "flex";
+      showTabsBtn.style.display = "none";
+    });
+  }
+
+
+  // --- CSAT Grid Initialization and Render function ---
+  let csatGridInitialized = false;
+  window.initCsatChart = function() { // kept name for compatibility with tab switch
+    if (csatGridInitialized) return;
+    if (typeof csatData === 'undefined') return;
+    
+    csatGridInitialized = true;
+    
+    // Create global tooltip if not exists
+    if (!document.getElementById("csat-tooltip")) {
+      const tt = document.createElement("div");
+      tt.id = "csat-tooltip";
+      tt.className = "custom-tooltip";
+      document.body.appendChild(tt);
+    }
+
+    // 1. Populate Filters
+    const regionSet = new Set(), sumSet = new Set(), countSet = new Set(), typeSet = new Set();
+    csatData.forEach(item => {
+      const region = item.지역 ? item.지역.trim() : "미표기";
+      regionSet.add(region);
+      if(item.전형) typeSet.add(item.전형.trim());
+      if(item.등급합) sumSet.add(item.등급합);
+      if(item.과목수) countSet.add(item.과목수);
+    });
+    
+    const filterRegion = document.getElementById("csat-filter-region");
+    const filterType = document.getElementById("csat-filter-type");
+    const filterSubject = document.getElementById("csat-filter-subject");
+    const filterGradeMin = document.getElementById("csat-filter-grade-min");
+    const filterGradeMax = document.getElementById("csat-filter-grade-max");
+    
+    if (filterRegion) [...regionSet].sort().forEach(val => filterRegion.add(new Option(val, val)));
+    if (filterType) [...typeSet].sort().forEach(val => filterType.add(new Option(val, val)));
+    if (filterSubject) [...countSet].sort().forEach(val => filterSubject.add(new Option(val + "과목", val)));
+    if (filterGradeMin && filterGradeMax) {
+      [...sumSet].sort((a,b)=>a-b).forEach(val => {
+        filterGradeMin.add(new Option(val + "합", val));
+        filterGradeMax.add(new Option(val + "합", val));
+      });
+    }
+
+    // Event listeners for filters
+    const render = () => renderCsatGrid();
+    if(filterRegion) filterRegion.addEventListener("change", render);
+    if(filterType) filterType.addEventListener("change", render);
+    if(filterSubject) filterSubject.addEventListener("change", render);
+    if(filterGradeMin) filterGradeMin.addEventListener("change", render);
+    if(filterGradeMax) filterGradeMax.addEventListener("change", render);
+
+    render();
+  };
+
+  function renderCsatGrid() {
+    const container = document.getElementById("csatGridContainer");
+    if(!container || typeof csatData === 'undefined') return;
+
+    const rFilter = document.getElementById("csat-filter-region")?.value || 'all';
+    const tFilter = document.getElementById("csat-filter-type")?.value || 'all';
+    const sFilter = document.getElementById("csat-filter-subject")?.value || 'all';
+    const gMinFilter = document.getElementById("csat-filter-grade-min")?.value || 'all';
+    const gMaxFilter = document.getElementById("csat-filter-grade-max")?.value || 'all';
+
+    const filtered = csatData.filter(item => {
+      if(rFilter !== 'all') {
+        const itemRegion = item.지역 ? item.지역.trim() : "미표기";
+        if(itemRegion !== rFilter) return false;
+      }
+      if(tFilter !== 'all') {
+        const itemType = item.전형 ? item.전형.trim() : "미표기";
+        if(itemType !== tFilter) return false;
+      }
+      if(sFilter !== 'all' && String(item.과목수) !== sFilter) return false;
+      
+      const grade = parseInt(item.등급합);
+      if(gMinFilter !== 'all' && grade < parseInt(gMinFilter)) return false;
+      if(gMaxFilter !== 'all' && grade > parseInt(gMaxFilter)) return false;
+      
+      return true;
+    });
+
+    let html = '<div class="csat-matrix">';
+    
+    // Header Row: Empty top-left cell, then columns 2 to 13
+    html += '<div class="matrix-header" style="background:transparent; border:none;"></div>';
+    for (let x = 2; x <= 13; x++) {
+      html += `<div class="matrix-header">${x}</div>`;
+    }
+
+    // Rows: Y from 4 down to 1
+    for (let y = 4; y >= 1; y--) {
+      html += `<div class="matrix-label-y">${y}합</div>`;
+      for (let x = 2; x <= 13; x++) {
+        // Find items matching this (x, y)
+        const cellItems = filtered.filter(item => parseInt(item.등급합) === x && parseInt(item.과목수) === y);
+        html += '<div class="matrix-cell">';
+        cellItems.forEach((item) => {
+          const rawIdx = csatData.indexOf(item);
+          const tooltip = `${item.대학}(${item.지역}): ${item.학과} | ${item.기준문자열}`;
+          html += `<div class="matrix-dot" data-idx="${rawIdx}" data-tooltip="${tooltip}"></div>`;
+        });
+        html += '</div>';
+      }
+    }
+    html += '</div>';
+    container.innerHTML = html;
+
+    // Attach click and hover events to dots
+    const tt = document.getElementById("csat-tooltip");
+    container.querySelectorAll('.matrix-dot').forEach(el => {
+      el.addEventListener('mouseenter', () => {
+        tt.innerHTML = el.dataset.tooltip || '';
+        tt.classList.add('visible');
+        const rect = el.getBoundingClientRect();
+        tt.style.left = (rect.left + rect.width / 2 + window.scrollX) + 'px';
+        tt.style.top = (rect.top + window.scrollY) + 'px';
+      });
+      el.addEventListener('mouseleave', () => {
+        tt.classList.remove('visible');
+      });
+
+      el.addEventListener("click", () => {
+        const item = csatData[el.dataset.idx];
+        const content = `
+          <div style="color: var(--text-primary);">
+            <table style="width:100%; border-collapse: collapse; margin-top: 0.5rem; text-align: left; font-size: 0.95rem;">
+              <tr><th style="padding:10px; border-bottom:1px solid var(--panel-border); width: 30%;">평균등급</th><td style="padding:10px; border-bottom:1px solid var(--panel-border);">${item['평균등급'] || '-'}</td></tr>
+              <tr><th style="padding:10px; border-bottom:1px solid var(--panel-border);">대학</th><td style="padding:10px; border-bottom:1px solid var(--panel-border);">${item['대학'] || '-'} (${item['지역'] || '-'})</td></tr>
+              <tr><th style="padding:10px; border-bottom:1px solid var(--panel-border);">전형/전형명</th><td style="padding:10px; border-bottom:1px solid var(--panel-border);">${item['전형'] || '-'} / ${item['전형명'] || '-'}</td></tr>
+              <tr><th style="padding:10px; border-bottom:1px solid var(--panel-border);">학과</th><td style="padding:10px; border-bottom:1px solid var(--panel-border); font-weight: bold; color: var(--accent-secondary);">${item['학과'] || '-'}</td></tr>
+              <tr><th style="padding:10px; border-bottom:1px solid var(--panel-border);">기준요약</th><td style="padding:10px; border-bottom:1px solid var(--panel-border);">${item['과목수']}과목 합 ${item['등급합']} (${item['기준문자열'] || ''})</td></tr>
+              <tr><th style="padding:10px; vertical-align:top;">최저기준 상세</th><td style="padding:10px; white-space:pre-wrap; line-height: 1.5; color: var(--accent-primary);">${item['최저기준'] || '-'}</td></tr>
+            </table>
+          </div>
+        `;
+        window.openPfDetailModal("수능최저 상세 정보", null);
+        document.getElementById("modalBody").innerHTML = content;
+      });
+    });
+  }
+
 
   const pfResultsUpload = document.getElementById("pf-results-upload");
   const pfStudentSelect = document.getElementById("pf-student-select");
@@ -170,12 +367,14 @@ document.addEventListener("DOMContentLoaded", () => {
               });
               
                // 일반등급 컬럼 찾기
-              const gCol = h.findIndex(c => c && String(c).replace(/\s+/g,"").includes("일반등급"));
+              const gCol = h.findIndex(c => c && String(c).replace(/\s+/g,"").includes("일반등급") && !String(c).replace(/\s+/g,"").includes("5등급"));
+              const gCol5 = h.findIndex(c => c && String(c).replace(/\s+/g,"").includes("일반등급(5등급)"));
               
               // 인덱스 기반 폴백 (최종단계는 보통 하단/옆에 위치)
               let finalRCol = rCol !== -1 ? rCol : 22; // 23번째 열 폴백
               let finalTCol = tCol !== -1 ? tCol : 8;  // 9번째 열 폴백
               let finalGCol = gCol !== -1 ? gCol : 17; // 18번째 열 폴백
+              let finalGCol5 = gCol5; // 5등급 열 추가              let finalGCol5 = gCol5; // 5등급 컬럼
               
               console.log(`\uc2dc\ud2b8(${sheetName}) \ud5e4\ub354 \ubc1c\uacb0:`, h, "RCol:", finalRCol, "TCol:", finalTCol);
 
@@ -200,7 +399,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 else if (raw.includes("\ucd5c\ucd08") || raw.includes("\ud569\uaca9")) res = "\ud569\uaca9";
                 
                 let genGrade = finalGCol !== -1 ? String(row[finalGCol]||"").trim() : "-";
-                pfStudents.push({ name, univ, dept, result: res, type: admType, genGrade });
+                let genGrade5 = finalGCol5 !== -1 && finalGCol5 !== undefined ? String(row[finalGCol5]||"").trim() : "-";
+                let failReason = finalFRCol !== -1 ? String(row[finalFRCol]||"").trim() : "";
+                
+                pfStudents.push({ name, univ, dept, result: res, type: admType, genGrade, genGrade5, failReason });
                 const opt = document.createElement("option");
                 opt.value = pfStudents.length - 1;
                 opt.textContent = `[${res}] ${name} | ${univ} (${dept})`;
@@ -259,351 +461,705 @@ document.addEventListener("DOMContentLoaded", () => {
   let lastReportData = null; // PDF \uc778\uc1c4\uc6a9 \ucd5c\uc2e0 \ub370\uc774\ud130 \uc800\uc7a5
 
   const universityData = {
-    "\uace0\ub824\ub300\ud559\uad50": {
-      "\uc778\ubb38\u00b7\uc0ac\ud68c\uacc4\uc5f4": ["\ucca0\ud559\uacfc", "\ud55c\uad6d\uc5b4\ubb38\ud559\uacfc", "\uc601\uc5b4\uc601\ubb38\ud559\uacfc", "\uc0ac\ud68c\ud559\uacfc", "\uc2ec\ub9ac\ud559\uacfc", "\ub3c5\uc5b4\ub3c5\ubb38\ud559\uacfc", "\ub178\uc5b4\ub178\ubb38\ud559\uacfc", "\uc911\uc5b4\uc911\ubb38\ud559\uacfc", "\ubd88\uc5b4\ubd88\ubb38\ud559\uacfc", "\uc815\uce58\uc678\uad50\ud559\uacfc", "\ud589\uc815\ud559\uacfc", "\uacbd\uc81c\ud559\uacfc"],
-      "\uc790\uc5f0\u00b7\uacf5\ud559\u00b7\uc0dd\ud65c\uacc4\uc5f4": ["\uc0dd\uba85\uacfc\ud559\ubd80", "\ud658\uacbd\uc0dd\ud0dc\uacf5\ud559\ubd80", "\ub1cc\uc778\uc9c0\uacfc\ud559\uacfc", "\uc2a4\ub9c8\ud2b8\ubcf4\uc548\ud559\ubd80", "\ub370\uc774\ud130\uacfc\ud559\ubd80", "\uc0ac\uc774\ubc84\uad6d\ubc29\ud559\uacfc", "\ubc18\ub3c4\uccb4\uacf5\ud559\uacfc", "\uc2e0\uc18c\uc7ac\uacf5\ud559\ubd80", "\ud654\uacf5\uc0dd\uba85\uacf5\ud559\ubd80", "\uae30\uacc4\uacf5\ud559\ubd80", "\uc758\uc0dd\uba85\uacf5\ud559\ubd80", "\uc804\uae30\uc804\uc790\uacf5\ud559\ubd80", "\ucef4\ud4e8\ud130\ud559\uacfc", "\uc0b0\uc5c5\uacbd\uc601\uacf5\ud559\ubd80"],
-      "\uacbd\uc0c1 \uae30\ud0c0": ["\uacbd\uc601\ub300\ud559", "\uad6d\uc81c\ud559\ubd80", "\ub514\uc790\uc778\uc870\ud615\ud559\ubd80", "\uccb4\uc721\uad50\uc721\uacfc"]
-    },
-    "\uc11c\uc6b8\ub300\ud559\uad50": {
-      "\uc778\ubb38\ub300\ud559": ["\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\uc911\uc5b4\uc911\ubb38\ud559\uacfc", "\uc601\uc5b4\uc601\ubb38\ud559\uacfc", "\ubd88\uc5b4\ubd88\ubb38\ud559\uacfc", "\ub3c5\uc5b4\ub3c5\ubb38\ud559\uacfc", "\ub178\uc5b4\ub178\ubb38\ud559\uacfc", "\uc11c\uc5b4\uc11c\ubb38\ud559\uacfc", "\uc5b8\uc5b4\ud559\uacfc", "\uc544\uc2dc\uc544\uc5b8\uc5b4\ubb38\uba85\ud559\ubd80", "\uc5ed\uc0ac\ud559\ubd80", "\uace0\uace0\ubbf8\uc220\uc0ac\ud559\uacfc", "\ucca0\ud559\uacfc", "\uc885\uad50\ud559\uacfc", "\ubbf8\ud559\uacfc"],
-      "\uc0ac\ud68c\uacfc\ud559\ub300\ud559": ["\uc815\uce58\uc678\uad50\ud559\ubd80", "\uacbd\uc81c\ud559\ubd80", "\uc0ac\ud68c\ud559\uacfc", "\uc778\ub958\ud559\uacfc", "\uc2ec\ub9ac\ud559\uacfc", "\uc9c0\ub9ac\ud559\uacfc", "\uc0ac\ud68c\ubcf5\uc9c0\ud559\uacfc", "\uc5b8\ub860\uc815\ubcf4\ud559\uacfc"],
-      "\uc790\uc5f0\uacfc\ud559\ub300\ud559": ["\uc218\ub9ac\uacfc\ud559\ubd80", "\ud1b5\uacc4\ud559\uacfc", "\ubb3c\ub9ac\u00b7\ucc9c\ubb38\ud559\ubd80(\ubb3c\ub9ac\ud559\uc804\uacf5/\ucc9c\ubb38\ud559\uc804\uacf5)", "\ud654\ud559\ubd80", "\uc0dd\uba85\uacfc\ud559\ubd80", "\uc9c0\uad6c\ud658\uacbd\uacfc\ud559\ubd80"],
-      "\uacf5\uacfc\ub300\ud559": ["\uac74\ucd95\ud559\uacfc", "\uc0b0\uc5c5\uacf5\ud559\uacfc", "\uc5d0\ub108\uc9c0\uc790\uc6d0\uacf5\ud559\uacfc", "\uc6d0\uc790\ud575\uacf5\ud559\uacfc", "\uc870\uc120\ud574\uc591\uacf5\ud559\uacfc", "\ud56d\uacf5\uc6b0\uc8fc\uacf5\ud559\uacfc", "\uad11\uc5ed", "\uac74\uc124\ud658\uacbd\ub3c4\uc2dc\uacf5\ud559\ubd80", "\uae30\uacc4\uacf5\ud559\ubd80", "\uc7ac\ub8cc\uacf5\ud559\ubd80", "\uc804\uae30\u00b7\uc815\ubcf4\uacf5\ud559\ubd80", "\ucef4\ud4e8\ud130\uacf5\ud559\ubd80", "\ud654\ud559\uc0dd\ubb3c\uacf5\ud559\ubd80"],
-      "\ub18d\uc5c5\uc0dd\uba85\uacfc\ud559\ub300\ud559": ["\ub18d\uacbd\uc81c\uc0ac\ud68c\ud559\ubd80", "\uc2dd\ubb3c\uc0dd\uc0b0\uacfc\ud559\ubd80", "\uc0b0\ub9bc\uacfc\ud559\ubd80", "\uc2dd\ud488\u00b7\ub3d9\ubb3c\uc0dd\uba85\uacf5\ud559\ubd80", "\uc751\uc6a9\uc0dd\ubb3c\ud654\ud559\ubd80", "\uc870\uacbd\u00b7\uc9c0\uc5ed\uc2dc\uc2a4\ud15c\uacf5\ud559\ubd80", "\ubc14\uc774\uc624\uc2dc\uc2a4\ud15c\u00b7\uc18c\uc7ac\ud559\ubd80", "\uc2a4\ub9c8\ud2b8\uc2dc\uc2a4\ud15c\uacfc\ud559\uacfc"],
-      "\ubbf8\uc220\ub300\ud559": ["\ub3d9\uc591\ud654\uacfc", "\uc11c\uc591\ud654\uacfc", "\uc870\uc18c\uacfc", "\uacf5\uc608\uacfc", "\ub514\uc790\uc778\uacfc"],
-      "\uc0ac\ubc94\ub300\ud559": ["\uad50\uc721\ud559\uacfc", "\uad6d\uc5b4\uad50\uc721\uacfc", "\uc601\uc5b4\uad50\uc721\uacfc", "\ub3c5\uc5b4\uad50\uc721\uacfc", "\ubd88\uc5b4\uad50\uc721\uacfc", "\uc0ac\ud68c\uad50\uc721\uacfc", "\uc5ed\uc0ac\uad50\uc721\uacfc", "\uc9c0\ub9ac\uad50\uc721\uacfc", "\uc724\ub9ac\uad50\uc721\uacfc", "\uc218\ud559\uad50\uc721\uacfc", "\ubb3c\ub9ac\uad50\uc721\uacfc", "\ud654\ud559\uad50\uc721\uacfc", "\uc0dd\ubb3c\uad50\uc721\uacfc", "\uc9c0\uad6c\uacfc\ud559\uad50\uc721\uacfc", "\uccb4\uc721\uad50\uc721\uacfc"],
-      "\uc0dd\ud65c\uacfc\ud559\ub300\ud559": ["\uc18c\ube44\uc790\uc544\ub3d9\ud559\ubd80(\uc18c\ube44\uc790\ud559/\uc544\ub3d9\uac00\uc871\ud559\uc804\uacf5)", "\uc2dd\ud488\uc601\uc591\ud559\uacfc", "\uc758\ub958\ud559\uacfc"],
-      "\uc74c\uc545\ub300\ud559": ["\uc131\uc545\uacfc", "\uc791\uace1\uacfc", "\uc74c\uc545\ud559\uacfc", "\ud53c\uc544\ub178\uacfc", "\uad00\ud604\uc545\uacfc", "\uad6d\uc545\uacfc"],
-      "\uae30\ud0c0 \ub2e8\uacfc\ub300\ud559": ["\uac04\ud638\ub300\ud559", "\uacbd\uc601\ub300\ud559", "\uc218\uc758\uacfc\ub300\ud559(\uc218\uc758\uc608\uacfc)", "\uc57d\ud559\ub300\ud559(\uc57d\ud559\uacc4\uc5f4)", "\uc758\uacfc\ub300\ud559(\uc758\uc608\uacfc)", "\uce58\uc758\ud559\ub300\ud559\uc6d0(\uce58\uc758\ud559\uacfc)", "\ucca8\ub2e8\uc735\ud569\ud559\ubd80", "\ud559\ubd80\ub300\ud559(\uad11\uc5ed, \uc790\uc720\uc804\uacf5\ud559\ubd80)"]
-    },
-    "\uc5f0\uc138\ub300\ud559\uad50": {
-      "\ubb38\uacfc\ub300\ud559": ["\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\uc911\uc5b4\uc911\ubb38\ud559\uacfc", "\uc601\uc5b4\uc601\ubb38\ud559\uacfc", "\ub3c5\uc5b4\ub3c5\ubb38\ud559\uacfc", "\ubd88\uc5b4\ubd88\ubb38\ud559\uacfc", "\ub178\uc5b4\ub178\ubb38\ud559\uacfc", "\uc0ac\ud559\uacfc", "\ucca0\ud559\uacfc", "\ubb38\ud5cc\uc815\ubcf4\ud559\uacfc", "\uc2ec\ub9ac\ud559\uacfc"],
-      "\uc0c1\uacbd/\uacbd\uc601\ub300\ud559": ["\uacbd\uc81c\ud559\ubd80", "\uc751\uc6a9\ud1b5\uacc4\ud559\uacfc", "\uacbd\uc601\ud559\uacfc"],
-      "\uc774\uacfc\ub300\ud559": ["\uc218\ud559\uacfc", "\ubb3c\ub9ac\ud559\uacfc", "\ud654\ud559\uacfc", "\uc9c0\uad6c\uc2dc\uc2a4\ud15c\uacfc\ud559\uacfc", "\ucc9c\ubb38\uc6b0\uc8fc\ud559\uacfc", "\ub300\uae30\uacfc\ud559\uacfc"],
-      "\uacf5\uacfc\ub300\ud559": ["\ud654\uacf5\uc0dd\uba85\uacf5\ud559\ubd80", "\uc804\uae30\uc804\uc790\uacf5\ud559\ubd80", "\uac74\ucd95\uacf5\ud559\uacfc", "\ub3c4\uc2dc\uacf5\ud559\uacfc", "\uac74\uc124\ud658\uacbd\uacf5\ud559\uacfc", "\uae30\uacc4\uacf5\ud559\ubd80", "\uc2e0\uc18c\uc7ac\uacf5\ud559\ubd80", "\uc0b0\uc5c5\uacf5\ud559\uacfc", "\uc2dc\uc2a4\ud15c\ubc18\ub3c4\uccb4\uacf5\ud559\uacfc", "\ub514\uc2a4\ud50c\ub808\uc774\uc735\ud569\uacf5\ud559\uacfc"],
-      "\uc0dd\uba85/\uc778\uacf5\uc9c0\ub2a5\uacc4\uc5f4": ["\uc0dd\uba85\uc2dc\uc2a4\ud15c\ub300\ud559(\uc2dc\uc2a4\ud15c\uc0dd\ubb3c\ud559\uacfc, \uc0dd\ud654\ud559\uacfc, \uc0dd\uba85\uacf5\ud559\uacfc)", "\uc778\uacf5\uc9c0\ub2a5\uc735\ud569\ub300\ud559(\ucca8\ub2e8\ucef4\ud4e8\ud305\ud559\ubd80, IT\uc735\ud569\uacf5\ud559\uc804\uacf5, \uc9c0\ub2a5\ud615\ubc18\ub3c4\uccb4\uc804\uacf5, \ubaa8\ube4c\ub9ac\ud2f0\uc2dc\uc2a4\ud15c\uc804\uacf5)"],
-      "\uc0ac\ud68c\uacfc\ud559\ub300\ud559": ["\uc815\uce58\uc678\uad50\ud559\uacfc", "\ud589\uc815\ud559\uacfc", "\uc5b8\ub860\ud64d\ubcf4\uc601\uc0c1\ud559\ubd80", "\uc0ac\ud68c\ubcf5\uc9c0\ud559\uacfc", "\uc0ac\ud68c\ud559\uacfc", "\ubb38\ud654\uc778\ub958\ud559\uacfc"],
-      "\uc74c\uc545\ub300\ud559": ["\uad50\ud68c\uc74c\uc545\uacfc", "\uc131\uc545\uacfc", "\ud53c\uc544\ub178\uacfc", "\uad00\ud604\uc545\uacfc", "\uc791\uace1\uacfc"],
-      "\uc0dd\ud65c/\uad50\uc721\uacfc\ud559\ub300\ud559": ["\uc0dd\ud65c\uacfc\ud559\ub300\ud559(\uc758\ub958\ud658\uacbd\ud559\uacfc, \uc2dd\ud488\uc601\uc591\ud559\uacfc, \uc2e4\ub0b4\uac74\ucd95\ud559\uacfc, \uc544\ub3d9\u00b7\uac00\uc871\ud559\uacfc, \ud1b5\ud569\ub514\uc790\uc778\ud559\uacfc)", "\uad50\uc721\uacfc\ud559\ub300\ud559(\uad50\uc721\ud559\ubd80, \uccb4\uc721\uad50\uc721\ud559\uacfc, \uc2a4\ud3ec\uce20\uc751\uc6a9\uc0b0\uc5c5\ud559\uacfc)"],
-      "\uc5b8\ub354\uc6b0\ub4dc\uad6d\uc81c\ub300\ud559": ["\uc5b8\ub354\uc6b0\ub4dc\ud559\ubd80(\ube44\uad50\ubb38\ud559\uacfc\ubb38\ud654, \uacbd\uc81c\ud559, \uad6d\uc81c\ud559, \uc815\uce58\uc678\uad50\ud559, \uc0dd\uba85\uacfc\ud559\uacf5\ud559)", "\uc735\ud569\uc778\ubb38\uc0ac\ud68c\uacfc\ud559\ubd80(\uc544\uc2dc\uc544\ud559, \ubb38\ud654\ub514\uc790\uc778\uacbd\uc601, \uc815\ubcf4\u00b7\uc778\ud130\ub799\uc158\ub514\uc790\uc778, \ucc3d\uc758\uae30\uc220\uacbd\uc601, \uc0ac\ud68c\uc815\uc758\ub9ac\ub354\uc2ed, \uacc4\ub7c9\uc704\ud5d8\uad00\ub9ac, \uacfc\ud559\uae30\uc220\uc815\ucc45, \uc9c0\uc18d\uac1c\ubc1c\ud611\ub825)", "\uc735\ud569\uacfc\ud559\uacf5\ud559\ubd80(\ub098\ub178\uacfc\ud559\uacf5\ud559, \uc5d0\ub108\uc9c0\ud658\uacbd\uc735\ud569, \ubc14\uc774\uc624\uc735\ud569)"],
-      "\uae30\ud0c0": ["\uc2e0\uacfc\ub300\ud559(\uc2e0\ud559\uacfc)", "\uae00\ub85c\ubc8c\uc778\uc7ac\ub300\ud559(\uae00\ub85c\ubc8c\uc778\uc7ac\ud559\ubd80)", "\uc758\uacfc\ub300\ud559(\uc758\uc608\uacfc)", "\uce58\uacfc\ub300\ud559(\uce58\uc758\uc608\uacfc)", "\uac04\ud638\ub300\ud559(\uac04\ud638\ud559\uacfc)", "\uc57d\ud559\ub300\ud559(\uc57d\ud559\uacfc)", "\ud559\ubd80\ub300\ud559(\uc9c4\ub9ac\uc790\uc720\ud559\ubd80)"]
-    },
-    "\ud55c\uc591\ub300\ud559\uad50": {
-      "\uacf5\uacfc\ub300\ud559": ["\uac74\ucd95\ud559\ubd80", "\uac74\ucd95\uacf5\ud559\ubd80", "\uac74\uc124\ud658\uacbd\uacf5\ud559\uacfc", "\ub3c4\uc2dc\uacf5\ud559\uacfc", "\uc790\uc6d0\ud658\uacbd\uacf5\ud559\uacfc", "\uc735\ud569\uc804\uc790\uacf5\ud559\ubd80", "\ucef4\ud4e8\ud130\uc18c\ud504\ud2b8\uc6e8\uc5b4\ud559\ubd80", "\uc815\ubcf4\uc2dc\uc2a4\ud15c\ud559\uacfc", "\uc804\uae30\u00b7\uc0dd\uccb4\uacf5\ud559\ubd80", "\uc2e0\uc18c\uc7ac\uacf5\ud559\ubd80", "\ud654\ud559\uacf5\ud559\uacfc", "\uc0dd\uba85\uacf5\ud559\uacfc", "\uc720\uae30\ub098\ub178\uacf5\ud559\uacfc", "\uc5d0\ub108\uc9c0\uacf5\ud559\uacfc", "\uae30\uacc4\uacf5\ud559\ubd80", "\uc6d0\uc790\ub825\uacf5\ud559\uacfc", "\uc0b0\uc5c5\uacf5\ud559\uacfc", "\ubbf8\ub798\uc790\ub3d9\ucc28\uacf5\ud559\uacfc", "\ub370\uc774\ud130\uc0ac\uc774\uc5b8\uc2a4\ud559\ubd80", "\ubc18\ub3c4\uccb4\uacf5\ud559\uacfc"],
-      "\uc778\ubb38\uacfc\ud559/\uc0ac\ud68c\uacfc\ud559\ub300\ud559": ["\uc778\ubb38\uacfc\ud559\ub300\ud559(\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc, \uc911\uc5b4\uc911\ubb38\ud559\uacfc, \uc601\uc5b4\uc601\ubb38\ud559\uacfc, \ub3c5\uc5b4\ub3c5\ubb38\ud559\uacfc, \uc0ac\ud559\uacfc, \ucca0\ud559\uacfc)", "\uc0ac\ud68c\uacfc\ud559\ub300\ud559(\uc815\uce58\uc678\uad50\ud559\uacfc, \uc0ac\ud68c\ud559\uacfc, \ubbf8\ub514\uc5b4\ucee4\ubba4\ub2c8\ucf00\uc774\uc158\ud559\uacfc, \uad00\uad11\ud559\ubd80)"],
-      "\uc790\uc5f0\uacfc\ud559/\uc815\ucc45/\uacbd\uae08/\uacbd\uc601\ub300\ud559": ["\uc790\uc5f0\uacfc\ud559\ub300\ud559(\uc218\ud559\uacfc, \ubb3c\ub9ac\ud559\uacfc, \ud654\ud559\uacfc, \uc0dd\uba85\uacfc\ud559\uacfc)", "\uc815\ucc45\uacfc\ud559\ub300\ud559(\uc815\ucc45\ud559\uacfc, \ud589\uc815\ud559\uacfc)", "\uacbd\uc81c\uae08\uc735\ub300\ud559(\uacbd\uc81c\uae08\uc735\ud559\ubd80)", "\uacbd\uc601\ub300\ud559(\uacbd\uc601\ud559\ubd80, \ud30c\uc774\ub0b8\uc2a4\uacbd\uc601\ud559\uacfc)"],
-      "\uc0ac\ubc94/\uc0dd\ud65c/\uc74c\uc545/\uc608\uc220/\uad6d\uc81c\uacc4\uc5f4": ["\uc0ac\ubc94\ub300\ud559(\uad50\uc721\ud559\uacfc, \uad50\uc721\uacf5\ud559\uacfc, \uad6d\uc5b4\uad50\uc721\uacfc, \uc601\uc5b4\uad50\uc721\uacfc, \uc218\ud559\uad50\uc721\uacfc, \uc751\uc6a9\ubbf8\uc220\uad50\uc721\uacfc)", "\uc0dd\ud65c\uacfc\ud559\ub300\ud559(\uc758\ub958\ud559\uacfc, \uc2dd\ud488\uc601\uc591\ud559\uacfc, \uc2e4\ub0b4\uac74\ucd95\ub514\uc790\uc778\ud559\uacfc)", "\uc74c\uc545\ub300\ud559(\uc131\uc545\uacfc, \uc791\uace1\uacfc, \ud53c\uc544\ub178\uacfc, \uad00\ud604\uc545\uacfc, \uad6d\uc545\uacfc)", "\uc608\uc220\uccb4\uc721\ub300\ud559(\uc2a4\ud3ec\uce20\uc0b0\uc5c5\uacfc\ud559\ubd80, \uc5f0\uadf9\uc601\ud654\ud559\uacfc, \ubb34\uc6a9\ud559\uacfc)", "\uad6d\uc81c\ub300\ud559(\uad6d\uc81c\ud559\ubd80)"],
-      "\uae30\ud0c0": ["\uc758\uacfc\ub300\ud559(\uc758\uc608\uacfc)", "\uac04\ud638\ub300\ud559(\uac04\ud638\ud559\uacfc)", "\uc0b0\uc5c5\uc735\ud569\ud559\ubd80", "\ud55c\uc591\uc778\ud130\uce7c\ub9ac\uc9c0\ud559\ubd80"]
-    },
-    "\uc11c\uac15\ub300\ud559\uad50": {
-      "\uc778\ubb38\u00b7\uc5b4\ubb38\uacc4\uc5f4": ["\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\uc0ac\ud559\uacfc", "\ucca0\ud559\uacfc", "\uc885\uad50\ud559\uacfc", "\uc601\ubb38\ud559\ubd80", "\uc720\ub7fd\ubb38\ud654\ud559\uacfc", "\uc911\uad6d\ubb38\ud654\ud559\uacfc", "\uc778\ubb38\ud559\uae30\ubc18\uc790\uc720\uc804\uacf5\ud559\ubd80"],
-      "\uc0ac\ud68c\uacfc\ud559\u00b7\uc0c1\uacbd\uacc4\uc5f4": ["\uc0ac\ud68c\ud559\uacfc", "\uc815\uce58\uc678\uad50\ud559\uacfc", "\uc2ec\ub9ac\ud559\uacfc", "\uacbd\uc81c\ud559\uacfc", "\uacbd\uc601\ud559\ubd80"],
-      "\uad6d\uc81c\u00b7\ubbf8\ub514\uc5b4\uacc4\uc5f4": ["\uc9c0\uc2dd\uc735\ud569\ubbf8\ub514\uc5b4\ud559\ubd80(\uc2e0\ubb38\ubc29\uc1a1\ud559\uacfc, \ubbf8\ub514\uc5b4&\uc5d4\ud130\ud14c\uc778\uba3c\ud2b8\ud559\uacfc, \uc544\ud2b8&\ud14c\ud06c\ub180\ub85c\uc9c0\ud559\uacfc)", "\uae00\ub85c\ubc8c\ud55c\uad6d\ud559\ubd80", "\uac8c\ud398\ub974\ud2b8\uad6d\uc81c\ud559\ubd80"],
-      "\uc790\uc5f0\u00b7\uacf5\ud559\uacc4\uc5f4": ["\uc218\ud559\uacfc", "\ubb3c\ub9ac\ud559\uacfc", "\ud654\ud559\uacfc", "\uc0dd\uba85\uacfc\ud559\uacfc", "\uc804\uc790\uacf5\ud559\uacfc", "\ud654\uacf5\uc0dd\uba85\uacf5\ud559\uacfc", "\ucef4\ud4e8\ud130\uacf5\ud559\uacfc", "\uae30\uacc4\uacf5\ud559\uacfc", "\uc2dc\uc2a4\ud15c\ubc18\ub3c4\uccb4\uacf5\ud559\uacfc", "\uc778\uacf5\uc9c0\ub2a5\ud559\uacfc", "\ubc18\ub3c4\uccb4\uacf5\ud559\uacfc", "SCIENCE\uae30\ubc18\uc790\uc720\uc804\uacf5\ud559\ubd80"]
-    },
-    "\uc131\uade0\uad00\ub300\ud559\uad50": {
-      "\uc790\uc720\uc804\uacf5/\uae00\ub85c\ubc8c\uacc4\uc5f4": ["\uc790\uc720\uc804\uacf5\uacc4\uc5f4(\uc2e0\uc124)", "\uae00\ub85c\ubc8c\ub9ac\ub354\ud559\ubd80", "\uae00\ub85c\ubc8c\uacbd\uc81c\ud559\uacfc", "\uae00\ub85c\ubc8c\uacbd\uc601\ud559\uacfc"],
-      "\uc778\ubb38\uacfc\ud559\uacc4\uc5f4": ["\uc720\ud559\ub3d9\uc591\ud559\uacfc", "\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\uc601\uc5b4\uc601\ubb38\ud559\uacfc", "\ud504\ub791\uc2a4\uc5b4\ubb38\ud559\uacfc", "\uc911\uc5b4\uc911\ubb38\ud559\uacfc", "\ub3c5\uc5b4\ub3c5\ubb38\ud559\uacfc", "\ub7ec\uc2dc\uc544\uc5b4\ubb38\ud559\uacfc", "\ud55c\ubb38\ud559\uacfc", "\uc0ac\ud559\uacfc", "\ucca0\ud559\uacfc", "\ubb38\ud5cc\uc815\ubcf4\ud559\uacfc"],
-      "\uc0ac\ud68c\uacfc\ud559\uacc4\uc5f4": ["\ud589\uc815\ud559\uacfc", "\uc815\uce58\uc678\uad50\ud559\uacfc", "\ubbf8\ub514\uc5b4\ucee4\ubba4\ub2c8\ucf00\uc774\uc158\ud559\uacfc", "\uc0ac\ud68c\ud559\uacfc", "\uc0ac\ud68c\ubcf5\uc9c0\ud559\uacfc", "\uc2ec\ub9ac\ud559\uacfc", "\uc544\ub3d9\uccad\uc18c\ub144\ud559\uacfc", "\ud1b5\uacc4\ud559\uacfc", "\uacbd\uc601\ud559\uacfc"],
-      "\uc790\uc5f0\uacfc\ud559\uacc4\uc5f4": ["\uc0dd\uba85\uacfc\ud559\uacfc", "\uc218\ud559\uacfc", "\ubb3c\ub9ac\ud559\uacfc", "\ud654\ud559\uacfc", "\uc2dd\ud488\uc0dd\uba85\uacf5\ud559\uacfc", "\ubc14\uc774\uc624\uba54\uce74\ud2b8\ub85c\ub2c9\uc2a4\ud559\uacfc", "\uc735\ud569\uc0dd\uba85\uacf5\ud559\uacfc"],
-      "\uacf5\ud559\uacc4\uc5f4": ["\uc804\uc790\uc804\uae30\uacf5\ud559\ubd80", "\uacf5\ud559\uacc4\uc5f4(\uc2e0\uc18c\uc7ac, \uae30\uacc4, \uac74\uc124\ud658\uacbd, \ud654\ud559\uacf5\ud559/\uace0\ubd84\uc790, \uc2dc\uc2a4\ud15c\uacbd\uc601, \ub098\ub178\uacf5\ud559)"],
-      "\uc18c\ud504\ud2b8\uc6e8\uc5b4/\ucca8\ub2e8\ud559\uacfc": ["\uc18c\ud504\ud2b8\uc6e8\uc5b4\ud559\uacfc", "\uc9c0\ub2a5\ud615\uc18c\ud504\ud2b8\uc6e8\uc5b4\ud559\uacfc(\uacc4\uc57d)", "\ubc18\ub3c4\uccb4\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc(\uacc4\uc57d)", "\ubc18\ub3c4\uccb4\uc735\ud569\uacf5\ud559\uacfc", "\uc591\uc790\uc815\ubcf4\uacf5\ud559\uacfc(\uc2e0\uc124)", "\uc5d0\ub108\uc9c0\ud559\uacfc", "\uae00\ub85c\ubc8c\ubc14\uc774\uc624\uba54\ub514\uceec\uacf5\ud559\uacfc"],
-      "\uc758\uc57d/\uc0ac\ubc94/\uc608\uccb4\ub2a5": ["\uc758\uc608\uacfc", "\uc57d\ud559\uacfc", "\uad50\uc721\ud559\uacfc", "\ud55c\ubb38\uad50\uc721\uacfc", "\uc218\ud559\uad50\uc721\uacfc", "\ucef4\ud4e8\ud130\uad50\uc721\uacfc", "\uc758\uc0c1\ud559\uacfc", "\uc601\uc0c1\ud559\uacfc", "\ub514\uc790\uc778\ud559\uacfc", "\uc2a4\ud3ec\uce20\uacfc\ud559\uacfc"]
-    },
-    "\uc911\uc559\ub300\ud559\uad50": {
-      "\uc778\ubb38\ub300\ud559": ["\uad6d\uc5b4\uad6d\ubb38\ud559", "\uc601\uc5b4\uc601\ubb38\ud559", "\uc720\ub7fd\ubb38\ud654\ud559\ubd80(\ub3c5\uc77c\uc5b4\ubb38\ud559, \ud504\ub791\uc2a4\uc5b4\ubb38\ud559, \ub7ec\uc2dc\uc544\uc5b4\ubb38\ud559)", "\uc544\uc2dc\uc544\ubb38\ud654\ud559\ubd80(\uc77c\ubcf8\uc5b4\ubb38\ud559, \uc911\uad6d\uc5b4\ubb38\ud559)", "\ucca0\ud559\uacfc", "\uc5ed\uc0ac\ud559\uacfc"],
-      "\uc0ac\ud68c\uacfc\ud559\ub300\ud559": ["\uc815\uce58\uad6d\uc81c\ud559\uacfc", "\uc2ec\ub9ac\ud559\uacfc", "\ubb38\ud5cc\uc815\ubcf4\ud559\uacfc", "\uc0ac\ud68c\ubcf5\uc9c0\ud559\ubd80", "\uc0ac\ud68c\ud559\uacfc", "\ub3c4\uc2dc\uacc4\ud68d\u00b7\ubd80\ub3d9\uc0b0\ud559\uacfc", "\uacf5\uacf5\uc778\uc7ac\ud559\ubd80", "\ubbf8\ub514\uc5b4\ucee4\ubba4\ub2c8\ucf00\uc774\uc158\ud559\ubd80"],
-      "\uc0ac\ubc94\ub300\ud559": ["\uad50\uc721\ud559\uacfc", "\uc720\uc544\uad50\uc721\uacfc", "\uc601\uc5b4\uad50\uc721\uacfc", "\uccb4\uc721\uad50\uc721\uacfc"],
-      "\uacbd\uc601\uacbd\uc81c\ub300\ud559": ["\uacbd\uc81c\ud559\ubd80", "\uc751\uc6a9\ud1b5\uacc4\ud559\uacfc", "\uad11\uace0\ud64d\ubcf4\ud559\ubd80", "\uad6d\uc81c\ubb3c\ub958\ud559\uacfc", "\uc0b0\uc5c5\ubcf4\uc548\ud559\uacfc", "\uacbd\uc601\ud559\ubd80(\uacbd\uc601\ud559, \uae00\ub85c\ubc8c\uae08\uc735)", "\uc9c0\uc2dd\uacbd\uc601\ud559\ubd80"],
-      "\uc790\uc5f0\uacfc\ud559\ub300\ud559": ["\ubb3c\ub9ac\ud559\uacfc", "\ud654\ud559\uacfc", "\uc0dd\uba85\uacfc\ud559\uacfc", "\uc218\ud559\uacfc"],
-      "\uacf5\uacfc\ub300\ud559": ["\uc0ac\ud68c\uae30\ubc18\uc2dc\uc2a4\ud15c\uacf5\ud559\ubd80(\uac74\uc124\ud658\uacbd\ud50c\ub79c\ud2b8\uacf5\ud559, \ub3c4\uc2dc\uc2dc\uc2a4\ud15c\uacf5\ud559)", "\uac74\ucd95\ud559\ubd80", "\uc5d0\ub108\uc9c0\uc2dc\uc2a4\ud15c\uacf5\ud559\ubd80", "\ud654\ud559\uacf5\ud559\uacfc", "\uae30\uacc4\uacf5\ud559\ubd80", "\ucca8\ub2e8\uc18c\uc7ac\uacf5\ud559\uacfc"],
-      "\ucc3d\uc758ICT\uacf5\uacfc\ub300\ud559": ["\uc804\uc790\uc804\uae30\uacf5\ud559\ubd80", "\uc735\ud569\uacf5\ud559\ubd80", "\uc9c0\ub2a5\ud615\ubc18\ub3c4\uccb4\uacf5\ud559\uacfc"],
-      "\uc18c\ud504\ud2b8\uc6e8\uc5b4\ub300\ud559": ["\uc18c\ud504\ud2b8\uc6e8\uc5b4\ud559\ubd80", "AI\ud559\uacfc"],
-      "\uc0dd\uba85\uacf5\ud559\ub300\ud559": ["\uc0dd\uba85\uc790\uc6d0\uacf5\ud559\ubd80(\ub3d9\ubb3c\uc0dd\uba85\uacf5\ud559, \uc2dd\ubb3c\uc0dd\uba85\uacf5\ud559)", "\uc2dd\ud488\uacf5\ud559\ubd80(\uc2dd\ud488\uacf5\ud559, \uc2dd\ud488\uc5f0\uc591)", "\uc2dc\uc2a4\ud15c\uc0dd\uba85\uacf5\ud559\uacfc"],
-      "\uc758\uc57d/\ubcf4\uac74\uacc4\uc5f4": ["\uc57d\ud559\ub300\ud559(\uc57d\ud559\ubd80)", "\uc758\uacfc\ub300\ud559(\uc758\ud559\ubd80)", "\uc801\uc2ed\uc790\uac04\ud638\ub300\ud559(\uac04\ud638\ud559\uacfc)"],
-      "\uc608\uc220\uacc4\uc5f4": ["\uc608\uc220\uacf5\ud559\ub300\ud559(\uc608\uc220\uacf5\ud559\ubd80)", "\uc608\uc220\ub300\ud559(\uacf5\uc5f0\uc601\uc0c1\ucc3d\uc791\ud559\ubd80(\uacf5\uac04\uc5f0\ucd9c/\ubb38\uc608\ucc3d\uc791)", "\ub514\uc790\uc778\ud559\ubd80(\uc2e4\ub0b4\ud658\uacbd\ub514\uc790\uc778/\ud328\uc158))"]
-    },
-    "\uacbd\ud76c\ub300\ud559\uad50": {
-      "\uacf5\ud559/\uc804\uc790/\ucef4\ud4e8\ud130\uacc4\uc5f4": ["\uae30\uacc4\uacf5\ud559\ubd80", "\ubbf8\ub798\uc815\ubcf4\ub514\uc2a4\ud50c\ub808\uc774\ud559\ubd80", "\uc0dd\uccb4\uc758\uacf5\ud559\uacfc", "\uc804\uc790\uacf5\ud559\uacfc", "\ubc18\ub3c4\uccb4\uacf5\ud559\uacfc", "\uac74\ucd95\uacf5\ud559\uacfc", "\uc0ac\ud68c\uae30\ubc18\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc", "\uac74\ucd95\ud559\uacfc", "\uc6d0\uc790\ub825\uacf5\ud559\uacfc", "\uc2e0\uc18c\uc7ac\uacf5\ud559\uacfc", "\ucef4\ud4e8\ud130\uacf5\ud559\ubd80(\ucef4\ud4e8\ud130\uacf5\ud559\uacfc/\uc778\uacf5\uc9c0\ub2a5\ud559\uacfc)", "\uc18c\ud504\ud2b8\uc6e8\uc5b4\uc735\ud569\ud559\uacfc"],
-      "\uc21c\uc218/\uc751\uc6a9\uacfc\ud559\uacc4\uc5f4": ["\ud654\ud559\uacfc", "\uc751\uc6a9\ud654\ud559\uacfc", "\uc751\uc6a9\uc218\ud559\uacfc", "\uc751\uc6a9\ubb3c\ub9ac\ud559\uacfc", "\uc6b0\uc8fc\uacfc\ud559\uacfc", "\uc9c0\ub9ac\ud559\uacfc"],
-      "\uc0dd\uba85/\ud658\uacbd\uacc4\uc5f4": ["\uc0dd\ubb3c\ud559\uacfc", "\uc2a4\ub9c8\ud2b8\ud31c\uacfc\ud559\uacfc", "\uc2dd\ud488\uc601\uc591\ud559\uacfc", "\uc2dd\ud488\uc0dd\uba85\uacf5\ud559\uacfc", "\uc720\uc804\uc0dd\uba85\uacf5\ud559\uacfc", "\ud658\uacbd\ud559\ubc0f\ud658\uacbd\uacf5\ud559\uacfc", "\uc735\ud569\ubc14\uc774\uc624\u00b7\uc2e0\uc18c\uc7ac\uacf5\ud559\uacfc"],
-      "\uc758\uc57d/\ubcf4\uac74\uacc4\uc5f4": ["\uc758\uc608\uacfc", "\ud55c\uc758\uc608\uacfc(\uc790\uc5f0)", "\uce58\uc758\uc608\uacfc", "\uc57d\ud559\uacfc", "\ud55c\uc57d\ud559\uacfc", "\uc57d\uacfc\ud559\uacfc", "\uac04\ud638\ud559\uacfc"],
-      "\uc608\uccb4\ub2a5/\uae30\ud0c0\uacc4\uc5f4": ["\uc0b0\uc5c5\ub514\uc790\uc778\ud559\uacfc", "\uc2dc\uac01\ub514\uc790\uc778\ud559\uacfc", "\ud658\uacbd\uc870\uacbd\ub514\uc790\uc778\ud559\uacfc", "\uc758\ub958\ub514\uc790\uc778\ud559\uacfc", "\ub514\uc9c0\ud138\ucf58\ud150\uce20\ud559\uacfc", "\ub3c4\uc608\ud559\uacfc", "\uc5f0\uadf9\uc601\ud654\ud559\uacfc(\uc601\ud654\uc5f0\ucd9c \ubc0f \uc81c\uc791)", "\uc790\uc728\uc804\uacf5\ud559\ubd80/\uc790\uc720\uc804\uacf5\ud559\ubd80"]
-    },
-    "\ud55c\uad6d\uc678\uad6d\uc5b4\ub300\ud559\uad50": {
-      "\uc11c\uc6b8\ucea0\ud37c\uc2a4": ["\uc601\uc5b4\ub300\ud559(ELLT\ud559\uacfc, \uc601\ubbf8\ubb38\ud559\u00b7\ubb38\ud654\ud559\uacfc, \uc601\uc5b4\ud1b5\ubc88\uc5ed\ud559\uacfc)", "\uc11c\uc591\uc5b4\ub300\ud559(\ud504\ub791\uc2a4\uc5b4\ud559\ubd80, \ub3c5\uc77c\uc5b4\uacfc, \ub178\uc5b4\uacfc, \uc2a4\ud398\uc778\uc5b4\uacfc, \uc774\ud0c8\ub9ac\uc544\uc5b4\uacfc, \ud3ec\ub974\ud22c\uac08\uc5b4\uacfc, \ub124\ub35c\ub780\ub4dc\uc5b4\uacfc, \uc2a4\uce78\ub514\ub098\ube44\uc544\uc5b4\uacfc)", "\uc544\uc2dc\uc544\uc5b8\uc5b4\ubb38\ud654\ub300\ud559(\ub9d0\ub808\uc774\u00b7\uc778\ub3c4\ub124\uc2dc\uc544\uc5b4\uacfc, \ud0dc\uad6d\ud559\uacfc, \ubca0\ud2b8\ub0a8\uc5b4\uacfc, \uc778\ub3c4\uc5b4\uacfc, \uc544\ub78d\uc5b4\uacfc, \ud280\ub974\ud0a4\uc608\u00b7\uc544\uc81c\ub974\ubc14\uc774\uc794\ud559\uacfc, \ud398\ub974\uc2dc\uc544\uc5b4\u00b7\uc774\ub780\ud559\uacfc, \ubabd\uace8\uc5b4\uacfc)", "\uc911\uad6d\ud559\ub300\ud559(\uc911\uad6d\uc5b8\uc5b4\ubb38\ud654\ud559\ubd80, \uc911\uad6d\uc678\uad50\ud1b5\uc0c1\ud559\ubd80)", "\uc77c\ubcf8\ud559\ub300\ud559(\uc77c\ubcf8\uc5b8\uc5b4\ubb38\ud654\ud559\ubd80, \uc735\ud569\uc77c\ubcf8\uc9c0\uc5ed\ud559\ubd80)", "\uc0ac\ud68c\uacfc\ud559\ub300\ud559(\uc815\uce58\uc678\uad50\ud559\uacfc, \ud589\uc815\ud559\uacfc, \ubbf8\ub514\uc5b4\ucee4\ubba4\ub2c8\ucf00\uc774\uc158\ud559\ubd80)", "\uc0c1\uacbd\ub300\ud559(\uad6d\uc81c\ud1b5\uc0c1\ud559\uacfc, \uacbd\uc81c\ud559\ubd80)", "\uacbd\uc601\ub300\ud559(\uacbd\uc601\ud559\ubd80)", "\uc0ac\ubc94\ub300\ud559(\uc601\uc5b4\uad50\uc721\uacfc, \ud55c\uad6d\uc5b4\uad50\uc721\uacfc, \uc678\uad6d\uc5b4\uad50\uc721\ud559\ubd80(\ud504\ub791\uc2a4\uc5b4/\ub3c5\uc77c\uc5b4/\uc911\uad6d\uc5b4\uad50\uc721\uc804\uacf5))", "AI\uc735\ud569\ub300\ud559(Language & AI\uc735\ud569\ud559\ubd80, Social Science & AI\uc735\ud569\ud559\ubd80)", "\uad6d\uc81c\ud559\ubd80", "Language & Diplomacy\ud559\ubd80", "Language & Trade\ud559\ubd80", "KFL\ud559\ubd80", "\uc790\uc720\uc804\uacf5\ud559\ubd80"],
-      "\uae00\ub85c\ubc8c\ucea0\ud37c\uc2a4": ["\uc778\ubb38\ub300\ud559(\ucca0\ud559\uacfc, \uc0ac\ud559\uacfc, \uc5b8\uc5b4\uc778\uc9c0\uacfc\ud559\uacfc)", "\uad6d\uac00\uc804\ub7b5\uc5b8\uc5b4\ub300\ud559(\ud3f4\ub780\ub4dc\ud559\uacfc, \ub8e8\ub9c8\ub2c8\uc544\ud559\uacfc, \uccb4\ucf54\u00b7\uc2ac\ub85c\ubc14\ud0a4\uc544\ud559\uacfc, \ud5dd\uac00\ub9ac\ud559\uacfc, \uc138\ub974\ube44\uc544\u00b7\ud06c\ub85c\uc544\ud2f0\uc544\ud559\uacfc, \uadf8\ub9ac\uc2a4\u00b7\ubd88\uac00\ub9ac\uc544\ud559\uacfc, \uc911\uc559\uc544\uc2dc\uc544\ud559\uacfc, \uc544\ud504\ub9ac\uce74\ud559\ubd80, \uc6b0\ud06c\ub77c\uc774\ub098\ud559\uacfc, \ud55c\uad6d\ud559\uacfc)", "\uacbd\uc0c1\ub300\ud559(Global Business & Technology\ud559\ubd80, \uad6d\uc81c\uae08\uc735\ud559\uacfc)", "\uc790\uc5f0\uacfc\ud559\ub300\ud559(\uc218\ud559\uacfc, \ud1b5\uacc4\ud559\uacfc, \uc804\uc790\ubb3c\ub9ac\ud559\uacfc, \ud658\uacbd\ud559\uacfc, \uc0dd\uba85\uacf5\ud559\uacfc, \ud654\ud559\uacfc)", "\uacf5\uacfc\ub300\ud559(\ucef4\ud4e8\ud130\uacf5\ud559\ubd80, \uc815\ubcf4\ud1b5\uc2e0\uacf5\ud559\uacfc, \ubc18\ub3c4\uccb4\uc804\uc790\uacf5\ud559\ubd80(\ubc18\ub3c4\uccb4/\uc804\uc790\uacf5\ud559\uc804\uacf5), \uc0b0\uc5c5\uacbd\uc601\uacf5\ud559\uacfc, \ubc14\uc774\uc624\uba54\ub514\uceec\uacf5\ud559\ubd80)", "\uc735\ud569\uc778\uc7ac\ub300\ud559(\uc735\ud569\uc778\uc7ac\ud559\ubd80)", "Culture & Technology \uc735\ud569\ub300\ud559(\ub514\uc9c0\ud138\ucf58\ud150\uce20\ud559\ubd80, \ud22c\uc5b4\ub9ac\uc998 & \uc6f0\ub2c8\uc2a4\ud559\ubd80, \uae00\ub85c\ubc8c\uc2a4\ud3ec\uce20\uc0b0\uc5c5\ud559\ubd80)", "AI\uc735\ud569\ub300\ud559(AI\ub370\uc774\ud130\uc735\ud569\ud559\ubd80, Finance & AI\uc735\ud569\ud559\ubd80)", "\uae30\ud6c4\ubcc0\ud654\uc735\ud569\ud559\ubd80", "\uc790\uc720\uc804\uacf5\ud559\ubd80"]
-    },
-    "\uac74\uad6d\ub300\ud559\uad50": {
-      "\ubb38\uacfc\ub300\ud559": ["\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\uc601\uc5b4\uc601\ubb38\ud559\uacfc", "\uc911\uc5b4\uc911\ubb38\ud559\uacfc", "\ucca0\ud559\uacfc", "\uc0ac\ud559\uacfc", "\uc9c0\ub9ac\ud559\uacfc", "\ubbf8\ub514\uc5b4\ucee4\ubba4\ub2c8\ucf00\uc774\uc158\ud559\uacfc", "\ubb38\ud654\ucf58\ud150\uce20\ud559\uacfc", "\ubb38\uacfc\ub300\ud559\uc790\uc720\uc804\uacf5\ud559\ubd80"],
-      "\uc774\uacfc\ub300\ud559": ["\uc218\ud559\uacfc", "\ubb3c\ub9ac\ud559\uacfc", "\ud654\ud559\uacfc", "\uc774\uacfc\ub300\ud559\uc790\uc720\uc804\uacf5\ud559\ubd80"],
-      "\uac74\ucd95\ub300\ud559": ["\uac74\ucd95\ud559\ubd80"],
-      "\uacf5\uacfc\ub300\ud559": ["\uc0ac\ud68c\ud658\uacbd\uacf5\ud559\ubd80", "\uae30\uacc4\u00b7\ub85c\ubd07\u00b7\uc790\ub3d9\ucc28\uacf5\ud559\ubd80", "\uc804\uae30\uc804\uc790\uacf5\ud559\ubd80", "\ud654\uacf5\ud559\ubd80", "\ucef4\ud4e8\ud130\uacf5\ud559\ubd80", "\uc7ac\ub8cc\uacf5\ud559\uacfc", "\ud56d\uacf5\uc6b0\uc8fc\u00b7\ubaa8\ube4c\ub9ac\ud2f0\uacf5\ud559\uacfc", "\uc0dd\ubb3c\uacf5\ud559\uacfc", "\uc0b0\uc5c5\uacf5\ud559\uacfc", "\uc2e0\uc0b0\uc5c5\uc735\ud569\ud559\uacfc", "K\ubdf0\ud2f0\uc0b0\uc5c5\uc735\ud569\ud559\uacfc", "\uacf5\uacfc\ub300\ud559\uc790\uc720\uc804\uacf5\ud559\ubd80"],
-      "\uc0ac\ud68c\uacfc\ud559\ub300\ud559": ["\uc815\uce58\uc678\uad50\ud559\uacfc", "\uacbd\uc81c\ud559\uacfc", "\ud589\uc815\ud559\uacfc", "\uad6d\uc81c\ubb34\uc5ed\ud559\uacfc", "\uc751\uc6a9\ud1b5\uacc4\ud559\uacfc", "\uc0ac\ud68c\uacfc\ud559\ub300\ud559\uc735\ud569\uc804\uacf5\ud559\ubd80"],
-      "\uacbd\uc601\ub300\ud559": ["\uacbd\uc601\ud559\uacfc", "\uae30\uc220\uacbd\uc601\ud559\uacfc"],
-      "\ubd80\ub3d9\uc0b0\uacfc\ud559\uc6d0": ["\ubd80\ub3d9\uc0b0\ud559\uacfc"],
-      "\uc735\ud569\uacfc\ud559\uae30\uc220\uc6d0": ["\ucca8\ub2e8\ubc14\uc774\uc624\uacf5\ud559\ubd80", "\uc2dc\uc2a4\ud15c\uc0dd\uba85\uacf5\ud559\uacfc", "\uc735\ud569\uc0dd\uba85\uacf5\ud559\uacfc", "\uc735\ud569\uacfc\ud559\uae30\uc220\uc6d0\uc790\uc720\uc804\uacf5\ud559\ubd80"],
-      "\uc0dd\uba85\uacfc\ud559\ub300\ud559": ["\ub3d9\ubb3c\uc790\uc6d0\u00b7\uc2dd\ud488\uacfc\ud559\u00b7\uc720\ud1b5\ud559\ubd80", "\ud658\uacbd\ubcf4\uac74\u00b7\uc0b0\ub9bc\uc870\uacbd\ud559\ubd80", "\uc0dd\uba85\uacfc\ud559\ud2b9\uc131\ud559\uacfc", "\uc2dd\ub7c9\uc790\uc6d0\uacfc\ud559\uacfc", "\uc0dd\uba85\uacfc\ud559\ub300\ud559\uc790\uc720\uc804\uacf5\ud559\ubd80"],
-      "\uc218\uc758\uacfc\ub300\ud559": ["\uc218\uc758\uc608\uacfc"],
-      "\uc608\uc220\ub514\uc790\uc778\ub300\ud559": ["\ucee4\ubba4\ub2c8\ucf00\uc774\uc158\ub514\uc790\uc778\ud559\uacfc", "\uc0b0\uc5c5\ub514\uc790\uc778\ud559\uacfc", "\uc758\uc0c1\ub514\uc790\uc778\ud559\uacfc", "\ub9ac\ube59\ub514\uc790\uc778\ud559\uacfc", "\ud604\ub300\ubbf8\uc220\ud559\uacfc", "\uc601\uc0c1\ud559\uacfc", "\ub9e4\uccb4\uc5f0\uae30\ud559\uacfc"],
-      "\uc0ac\ubc94\ub300\ud559": ["\uc77c\uc5b4\uad50\uc721\uacfc", "\uc218\ud559\uad50\uc721\uacfc", "\uccb4\uc721\uad50\uc721\uacfc", "\uc74c\uc545\uad50\uc721\uacfc", "\uad50\uc721\uacf5\ud559\uacfc", "\uc601\uc5b4\uad50\uc721\uacfc"],
-      "\uc0c1\ud5c8\uad50\uc591\ub300\ud559": ["KU\uc790\uc720\uc804\uacf5\ud559\ubd80"]
-    },
-    "\ub2e8\uad6d\ub300\ud559\uad50": {
-      "\uac1c\uc124\ud559\uacfc": ["\ubc95\uacfc\ub300", "\uacf5\uc5f0\uc608\uc220\ud559\ubd80", "\uc2a4\ud3ec\uce20\uacfc\ud559\ubd80", "\ud1b5\ud569\uc804\uacf5(\ubbf8\ub798\ubaa8\ube4c\ub9ac\ud2f0\uc804\uacf5, \ube45\ub370\uc774\ud130\ube44\uc988\ub2c8\uc2a4\uc804\uacf5, \uacf5\uc5f0\uc608\uc220\uc804\uacf5, \uc9c0\ub2a5\u00b7\ub85c\ubd07\uacf5\ud559\uc804\uacf5, \uc2a4\ub9c8\ud2b8\ub3c4\uc2dc\u00b7\ub370\uc774\ud130\uc0ac\uc774\uc5b8\uc2a4\uc804\uacf5, \uc758\ub8cc\uc11c\ube44\uc2a4\ucf00\uc5b4AI\uc804\uacf5)"]
-    },
-    "\uc544\uc8fc\ub300\ud559\uad50": {
-      "\uac1c\uc124\ud559\uacfc": ["\uacbd\uc601\uc815\ubcf4\ud559\ubd80", "\uc0ac\ud68c\ubcf5\uc9c0\ud559\uacfc", "\uc0ac\uc774\ubc84\ubcf4\uc548\ud559\uacfc", "\uc218\ud559\uacfc", "\ubb3c\ub9ac\ud559\uacfc", "\ud654\ud559\uacfc", "\uc0dd\uba85\uacfc\ud559\uacfc", "\uc815\ubcf4\ubcf4\ud638\ud559\uacfc", "\uc18c\ud504\ud2b8\uc6e8\uc5b4\ud559\uacfc", "\ucef4\ud4e8\ud130\uacf5\ud559\uacfc", "\uc804\uc790\uacf5\ud559\uacfc", "\uae30\uacc4\uacf5\ud559\uacfc", "\uc0b0\uc5c5\uacf5\ud559\uacfc", "\ud654\ud559\uacf5\ud559\uacfc", "\uac74\ucd95\ud559\uacfc", "\uc758\ud559\uacfc", "\uac04\ud638\ud559\uacfc", "AI\uc735\ud569\ud559\ubd80"]
-    },
-    "\uc11c\uc6b8\uc2dc\ub9bd\ub300\ud559\uad50": {
-      "\uc815\uacbd\ub300\ud559": ["\ud589\uc815\ud559\uacfc", "\uad6d\uc81c\uad00\uacc4\ud559\uacfc", "\uacbd\uc81c\ud559\ubd80", "\uc0ac\ud68c\ubcf5\uc9c0\ud559\uacfc", "\uc138\ubb34\ud559\uacfc"],
-      "\uacbd\uc601\ub300\ud559": ["\uacbd\uc601\ud559\ubd80"],
-      "\uc778\ubb38\ub300\ud559": ["\uc601\uc5b4\uc601\ubb38\ud559\uacfc", "\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\uad6d\uc0ac\ud559\uacfc", "\ucca0\ud559\uacfc", "\uc911\uad6d\uc5b4\ubb38\ud654\ud559\uacfc"],
-      "\ub3c4\uc2dc\uacfc\ud559\ub300\ud559": ["\ub3c4\uc2dc\ud589\uc815\ud559\uacfc", "\ub3c4\uc2dc\uc0ac\ud68c\ud559\uacfc", "\uac74\ucd95\ud559\ubd80(\uac74\ucd95\uacf5\ud559/\uac74\ucd95\ud559\uc804\uacf5)", "\ub3c4\uc2dc\uacf5\ud559\uacfc", "\uad50\ud1b5\uacf5\ud559\uacfc", "\uc870\uacbd\ud559\uacfc", "\ud658\uacbd\uacf5\ud559\ubd80", "\uacf5\uac04\uc815\ubcf4\uacf5\ud559\uacfc"],
-      "\uacf5\uacfc\ub300\ud559": ["\uc804\uc790\uc804\uae30\ucef4\ud4e8\ud130\uacf5\ud559\ubd80", "\ud654\ud559\uacf5\ud559\uacfc", "\uae30\uacc4\uc815\ubcf4\uacf5\ud559\uacfc", "\uc2e0\uc18c\uc7ac\uacf5\ud559\uacfc", "\ud1a0\ubaa9\uacf5\ud559\uacfc", "\ucef4\ud4e8\ud130\uacfc\ud559\ubd80", "\uc778\uacf5\uc9c0\ub2a5\ud559\uacfc"],
-      "\uc790\uc5f0\uacfc\ud559\ub300\ud559": ["\uc218\ud559\uacfc", "\ud1b5\uacc4\ud559\uacfc", "\ubb3c\ub9ac\ud559\uacfc", "\uc0dd\uba85\uacfc\ud559\uacfc", "\ud658\uacbd\uc6d0\uc608\ud559\uacfc", "\uc735\ud569\uc751\uc6a9\ud654\ud559\uacfc"],
-      "\uc790\uc720/\ucca8\ub2e8\uc735\ud569\ud559\ubd80": ["\uc790\uc720\uc804\uacf5\ud559\ubd80(\uc778\ubb38/\uc790\uc5f0)", "\ucca8\ub2e8\uc735\ud569\ud559\ubd80(\uc735\ud569\ubc14\uc774\uc624\ud5ec\uc2a4\uc804\uacf5, \ucca8\ub2e8\uc778\uacf5\uc9c0\ub2a5\uc804\uacf5, \uc9c0\ub2a5\ud615\ubc18\ub3c4\uccb4\uc804\uacf5)"],
-      "\uc608\uc220\uccb4\uc721\ub300\ud559": ["\uc74c\uc545\ud559\uacfc", "\ub514\uc790\uc778\ud559\uacfc(\uc2dc\uac01/\uc0b0\uc5c5\ub514\uc790\uc778\uc804\uacf5)", "\uc870\uac01\ud559\uacfc", "\uc2a4\ud3ec\uce20\uacfc\ud559\uacfc"]
-    },
-    "서울과학기술대학교": {
-      "공과대학": ["기계시스템공학부(지능형로봇전공, 미래자동차전공)", "기계공학과", "안전공학과", "신소재공학과", "건설시스템공학과", "건축학부(건축공학전공, 건축학전공)", "자유전공학부(공과대학)"],
-      "정보통신대학": ["전기정보공학과", "전자공학과", "스마트ICT융합공학과", "컴퓨터공학과", "자유전공학부(정보통신대학)"],
-      "에너지바이오대학": ["화공생명공학과", "환경공학과", "식품생명공학과", "정밀화학과", "안경광학과", "스포츠과학과", "바이오메디컬학과(신설)", "자유전공학부(에너지바이오대학)"],
-      "조형대학": ["디자인학과(산업디자인전공, 시각디자인전공)", "도예학과", "금속공예디자인학과", "조형예술학과"],
-      "인문사회대학": ["행정학과", "영어영문학과", "문예창작학과", "자유전공학부(인문사회대학)"],
-      "기술경영융합대학": ["산업공학과(산업정보시스템전공)", "산업공학과(ITM전공)", "MSDE학과", "경영학과(경영학전공)", "경영학과(글로벌테크노경영전공)", "자유전공학부(기술경영융합대학)"],
-      "창의융합대학": ["인공지능응용학과", "지능형반도체공학과", "미래에너지융합학과", "자유전공학부(창의융합대학)"],
-      "미래융합대학": ["융합기계공학과", "건설환경융합공학과", "헬스피트니스학과", "문화예술학과", "영어과", "벤처경영학과", "정보통신융합공학과", "자유전공학부(미래융합대학)"],
-      "교양대학": ["ST자유전공학부"]
-    },
-    "\ub3d9\uad6d\ub300\ud559\uad50": {
-      "불교대학": ["불교학부", "문화유산학과"],
-      "문과대학": ["국어국문·문예창작학부", "영어영문학부(영어문학전공, 영어통번역학전공)", "일본학과", "중어중문학과", "철학과", "사학과"],
-      "이과대학": ["수학과", "화학과", "통계학과", "물리학과"],
-      "법과대학": ["법학과"],
-      "사회과학대학": ["정치외교학전공", "행정학전공", "북한학전공", "경제학과", "국제통상학과", "사회학전공", "미디어커뮤니케이션학전공", "식품산업관리학과", "광고홍보학과", "사회복지학과"],
-      "경찰사법대학": ["경찰행정학부"],
-      "경영대학 (단과대학 단위 모집 포함)": ["경영학과", "회계학과", "경영정보학과"],
-      "바이오시스템대학 (단과대학 단위 모집 포함)": ["융합환경과학과", "생명과학과", "식품바이오융합공학과", "의생명공학과"],
-      "공과대학": ["전자전기공학부", "정보통신공학과", "건설환경공학과", "화공생물공학과", "기계로봇에너지공학과", "건축공학부(건축공학전공, 건축학전공)", "산업시스템공학과", "에너지신소재공학과"],
-      "첨단융합대학": ["컴퓨터·AI학부", "시스템반도체학부", "의료인공지능공학과", "지능형네트워크융합학과"],
-      "사범대학": ["교육학과", "국어교육과", "역사교육과", "지리교육과", "수학교육과", "가정교육과", "체육교육과"],
-      "예술대학": ["미술학부(불교미술전공, 한국화전공, 서양화전공, 조소전공)", "연극학부", "영화영상학과", "스포츠문화학과", "한국음악과"],
-      "약학대학": ["약학과"],
-      "미래융합대학": ["범죄학과", "사회복지상담학과", "글로벌무역학과"],
-      "열린전공학부 (광역화 모집단위)": ["인문/자연 계열 무전공"]
-    },
-    "\ud64d\uc775\ub300\ud559\uad50": {
-      "\ucea0\ud37c\uc2a4\uc790\uc728\uc804\uacf5": ["\uc11c\uc6b8\ucea0\ud37c\uc2a4\uc790\uc728\uc804\uacf5(\uc790\uc5f0\u00b7\uc608\ub2a5)", "\uc11c\uc6b8\ucea0\ud37c\uc2a4\uc790\uc728\uc804\uacf5(\uc778\ubb38\u00b7\uc608\ub2a5)"],
-      "\uacf5\uacfc\ub300\ud559": ["\uc804\uc790\u00b7\uc804\uae30\uacf5\ud559\ubd80", "\uc2e0\uc18c\uc7ac\u00b7\ud654\uacf5\uc2dc\uc2a4\ud15c\uacf5\ud559\ubd80", "\ucef4\ud4e8\ud130\uacf5\ud559\uacfc", "\uc0b0\uc5c5\u00b7\ub370\uc774\ud130\uacf5\ud559\uacfc", "\uae30\uacc4\u00b7\uc2dc\uc2a4\ud15c\ub514\uc790\uc778\uacf5\ud559\uacfc", "\uac74\uc124\ud658\uacbd\uacf5\ud559\uacfc"],
-      "\uac74\ucd95\ub3c4\uc2dc\ub300\ud559": ["\uac74\ucd95\ud559\ubd80 \uac74\ucd95\ud559\uc804\uacf5(5\ub144\uc81c)", "\uac74\ucd95\ud559\ubd80 \uc2e4\ub0b4\uac74\ucd95\ud559\uc804\uacf5", "\ub3c4\uc2dc\uacf5\ud559\uacfc"],
-      "\uc0ac\ubc94\ub300\ud559": ["\uc218\ud559\uad50\uc721\uacfc", "\uad6d\uc5b4\uad50\uc721\uacfc", "\uc601\uc5b4\uad50\uc721\uacfc", "\uc5ed\uc0ac\uad50\uc721\uacfc", "\uad50\uc721\ud559\uacfc"],
-      "\uacbd\uc601\ub300\ud559": ["\uacbd\uc601\ud559\ubd80"],
-      "\ubb38\uacfc\ub300\ud559": ["\uc601\uc5b4\uc601\ubb38\ud559\uacfc", "\ub3c5\uc5b4\ub3c5\ubb38\ud559\uacfc", "\ubd88\uc5b4\ubd88\ubb38\ud559\uacfc", "\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc"],
-      "\ubc95\uacfc\ub300\ud559": ["\ubc95\ud559\ubd80"],
-      "\ub3c5\ub9bd\ud559\ubd80": ["\uacbd\uc81c\ud559\ubd80"],
-      "\ubbf8\uc220\ub300\ud559": ["\uc608\uc220\ud559\uacfc"],
-      "\uc11c\uc6b8\ucea0\ud37c\uc2a4 \uc735\ud569\uc804\uacf5": ["\uacf5\uc5f0\uc608\uc220\uc804\uacf5", "\ubb38\ud654\uc608\uc220\uacbd\uc601\uc804\uacf5", "\uac74\ucd95\uacf5\uac04\uc608\uc220\uc804\uacf5", "\uc0ac\ubb3c\uc778\ud130\ub137\uacf5\ud559\uc804\uacf5", "\uc9c0\ub2a5\u00b7\ub85c\ubd07\uacf5\ud559\uc804\uacf5", "\uc2a4\ub9c8\ud2b8\ub3c4\uc2dc\u00b7\ub370\uc774\ud130\uc0ac\uc774\uc5b8\uc2a4\uc804\uacf5", "\ub514\uc790\uc778\uc5d4\uc9c0\ub2c8\uc5b4\ub9c1\uc804\uacf5", "\ub370\uc774\ud130\uc0ac\uc774\uc5b8\uc2a4\uc804\uacf5", "\uc758\ub8cc\ud5ec\uc2a4\ucf00\uc5b4AI\uc804\uacf5", "\ud5ec\uc2a4\ucf00\uc5b4\uc11c\ube44\uc2a4\uc804\uacf5"]
-    },
-    "\uad6d\ubbfc\ub300\ud559\uad50": {
-      "\uae00\ub85c\ubc8c\uc778\ubb38/\uc0ac\ud68c/\ubc95\ud559/\uacbd\uc0c1": ["\ud55c\uad6d\uc5b4\ubb38\ud559\ubd80", "\uc601\uc5b4\uc601\ubb38\ud559\ubd80", "\uc911\uad6d\ud559\ubd80", "\ud55c\uad6d\uc5ed\uc0ac\ud559\uacfc", "\ud589\uc815\ud559\uacfc", "\uc815\uce58\uc678\uad50\ud559\uacfc", "\uc0ac\ud68c\ud559\uacfc", "\ubbf8\ub514\uc5b4\u00b7\uad11\uace0\ud559\ubd80", "\ub7ec\uc2dc\uc544\u00b7\uc720\ub77c\uc2dc\uc544\ud559\uacfc", "\uc77c\ubcf8\ud559\uacfc", "\uad50\uc721\ud559\uacfc", "\ubc95\ud559\ubd80", "\uacbd\uc81c\ud559\uacfc", "\uad6d\uc81c\ud1b5\uc0c1\ud559\uacfc"],
-      "\uacbd\uc601/AI\ube45\ub370\uc774\ud130": ["\uacbd\uc601\ud559\ubd80", "\uacbd\uc601\uc815\ubcf4\ud559\ubd80", "AI\ube45\ub370\uc774\ud130\uc735\ud569\uacbd\uc601\ud559\uacfc"],
-      "\uacf5\uacfc/\uc790\ub3d9\ucc28/\uc18c\ud504\ud2b8\uc6e8\uc5b4": ["\uae30\uacc4\uacf5\ud559\ubd80", "\uac74\uc124\uc2dc\uc2a4\ud15c\uacf5\ud559\ubd80", "\uc2e0\uc18c\uc7ac\uacf5\ud559\ubd80", "\uc804\uc790\uacf5\ud559\ubd80", "\uc790\ub3d9\ucc28\uacf5\ud559\uacfc", "\uc790\ub3d9\ucc28IT\uc735\ud569\ud559\uacfc", "\ubbf8\ub798\ubaa8\ube4c\ub9ac\ud2f0\ud559\uacfc", "\uc18c\ud504\ud2b8\uc6e8\uc5b4\ud559\ubd80", "\uc778\uacf5\uc9c0\ub2a5\ud559\ubd80"],
-      "\uacfc\ud559\uae30\uc220/\uac74\ucd95": ["\uc0b0\ub9bc\ud658\uacbd\uc2dc\uc2a4\ud15c\ud559\uacfc", "\uc784\uc0b0\uc0dd\uba85\uacf5\ud559\uacfc", "\ub098\ub178\uc804\uc790\ubb3c\ub9ac\ud559\uacfc", "\uc751\uc6a9\ud654\ud559\ubd80", "\uc2dd\ud488\uc601\uc591\ud559\uacfc", "\uc815\ubcf4\ubcf4\uc548\uc554\ud638\uc218\ud559\uacfc", "\ubc14\uc774\uc624\ubc1c\ud6a8\uc735\ud569\ud559\uacfc", "\uac74\ucd95\ud559\ubd80"],
-      "\uc870\ud615\ub300\ud559(\ub514\uc790\uc778)": ["\uacf5\uc5c5\ub514\uc790\uc778\ud559\uacfc", "\uc2dc\uac01\ub514\uc790\uc778\ud559\uacfc", "\uae08\uc18d\uacf5\uc608\ud559\uacfc", "\ub3c4\uc790\uacf5\uc608\ud559\uacfc", "\uc758\uc0c1\ub514\uc790\uc778\ud559\uacfc", "\uacf5\uac04\ub514\uc790\uc778\ud559\uacfc", "\uc601\uc0c1\ub514\uc790\uc778\ud559\uacfc", "\uc790\ub3d9\ucc28\u00b7\uc6b4\uc1a1\ub514\uc790\uc778\ud559\uacfc", "AI\ub514\uc790\uc778\ud559\uacfc"],
-      "\uc608\uc220/\uccb4\uc721": ["\uc74c\uc545\ud559\ubd80", "\ubbf8\uc220\ud559\ubd80", "\uacf5\uc5f0\uc608\uc220\ud559\ubd80", "\uc2a4\ud3ec\uce20\uad50\uc721\ud559\uacfc", "\uc2a4\ud3ec\uce20\uc0b0\uc5c5\ub808\uc800\ud559\uacfc", "\uc2a4\ud3ec\uce20\uac74\uac15\uc7ac\ud65c\ud559\uacfc"],
-      "\uc790\uc720\uc804\uacf5/\uc735\ud569": ["\ubbf8\ub798\uc735\ud569\ud559\ubd80", "\uc804\uacf5\uc790\uc728\uc120\ud0dd\uc81c(\uc790\uc720\uc804\uacf5)"]
-    },
-    "\uc22d\uc2e4\ub300\ud559\uad50": {
-      "\uc778\ubb38\ub300\ud559": ["\uae30\ub3c5\uad50\ud559\uacfc", "\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\uc601\uc5b4\uc601\ubb38\ud559\uacfc", "\ub3c5\uc5b4\ub3c5\ubb38\ud559\uacfc", "\ubd88\uc5b4\ubd88\ubb38\ud559\uacfc", "\uc911\uc5b4\uc911\ubb38\ud559\uacfc", "\uc77c\uc5b4\uc77c\ubb38\ud559\uacfc", "\ucca0\ud559\uacfc", "\uc0ac\ud559\uacfc", "\uc608\uc220\ucc3d\uc791\ud559\ubd80(\ubb38\uc608\ucc3d\uc791/\uc601\ud654\uc608\uc220)", "\uc2a4\ud3ec\uce20\ud559\ubd80"],
-      "\uc790\uc5f0\uacfc\ud559/\ubc95\ud559": ["\uc218\ud559\uacfc", "\ubb3c\ub9ac\ud559\uacfc", "\ud654\ud559\uacfc", "\uc815\ubcf4\ud1b5\uacc4\u00b7\ubcf4\ud5d8\uc218\ub9ac\ud559\uacfc", "\uc758\uc0dd\uba85\uc2dc\uc2a4\ud15c\ud559\ubd80", "\ubc95\ud559\uacfc", "\uad6d\uc81c\ubc95\ubb34\ud559\uacfc"],
-      "\uc0ac\ud68c\uacfc\ud559/\uacbd\uc81c\ud1b5\uc0c1": ["\uc0ac\ud68c\ubcf5\uc9c0\ud559\ubd80", "\ud589\uc815\ud559\ubd80", "\uc815\uce58\uc678\uad50\ud559\uacfc", "\uc815\ubcf4\uc0ac\ud68c\ud559\uacfc", "\uc5b8\ub860\ud64d\ubcf4\ud559\uacfc", "\ud3c9\uc0dd\uad50\uc721\ud559\uacfc", "\uacbd\uc81c\ud559\uacfc", "\uae00\ub85c\ubc8c\ud1b5\uc0c1\ud559\uacfc", "\uae08\uc735\uacbd\uc81c\ud559\uacfc", "\uad6d\uc81c\ubb34\uc5ed\ud559\uacfc"],
-      "\uacbd\uc601\ub300\ud559": ["\uacbd\uc601\ud559\ubd80", "\ud68c\uacc4\ud559\uacfc", "\ubca4\ucc98\uc911\uc18c\uae30\uc5c5\ud559\uacfc", "\uae08\uc735\ud559\ubd80"],
-      "\uacf5\uacfc\ub300\ud559": ["\ud654\ud559\uacf5\ud559\uacfc", "\uc2e0\uc18c\uc7ac\uacf5\ud559\uacfc", "\uc804\uae30\uacf5\ud559\ubd80", "\uae30\uacc4\uacf5\ud559\ubd80", "\uc0b0\uc5c5\u00b7\uc815\ubcf4\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc", "\uac74\ucd95\ud559\ubd80(\uac74\ucd95\ud559\u00b7\uac74\ucd95\uacf5\ud559/\uc2e4\ub0b4\uac74\ucd95)"],
-      "IT/AI\ub300\ud559": ["\ucef4\ud4e8\ud130\ud559\ubd80", "\uc804\uc790\uc815\ubcf4\uacf5\ud559\ubd80(\uc804\uc790\uacf5\ud559/IT\uc735\ud569)", "\uae00\ub85c\ubc8c\ubbf8\ub514\uc5b4\ud559\ubd80", "\ub514\uc9c0\ud138\ubbf8\ub514\uc5b4\ud559\uacfc", "AI\uc18c\ud504\ud2b8\uc6e8\uc5b4\ud559\ubd80(\uc18c\ud504\ud2b8\uc6e8\uc5b4/\uc815\ubcf4\ubcf4\ud638/\uc778\uacf5\uc9c0\ub2a5/AI\uc2dc\uc2a4\ud15c)", "\uc815\ubcf4\ubcf4\ud638\ud559\uacfc(\uacc4\uc57d)"],
-      "\uc790\uc720\uc804\uacf5/\uae30\ud0c0": ["\uc790\uc720\uc804\uacf5\ud559\ubd80(\uc778\ubb38)", "\uc790\uc720\uc804\uacf5\ud559\ubd80(\uc790\uc5f0)", "\ucc28\uc138\ub300\ubc18\ub3c4\uccb4\ud559\uacfc"]
-    },
-    "\uc138\uc885\ub300\ud559\uad50": {
-      "\uc778\ubb38/\uc0ac\ud68c/\uacbd\uc601": ["\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\uad6d\uc81c\ud559\ubd80(\uc601\uc5b4\ub370\uc774\ud130\uc735\ud569/\uad6d\uc81c\uc77c\ubcf8\ud559/\uc911\uad6d\ud1b5\uc0c1\ud559)", "\uc5ed\uc0ac\ud559\uacfc", "\uad50\uc721\ud559\uacfc", "\ud589\uc815\ud559\uacfc", "\ubbf8\ub514\uc5b4\ucee4\ubba4\ub2c8\ucf00\uc774\uc158\ud559\uacfc", "\ubc95\ud559\uacfc", "\uacbd\uc601\ud559\ubd80", "\uacbd\uc81c\ud559\uacfc"],
-      "\ud638\ud154\uad00\uad11\ub300\ud559": ["\ud638\ud154\uad00\uad11\uc678\uc2dd\uacbd\uc601\ud559\ubd80(\ud638\ud154\uad00\uad11/\uc678\uc2dd\uacbd\uc601)", "\ud638\ud154\uc678\uc2dd\uad00\uad11\ud504\ub79c\ucc28\uc774\uc988\uacbd\uc601\ud559\uacfc", "\uc870\ub9ac\uc11c\ube44\uc2a4\uacbd\uc601\ud559\uacfc"],
-      "\uc790\uc5f0\uacfc\ud559/\uc0dd\uba85": ["\uc218\ud559\ud1b5\uacc4\ud559\uacfc", "\ubb3c\ub9ac\ucc9c\ubb38\ud559\uacfc", "\ud654\ud559\uacfc", "\uc0dd\uba85\uc2dc\uc2a4\ud15c\ud559\ubd80(\uc2dd\ud488\uc0dd\uba85/\ubc14\uc774\uc624\uc735\ud569/\ubc14\uc774\uc624\uc0b0\uc5c5\uc790\uc6d0)", "\uc2a4\ub9c8\ud2b8\uc0dd\uba85\uc0b0\uc5c5\uc735\ud569\ud559\uacfc"],
-      "\uc778\uacf5\uc9c0\ub2a5\uc735\ud569\ub300\ud559": ["AI\uc735\ud569\uc804\uc790\uacf5\ud559\uacfc", "\ubc18\ub3c4\uccb4\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc", "\ucef4\ud4e8\ud130\uacf5\ud559\uacfc", "\uc815\ubcf4\ubcf4\ud638\ud559\uacfc", "\uc591\uc790\uc9c0\ub2a5\uc815\ubcf4\ud559\uacfc", "\uc778\uacf5\uc9c0\ub2a5\ub370\uc774\ud130\uc0ac\uc774\uc5b8\uc2a4\ud559\uacfc", "AI\ub85c\ubd07\ud559\uacfc", "\uc9c0\ub2a5\uc815\ubcf4\uc735\ud569\ud559\uacfc", "\ucf58\ud150\uce20\uc18c\ud504\ud2b8\uc6e8\uc5b4\ud559\uacfc"],
-      "\uc870\ud615/\uc608\uccb4\ub2a5": ["\ub514\uc790\uc778\uc774\ub178\ubca0\uc774\uc158\uc804\uacf5", "\ub9cc\ud654\uc560\ub2c8\uba54\uc774\uc158\ud14d\uc804\uacf5", "\ud68c\ud654\uacfc", "\ud328\uc158\ub514\uc790\uc778\ud559\uacfc", "\uc74c\uc545\uacfc", "\uccb4\uc721\ud559\uacfc", "\ubb34\uc6a9\uacfc", "\uc601\ud654\uc608\uc220\ud559\uacfc"],
-      "\uacf5\uacfc\ub300\ud559": ["\uac74\ucd95\uacf5\ud559\uacfc", "\uac74\ucd95\ud559\uacfc(5\ub144\uc81c)", "\uac74\uc124\ud658\uacbd\uacf5\ud559\uacfc", "\ud658\uacbd\uc735\ud569\uacf5\ud559\uacfc", "\uc5d0\ub108\uc9c0\uc790\uc6d0\uacf5\ud559\uacfc", "\uae30\uacc4\uacf5\ud559\uacfc", "\ub098\ub178\uc2e0\uc18c\uc7ac\uacf5\ud559\uacfc", "\uc591\uc790\uc6d0\uc790\ub825\uacf5\ud559\uacfc", "\uc6b0\uc8fc\ud56d\uacf5\uc2dc\uc2a4\ud15c\uacf5\ud559\ubd80(\uc6b0\uc8fc\ud56d\uacf5/\uc9c0\ub2a5\ud615\ub4dc\ub860/\ud56d\uacf5\uc2dc\uc2a4\ud15c)", "\uad6d\ubc29AI\uc735\ud569\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc"],
-      "\uc790\uc720\uc804\uacf5/\uacc4\uc57d": ["\uc790\uc720\uc804\uacf5\ud559\ubd80(\ub300\uc591\ud734\uba38\ub2c8\ud2f0\uce7c\ub9ac\uc9c0)", "\uc0ac\uc774\ubc84\uad6d\ubc29\ud559\uacfc(\uc721\uad70)", "\uad6d\ubc29AI\ub85c\ubd07\uc735\ud569\uacf5\ud559\uacfc(\ud574\ubcd1\ub300)"]
-    },
-    "\ub2e8\uad6d\ub300\ud559\uad50": {
-      "\uc8fd\uc804-\uad11\uc5ed/\uc778\ubb38/\uc0ac\ud68c": ["\uc778\ubb38\uacc4\uc5f4\uad11\uc5ed", "\uc0ac\ud68c\uacc4\uc5f4\uad11\uc5ed", "\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\uc0ac\ud559\uacfc", "\ucca0\ud559\uacfc", "\uc601\ubbf8\uc778\ubb38\ud559\uacfc", "\ubc95\ud559\uacfc", "\uc815\uce58\uc678\uad50\ud559\uacfc", "\ud589\uc815\ud559\uacfc", "\ub3c4\uc2dc\uacc4\ud68d\u00b7\ubd80\ub3d9\uc0b0\ud559\ubd80", "\ubbf8\ub514\uc5b4\ucee4\ubba4\ub2c8\ucf00\uc774\uc158\ud559\ubd80", "\uc0c1\ub2f4\ud559\uacfc", "\uacbd\uc81c\ud559\uacfc", "\ubb34\uc5ed\ud559\uacfc", "\uacbd\uc601\ud559\ubd80", "\uc0b0\uc5c5\uacbd\uc601\ud559\uacfc(\uc57c)"],
-      "\uc8fd\uc804-\uacf5\ud559/SW/AI": ["\uacf5\ud559\uacc4\uc5f4\uad11\uc5ed", "SW\uc735\ud569\uacc4\uc5f4\uad11\uc5ed", "\uc804\uc790\uc804\uae30\uacf5\ud559\ubd80", "\uc735\ud569\ubc18\ub3c4\uccb4\uacf5\ud559\uacfc", "\uace0\ubd84\uc790\uc2dc\uc2a4\ud15c\uacf5\ud559\ubd80(\uace0\ubd84\uc790/\uc735\ud569\uc18c\uc7ac)", "\uc778\ud504\ub77c\uac74\uc124\uacf5\ud559\uacfc", "\uae30\uacc4\uacf5\ud559\uacfc", "\ud654\ud559\uacf5\ud559\uacfc", "\uac74\ucd95\ud559\ubd80(\uac74\ucd95\uacf5\ud559/\uac74\ucd95\ud559(5\ub144))", "\uc18c\ud504\ud2b8\uc6e8\uc5b4\ud559\uacfc", "\ucef4\ud4e8\ud130\uacf5\ud559\uacfc", "\ud1b5\uacc4\ub370\uc774\ud130\uc0ac\uc774\uc5b8\uc2a4\ud559\uacfc", "\uc0ac\uc774\ubc84\ubcf4\uc548\ud559\uacfc", "\uc778\uacf5\uc9c0\ub2a5\ud559\uacfc"],
-      "\uc8fd\uc804-\uc0ac\ubc94/\uae30\ud0c0": ["\ud55c\ubb38\uad50\uc721\uacfc", "\ud2b9\uc218\uad50\uc721\uacfc", "\uc218\ud559\uad50\uc721\uacfc", "\uacfc\ud559\uad50\uc721\uacfc", "\uccb4\uc721\uad50\uc721\uacfc", "\uad6d\uc81c\uacbd\uc601\ud559\uacfc", "\ubaa8\ubc14\uc77c\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc"],
-      "\ucc9c\uc548-\uad11\uc5ed/\uc678\uad6d\uc5b4": ["\uc778\ubb38\uc0ac\ud68c\uacc4\uc5f4\uad11\uc5ed", "\uc544\uc2dc\uc544\uc911\ub3d9\ud559\ubd80(\uc911\uad6d/\uc77c\ubcf8/\ubabd\uace8/\uc911\ub3d9/\ubca0\ud2b8\ub0a8)", "\uc720\ub7fd\uc911\ub0a8\ubbf8\ud559\ubd80(\ub3c5\uc77c/\ud504\ub791\uc2a4/\uc2a4\ud398\uc778\uc911\ub0a8\ubbf8/\ub7ec\uc2dc\uc544/\ud3ec\ub974\ud22c\uac08\ube0c\ub77c\uc9c8)", "\uc601\uc5b4\uacfc", "\uae00\ub85c\ubc8c\ud55c\uad6d\uc5b4\uacfc"],
-      "\ucc9c\uc548-\uacf5\uacf5/\ubcf4\uac74": ["\uacf5\uacf5\uc815\ucc45\ud559\uacfc", "\uacf5\uacf5\uc815\ucc45\ud559\uacfc(\uc57c)", "\uc0ac\ud68c\ubcf5\uc9c0\ud559\uacfc", "\ud574\ubcd1\ub300\uad70\uc0ac\ud559\uacfc", "\uc2dd\ud488\uc790\uc6d0\uacbd\uc81c\ud559\uacfc", "\ubcf4\uac74\ud589\uc815\ud559\uacfc", "\uc2ec\ub9ac\ud559\uacfc", "\uc784\uc0c1\ubcd1\ub9ac\ud559\uacfc", "\ubb3c\ub9ac\uce58\ub8cc\ud559\uacfc", "\uce58\uc704\uc0dd\ud559\uacfc"],
-      "\ucc9c\uc548-\uc790\uc5f0/\ubc14\uc774\uc624": ["\uc790\uc5f0\uacf5\ud559\uacc4\uc5f4\uad11\uc5ed", "\uc218\ud559\uacfc", "\ubb3c\ub9ac\ud559\uacfc", "\ud654\ud559\uacfc", "\uc2dd\ud488\uc601\uc591\ud559\uacfc", "\uc2e0\uc18c\uc7ac\uacf5\ud559\uacfc", "\uc5d0\ub108\uc9c0\uacf5\ud559\uacfc", "\uacbd\uc601\uacf5\ud559\uacfc", "\uc81c\uc57d\uacf5\ud559\uacfc", "\uc0dd\uba85\uacf5\ud559\ubd80(\uc2dd\ub7c9\uc0dd\uba85/\ub3d9\ubb3c\uc0dd\uba85/\ud658\uacbd\uc6d0\uc608/\ub179\uc9c0\uc870\uacbd)", "\uc758\uc0dd\uba85\uacfc\ud559\ubd80(\uc758\uc0dd\uba85\uc2dc\uc2a4\ud15c/\uc0dd\uba85\uacfc\ud559/\ubbf8\uc0dd\ubb3c)", "\uc2dd\ud488\uacf5\ud559\uacfc", "\ucf54\uc2a4\uba54\ub514\uceec\uc18c\uc7ac\ud559\uacfc"],
-      "\ucc9c\uc548-\uc758\ud559/\uac04\ud638/\uc57d\ud559": ["\uac04\ud638\ud559\uacfc", "\uc758\uc608\uacfc", "\uce58\uc758\uc608\uacfc", "\uc57d\ud559\uacfc"],
-      "\ucc9c\uc548-\uc608\uc220/\uc2a4\ud3ec\uce20": ["\ubb38\uc608\ucc3d\uc791\uacfc", "\uc2a4\ud3ec\uce20\uacbd\uc601\ud559\uacfc", "\uad6d\uc81c\uc2a4\ud3ec\uce20\ud559\ubd80(\uc6b4\ub3d9\ucc98\ubc29\uc7ac\ud65c)"]
-    },
-    "\uc804\ubd81\ub300\ud559\uad50": {
-      "\uacf5\uacfc\ub300\ud559": ["\uac74\ucd95\uacf5\ud559", "\uace0\ubd84\uc790\u00b7\ub098\ub178\uacf5\ud559", "\uc720\uae30\uc18c\uc7ac\uc12c\uc720\uacf5\ud559", "\uae30\uacc4\uacf5\ud559", "\uae30\uacc4\uc124\uacc4\uacf5\ud559", "\ub098\ub178\ubc14\uc774\uc624\uae30\uacc4\uc2dc\uc2a4\ud15c\uacf5\ud559", "\uae30\uacc4\uc2dc\uc2a4\ud15c\uacf5\ud559", "\ub3c4\uc2dc\uacf5\ud559", "\ubc14\uc774\uc624\uba54\ub514\uceec\uacf5\ud559", "\uc0b0\uc5c5\uc815\ubcf4\uc2dc\uc2a4\ud15c\uacf5\ud559", "\uc18c\ud504\ud2b8\uc6e8\uc5b4\uacf5\ud559", "\uc2e0\uc18c\uc7ac\uacf5\ud559(\uae08\uc18d/\uc804\uc790\uc7ac\ub8cc)", "\uc735\ud569\uae30\uc220\uacf5\ud559(IT\uc735\ud569\uae30\uc804\uacf5\ud559/IT\uc751\uc6a9\uc2dc\uc2a4\ud15c\uacf5\ud559)", "\uc804\uae30\uacf5\ud559", "\ud1a0\ubaa9/\ud658\uacbd/\uc790\uc6d0\u00b7\uc5d0\ub108\uc9c0\uacf5\ud559\ubd80", "\ud654\ud559\uacf5\ud559\ubd80", "\uc804\uc790\uacf5\ud559\ubd80", "\ucef4\ud4e8\ud130\uc778\uacf5\uc9c0\ub2a5\ud559\ubd80", "\uc2e0\uc18c\uc7ac\uacf5\ud559\ubd80(\uc815\ubcf4\uc18c\uc7ac\uacf5\ud559)", "\uc591\uc790\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc", "\ud56d\uacf5\uc6b0\uc8fc\uacf5\ud559\uacfc"],
-      "\uc790\uc5f0\uacfc\ud559\ub300\ud559": ["\uacfc\ud559\ud559\uacfc", "\ubd84\uc790\uc0dd\ubb3c\ud559\uacfc", "\uc218\ud559\uacfc", "\uc0dd\uba85\uacfc\ud559\uacfc", "\uc9c0\uad6c\ud658\uacbd\uacfc\ud559\uacfc", "\ud654\ud559\uacfc", "\ubb3c\ub9ac\ud559\uacfc", "\ubc18\ub3c4\uccb4\uacfc\ud559\uae30\uc220\ud559\uacfc", "\ud1b5\uacc4\ud559\uacfc", "\uc2a4\ud3ec\uce20\uacfc\ud559\uacfc"],
-      "\ub18d\uc5c5\uc0dd\uba85\uacfc\ud559\ub300\ud559": ["\ub18d\uacbd\uc81c\uc720\ud1b5\ud559\ubd80", "\ub18d\uc0dd\ubb3c\ud559\uacfc(\uc2dd\ubb3c\uc758\ud559\uacfc)", "\ub3d9\ubb3c\uc0dd\uba85\uacf5\ud559\uacfc", "\ub3d9\ubb3c\uc790\uc6d0\uacfc\ud559\uacfc", "\ubaa9\uc7ac\uc751\uc6a9\uacfc\ud559\uacfc", "\uc0b0\ub9bc\ud658\uacbd\uacfc\ud559\uacfc", "\uc0dd\ubb3c\uc0b0\uc5c5\uae30\uacc4\uacf5\ud559\uacfc", "\uc0dd\ubb3c\ud658\uacbd\ud654\ud559\uacfc", "\uc2dd\ud488\uacf5\ud559\uacfc", "\uc6d0\uc608\ud559\uacfc", "\uc791\ubb3c\uc0dd\uba85\uacfc\ud559\uacfc", "\uc870\uacbd\ud559\uacfc", "\uc9c0\uc5ed\uac74\uc124\uacf5\ud559\uacfc", "\uc2a4\ub9c8\ud2b8\ud31c\ud559\uacfc"],
-      "\uacbd\uc0c1\ub300\ud559": ["\uacbd\uc601\ud559\uacfc", "\uacbd\uc81c\ud559\ubd80", "\ubb34\uc5ed\ud559\uacfc", "\ud68c\uacc4\ud559\uacfc"],
-      "\uc0ac\ud68c\uacfc\ud559\ub300\ud559": ["\uc0ac\ud68c\ubcf5\uc9c0\ud559\uacfc", "\uc0ac\ud68c\ud559\uacfc", "\ubbf8\ub514\uc5b4\ucee4\ubba4\ub2c8\ucf00\uc774\uc158\ud559\uacfc", "\uc2ec\ub9ac\ud559\uacfc", "\uc815\uce58\uc678\uad50\ud559\uacfc", "\ud589\uc815\ud559\uacfc", "\uacf5\uacf5\uc778\uc7ac\ud559\ubd80"],
-      "\uc778\ubb38\ub300\ud559": ["\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\uc601\uc5b4\uc601\ubb38\ud559\uacfc", "\ucca0\ud559\uacfc", "\uad6d\uc81c\ud559\ubd80", "\uace0\uace0\ubb38\ud654\uc778\ub958\ud559\uacfc", "\ubb38\ud5cc\uc815\ubcf4\ud559\uacfc", "\uc0ac\ud559\uacfc", "\ub3c5\uc77c\ud559\uacfc", "\uc2a4\ud398\uc778\u00b7\uc911\ub0a8\ubbf8\ud559\uacfc", "\uc77c\ubcf8\ud559\uacfc", "\uc911\uc5b4\uc911\ubb38\ud559\uacfc", "\ud504\ub791\uc2a4\u00b7\uc544\ud504\ub9ac\uce74\ud559\uacfc"],
-      "\uc758\uc57d\u00b7\ubcf4\uac74\u00b7\uac04\ud638\u00b7\uc218\uc758\uacc4\uc5f4": ["\uc758\uacfc\ub300\ud559(\uc758\uc608\uacfc)", "\uce58\uacfc\ub300\ud559(\uce58\uc758\uc608\uacfc)", "\uc218\uc758\uacfc\ub300\ud559(\uc218\uc758\uc608\uacfc)", "\uac04\ud638\ub300\ud559(\uac04\ud638\ud559\uacfc)", "\uc57d\ud559\ub300\ud559(\uc57d\ud559\uacfc)"],
-      "\uc0ac\ubc94\ub300\ud559": ["\uad6d\uc5b4\uad50\uc721\uacfc", "\uc0ac\ud68c\uacfc\uad50\uc721\ud559\ubd80(\uc5ed\uc0ac/\uc724\ub9ac/\uc77c\ubc18\uc0ac\ud68c/\uc9c0\ub9ac)", "\uad50\uc721\ud559\uacfc", "\ub3c5\uc5b4\uad50\uc721\uacfc", "\uc601\uc5b4\uad50\uc721\uacfc", "\uacfc\ud559\uad50\uc721\ud559\ubd80(\ubb3c\ub9ac/\uc0dd\ubb3c/\uc9c0\uad6c\uacfc\ud559/\ud654\ud559)", "\uc218\ud559\uad50\uc721\uacfc", "\uccb4\uc721\uad50\uc721\uacfc"],
-      "\uc0dd\ud65c\uacfc\ud559\ub300\ud559": ["\uc2dd\ud488\uc601\uc591\ud559\uacfc", "\uc544\ub3d9\ud559\uacfc", "\uc758\ub958\ud559\uacfc", "\uc8fc\uac70\ud658\uacbd\ud559\uacfc"],
-      "\ud658\uacbd\uc0dd\uba85\uc790\uc6d0\ub300\ud559": ["\uc0dd\uba85\uacf5\ud559\ubd80", "\uc0dd\ud0dc\uc870\uacbd\ub514\uc790\uc778\ud559\uacfc"],
-      "\ub300\ud559\ubcf8\ubd80 \uc9c1\uc18d \ubc0f \uc735\ud569\uc790\uc728\uc804\uacf5": ["\uad6d\uc81c\uc774\uacf5\ud559\ubd80", "\uc774\ucc28\uc804\uc9c0\uacf5\ud559\uacfc", "\ucca8\ub2e8\ubc29\uc704\uc0b0\uc5c5\ud559\uacfc", "\uc735\ud569\uc790\uc728\uc804\uacf5\ud559\ubd80 1(\uc804\uc8fc)", "\uc735\ud569\uc790\uc728\uc804\uacf5\ud559\ubd80 2(\uc775\uc0b0)"],
-      "\uc608\uc220\ub300\ud559": ["\ubb34\uc6a9\ud559\uacfc(\ubc1c\ub808/\ubb34\uc6a9\uad50\uc721\ud06c\ub9ac\uc5d0\uc774\ud130/\ud55c\uad6d\ubb34\uc6a9/\ucee8\ud15c\ud3ec\ub7ec\ub9ac\ubb34\uc6a9)", "\ubbf8\uc220\ud559\uacfc(\ud55c\uad6d\ud654/\ud68c\ud654/\uc870\uc18c/\uac00\uad6c\uc870\ud615\ub514\uc790\uc778)", "\uc0b0\uc5c5\ub514\uc790\uc778\ud559\uacfc", "\uc74c\uc545\uacfc", "\ud55c\uad6d\uc74c\uc545\ud559\uacfc"]
-    },
-    "\uc804\ub0a8\ub300\ud559\uad50": {
-      "\uc758\uc57d\u00b7\ubcf4\uac74\u00b7\uac04\ud638 \uacc4\uc5f4": ["\uac04\ud638\ub300\ud559(\uac04\ud638\ud559\uacfc)", "\uc758\uacfc\ub300\ud559(\uc758\ud559\uacfc)", "\uc218\uc758\uacfc\ub300\ud559(\uc218\uc758\uc608\uacfc)", "\uc57d\ud559\ub300\ud559(\uc57d\ud559\ubd80)", "\uce58\uc758\ud559\uc804\ubb38\ub300\ud559\uc6d0"],
-      "\uacbd\uc601\ub300\ud559": ["\uacbd\uc601\ud559\ubd80", "\uacbd\uc81c\ud559\ubd80"],
-      "\uacf5\uacfc\ub300\ud559": ["\uac74\ucd95\ud559\ubd80", "\uc0b0\uc5c5\uacf5\ud559\uacfc", "\uae30\uacc4\uacf5\ud559\ubd80", "\uc804\uc790\ucef4\ud4e8\ud130\uacf5\ud559\ubd80", "\ud1a0\ubaa9\uacf5\ud559\uacfc", "\uc804\uae30\uacf5\ud559\uacfc", "\ud654\ud559\uacf5\ud559\ubd80", "\uc2e0\uc18c\uc7ac\uacf5\ud559\ubd80", "\uc5d0\ub108\uc9c0\uc790\uc6d0\uacf5\ud559\uacfc", "\uace0\ubd84\uc790\uc735\ud569\uc18c\uc7ac\uacf5\ud559\ubd80", "\ud658\uacbd\uc5d0\ub108\uc9c0\uacf5\ud559\uacfc", "\uc0dd\ubb3c\uacf5\ud559\uacfc"],
-      "\ub18d\uc5c5\uc0dd\uba85\uacfc\ud559\ub300\ud559": ["\uc751\uc6a9\uc2dd\ubb3c\ud559\uacfc", "\uc6d0\uc608\uc0dd\uba85\ud559\uacfc", "\uc751\uc6a9\uc0dd\ubb3c\ud559\uacfc", "\uc0b0\ub9bc\uc790\uc6d0\ud559\uacfc", "\uc784\uc0b0\uacf5\ud559\uacfc", "\ub18d\uc0dd\uba85\ud654\ud559\uacfc", "\uc2dd\ud488\uacf5\ud559\uacfc", "\ubd84\uc790\uc0dd\uba85\ud559\uacfc", "\ub3d9\ubb3c\uc790\uc6d0\ud559\uacfc", "\ubc14\uc774\uc624\uc5d0\ub108\uc9c0\ud559\uacfc", "\uc870\uacbd\ud559\uacfc", "\uc9c0\uc5ed\u00b7\ubc14\uc774\uc624\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc", "\uc735\ud569\ubc14\uc774\uc624\uc2dc\uc2a4\ud15c\uae30\uacc4\uacf5\ud559\uacfc", "\ub18d\uc5c5\uacbd\uc81c\ud559\uacfc"],
-      "\uc0ac\ud68c\uacfc\ud559\ub300\ud559": ["\uc815\uce58\uc678\uad50\ud559\uacfc", "\ud589\uc815\ud559\uacfc", "\uc2ec\ub9ac\ud559\uacfc", "\uc0ac\ud68c\ud559\uacfc", "\ubb38\ud5cc\uc815\ubcf4\ud559\uacfc", "\ubbf8\ub514\uc5b4\ucee4\ubba4\ub2c8\ucf00\uc774\uc158\ud559\uacfc", "\uc9c0\ub9ac\ud559\uacfc", "\ubb38\ud654\uc778\ub958\uace0\uace0\ud559\uacfc"],
-      "\uc0ac\ubc94\ub300\ud559": ["\uad6d\uc5b4\uad50\uc721\uacfc", "\uc601\uc5b4\uad50\uc721\uacfc", "\uc5ed\uc0ac\uad50\uc721\uacfc", "\uc9c0\ub9ac\uad50\uc721\uacfc", "\uc724\ub9ac\uad50\uc721\uacfc", "\uc218\ud559\uad50\uc721\uacfc", "\ubb3c\ub9ac\uad50\uc721\uacfc", "\ud654\ud559\uad50\uc721\uacfc", "\uc0dd\ubb3c\uad50\uc721\uacfc", "\uc9c0\uad6c\uacfc\ud559\uad50\uc721\uacfc", "\uad50\uc721\ud559\uacfc", "\uc720\uc544\uad50\uc721\uacfc", "\uac00\uc815\uad50\uc721\uacfc", "\ud2b9\uc218\uad50\uc721\ud559\ubd80"],
-      "\uc778\ubb38\ub300\ud559": ["\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\uc601\uc5b4\uc601\ubb38\ud559\uacfc", "\uc0ac\ud559\uacfc", "\ucca0\ud559\uacfc", "\uc5b4\ubb38\uacc4\uc5f4(\ub3c5\uc5b4/\ubd88\uc5b4/\uc911\uc5b4/\uc77c\uc5b4 \ub4f1)"],
-      "\uc790\uc5f0\uacfc\ud559\ub300\ud559": ["\uc218\ud559\uacfc", "\ud1b5\uacc4\ud559\uacfc", "\ubb3c\ub9ac\ud559\uacfc", "\uc0dd\ubb3c\ud559\uacfc", "\uc0dd\uba85\uacfc\ud559\uae30\uc220\ud559\ubd80", "\ud654\ud559\uacfc", "\uc9c0\uad6c\ud658\uacbd\uacfc\ud559\ubd80"],
-      "\uc0dd\ud65c\uacfc\ud559\ub300\ud559": ["\uc0dd\ud65c\ubcf5\uc9c0\ud559\uacfc", "\uc2dd\ud488\uc601\uc591\uacfc\ud559\ubd80", "\uc758\ub958\ud559\uacfc"],
-      "AI\uc735\ud569\ub300\ud559": ["\uc778\uacf5\uc9c0\ub2a5\ud559\ubd80", "\ube45\ub370\uc774\ud130\uc735\ud569\ud559\uacfc", "\ubbf8\ub798\ubaa8\ube4c\ub9ac\ud2f0\ud559\uacfc"],
-      "\uad11\uc8fc \uc9c1\ud560/\uc608\uc220\ub300\ud559": ["\uc790\uc728\uc804\uacf5\ud559\ubd80(4\ub144)", "\uc790\uc728\uc804\uacf5(1\ub144)", "\ubbf8\uc220\ud559\uacfc", "\ub514\uc790\uc778\ud559\uacfc", "\uc74c\uc545\ud559\uacfc", "\uad6d\uc545\ud559\uacfc"],
-      "\uc5ec\uc218-\uacf5\ud559\ub300\ud559": ["\uacf5\ud559\uacc4\uc5f4", "\uac74\ucd95\ub514\uc790\uc778\ud559\uacfc", "\uc758\uacf5\ud559\ubd80", "\uc11d\uc720\ud654\ud559\uc18c\uc7ac\uacf5\ud559\uacfc"],
-      "\uc5ec\uc218-\ubb38\ud654\uc0ac\ud68c\uacfc\ud559\ub300\ud559": ["\uae00\ub85c\ubc8c\ube44\uc988\ub2c8\uc2a4\ud559\ubd80", "\ubb3c\ub958\uad50\ud1b5\ud559\uacfc", "\ubb38\ud654\ucf58\ud150\uce20\ud559\ubd80", "\ubb38\ud654\uad00\uad11\uacbd\uc601\ud559\uacfc", "\uad6d\uc81c\ud559\ubd80"],
-      "\uc5ec\uc218-\uc218\uc0b0\ud574\uc591/\uc9c1\ud560": ["\ud574\uc591\uc218\uc0b0\uad11\uc5ed", "\uae30\uad00\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc", "\uc870\uc120\ud574\uc591\uacf5\ud559\uacfc", "\uc218\uc0b0\uc0dd\uba85\uc758\ud559\uacfc", "\uc2a4\ub9c8\ud2b8\uc218\uc0b0\uc790\uc6d0\uad00\ub9ac\ud559\uacfc", "\ucc3d\uc758\uc735\ud569\ud559\ubd80"]
-    },
-    "\ucda9\ub0a8\ub300\ud559\uad50": {
-      "\uc778\ubb38\ub300\ud559": ["\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\uc601\uc5b4\uc601\ubb38\ud559\uacfc", "\ub3c5\uc5b4\ub3c5\ubb38\ud559\uacfc", "\ubd88\uc5b4\ubd88\ubb38\ud559\uacfc", "\uc911\uc5b4\uc911\ubb38\ud559\uacfc", "\uc77c\uc5b4\uc77c\ubb38\ud559\uacfc", "\ud55c\ubb38\ud559\uacfc", "\uc5b8\uc5b4\ud559\uacfc", "\uad6d\uc0ac\ud559\uacfc", "\uc0ac\ud559\uacfc", "\uace0\uace0\ud559\uacfc", "\ucca0\ud559\uacfc"],
-      "\uc0ac\ud68c\uacfc\ud559\ub300\ud559": ["\uc0ac\ud68c\ud559\uacfc", "\ubb38\ud5cc\uc815\ubcf4\ud559\uacfc", "\uc2ec\ub9ac\ud559\uacfc", "\uc5b8\ub860\uc815\ubcf4\ud559\uacfc", "\uc0ac\ud68c\ubcf5\uc9c0\ud559\uacfc", "\uc815\uce58\uc678\uad50\ud559\uacfc", "\ud589\uc815\ud559\ubd80", "\ub3c4\uc2dc\u00b7\uc790\uce58\uc735\ud569\ud559\uacfc"],
-      "\uacbd\uc0c1\ub300\ud559": ["\uacbd\uc81c\ud559\uacfc", "\uacbd\uc601\ud559\ubd80", "\ubb34\uc5ed\ud559\uacfc"],
-      "\uc790\uc5f0\uacfc\ud559\ub300\ud559": ["\uc218\ud559\uacfc", "\uc815\ubcf4\ud1b5\uacc4\ud559\uacfc", "\ubb3c\ub9ac\ud559\uacfc", "\ucc9c\ubb38\uc6b0\uc8fc\uacfc\ud559\uacfc", "\ud654\ud559\uacfc", "\uc0dd\ud654\ud559\uacfc", "\uc9c0\uc9c8\ud658\uacbd\uacfc\ud559\uacfc", "\ud574\uc591\ud658\uacbd\uacfc\ud559\uacfc", "\ubc18\ub3c4\uccb4\uc735\ud569\ud559\uacfc", "\uc2a4\ud3ec\uce20\uacfc\ud559\uacfc", "\ubb34\uc6a9\ud559\uacfc"],
-      "\uacf5\uacfc\ub300\ud559": ["\uac74\ucd95\ud559\uacfc(5\ub144\uc81c)", "\uc2a4\ub9c8\ud2b8\uc2dc\ud2f0\uac74\ucd95\uacf5\ud559\uacfc", "\ud1a0\ubaa9\uacf5\ud559\uacfc", "\ud658\uacbd\uacf5\ud559\uacfc", "\uae30\uacc4\uacf5\ud559\ubd80", "\uba54\uce74\ud2b8\ub85c\ub2c9\uc2a4\uacf5\ud559\uacfc", "\ud56d\uacf5\uc6b0\uc8fc\uacf5\ud559\uacfc", "\uc804\uae30\uacf5\ud559\uacfc", "\uc804\uc790\uacf5\ud559\uacfc", "\uc815\ubcf4\ud1b5\uc2e0\uc735\ud569\ud559\ubd80", "\ucef4\ud4e8\ud130\uc778\uacf5\uc9c0\ub2a5\ud559\ubd80", "\uc2e0\uc18c\uc7ac\uacf5\ud559\uacfc", "\uc720\uae30\uc7ac\ub8cc\uacf5\ud559\uacfc", "\uc751\uc6a9\ud654\ud559\uacf5\ud559\uacfc", "\uc790\uc728\uc6b4\ud56d\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc", "\uc5d0\ub108\uc9c0\uacf5\ud559\uacfc"],
-      "\ub18d\uc5c5\uc0dd\uba85\uacfc\ud559\ub300\ud559": ["\ub18d\uc5c5\uacbd\uc81c\ud559\uacfc", "\uc2dd\ubb3c\uc790\uc6d0\ud559\uacfc", "\uc6d0\uc608\ud559\uacfc", "\uc0b0\ub9bc\ud658\uacbd\uc790\uc6d0\ud559\uacfc", "\ud658\uacbd\uc18c\uc7ac\uacf5\ud559\uacfc", "\ub3d9\ubb3c\uc790\uc6d0\uc0dd\uba85\uacfc\ud559\uacfc", "\ub3d9\ubb3c\ubc14\uc774\uc624\uc2dc\uc2a4\ud15c\uacfc\ud559\uacfc", "\uc751\uc6a9\uc0dd\ubb3c\ud559\uacfc", "\uc0dd\ubb3c\ud658\uacbd\ud654\ud559\uacfc", "\uc2dd\ud488\uacf5\ud559\uacfc", "\uc9c0\uc5ed\ud658\uacbd\ud1a0\ubaa9\ud559\uacfc", "\uc2a4\ub9c8\ud2b8\ub18d\uc5c5\uc2dc\uc2a4\ud15c\uae30\uacc4\uacf5\ud559\uacfc", "\ub18d\uc0dd\uba85\uc735\ud569\ud559\ubd80"],
-      "\uc0dd\uba85\uc2dc\uc2a4\ud15c\uacfc\ud559\ub300\ud559": ["\uc0dd\ubb3c\uacfc\ud559\uacfc", "\ubbf8\uc0dd\ubb3c\u00b7\ubd84\uc790\uc0dd\uba85\uacfc\ud559\uacfc", "\uc0dd\uba85\uc815\ubcf4\uc735\ud569\ud559\uacfc"],
-      "\uc758\uc57d\u00b7\uac04\ud638\u00b7\uc218\uc758\uacc4\uc5f4": ["\uc758\uc608\uacfc/\uc758\ud559\uacfc", "\uc218\uc758\uc608\uacfc/\uc218\uc758\ud559\uacfc", "\uc57d\ud559\uacfc", "\uac04\ud638\ud559\uacfc"],
-      "\uc0dd\ud65c\uacfc\ud559\ub300\ud559": ["\uc758\ub958\ud559\uacfc", "\uc2dd\ud488\uc601\uc591\ud559\uacfc", "\uc18c\ube44\uc790\ud559\uacfc"],
-      "\uc0ac\ubc94\ub300\ud559": ["\uad6d\uc5b4\uad50\uc721\uacfc", "\uc601\uc5b4\uad50\uc721\uacfc", "\uc218\ud559\uad50\uc721\uacfc", "\uad50\uc721\ud559\uacfc", "\uccb4\uc721\uad50\uc721\uacfc", "\uae30\uc220\uad50\uc721\uacfc", "\uac74\uc124\uacf5\ud559\uad50\uc721\uacfc", "\uae30\uacc4\uacf5\ud559\uad50\uc721\uacfc", "\uc804\uae30\u00b7\uc804\uc790\u00b7\ud1b5\uc2e0\uacf5\ud559\uad50\uc721\uacfc", "\ud654\ud559\uacf5\ud559\uad50\uc721\uacfc"],
-      "\uc608\uc220\ub300\ud559": ["\uc74c\uc545\uacfc", "\uad00\ud604\uc545\uacfc", "\ud68c\ud654\uacfc", "\uc870\uc18c\uacfc", "\ub514\uc790\uc778\ucc3d\uc758\ud559\uacfc"],
-      "\ud2b9\uc218 \ubc0f \uc735\ud569\ud559\ubd80": ["\uc9c0\uc2dd\uc735\ud569\ud559\ubd80(\ubb38\ud654\uc640\uc0ac\ud68c\uc735\ud569/\uacf5\uacf5\uc548\uc804\uc735\ud569/\ub9ac\ub354\uc2ed\uacfc\uc870\uc9c1\uacfc\ud559)", "\uad6d\uc81c\ud559\ubd80", "\uad6d\uac00\uc548\ubcf4\uc735\ud569\ud559\ubd80(\uad6d\ud1a0\uc548\ubcf4\ud559/\ud574\uc591\uc548\ubcf4\ud559)", "\ucc3d\uc758\uc735\ud569\ub300\ud559(\uc790\uc728\uc804\uacf5\uc735\ud569/\uc778\ubb38\uc0ac\ud68c\uc735\ud569/\uc790\uc5f0\uacfc\ud559\uc735\ud569/\uacf5\ud559\uc735\ud569)"]
-    },
-    "\ucda9\ubd81\ub300\ud559\uad50": {
-      "\uc778\ubb38\ub300\ud559": ["\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\uc911\uc5b4\uc911\ubb38\ud559\uacfc", "\uc601\uc5b4\uc601\ubb38\ud559\uacfc", "\ub3c5\uc77c\uc5b8\uc5b4\ubb38\ud654\ud559\uacfc", "\ud504\ub791\uc2a4\uc5b8\uc5b4\ubb38\ud654\ud559\uacfc", "\ub7ec\uc2dc\uc544\uc5b8\uc5b4\ubb38\ud654\ud559\uacfc", "\ucca0\ud559\uacfc", "\uc0ac\ud559\uacfc", "\uace0\uace0\ubbf8\uc220\uc0ac\ud559\uacfc", "\uc778\ubb38\ud559\uc790\uc728\uc804\uacf5\ud559\ubd80"],
-      "\uc0ac\ud68c\uacfc\ud559\ub300\ud559": ["\uc0ac\ud68c\ud559\uacfc", "\ud589\uc815\ud559\uacfc", "\uc815\uce58\uc678\uad50\ud559\uacfc", "\uc2ec\ub9ac\ud559\uacfc", "\uacbd\uc81c\ud559\uacfc", "\uc0ac\ud68c\uacfc\ud559\uc790\uc728\uc804\uacf5\ud559\ubd80"],
-      "\uc790\uc5f0\uacfc\ud559\ub300\ud559": ["\uc218\ud559\uacfc", "\uc815\ubcf4\ud1b5\uacc4\ud559\uacfc", "\ubb3c\ub9ac\ud559\uacfc", "\ud654\ud559\uacfc", "\uc0dd\ubb3c\ud559\uacfc", "\ubbf8\uc0dd\ubb3c\ud559\uacfc", "\uc0dd\ud654\ud559\uacfc", "\ucc9c\ubb38\uc6b0\uc8fc\ud559\uacfc", "\uc9c0\uad6c\ud658\uacbd\uacfc\ud559\uacfc", "\uc790\uc5f0\uacfc\ud559\uc790\uc728\uc804\uacf5\ud559\ubd80"],
-      "\uacbd\uc601\ub300\ud559": ["\uacbd\uc601\ud559\ubd80", "\uad6d\uc81c\uacbd\uc601\ud559\uacfc", "\uacbd\uc601\uc815\ubcf4\ud559\uacfc", "\uacbd\uc601\ud559\uc790\uc728\uc804\uacf5\ud559\ubd80"],
-      "\uacf5\uacfc\ub300\ud559": ["\ud1a0\ubaa9\uacf5\ud559\ubd80", "\uae30\uacc4\uacf5\ud559\ubd80", "\ud654\ud559\uacf5\ud559\uacfc", "\uc2e0\uc18c\uc7ac\uacf5\ud559\uacfc", "\uac74\ucd95\uacf5\ud559\uacfc", "\uc548\uc804\uacf5\ud559\uacfc", "\ud658\uacbd\uacf5\ud559\uacfc", "\uacf5\uc5c5\ud654\ud559\uacfc", "\ub3c4\uc2dc\uacf5\ud559\uacfc", "\uac74\ucd95\ud559\uacfc", "\uacf5\ud559\uc790\uc728\uc804\uacf5\ud559\ubd80"],
-      "\uc804\uc790\uc815\ubcf4\ub300\ud559": ["\uc804\uae30\uacf5\ud559\ubd80", "\uc804\uc790\uacf5\ud559\uacfc", "\ubc18\ub3c4\uccb4\uacf5\ud559\ubd80", "\uc815\ubcf4\ud1b5\uc2e0\uacf5\ud559\ubd80", "\ucef4\ud4e8\ud130\uacf5\ud559\uacfc", "\uc18c\ud504\ud2b8\uc6e8\uc5b4\ud559\ubd80", "\uc9c0\ub2a5\ub85c\ubd07\uacf5\ud559\uacfc", "\uc804\uc790\uc815\ubcf4\uc790\uc728\uc804\uacf5\ud559\ubd80"],
-      "\ub18d\uc5c5\uc0dd\uba85\ud658\uacbd\ub300\ud559": ["\ub18d\uc5c5\uacbd\uc81c\ud559\uacfc", "\uc2dd\ubb3c\uc790\uc6d0\ud559\uacfc", "\ucd95\uc0b0\ud559\uacfc", "\uc0b0\ub9bc\ud559\uacfc", "\uc9c0\uc5ed\uac74\uc124\uacf5\ud559\uacfc", "\ud658\uacbd\uc0dd\uba85\ud654\ud559\uacfc", "\ud2b9\uc6a9\uc2dd\ubb3c\ud559\uacfc", "\uc6d0\uc608\uacfc\ud559\uacfc", "\ubc14\uc774\uc624\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc", "\uc2dd\ubb3c\uc758\ud559\uacfc", "\uc2dd\ud488\uc0dd\uba85\uacf5\ud559\uacfc", "\ubaa9\uc7ac\u2027\uc885\uc774\uacfc\ud559\uacfc", "\ub18d\uc5c5\uc0dd\uba85\ud658\uacbd\uc790\uc728\uc804\uacf5\ud559\ubd80"],
-      "\uc0ac\ubc94\ub300\ud559": ["\uad6d\uc5b4\uad50\uc721\uacfc", "\uc601\uc5b4\uad50\uc721\uacfc", "\uc5ed\uc0ac\uad50\uc721\uacfc", "\uc9c0\ub9ac\uad50\uc721\uacfc", "\uc0ac\ud68c\uad50\uc721\uacfc", "\uc724\ub9ac\uad50\uc721\uacfc", "\uad50\uc721\ud559\uacfc", "\uc218\ud559\uad50\uc721\uacfc", "\ubb3c\ub9ac\uad50\uc721\uacfc", "\ud654\ud559\uad50\uc721\uacfc", "\uc0dd\ubb3c\uad50\uc721\uacfc", "\uc9c0\uad6c\uacfc\ud559\uad50\uc721\uacfc", "\uccb4\uc721\uad50\uc721\uacfc"],
-      "\uc0dd\ud65c\uacfc\ud559\ub300\ud559": ["\uc2dd\ud488\uc601\uc591\ud559\uacfc", "\uc758\ub958\ud559\uacfc", "\uc8fc\uac70\ud658\uacbd\ud559\uacfc", "\uc544\ub3d9\ubcf5\uc9c0\ud559\uacfc", "\uc18c\ube44\uc790\ud559\uacfc", "\uc0dd\ud65c\uacfc\ud559\uc790\uc728\uc804\uacf5\ud559\ubd80"],
-      "\uc758\uc57d/\ubcf4\uac74/\uac04\ud638/\uc218\uc758\uacc4\uc5f4": ["\uc758\uacfc\ub300\ud559(\uc758\uc608\uacfc)", "\uc57d\ud559\ub300\ud559(\uc57d\ud559\uacfc)", "\uc57d\ud559\ub300\ud559(\uc81c\uc57d\ud559\uacfc)", "\uc218\uc758\uacfc\ub300\ud559(\uc218\uc758\uc608\uacfc)", "\uac04\ud638\ub300\ud559(\uac04\ud638\ud559\uacfc)"],
-      "\ucc3d\uc758\uc735\ud569\ub300\ud559 \ubc0f \uc9c1\ud560\ud559\ubd80": ["\uc778\ubb38\uc0ac\ud68c\uc790\uc728\uc804\uacf5\uacc4\uc5f4", "\uc790\uc5f0\uacfc\ud559\uc790\uc728\uc804\uacf5\uacc4\uc5f4", "\ubc14\uc774\uc624\ud5ec\uc2a4\ud559\ubd80"],
-      "\uc608\uc220\ud559\uacfc\uad70": ["\ubbf8\uc220\ud559\uacfc(\ub3d9\uc591\ud654/\uc11c\uc591\ud654/\uc870\uc18c)", "\ub514\uc790\uc778\ud559\uacfc"]
-    },
-    "\uacbd\ubd81\ub300\ud559\uad50": {
-      "\uc778\ubb38\u00b7\uc0ac\ud68c\u00b7\uacbd\uc0c1 \uacc4\uc5f4 (\ubb38\uacfc \uc131\ud5a5)": ["\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\uc601\uc5b4\uc601\ubb38\ud559\uacfc", "\ub3c5\uc5b4\ub3c5\ubb38\ud559\uacfc", "\ubd88\uc5b4\ubd88\ubb38\ud559\uacfc", "\uc911\uc5b4\uc911\ubb38\ud559\uacfc", "\uc77c\uc5b4\uc77c\ubb38\ud559\uacfc", "\uc0ac\ud559\uacfc", "\ucca0\ud559\uacfc", "\uace0\uace0\uc778\ub958\ud559\uacfc", "\ub178\uc5b4\ub178\ubb38\ud559\uacfc", "\ud55c\ubb38\ud559\uacfc", "\uc815\uce58\uc678\uad50\ud559\uacfc", "\uc0ac\ud68c\ud559\uacfc", "\ubbf8\ub514\uc5b4\ucee4\ubba4\ub2c8\ucf00\uc774\uc158\ud559\uacfc", "\ubb38\ud5cc\uc815\ubcf4\ud559\uacfc", "\uc0ac\ud68c\ubcf5\uc9c0\ud559\ubd80", "\uc9c0\ub9ac\ud559\uacfc", "\uc2ec\ub9ac\ud559\uacfc", "\uacbd\uc81c\ud1b5\uc0c1\ud559\ubd80", "\uacbd\uc601\ud559\ubd80", "\ud589\uc815\ud559\ubd80"],
-      "\uc790\uc5f0\uacfc\ud559\u00b7\uacf5\ud559\u00b7IT \uacc4\uc5f4 (\uc774\uacfc \uc131\ud5a5)": ["\uc218\ud559\uacfc", "\ubb3c\ub9ac\ud559\uacfc", "\ud654\ud559\uacfc", "\uc9c0\uad6c\uc2dc\uc2a4\ud15c\uacfc\ud559\ubd80", "\uc0dd\uba85\uacfc\ud559\ubd80", "\uc0dd\ubb3c\ud559\uacfc", "\ud1b5\uacc4\ud559\uacfc", "\uae30\uacc4\uacf5\ud559\ubd80", "\uc2e0\uc18c\uc7ac\uacf5\ud559\uacfc", "\uae08\uc18d\uc7ac\ub8cc\uacf5\ud559\uacfc", "\uac74\ucd95\ud559\ubd80(\uac74\ucd95\uacf5\ud559\uc804\uacf5)", "\ud1a0\ubaa9\uacf5\ud559\uacfc", "\uc751\uc6a9\ud654\ud559\uacf5\ud559\ubd80", "\uace0\ubd84\uc790\uacf5\ud559\uacfc", "\uc12c\uc720\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc", "\ud658\uacbd\uacf5\ud559\uacfc", "\uc5d0\ub108\uc9c0\uacf5\ud559\ubd80", "\uac74\ucd95\ud559\ubd80(\uac74\ucd95\ud559\uc804\uacf5 - 5\ub144\uc81c)", "\uc804\uc790\uacf5\ud559\ubd80", "\ucef4\ud4e8\ud130\ud559\ubd80(\uc804 \uc804\uacf5)", "\uc804\uae30\uacf5\ud559\uacfc", "\uc804\uc790\uacf5\ud559\ubd80(\ubaa8\ubc14\uc77c\uacf5\ud559\uc804\uacf5)", "\uac74\uc124\ubc29\uc7ac\uacf5\ud559\uacfc", "\ud658\uacbd\uc548\uc804\uacf5\ud559\uacfc", "\uc815\ubc00\uae30\uacc4\uacf5\ud559\uacfc", "\uc790\ub3d9\ucc28\uacf5\ud559\uacfc", "\uc18c\ud504\ud2b8\uc6e8\uc5b4\ud559\uacfc", "\ub098\ub178\uc2e0\uc18c\uc7ac\uacf5\ud559\uacfc", "\uc5d0\ub108\uc9c0\ud654\ud559\uacf5\ud559\uacfc", "\uc12c\uc720\ud328\uc158\ub514\uc790\uc778\ud559\ubd80(\uc12c\uc720\uacf5\ud559\uc804\uacf5)", "\uc704\uce58\uc815\ubcf4\uc2dc\uc2a4\ud15c\ud559\uacfc", "\uc2a4\ub9c8\ud2b8\ud50c\ub79c\ud2b8\uacf5\ud559\uacfc", "\uc2dd\ud488\uc678\uc2dd\uc0b0\uc5c5\ud559\uacfc", "\uce58\uc704\uc0dd\ud559\uacfc", "\uc12c\uc720\ud328\uc158\ub514\uc790\uc778\ud559\ubd80(\ud328\uc158\ub514\uc790\uc778\uc804\uacf5)"],
-      "\ub18d\uc5c5\uc0dd\uba85\u00b7\uc0dd\ud0dc\ud658\uacbd \uacc4\uc5f4": ["\uc751\uc6a9\uc0dd\uba85\uacfc\ud559\ubd80", "\uc2dd\ud488\uacf5\ud559\ubd80", "\ubc14\uc774\uc624\uc12c\uc720\uc18c\uc7ac\ud559\uacfc", "\ub18d\uc5c5\ud1a0\ubaa9\uacf5\ud559\uacfc", "\uc2a4\ub9c8\ud2b8\uc0dd\ubb3c\uc0b0\uc5c5\uae30\uacc4\uacf5\ud559\uacfc", "\uc2dd\ubb3c\uc758\ud559\uacfc", "\uc6d0\uc608\uacfc\ud559\uacfc", "\uc0b0\ub9bc\uacfc\ud559\u00b7\uc870\uacbd\ud559\ubd80", "\uc2dd\ud488\uc790\uc6d0\uacbd\uc81c\ud559\uacfc", "\ub18d\uc0b0\uc5c5\ud559\uacfc", "\uc0b0\ub9bc\uc0dd\ud0dc\ubcf4\ud638\ud559\uacfc", "\uc2dd\ubb3c\uc790\uc6d0\ud559\uacfc", "\uace4\ucda9\uc0dd\uba85\uacfc\ud559\uacfc", "\ub3d9\ubb3c\uc0dd\uba85\uacf5\ud559\uacfc", "\ub9d0/\ud2b9\uc218\ub3d9\ubb3c\ud559\uacfc", "\ucd95\uc0b0\ud559\uacfc", "\uad00\uad11\ud559\uacfc"],
-      "\uc758\uc57d\u00b7\ubcf4\uac74\u00b7\uc0dd\ud65c\uacfc\ud559 \uacc4\uc5f4": ["\uc758\uacfc\ub300\ud559 (\uc758\uc608\uacfc)", "\uce58\uacfc\ub300\ud559 (\uce58\uc758\uc608\uacfc)", "\uc218\uc758\uacfc\ub300\ud559 (\uc218\uc758\uc608\uacfc)", "\uc57d\ud559\ub300\ud559 (\uc57d\ud559\uacfc)", "\uac04\ud638\ub300\ud559 (\uac04\ud638\ud559\uacfc)", "\uc2dd\ud488\uc601\uc591\ud559\uacfc", "\uc758\ub958\ud559\uacfc", "\uc544\ub3d9\ud559\ubd80"],
-      "\uc0ac\ubc94\ub300\ud559 (\uad50\uc721 \uacc4\uc5f4)": ["\uad6d\uc5b4\uad50\uc721\uacfc", "\uc601\uc5b4\uad50\uc721\uacfc", "\ub3c5\uc5b4\uad50\uc721\uc804\uacf5", "\uc5ed\uc0ac\uad50\uc721\uacfc", "\uc9c0\ub9ac\uad50\uc721\uacfc", "\uc77c\ubc18\uc0ac\ud68c\uad50\uc721\uacfc", "\uc724\ub9ac\uad50\uc721\uacfc", "\uc218\ud559\uad50\uc721\uacfc", "\ubb3c\ub9ac\uad50\uc721\uacfc", "\ud654\ud559\uad50\uc721\uacfc", "\uc0dd\ubb3c\uad50\uc721\uacfc", "\uc9c0\uad6c\uacfc\ud559\uad50\uc721\uacfc", "\uc815\ubcf4\u00b7\ucef4\ud4e8\ud130\uad50\uc721\uacfc", "\uac00\uc815\uad50\uc721\uacfc", "\uad50\uc721\ud559\uacfc", "\uccb4\uc721\uad50\uc721\uacfc"]
-    },
-    "\ubd80\uc0b0\ub300\ud559\uad50": {
-      "\uc778\ubb38\ub300\ud559": ["\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\uc601\uc5b4\uc601\ubb38\ud559\uacfc", "\uc5b8\uc5b4\uc815\ubcf4\ud559\uacfc", "\ub178\uc5b4\ub178\ubb38\ud559\uacfc", "\uc911\uc5b4\uc911\ubb38\ud559\uacfc", "\uc77c\uc5b4\uc77c\ubb38\ud559\uacfc", "\ubd88\uc5b4\ubd88\ubb38\ud559\uacfc", "\ub3c5\uc5b4\ub3c5\ubb38\ud559\uacfc", "\uc0ac\ud559\uacfc", "\ucca0\ud559\uacfc", "\ud55c\ubb38\ud559\uacfc", "\uace0\uace0\ud559\uacfc"],
-      "\uc0ac\ud68c\uacfc\ud559\ub300\ud559": ["\ud589\uc815\ud559\uacfc", "\uc815\uce58\uc678\uad50\ud559\uacfc", "\uc0ac\ud68c\ubcf5\uc9c0\ud559\uacfc", "\ubb38\ud5cc\uc815\ubcf4\ud559\uacfc", "\uc0ac\ud68c\ud559\uacfc", "\uc2ec\ub9ac\ud559\uacfc", "\ubbf8\ub514\uc5b4\ucee4\ubba4\ub2c8\ucf00\uc774\uc158\ud559\uacfc"],
-      "\uc790\uc5f0\uacfc\ud559\ub300\ud559": ["\uc218\ud559\uacfc", "\ud1b5\uacc4\ud559\uacfc", "\ubb3c\ub9ac\ud559\uacfc", "\ud654\ud559\uacfc", "\uc0dd\uba85\uacfc\ud559\uacfc", "\ubbf8\uc0dd\ubb3c\ud559\uacfc", "\ubd84\uc790\uc0dd\ubb3c\ud559\uacfc", "\uc9c0\uc9c8\ud658\uacbd\uacfc\ud559\uacfc", "\ud574\uc591\ud559\uacfc", "\ub300\uae30\ud658\uacbd\uacfc\ud559\uacfc"],
-      "\uacf5\uacfc\ub300\ud559": ["\uae30\uacc4\uacf5\ud559\ubd80", "\uc804\uae30\uc804\uc790\uacf5\ud559\ubd80(\uc804\uae30/\uc804\uc790/\ubc18\ub3c4\uccb4)", "\ud56d\uacf5\uc6b0\uc8fc\uacf5\ud559\uacfc", "\uc0ac\ud68c\uae30\ubc18\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc", "\uc870\uc120\u00b7\ud574\uc591\uacf5\ud559\uacfc", "\uc7ac\ub8cc\uacf5\ud559\ubd80", "\uc720\uae30\uc18c\uc7ac\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc", "\ud654\uacf5\uc0dd\uba85\uacf5\ud559\uacfc", "\ud658\uacbd\uacf5\ud559\uacfc", "\uace0\ubd84\uc790\uacf5\ud559\uacfc", "\uc0b0\uc5c5\uacf5\ud559\uacfc", "\ub3c4\uc2dc\uacf5\ud559\uacfc", "\uac74\ucd95\ud559\uacfc(5\ub144\uc81c)", "\uac74\ucd95\uacf5\ud559\uacfc", "\uc735\ud569/\uc790\uc728\uc804\uacf5(\ucca8\ub2e8IT/\ucca8\ub2e8\uc18c\uc7ac/\ucca8\ub2e8\ubaa8\ube4c\ub9ac\ud2f0/\uc2a4\ub9c8\ud2b8\uc2dc\ud2f0/\ubbf8\ub798\ub3c4\uc2dc\uac74\ucd95 \ub4f1)"],
-      "\uc0ac\ubc94\ub300\ud559": ["\uad6d\uc5b4\uad50\uc721", "\uc601\uc5b4\uad50\uc721", "\uc5ed\uc0ac\uad50\uc721", "\uc9c0\ub9ac\uad50\uc721", "\uc77c\ubc18\uc0ac\ud68c\uad50\uc721", "\uc724\ub9ac\uad50\uc721", "\uc218\ud559\uad50\uc721", "\ubb3c\ub9ac\uad50\uc721", "\ud654\ud559\uad50\uc721", "\uc0dd\ubb3c\uad50\uc721", "\uc9c0\uad6c\uacfc\ud559\uad50\uc721", "\uad50\uc721\ud559\uacfc", "\uc720\uc544\uad50\uc721\uacfc", "\ud2b9\uc218\uad50\uc721\uacfc"],
-      "\uacbd\uc81c\ud1b5\uc0c1\u00b7\uacbd\uc601\ub300\ud559": ["\uacbd\uc81c\ud559\ubd80", "\ubb34\uc5ed\ud559\ubd80", "\uacf5\uacf5\uc815\ucc45\ud559\ubd80", "\uacbd\uc601\ud559\uacfc", "\uad6d\uc81c\ud559\ubd80", "\uad00\uad11\ucee8\ubca4\uc158\ud559\uacfc"],
-      "\uc0dd\ud65c\uacfc\ud559\ub300\ud559": ["\uc2dd\ud488\uc601\uc591\ud559\uacfc", "\uc758\ub958\ud559\uacfc", "\uc2e4\ub0b4\ud658\uacbd\ub514\uc790\uc778\ud559\uacfc", "\uc544\ub3d9\uac00\uc871\ud559\uacfc", "\uc2a4\ud3ec\uce20\uacfc\ud559\uacfc"],
-      "\uc0dd\uba85\uc790\uc6d0\uacfc\ud559\ub300\ud559": ["\uc6d0\uc608\uc0dd\uba85", "\uc2dd\ud488\uacf5\ud559", "\uc0dd\uba85\ud658\uacbd\ud654\ud559", "\ubc14\uc774\uc624\uc18c\uc7ac", "\ubc14\uc774\uc624\ud658\uacbd\uc5d0\ub108\uc9c0", "\uc870\uacbd\ud559\uacfc", "\ubc14\uc774\uc624\uc0b0\uc5c5\uae30\uacc4\uacf5\ud559\uacfc", "IT\uc751\uc6a9\uacf5\ud559\uacfc", "\uc2dd\ud488\uc790\uc6d0\uacbd\uc81c\ud559\uacfc"],
-      "\uc815\ubcf4\uc758\uc0dd\uba85\uacf5\ud559\ub300\ud559": ["\uc815\ubcf4\ucef4\ud4e8\ud130\uacf5\ud559\ubd80(\ucef4\ud4e8\ud130, \uc778\uacf5\uc9c0\ub2a5, \ub514\uc790\uc778\ud14c\ud06c\ub180\ub85c\uc9c0)", "\uc758\uc0dd\uba85\uc735\ud569\uacf5\ud559\ubd80"],
-      "\ud559\ubd80\ub300\ud559": ["\ucca8\ub2e8\uc735\ud569\ud559\ubd80", "\uc751\uc6a9\uc0dd\uba85\uc735\ud569\ud559\ubd80", "\uc790\uc720\uc804\uacf5\ud559\ubd80"],
-      "\uc758\uc57d\u00b7\ubcf4\uac74\u00b7\uac04\ud638 \uacc4\uc5f4": ["\uc758\uacfc\ub300\ud559 (\uc758\uc608\uacfc)", "\ud55c\uc758\ud559\uc804\ubb38\ub300\ud559\uc6d0", "\uce58\uacfc\ub300\ud559 (\uce58\uc758\uc608\uacfc)", "\uc57d\ud559\ub300\ud559 (\uc57d\ud559\ubd80)", "\uac04\ud638\ub300\ud559 (\uac04\ud638\ud559\uacfc)"]
-    },
-    "\uc778\ud558\ub300\ud559\uad50": {
-      "\uacf5\uacfc\ub300\ud559": ["\uae30\uacc4\uacf5\ud559\uacfc", "\ud56d\uacf5\uc6b0\uc8fc\uacf5\ud559\uacfc", "\uc870\uc120\ud574\uc591\uacf5\ud559\uacfc", "\uc0b0\uc5c5\uacbd\uc601\uacf5\ud559\uacfc", "\ud654\ud559\uacf5\ud559\uacfc", "\uace0\ubd84\uc790\uacf5\ud559\uacfc", "\uc2e0\uc18c\uc7ac\uacf5\ud559\uacfc", "\uc0ac\ud68c\uc778\ud504\ub77c\uacf5\ud559\uacfc", "\ud658\uacbd\uacf5\ud559\uacfc", "\uacf5\uac04\uc815\ubcf4\uacf5\ud559\uacfc", "\uc5d0\ub108\uc9c0\uc790\uc6d0\uacf5\ud559\uacfc", "\uc804\uae30\uc804\uc790\uacf5\ud559\ubd80", "\ubc18\ub3c4\uccb4\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc", "\uc774\ucc28\uc804\uc9c0\uc735\ud569\ud559\uacfc", "\uac74\ucd95\ud559\ubd80(\uac74\ucd95\uacf5\ud559\uc804\uacf5)", "\uac74\ucd95\ud559\ubd80(\uac74\ucd95\ud559\uc804\uacf5(5\ub144\uc81c))"],
-      "\uc790\uc5f0\uacfc\ud559\ub300\ud559": ["\uc218\ud559\uacfc", "\ud1b5\uacc4\ud559\uacfc", "\ubb3c\ub9ac\ud559\uacfc", "\ud654\ud559\uacfc", "\ud574\uc591\uacfc\ud559\uacfc", "\uc2dd\ud488\uc601\uc591\ud559\uacfc"],
-      "\uacbd\uc601\ub300\ud559": ["\uacbd\uc601\ud559\ubd80(\uacbd\uc601\ud559\uacfc)", "\uacbd\uc601\ud559\ubd80(\ud30c\uc774\ub0b8\uc2a4\uacbd\uc601\ud559\uacfc)", "\uc544\ud0dc\ubb3c\ub958\ud559\ubd80", "\uad6d\uc81c\ud1b5\uc0c1\ud559\uacfc"],
-      "\uc0ac\ubc94\ub300\ud559": ["\uad6d\uc5b4\uad50\uc721\uacfc", "\uc601\uc5b4\uad50\uc721\uacfc", "\uc0ac\ud68c\uad50\uc721\uacfc", "\uccb4\uc721\uad50\uc721\uacfc", "\uad50\uc721\ud559\uacfc", "\uc218\ud559\uad50\uc721\uacfc"],
-      "\uc0ac\ud68c\uacfc\ud559\ub300\ud559": ["\ud589\uc815\ud559\uacfc", "\uc815\uce58\uc678\uad50\ud559\uacfc", "\ubbf8\ub514\uc5b4\ucee4\ubba4\ub2c8\ucf00\uc774\uc158\ud559\uacfc", "\uacbd\uc81c\ud559\uacfc", "\uc18c\ube44\uc790\ud559\uacfc", "\uc544\ub3d9\uc2ec\ub9ac\ud559\uacfc", "\uc0ac\ud68c\ubcf5\uc9c0\ud559\uacfc"],
-      "\ubb38\uacfc\ub300\ud559": ["\ud55c\uad6d\uc5b4\ubb38\ud559\uacfc", "\uc0ac\ud559\uacfc", "\ucca0\ud559\uacfc", "\uc911\uad6d\ud559\uacfc", "\uc77c\ubcf8\uc5b8\uc5b4\ubb38\ud654\ud559\uacfc", "\uc601\ubbf8\uc720\ub7fd\uc778\ubb38\uc735\ud569\ud559\ubd80(\uc601\uc5b4\uc601\ubb38\ud559)", "\uc601\ubbf8\uc720\ub7fd\uc778\ubb38\uc735\ud569\ud559\ubd80(\ud504\ub791\uc2a4\uc5b8\uc5b4\ubb38\ud654)", "\ubb38\ud654\ucf58\ud150\uce20\ubb38\ud654\uacbd\uc601\ud559\uacfc"],
-      "\uc758\uacfc\ub300\ud559 \ubc0f \uac04\ud638\ub300\ud559": ["\uc758\uacfc\ub300\ud559(\uc758\uc608\uacfc)", "\uac04\ud638\ub300\ud559(\uac04\ud638\ud559\uacfc)"],
-      "\uc608\uc220\uccb4\uc721\ub300\ud559": ["\uc870\ud615\uc608\uc220\ud559\uacfc", "\ub514\uc790\uc778\uc735\ud569\ud559\uacfc", "\uc2a4\ud3ec\uce20\uacfc\ud559\uacfc", "\uc5f0\uadf9\uc601\ud654\ud559\uacfc", "\uc758\ub958\ub514\uc790\uc778\ud559\uacfc(\uc77c\ubc18/\uc2e4\uae30)"],
-      "\uc18c\ud504\ud2b8\uc6e8\uc5b4\uc735\ud569\ub300\ud559": ["\uc778\uacf5\uc9c0\ub2a5\uacf5\ud559\uacfc", "\ub370\uc774\ud130\uc0ac\uc774\uc5b8\uc2a4\ud559\uacfc", "\uc2a4\ub9c8\ud2b8\ubaa8\ube4c\ub9ac\ud2f0\uacf5\ud559\uacfc", "\ub514\uc790\uc778\ud14c\ud06c\ub180\ub85c\uc9c0\ud559\uacfc", "\ucef4\ud4e8\ud130\uacf5\ud559\uacfc"],
-      "\ubbf8\ub798\uc735\ud569\ub300\ud559": ["\uba54\uce74\ud2b8\ub85c\ub2c9\uc2a4\uacf5\ud559\uacfc", "\uc18c\ud504\ud2b8\uc6e8\uc5b4\uc735\ud569\uacf5\ud559\uacfc", "\uc0b0\uc5c5\uacbd\uc601\ud559\uacfc", "\uae08\uc735\ud22c\uc790\ud559\uacfc", "\ubc18\ub3c4\uccb4\uc0b0\uc5c5\uc735\ud569\ud559\uacfc"],
-      "\ubc14\uc774\uc624\uc2dc\uc2a4\ud15c\uc735\ud569\ud559\ubd80": ["\uc0dd\uba85\uacf5\ud559\uacfc", "\uc0dd\uba85\uacfc\ud559\uacfc", "\ucca8\ub2e8\ubc14\uc774\uc624\uc758\uc57d\ud559\uacfc", "\ubc14\uc774\uc624\uc2dd\ud488\uacf5\ud559\uacfc"],
-      "\ud504\ub7f0\ud2f0\uc5b4\ucc3d\uc758\ub300\ud559 (\ubb34\uc804\uacf5/\uc735\ud569)": ["\uc790\uc720\uc804\uacf5\uc735\ud569\ud559\ubd80", "\uacf5\ud559\uc735\ud569\ud559\ubd80", "\uc790\uc5f0\uacfc\ud559\uc735\ud569\ud559\ubd80", "\uacbd\uc601\uc735\ud569\ud559\ubd80", "\uc0ac\ud68c\uacfc\ud559\uc735\ud569\ud559\ubd80", "\uc778\ubb38\uc735\ud569\ud559\ubd80"],
-      "\uad6d\uc81c\ud559\ubd80": ["IBT\ud559\uacfc", "ISE\ud559\uacfc", "KLC\ud559\uacfc"]
-    },
-    "\uc544\uc8fc\ub300\ud559\uad50": {
-      "\uacf5\uacfc\ub300\ud559": ["\uae30\uacc4\uacf5\ud559\uacfc", "\uc0b0\uc5c5\uacf5\ud559\uacfc", "\ud654\ud559\uacf5\ud559\uacfc", "\ucca8\ub2e8\uc2e0\uc18c\uc7ac\uacf5\ud559\uacfc", "\uc751\uc6a9\ud654\ud559\uacfc", "\ud658\uacbd\uc548\uc804\uacf5\ud559\uacfc", "\uac74\uc124\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc", "\uad50\ud1b5\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc", "\uac74\ucd95\ud559\uacfc(\uac74\ucd95\ud559 5\ub144)", "\uac74\ucd95\ud559\uacfc(\uac74\ucd95\uacf5\ud559 4\ub144)", "\uc735\ud569\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc(\ud2b9\uc131\ud654\uace0 \uc7ac\uc9c1\uc790)"],
-      "\ucca8\ub2e8ICT\uc735\ud569\ub300\ud559": ["\uc804\uc790\uacf5\ud559\uacfc", "\uc9c0\ub2a5\ud615\ubc18\ub3c4\uccb4\uacf5\ud559\uacfc", "\ubbf8\ub798\ubaa8\ube4c\ub9ac\ud2f0\uacf5\ud559\uacfc"],
-      "\uc18c\ud504\ud2b8\uc6e8\uc5b4\uc735\ud569\ub300\ud559": ["\uc18c\ud504\ud2b8\uc6e8\uc5b4\ud559\uacfc", "\uc0ac\uc774\ubc84\ubcf4\uc548\ud559\uacfc", "\ub514\uc9c0\ud138\ubbf8\ub514\uc5b4\ud559\uacfc", "\uad6d\ubc29\ub514\uc9c0\ud138\uc735\ud569\ud559\uacfc(\uad6d\ubc29IT\uc6b0\uc218\uc778\uc7ac)"],
-      "\uc790\uc5f0\uacfc\ud559\ub300\ud559": ["\uc218\ud559\uacfc", "\ud504\ub7f0\ud2f0\uc5b4\uacfc\ud559\ud559\ubd80(\ubb3c\ub9ac\u00b7\uc591\uc790\uacfc\ud559)", "\ud504\ub7f0\ud2f0\uc5b4\uacfc\ud559\ud559\ubd80(\ud654\ud559\u00b7\ubb3c\uc9c8\uacfc\ud559)", "\ud504\ub7f0\ud2f0\uc5b4\uacfc\ud559\ud559\ubd80(\uc0dd\uba85\uacfc\ud559\u00b7\uc751\uc6a9\uc0dd\ubb3c\ud559)"],
-      "\uacbd\uc601\ub300\ud559": ["\uacbd\uc601\ud559\uacfc", "\uacbd\uc601\uc778\ud154\ub9ac\uc804\uc2a4\ud559\uacfc", "\uae08\uc735\uacf5\ud559\uacfc", "\uae00\ub85c\ubc8c\uacbd\uc601\ud559\uacfc(\ud2b9\uc131\ud654\uace0 \uc7ac\uc9c1\uc790)"],
-      "\uc778\ubb38\ub300\ud559": ["\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\uc601\uc5b4\uc601\ubb38\ud559\uacfc", "\ubd88\uc5b4\ubd88\ubb38\ud559\uacfc", "\uc0ac\ud559\uacfc", "\ubb38\ud654\ucf58\ud150\uce20\ud559\uacfc"],
-      "\uc0ac\ud68c\uacfc\ud559\ub300\ud559": ["\ud589\uc815\ud559\uacfc", "\uc2ec\ub9ac\ud559\uacfc", "\uc2a4\ud3ec\uce20\ub808\uc800\ud559\uacfc", "\uacbd\uc81c\uc815\uce58\uc0ac\ud68c\uc735\ud569\ud559\ubd80(\uacbd\uc81c\ud559/\uc0ac\ud68c\ud559/\uc815\uce58\uc678\uad50\ud559)"],
-      "\uc758\uacfc\ub300\ud559": ["\uc758\ud559\uacfc"],
-      "\uac04\ud638\ub300\ud559": ["\uac04\ud638\ud559\uacfc"],
-      "\uc57d\ud559\ub300\ud559": ["\uc57d\ud559\uacfc"],
-      "\ucca8\ub2e8\ubc14\uc774\uc624\uc735\ud569\ub300\ud559": ["\ucca8\ub2e8\ubc14\uc774\uc624\uc18c\uc7ac\uacf5\ud559", "\ud601\uc2e0\uc2e0\uc57d\uacf5\ud559"],
-      "\ub2e4\uc0b0\ud559\ubd80\ub300\ud559": ["\uc790\uc720\uc804\uacf5\ud559\ubd80(\uc790\uc5f0)", "\uc790\uc720\uc804\uacf5\ud559\ubd80(\uc778\ubb38)"]
-    },
-    "\uc778\ucc9c\ub300\ud559\uad50": {
-      "\uc778\ubb38\ub300\ud559": ["\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\uc601\uc5b4\uc601\ubb38\ud559\uacfc", "\ub3c5\uc5b4\ub3c5\ubb38\ud559\uacfc", "\ubd88\uc5b4\ubd88\ubb38\ud559\uacfc", "\uc77c\ubcf8\uc9c0\uc5ed\ubb38\ud654\ud559\uacfc", "\uc911\uc5b4\uc911\uad6d\ud559\uacfc"],
-      "\uc790\uc5f0\uacfc\ud559\ub300\ud559": ["\uc218\ud559\uacfc", "\ubb3c\ub9ac\ud559\uacfc", "\ud654\ud559\uacfc", "\ud328\uc158\uc0b0\uc5c5\ud559\uacfc", "\ud574\uc591\ud559\uacfc"],
-      "\uc0ac\ud68c\uacfc\ud559\ub300\ud559": ["\uc0ac\ud68c\ubcf5\uc9c0\ud559\uacfc", "\ubbf8\ub514\uc5b4\ucee4\ubba4\ub2c8\ucf00\uc774\uc158\ud559\uacfc", "\ubb38\ud5cc\uc815\ubcf4\ud559\uacfc", "\ucc3d\uc758\uc778\uc7ac\uac1c\ubc1c\ud559\uacfc"],
-      "\uae00\ub85c\ubc8c\uc815\uacbd\ub300\ud559": ["\ud589\uc815\ud559\uacfc", "\uc815\uce58\uc678\uad50\ud559\uacfc", "\uacbd\uc81c\ud559\uacfc", "Global Trade & Service\ud559\ubd80", "\uc18c\ube44\uc790\ud559\uacfc"],
-      "\uacf5\uacfc\ub300\ud559": ["\uae30\uacc4\uacf5\ud559\uacfc", "\uc804\uae30\uacf5\ud559\uacfc", "\uc804\uc790\uacf5\ud559\ubd80(\uc804\uc790\uacf5\ud559\uc804\uacf5, \ubc18\ub3c4\uccb4\uc735\ud569\uc804\uacf5)", "\uc0b0\uc5c5\uacbd\uc601\uacf5\ud559\uacfc", "\uc2e0\uc18c\uc7ac\uacf5\ud559\uacfc", "\uc548\uc804\uacf5\ud559\uacfc", "\uc5d0\ub108\uc9c0\ud654\ud559\uacf5\ud559\uacfc", "\ubc14\uc774\uc624-\ub85c\ubd07\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc"],
-      "\uc815\ubcf4\uae30\uc220\ub300\ud559": ["\ucef4\ud4e8\ud130\uacf5\ud559\ubd80", "\uc815\ubcf4\ud1b5\uc2e0\uacf5\ud559\uacfc", "\uc784\ubca0\ub514\ub4dc\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc"],
-      "\uacbd\uc601\ub300\ud559": ["\uacbd\uc601\ud559\ubd80", "\ub370\uc774\ud130\uacfc\ud559\uacfc", "\uc138\ubb34\ud68c\uacc4\ud559\uacfc"],
-      "\uc608\uc220\uccb4\uc721\ub300\ud559": ["\uc870\ud615\uc608\uc220\ud559\ubd80(\ud55c\uad6d\ud654\uc804\uacf5, \uc11c\uc591\ud654\uc804\uacf5)", "\ub514\uc790\uc778\ud559\ubd80", "\uacf5\uc5f0\uc608\uc220\ud559\uacfc", "\uc2a4\ud3ec\uce20\uacfc\ud559\ubd80", "\uc6b4\ub3d9\uac74\uac15\ud559\ubd80"],
-      "\uc0ac\ubc94\ub300\ud559": ["\uad6d\uc5b4\uad50\uc721\uacfc", "\uc601\uc5b4\uad50\uc721\uacfc", "\uc77c\uc5b4\uad50\uc721\uacfc", "\uc218\ud559\uad50\uc721\uacfc", "\uccb4\uc721\uad50\uc721\uacfc", "\uc720\uc544\uad50\uc721\uacfc", "\uc5ed\uc0ac\uad50\uc721\uacfc", "\uc724\ub9ac\uad50\uc721\uacfc"],
-      "\ub3c4\uc2dc\uacfc\ud559\ub300\ud559": ["\ub3c4\uc2dc\ud589\uc815\ud559\uacfc", "\ub3c4\uc2dc\ud658\uacbd\uacf5\ud559\ubd80(\uac74\uc124\ud658\uacbd\uacf5\ud559\uc804\uacf5, \ud658\uacbd\uacf5\ud559\uc804\uacf5)", "\ub3c4\uc2dc\uacf5\ud559\uacfc", "\ub3c4\uc2dc\uac74\ucd95\ud559\ubd80(\uac74\ucd95\uacf5\ud559\uc804\uacf5, \ub3c4\uc2dc\uac74\ucd95\ud559\uc804\uacf5)"],
-      "\uc0dd\uba85\uacfc\ud559\uae30\uc220\ub300\ud559": ["\uc0dd\uba85\uacfc\ud559\ubd80(\uc0dd\uba85\uacfc\ud559\uc804\uacf5, \ubd84\uc790\uc758\uc0dd\uba85\uc804\uacf5)", "\uc0dd\uba85\uacf5\ud559\ubd80(\uc0dd\uba85\uacf5\ud559\uc804\uacf5, \ub098\ub178\ubc14\uc774\uc624\uacf5\ud559\uc804\uacf5)"],
-      "\uc735\ud569\uc790\uc720\uc804\uacf5\ub300\ud559": ["\uc790\uc720\uc804\uacf5\ud559\ubd80(\uc778\ubb38/\uc790\uc5f0)", "\ub3d9\ubd81\uc544\uad6d\uc81c\ud1b5\uc0c1\ubb3c\ub958\ud559\ubd80(\ub3d9\ubd81\uc544\uad6d\uc81c\ud1b5\uc0c1\uc804\uacf5, \uc2a4\ub9c8\ud2b8\ubb3c\ub958\uacf5\ud559\uc804\uacf5)", "\ubc95\ud559\ubd80"]
-    },
-    "\uac00\ud1a8\ub9ad\ub300\ud559\uad50": {
-      "\ubb34\uc804\uacf5 / \uad11\uc5ed \ubaa8\uc9d1\ub2e8\uc704": ["\uc790\uc720\uc804\uacf5\ud559\ubd80", "\uc778\ubb38\uc0ac\ud68c\uacc4\uc5f4", "\uc790\uc5f0\uacf5\ud559\uacc4\uc5f4"],
-      "\uc778\ubb38\u00b7\uc5b4\ubb38\ud559 \ubd84\uc57c": ["\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\ucca0\ud559\uacfc", "\uad6d\uc0ac\ud559\uacfc", "\uc601\uc5b4\uc601\ubb38\ud559\ubd80", "\uc911\uad6d\uc5b8\uc5b4\ubb38\ud654\ud559\uacfc", "\uc77c\uc5b4\uc77c\ubcf8\ubb38\ud654\ud559\uacfc", "\ud504\ub791\uc2a4\uc5b4\ubb38\ud654\ud559\uacfc"],
-      "\uc0ac\ud68c\uacfc\ud559 \ubd84\uc57c": ["\uc0ac\ud68c\ubcf5\uc9c0\ud559\uacfc", "\uc2ec\ub9ac\ud559\uacfc", "\uc0ac\ud68c\ud559\uacfc", "\uc544\ub3d9\ud559\uacfc", "\ud589\uc815\ud559\uacfc"],
-      "\uc0c1\uacbd\u00b7\ubc95\ud559 \ubd84\uc57c": ["\uacbd\uc601\ud559\uacfc", "\ud68c\uacc4\ud559\uacfc", "\uacbd\uc81c\ud559\uacfc", "\uad6d\uc81c\ud559\ubd80", "\ubc95\ud559\uacfc"],
-      "\uae30\ucd08 \ubc0f \uc751\uc6a9\uacfc\ud559 \ubd84\uc57c": ["\ud654\ud559\uacfc", "\uc218\ud559\uacfc", "\ubb3c\ub9ac\ud559\uacfc"],
-      "\uc18c\ud504\ud2b8\uc6e8\uc5b4 \ubc0f IT/\ub370\uc774\ud130 \ubd84\uc57c": ["\ucef4\ud4e8\ud130\uc815\ubcf4\uacf5\ud559\ubd80", "\uc815\ubcf4\ud1b5\uc2e0\uc804\uc790\uacf5\ud559\ubd80", "\uc778\uacf5\uc9c0\ub2a5\ud559\uacfc", "\ub370\uc774\ud130\uc0ac\uc774\uc5b8\uc2a4\ud559\uacfc", "\ubc14\uc774\uc624\uba54\ub514\uceec\uc18c\ud504\ud2b8\uc6e8\uc5b4\ud559\uacfc", "\ubbf8\ub514\uc5b4\uae30\uc220\ucf58\ud150\uce20\ud559\uacfc"],
-      "\ubc14\uc774\uc624 \ubc0f \ud658\uacbd\uacf5\ud559 \ubd84\uc57c": ["\uc0dd\uba85\uacf5\ud559\uacfc", "\uc5d0\ub108\uc9c0\ud658\uacbd\uacf5\ud559\uacfc", "\ubc14\uc774\uc624\uba54\ub514\uceec\ud654\ud559\uacf5\ud559\uacfc", "\uc758\uc0dd\uba85\uacfc\ud559\uacfc"],
-      "\uc0dd\ud65c\uacfc\ud559 \ubd84\uc57c": ["\uacf5\uac04\ub514\uc790\uc778\u00b7\uc18c\ube44\uc790\ud559\uacfc", "\uc758\ub958\ud559\uacfc", "\uc2dd\ud488\uc601\uc591\ud559\uacfc"],
-      "2026 \ucca8\ub2e8\ud559\uacfc": ["\ubc14\uc774\uc624\ub85c\uc9c1\uc2a4\uacf5\ud559\ubd80", "AI\uc758\uacf5\ud559\uacfc"],
-      "\uc758\uc57d\u00b7\ubcf4\uac74\u00b7\uc0ac\ubc94\u00b7\uc2e0\ud559\u00b7\uc608\uccb4\ub2a5 \uacc4\uc5f4 (\ud2b9\uc218 \ubaa9\uc801)": ["\uc758\uc608\uacfc", "\uc57d\ud559\uacfc", "\uac04\ud638\ud559\uacfc", "\ud2b9\uc218\uad50\uc721\uacfc", "\uc2e0\ud559\uacfc", "\uc74c\uc545\uacfc"],
-      "\uae00\ub85c\ubc8c\uacbd\uc601\ub300\ud559 (\uc7ac\uc9c1\uc790 \uc804\ud615)": ["\uad6d\uc81c\uacbd\uc601\ud559\uacfc", "\uc138\ubb34\ud68c\uacc4\uae08\uc735\ud559\uacfc", "IT\ud30c\uc774\ub0b8\uc2a4\ud559\uacfc"]
-    },
-    "\uad11\uc6b4\ub300\ud559\uad50": {
-      "\uc804\uc790\uc815\ubcf4\uacf5\uacfc\ub300\ud559": ["\uc804\uc790\uacf5\ud559\uacfc", "\uc804\uc790\ud1b5\uc2e0\uacf5\ud559\uacfc", "\uc804\uc790\uc735\ud569\uacf5\ud559\uacfc", "\uc804\uae30\uacf5\ud559\uacfc", "\uc804\uc790\uc7ac\ub8cc\uacf5\ud559\uacfc", "\ubc18\ub3c4\uccb4\uc2dc\uc2a4\ud15c\uacf5\ud559\ubd80(\ubc18\ub3c4\uccb4\uc2dc\uc2a4\ud15c\uacf5\ud559\uc804\uacf5)"],
-      "\uc778\uacf5\uc9c0\ub2a5\uc735\ud569\ub300\ud559": ["\ucef4\ud4e8\ud130\uc815\ubcf4\uacf5\ud559\ubd80", "\uc18c\ud504\ud2b8\uc6e8\uc5b4\ud559\ubd80", "\uc815\ubcf4\uc735\ud569\ud559\ubd80", "\ub85c\ubd07\ud559\ubd80(AI\ub85c\ubd07\uc804\uacf5)"],
-      "\uacf5\uacfc\ub300\ud559": ["\uac74\ucd95\ud559\uacfc(5\ub144\uc81c)", "\uac74\ucd95\uacf5\ud559\uacfc", "\ud654\ud559\uacf5\ud559\uacfc", "\ud658\uacbd\uacf5\ud559\uacfc"],
-      "\uc790\uc5f0\uacfc\ud559\ub300\ud559": ["\uc218\ud559\uacfc", "\uc804\uc790\ubc14\uc774\uc624\ubb3c\ub9ac\ud559\uacfc", "\ud654\ud559\uacfc", "\uc2a4\ud3ec\uce20\uc735\ud569\uacfc\ud559\uacfc"],
-      "\uc778\ubb38\uc0ac\ud68c\uacfc\ud559\ub300\ud559": ["\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\uc601\uc5b4\uc0b0\uc5c5\ud559\uacfc", "\ubbf8\ub514\uc5b4\ucee4\ubba4\ub2c8\ucf00\uc774\uc158\ud559\ubd80", "\uc0b0\uc5c5\uc2ec\ub9ac\ud559\uacfc", "\ub3d9\ubd81\uc544\ubb38\ud654\uc0b0\uc5c5\ud559\ubd80"],
-      "\uc815\ucc45\ubc95\ud559\ub300\ud559": ["\ud589\uc815\ud559\uacfc", "\ubc95\ud559\ubd80", "\uad6d\uc81c\ud559\ubd80"],
-      "\uacbd\uc601\ub300\ud559": ["\uacbd\uc601\ud559\ubd80(\uacbd\uc601\ud559\uc804\uacf5, \ube45\ub370\uc774\ud130\uacbd\uc601\uc804\uacf5)", "\uad6d\uc81c\ud1b5\uc0c1\ud559\ubd80"],
-      "\ucc38\ube5b\uc778\uc7ac\ub300\ud559 (\uc815\uc6d0\uc678 \ub4f1)": ["\uae08\uc735\ubd80\ub3d9\uc0b0\ubc95\ubb34\ud559\uacfc", "\uac8c\uc784\ucf58\ud150\uce20\ud559\uacfc", "\uc2a4\ub9c8\ud2b8\uc804\uae30\uc804\uc790\ud559\uacfc", "\uc2a4\ud3ec\uce20\uc0c1\ub2f4\uc7ac\ud65c\ud559\uacfc"],
-      "\uc778\uc81c\ub2c8\uc6c0\ub300\ud559": ["\uc790\uc728\uc804\uacf5\ud559\ubd80(\uc790\uc5f0/\uc778\ubb38)"]
-    },
-    "\uacbd\uae30\ub300\ud559\uad50": {
-      "\uc778\ubb38\ub300\ud559": ["\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\uc601\uc5b4\uc601\ubb38\ud559\uacfc", "\uc0ac\ud559\uacfc", "\ubb38\ud5cc\uc815\ubcf4\ud559\uacfc", "\uae00\ub85c\ubc8c\uc5b4\ubb38\ud559\ubd80(\ub3c5\uc5b4\ub3c5\ubb38, \ud504\ub791\uc2a4\uc5b4\ubb38, \uc77c\uc5b4\uc77c\ubb38, \uc911\uc5b4\uc911\ubb38, \ub7ec\uc2dc\uc544\uc5b4\ubb38 \uc804\uacf5)", "\uc720\uc544\uad50\uc721\uacfc"],
-      "\uc608\uc220\uccb4\uc721\ub300\ud559": ["\ub514\uc790\uc778\ube44\uc988\ud559\ubd80(\uc2dc\uac01\uc815\ubcf4\ub514\uc790\uc778, \uc0b0\uc5c5\ub514\uc790\uc778, \ub9ac\ube59\u00b7\uc8fc\uc5bc\ub9ac\ub514\uc790\uc778 \uc804\uacf5)", "Fine Arts\ud559\ubd80(\ud55c\uad6d\ud654, \uc11c\uc591\ud654, \ubbf8\uc220\uacbd\uc601, \uc11c\uc608 \uc804\uacf5)"],
-      "\uc0ac\ud68c\uacfc\ud559\ub300\ud559": ["\ubc95\ud559\uacfc", "\ubb34\uc5ed\ud559\uacfc", "\uacf5\uacf5\uc548\uc804\ud559\ubd80(\ubc94\uc8c4\uad50\uc815\uc2ec\ub9ac, \uacbd\ucc30\ud589\uc815 \uc804\uacf5)", "\ud734\uba3c\uc11c\ube44\uc2a4\ud559\ubd80(\uc0ac\ud68c\ubcf5\uc9c0, \uccad\uc18c\ub144 \uc804\uacf5)", "\uacf5\uacf5\uc778\uc7ac\ud559\ubd80(\ud589\uc815, \uc815\uce58\uc678\uad50 \uc804\uacf5)", "\uacbd\uc81c\ud559\ubd80(\uacbd\uc81c, \uc751\uc6a9\ud1b5\uacc4, \uc9c0\uc2dd\uc7ac\uc0b0 \uc804\uacf5)"],
-      "\uc18c\ud504\ud2b8\uc6e8\uc5b4\uacbd\uc601\ub300\ud559": ["\uacbd\uc601\ud559\ubd80(\uacbd\uc601, \ud68c\uacc4\uc138\ubb34 \uc804\uacf5)", "\uc0b0\uc5c5\uacbd\uc601\uacf5\ud559\uacfc", "AI\ucef4\ud4e8\ud130\uacf5\ud559\ubd80(\ucef4\ud4e8\ud130\uacf5\ud559, \uc778\uacf5\uc9c0\ub2a5, SW\uc548\uc804\ubcf4\uc548, \ubaa8\ube4c\ub9ac\ud2f0SW \uc804\uacf5)"],
-      "\uc735\ud569\uacfc\ud559\ub300\ud559": ["\uc218\ud559\uacfc", "\ud654\ud559\uacfc", "\ubc14\uc774\uc624\uc735\ud569\ud559\ubd80(\uc0dd\uba85\uacfc\ud559, \uc2dd\ud488\uc0dd\ubb3c\uacf5\ud559 \uc804\uacf5)"],
-      "\ucc3d\uc758\uacf5\uacfc\ub300\ud559": ["\uac74\ucd95\ud559\uacfc(5\ub144\uc81c)", "\uc0ac\ud68c\uc5d0\ub108\uc9c0\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc", "\uae30\uacc4\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc", "\uc804\uc790\uacf5\ud559\ubd80(\ub098\ub178\u00b7\ubc18\ub3c4\uccb4, \uc815\ubcf4\ud1b5\uc2e0\uc2dc\uc2a4\ud15c \uc804\uacf5)", "\uc2e0\uc18c\uc7ac\ud654\ud559\uacf5\ud559\ubd80(\uc2e0\uc18c\uc7ac\uacf5\ud559, \ud654\ud559\uacf5\ud559 \uc804\uacf5)", "\uc2a4\ub9c8\ud2b8\uc2dc\ud2f0\uacf5\ud559\ubd80(\uac74\ucd95\uacf5\ud559, \ub3c4\uc2dc\u00b7\uad50\ud1b5\uacf5\ud559 \uc804\uacf5)"],
-      "\uad00\uad11\ubb38\ud654\ub300\ud559 (\uc11c\uc6b8\ucea0\ud37c\uc2a4)": ["\ubbf8\ub514\uc5b4\uc601\uc0c1\ud559\uacfc", "\uad00\uad11\uac1c\ubc1c\uacbd\uc601\ud559\uacfc", "\uad00\uad11\ubb38\ud654\ucf58\ud150\uce20\ud559\uacfc", "\ud638\ud154\uc678\uc2dd\uacbd\uc601\ud559\ubd80(\ud638\ud154\uacbd\uc601, \uc678\uc2dd\u00b7\uc870\ub9ac \uc804\uacf5)"]
-    },
+
     "\uac00\ucc9c\ub300\ud559\uad50": {
-      "\uacbd\uc601 \ubc0f \uc0ac\ud68c\uacfc\ud559 \uacc4\uc5f4": ["\uacbd\uc601\ud559\uacfc", "\ud68c\uacc4\uc138\ubb34\ud559\uacfc", "\uad00\uad11\uacbd\uc601\ud559\uacfc", "\uc758\ub8cc\uc0b0\uc5c5\uacbd\uc601\ud559\uacfc", "\uae08\uc735\u00b7\ube45\ub370\uc774\ud130\ud559\ubd80(\uae08\uc735\uc218\ud559\uc804\uacf5, \ube45\ub370\uc774\ud130\uacbd\uc601\uc804\uacf5)", "\ubbf8\ub514\uc5b4\ucee4\ubba4\ub2c8\ucf00\uc774\uc158\ud559\uacfc", "\uacbd\uc81c\ud559\uacfc", "\uc751\uc6a9\ud1b5\uacc4\ud559\uacfc", "\uc0ac\ud68c\ubcf5\uc9c0\ud559\uacfc", "\uc720\uc544\uad50\uc721\ud559\uacfc", "\uc2ec\ub9ac\ud559\uacfc", "\ud328\uc158\uc0b0\uc5c5\ud559\uacfc"],
-      "\uc778\ubb38 \ubc0f \ubc95\ud559 \uacc4\uc5f4": ["\ud55c\uad6d\uc5b4\ubb38\ud559\uacfc", "\uc601\ubbf8\uc5b4\ubb38\ud559\uacfc", "\uc911\uad6d\uc5b4\ubb38\ud559\uacfc", "\uc77c\ubcf8\uc5b4\ubb38\ud559\uacfc", "\uc720\ub7fd\uc5b4\ubb38\ud559\uacfc", "\ubc95\ud559\uacfc", "\uacbd\ucc30\ud589\uc815\ud559\uacfc", "\ud589\uc815\ud559\uacfc"],
-      "\uacf5\ud559 \ubc0f \uc2a4\ub9c8\ud2b8\uc2dc\ud2f0 \uacc4\uc5f4": ["\ub3c4\uc2dc\uacc4\ud68d\u00b7\uc870\uacbd\ud559\ubd80", "\uac74\ucd95\ud559\ubd80", "\uac74\ucd95\uacf5\ud559\uacfc", "\ud654\uacf5\uc0dd\uba85\ubc30\ud130\ub9ac\uacf5\ud559\ubd80(\ud654\uacf5\uc0dd\uba85\uacf5\ud559, \ubc30\ud130\ub9ac\uacf5\ud559)", "\uae30\uacc4\uacf5\ud559\ubd80(\uae30\uacc4\uacf5\ud559, \ub85c\ubd07\uacf5\ud559, \uc124\ube44\u00b7\uc18c\ubc29\uacf5\ud559)", "\uc2a4\ub9c8\ud2b8\ud329\ud1a0\ub9ac\ud559\uacfc", "\uac74\uc124\ud658\uacbd\uacf5\ud559\uacfc", "\uc2e0\uc18c\uc7ac\uacf5\ud559\uacfc", "\ubbf8\ub798\uc790\ub3d9\ucc28\ud559\uacfc"],
-      "\uae30\ucd08\uacfc\ud559 \ubc0f \ubc14\uc774\uc624 \uacc4\uc5f4": ["\ubc14\uc774\uc624\ub098\ub178\ud559\uacfc", "\uc2dd\ud488\uc0dd\uba85\uacf5\ud559\uacfc", "\uc2dd\ud488\uc601\uc591\ud559\uacfc", "\uc0dd\uba85\uacfc\ud559\uacfc", "\ubc18\ub3c4\uccb4\ubb3c\ub9ac\ud559\uacfc", "\ud654\ud559\uacfc"],
-      "\ucca8\ub2e8 IT \ubc0f \ubc18\ub3c4\uccb4 \uacc4\uc5f4": ["\uc804\uc790\uacf5\ud559\uacfc", "\ubc18\ub3c4\uccb4\uacf5\ud559\uacfc", "\uc2dc\uc2a4\ud15c\ubc18\ub3c4\uccb4\ud559\uacfc", "\ubc18\ub3c4\uccb4\u00b7\ub514\uc2a4\ud50c\ub808\uc774\ud559\uacfc", "\ubc18\ub3c4\uccb4\uc124\uacc4\ud559\uacfc", "\ucef4\ud4e8\ud130\uacf5\ud559\uacfc", "\uc778\uacf5\uc9c0\ub2a5\ud559\uacfc", "\uc778\uacf5\uc9c0\ub2a5\uc2dc\uc2a4\ud15c\ud559\uacfc", "\uc815\ubcf4\ubcf4\ud638\ud559\uacfc", "\uc804\uae30\uacf5\ud559\uacfc", "\uc2a4\ub9c8\ud2b8\uc2dc\ud2f0\ud559\uacfc", "\uc758\uacf5\ud559\uacfc", "\ubc14\uc774\uc624\uc758\ub8cc\uae30\uae30\ud559\uacfc", "\uac8c\uc784\u00b7\uc601\uc0c1\ud559\uacfc"],
-      "\uc758\uc57d\ud559 \ubc0f \ubcf4\uac74\u00b7\uba54\ub514\uceec \uacc4\uc5f4": ["\uc758\uc608\uacfc", "\ud55c\uc758\uc608\uacfc", "\uc57d\ud559\uacfc", "\ubc14\uc774\uc624\ub85c\uc9c1\uc2a4\ud559\uacfc", "\uac04\ud638\ud559\uacfc", "\uce58\uc704\uc0dd\ud559\uacfc", "\uc751\uae09\uad6c\uc870\ud559\uacfc", "\ubb3c\ub9ac\uce58\ub8cc\ud559\uacfc", "\ubc29\uc0ac\uc120\ud559\uacfc", "\uc6b4\ub3d9\uc7ac\ud65c\ud559\uacfc"],
-      "\uc608\uc220\u00b7\uccb4\uc721 \ubc0f \uc790\uc720\uc804\uacf5": ["\ubbf8\uc220\u00b7\ub514\uc790\uc778\ud559\ubd80", "\uc74c\uc545\ud559\ubd80", "\uccb4\uc721\ud559\ubd80", "\uc5f0\uae30\uc608\uc220\ud559\uacfc", "\uc790\uc720\uc804\uacf5\ud559\ubd80"]
+
+      "\uacbd\uc601 \ubc0f \uc0ac\ud68c\uacfc\ud559 \uacc4\uc5f4": ["\uacbd\uc601\ud559\uacfc", "\uacbd\uc81c\ud559\uacfc", "\uad00\uad11\uacbd\uc601\ud559\uacfc", "\uae08\uc735\u00b7\ube45\ub370\uc774\ud130\ud559\ubd80(\uae08\uc735\uc218\ud559\uc804\uacf5, \ube45\ub370\uc774\ud130\uacbd\uc601\uc804\uacf5)", "\ubbf8\ub514\uc5b4\ucee4\ubba4\ub2c8\ucf00\uc774\uc158\ud559\uacfc", "\uc0ac\ud68c\ubcf5\uc9c0\ud559\uacfc", "\uc2ec\ub9ac\ud559\uacfc", "\uc720\uc544\uad50\uc721\ud559\uacfc", "\uc751\uc6a9\ud1b5\uacc4\ud559\uacfc", "\uc758\ub8cc\uc0b0\uc5c5\uacbd\uc601\ud559\uacfc", "\ud328\uc158\uc0b0\uc5c5\ud559\uacfc", "\ud68c\uacc4\uc138\ubb34\ud559\uacfc"],
+
+      "\uacf5\ud559 \ubc0f \uc2a4\ub9c8\ud2b8\uc2dc\ud2f0 \uacc4\uc5f4": ["\uac74\uc124\ud658\uacbd\uacf5\ud559\uacfc", "\uac74\ucd95\uacf5\ud559\uacfc", "\uac74\ucd95\ud559\ubd80", "\uae30\uacc4\uacf5\ud559\ubd80(\uae30\uacc4\uacf5\ud559, \ub85c\ubd07\uacf5\ud559, \uc124\ube44\u00b7\uc18c\ubc29\uacf5\ud559)", "\ub3c4\uc2dc\uacc4\ud68d\u00b7\uc870\uacbd\ud559\ubd80", "\ubbf8\ub798\uc790\ub3d9\ucc28\ud559\uacfc", "\uc2a4\ub9c8\ud2b8\ud329\ud1a0\ub9ac\ud559\uacfc", "\uc2e0\uc18c\uc7ac\uacf5\ud559\uacfc", "\ud654\uacf5\uc0dd\uba85\ubc30\ud130\ub9ac\uacf5\ud559\ubd80(\ud654\uacf5\uc0dd\uba85\uacf5\ud559, \ubc30\ud130\ub9ac\uacf5\ud559)"],
+
+      "\uae30\ucd08\uacfc\ud559 \ubc0f \ubc14\uc774\uc624 \uacc4\uc5f4": ["\ubc14\uc774\uc624\ub098\ub178\ud559\uacfc", "\ubc18\ub3c4\uccb4\ubb3c\ub9ac\ud559\uacfc", "\uc0dd\uba85\uacfc\ud559\uacfc", "\uc2dd\ud488\uc0dd\uba85\uacf5\ud559\uacfc", "\uc2dd\ud488\uc601\uc591\ud559\uacfc", "\ud654\ud559\uacfc"],
+
+      "\uc608\uc220\u00b7\uccb4\uc721 \ubc0f \uc790\uc720\uc804\uacf5": ["\ubbf8\uc220\u00b7\ub514\uc790\uc778\ud559\ubd80", "\uc5f0\uae30\uc608\uc220\ud559\uacfc", "\uc74c\uc545\ud559\ubd80", "\uc790\uc720\uc804\uacf5\ud559\ubd80", "\uccb4\uc721\ud559\ubd80"],
+
+      "\uc758\uc57d\ud559 \ubc0f \ubcf4\uac74\u00b7\uba54\ub514\uceec \uacc4\uc5f4": ["\uac04\ud638\ud559\uacfc", "\ubb3c\ub9ac\uce58\ub8cc\ud559\uacfc", "\ubc14\uc774\uc624\ub85c\uc9c1\uc2a4\ud559\uacfc", "\ubc29\uc0ac\uc120\ud559\uacfc", "\uc57d\ud559\uacfc", "\uc6b4\ub3d9\uc7ac\ud65c\ud559\uacfc", "\uc751\uae09\uad6c\uc870\ud559\uacfc", "\uc758\uc608\uacfc", "\uce58\uc704\uc0dd\ud559\uacfc", "\ud55c\uc758\uc608\uacfc"],
+
+      "\uc778\ubb38 \ubc0f \ubc95\ud559 \uacc4\uc5f4": ["\uacbd\ucc30\ud589\uc815\ud559\uacfc", "\ubc95\ud559\uacfc", "\uc601\ubbf8\uc5b4\ubb38\ud559\uacfc", "\uc720\ub7fd\uc5b4\ubb38\ud559\uacfc", "\uc77c\ubcf8\uc5b4\ubb38\ud559\uacfc", "\uc911\uad6d\uc5b4\ubb38\ud559\uacfc", "\ud55c\uad6d\uc5b4\ubb38\ud559\uacfc", "\ud589\uc815\ud559\uacfc"],
+
+      "\ucca8\ub2e8 IT \ubc0f \ubc18\ub3c4\uccb4 \uacc4\uc5f4": ["\uac8c\uc784\u00b7\uc601\uc0c1\ud559\uacfc", "\ubc14\uc774\uc624\uc758\ub8cc\uae30\uae30\ud559\uacfc", "\ubc18\ub3c4\uccb4\u00b7\ub514\uc2a4\ud50c\ub808\uc774\ud559\uacfc", "\ubc18\ub3c4\uccb4\uacf5\ud559\uacfc", "\ubc18\ub3c4\uccb4\uc124\uacc4\ud559\uacfc", "\uc2a4\ub9c8\ud2b8\uc2dc\ud2f0\ud559\uacfc", "\uc2dc\uc2a4\ud15c\ubc18\ub3c4\uccb4\ud559\uacfc", "\uc758\uacf5\ud559\uacfc", "\uc778\uacf5\uc9c0\ub2a5\uc2dc\uc2a4\ud15c\ud559\uacfc", "\uc778\uacf5\uc9c0\ub2a5\ud559\uacfc", "\uc804\uae30\uacf5\ud559\uacfc", "\uc804\uc790\uacf5\ud559\uacfc", "\uc815\ubcf4\ubcf4\ud638\ud559\uacfc", "\ucef4\ud4e8\ud130\uacf5\ud559\uacfc"]
+
+    },
+
+    "\uac00\ud1a8\ub9ad\ub300\ud559\uad50": {
+
+      "2026 \ucca8\ub2e8\ud559\uacfc": ["AI\uc758\uacf5\ud559\uacfc", "\ubc14\uc774\uc624\ub85c\uc9c1\uc2a4\uacf5\ud559\ubd80"],
+
+      "\uae00\ub85c\ubc8c\uacbd\uc601\ub300\ud559 (\uc7ac\uc9c1\uc790 \uc804\ud615)": ["IT\ud30c\uc774\ub0b8\uc2a4\ud559\uacfc", "\uad6d\uc81c\uacbd\uc601\ud559\uacfc", "\uc138\ubb34\ud68c\uacc4\uae08\uc735\ud559\uacfc"],
+
+      "\uae30\ucd08 \ubc0f \uc751\uc6a9\uacfc\ud559 \ubd84\uc57c": ["\ubb3c\ub9ac\ud559\uacfc", "\uc218\ud559\uacfc", "\ud654\ud559\uacfc"],
+
+      "\ubb34\uc804\uacf5 / \uad11\uc5ed \ubaa8\uc9d1\ub2e8\uc704": ["\uc778\ubb38\uc0ac\ud68c\uacc4\uc5f4", "\uc790\uc5f0\uacf5\ud559\uacc4\uc5f4", "\uc790\uc720\uc804\uacf5\ud559\ubd80"],
+
+      "\ubc14\uc774\uc624 \ubc0f \ud658\uacbd\uacf5\ud559 \ubd84\uc57c": ["\ubc14\uc774\uc624\uba54\ub514\uceec\ud654\ud559\uacf5\ud559\uacfc", "\uc0dd\uba85\uacf5\ud559\uacfc", "\uc5d0\ub108\uc9c0\ud658\uacbd\uacf5\ud559\uacfc", "\uc758\uc0dd\uba85\uacfc\ud559\uacfc"],
+
+      "\uc0ac\ud68c\uacfc\ud559 \ubd84\uc57c": ["\uc0ac\ud68c\ubcf5\uc9c0\ud559\uacfc", "\uc0ac\ud68c\ud559\uacfc", "\uc2ec\ub9ac\ud559\uacfc", "\uc544\ub3d9\ud559\uacfc", "\ud589\uc815\ud559\uacfc"],
+
+      "\uc0c1\uacbd\u00b7\ubc95\ud559 \ubd84\uc57c": ["\uacbd\uc601\ud559\uacfc", "\uacbd\uc81c\ud559\uacfc", "\uad6d\uc81c\ud559\ubd80", "\ubc95\ud559\uacfc", "\ud68c\uacc4\ud559\uacfc"],
+
+      "\uc0dd\ud65c\uacfc\ud559 \ubd84\uc57c": ["\uacf5\uac04\ub514\uc790\uc778\u00b7\uc18c\ube44\uc790\ud559\uacfc", "\uc2dd\ud488\uc601\uc591\ud559\uacfc", "\uc758\ub958\ud559\uacfc"],
+
+      "\uc18c\ud504\ud2b8\uc6e8\uc5b4 \ubc0f IT/\ub370\uc774\ud130 \ubd84\uc57c": ["\ub370\uc774\ud130\uc0ac\uc774\uc5b8\uc2a4\ud559\uacfc", "\ubbf8\ub514\uc5b4\uae30\uc220\ucf58\ud150\uce20\ud559\uacfc", "\ubc14\uc774\uc624\uba54\ub514\uceec\uc18c\ud504\ud2b8\uc6e8\uc5b4\ud559\uacfc", "\uc778\uacf5\uc9c0\ub2a5\ud559\uacfc", "\uc815\ubcf4\ud1b5\uc2e0\uc804\uc790\uacf5\ud559\ubd80", "\ucef4\ud4e8\ud130\uc815\ubcf4\uacf5\ud559\ubd80"],
+
+      "\uc758\uc57d\u00b7\ubcf4\uac74\u00b7\uc0ac\ubc94\u00b7\uc2e0\ud559\u00b7\uc608\uccb4\ub2a5 \uacc4\uc5f4 (\ud2b9\uc218 \ubaa9\uc801)": ["\uac04\ud638\ud559\uacfc", "\uc2e0\ud559\uacfc", "\uc57d\ud559\uacfc", "\uc74c\uc545\uacfc", "\uc758\uc608\uacfc", "\ud2b9\uc218\uad50\uc721\uacfc"],
+
+      "\uc778\ubb38\u00b7\uc5b4\ubb38\ud559 \ubd84\uc57c": ["\uad6d\uc0ac\ud559\uacfc", "\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\uc601\uc5b4\uc601\ubb38\ud559\ubd80", "\uc77c\uc5b4\uc77c\ubcf8\ubb38\ud654\ud559\uacfc", "\uc911\uad6d\uc5b8\uc5b4\ubb38\ud654\ud559\uacfc", "\ucca0\ud559\uacfc", "\ud504\ub791\uc2a4\uc5b4\ubb38\ud654\ud559\uacfc"]
+
+    },
+
+    "\uac74\uad6d\ub300\ud559\uad50": {
+
+      "\uac74\ucd95\ub300\ud559": ["\uac74\ucd95\ud559\ubd80"],
+
+      "\uacbd\uc601\ub300\ud559": ["\uacbd\uc601\ud559\uacfc", "\uae30\uc220\uacbd\uc601\ud559\uacfc"],
+
+      "\uacf5\uacfc\ub300\ud559": ["K\ubdf0\ud2f0\uc0b0\uc5c5\uc735\ud569\ud559\uacfc", "\uacf5\uacfc\ub300\ud559\uc790\uc720\uc804\uacf5\ud559\ubd80", "\uae30\uacc4\u00b7\ub85c\ubd07\u00b7\uc790\ub3d9\ucc28\uacf5\ud559\ubd80", "\uc0ac\ud68c\ud658\uacbd\uacf5\ud559\ubd80", "\uc0b0\uc5c5\uacf5\ud559\uacfc", "\uc0dd\ubb3c\uacf5\ud559\uacfc", "\uc2e0\uc0b0\uc5c5\uc735\ud569\ud559\uacfc", "\uc7ac\ub8cc\uacf5\ud559\uacfc", "\uc804\uae30\uc804\uc790\uacf5\ud559\ubd80", "\ucef4\ud4e8\ud130\uacf5\ud559\ubd80", "\ud56d\uacf5\uc6b0\uc8fc\u00b7\ubaa8\ube4c\ub9ac\ud2f0\uacf5\ud559\uacfc", "\ud654\uacf5\ud559\ubd80"],
+
+      "\ubb38\uacfc\ub300\ud559": ["\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\ubb38\uacfc\ub300\ud559\uc790\uc720\uc804\uacf5\ud559\ubd80", "\ubb38\ud654\ucf58\ud150\uce20\ud559\uacfc", "\ubbf8\ub514\uc5b4\ucee4\ubba4\ub2c8\ucf00\uc774\uc158\ud559\uacfc", "\uc0ac\ud559\uacfc", "\uc601\uc5b4\uc601\ubb38\ud559\uacfc", "\uc911\uc5b4\uc911\ubb38\ud559\uacfc", "\uc9c0\ub9ac\ud559\uacfc", "\ucca0\ud559\uacfc"],
+
+      "\ubd80\ub3d9\uc0b0\uacfc\ud559\uc6d0": ["\ubd80\ub3d9\uc0b0\ud559\uacfc"],
+
+      "\uc0ac\ubc94\ub300\ud559": ["\uad50\uc721\uacf5\ud559\uacfc", "\uc218\ud559\uad50\uc721\uacfc", "\uc601\uc5b4\uad50\uc721\uacfc", "\uc74c\uc545\uad50\uc721\uacfc", "\uc77c\uc5b4\uad50\uc721\uacfc", "\uccb4\uc721\uad50\uc721\uacfc"],
+
+      "\uc0ac\ud68c\uacfc\ud559\ub300\ud559": ["\uacbd\uc81c\ud559\uacfc", "\uad6d\uc81c\ubb34\uc5ed\ud559\uacfc", "\uc0ac\ud68c\uacfc\ud559\ub300\ud559\uc735\ud569\uc804\uacf5\ud559\ubd80", "\uc751\uc6a9\ud1b5\uacc4\ud559\uacfc", "\uc815\uce58\uc678\uad50\ud559\uacfc", "\ud589\uc815\ud559\uacfc"],
+
+      "\uc0c1\ud5c8\uad50\uc591\ub300\ud559": ["KU\uc790\uc720\uc804\uacf5\ud559\ubd80"],
+
+      "\uc0dd\uba85\uacfc\ud559\ub300\ud559": ["\ub3d9\ubb3c\uc790\uc6d0\u00b7\uc2dd\ud488\uacfc\ud559\u00b7\uc720\ud1b5\ud559\ubd80", "\uc0dd\uba85\uacfc\ud559\ub300\ud559\uc790\uc720\uc804\uacf5\ud559\ubd80", "\uc0dd\uba85\uacfc\ud559\ud2b9\uc131\ud559\uacfc", "\uc2dd\ub7c9\uc790\uc6d0\uacfc\ud559\uacfc", "\ud658\uacbd\ubcf4\uac74\u00b7\uc0b0\ub9bc\uc870\uacbd\ud559\ubd80"],
+
+      "\uc218\uc758\uacfc\ub300\ud559": ["\uc218\uc758\uc608\uacfc"],
+
+      "\uc608\uc220\ub514\uc790\uc778\ub300\ud559": ["\ub9ac\ube59\ub514\uc790\uc778\ud559\uacfc", "\ub9e4\uccb4\uc5f0\uae30\ud559\uacfc", "\uc0b0\uc5c5\ub514\uc790\uc778\ud559\uacfc", "\uc601\uc0c1\ud559\uacfc", "\uc758\uc0c1\ub514\uc790\uc778\ud559\uacfc", "\ucee4\ubba4\ub2c8\ucf00\uc774\uc158\ub514\uc790\uc778\ud559\uacfc", "\ud604\ub300\ubbf8\uc220\ud559\uacfc"],
+
+      "\uc735\ud569\uacfc\ud559\uae30\uc220\uc6d0": ["\uc2dc\uc2a4\ud15c\uc0dd\uba85\uacf5\ud559\uacfc", "\uc735\ud569\uacfc\ud559\uae30\uc220\uc6d0\uc790\uc720\uc804\uacf5\ud559\ubd80", "\uc735\ud569\uc0dd\uba85\uacf5\ud559\uacfc", "\ucca8\ub2e8\ubc14\uc774\uc624\uacf5\ud559\ubd80"],
+
+      "\uc774\uacfc\ub300\ud559": ["\ubb3c\ub9ac\ud559\uacfc", "\uc218\ud559\uacfc", "\uc774\uacfc\ub300\ud559\uc790\uc720\uc804\uacf5\ud559\ubd80", "\ud654\ud559\uacfc"]
+
+    },
+
+    "\uacbd\uae30\ub300\ud559\uad50": {
+
+      "\uad00\uad11\ubb38\ud654\ub300\ud559 (\uc11c\uc6b8\ucea0\ud37c\uc2a4)": ["\uad00\uad11\uac1c\ubc1c\uacbd\uc601\ud559\uacfc", "\uad00\uad11\ubb38\ud654\ucf58\ud150\uce20\ud559\uacfc", "\ubbf8\ub514\uc5b4\uc601\uc0c1\ud559\uacfc", "\ud638\ud154\uc678\uc2dd\uacbd\uc601\ud559\ubd80(\ud638\ud154\uacbd\uc601, \uc678\uc2dd\u00b7\uc870\ub9ac \uc804\uacf5)"],
+
+      "\uc0ac\ud68c\uacfc\ud559\ub300\ud559": ["\uacbd\uc81c\ud559\ubd80(\uacbd\uc81c, \uc751\uc6a9\ud1b5\uacc4, \uc9c0\uc2dd\uc7ac\uc0b0 \uc804\uacf5)", "\uacf5\uacf5\uc548\uc804\ud559\ubd80(\ubc94\uc8c4\uad50\uc815\uc2ec\ub9ac, \uacbd\ucc30\ud589\uc815 \uc804\uacf5)", "\uacf5\uacf5\uc778\uc7ac\ud559\ubd80(\ud589\uc815, \uc815\uce58\uc678\uad50 \uc804\uacf5)", "\ubb34\uc5ed\ud559\uacfc", "\ubc95\ud559\uacfc", "\ud734\uba3c\uc11c\ube44\uc2a4\ud559\ubd80(\uc0ac\ud68c\ubcf5\uc9c0, \uccad\uc18c\ub144 \uc804\uacf5)"],
+
+      "\uc18c\ud504\ud2b8\uc6e8\uc5b4\uacbd\uc601\ub300\ud559": ["AI\ucef4\ud4e8\ud130\uacf5\ud559\ubd80(\ucef4\ud4e8\ud130\uacf5\ud559, \uc778\uacf5\uc9c0\ub2a5, SW\uc548\uc804\ubcf4\uc548, \ubaa8\ube4c\ub9ac\ud2f0SW \uc804\uacf5)", "\uacbd\uc601\ud559\ubd80(\uacbd\uc601, \ud68c\uacc4\uc138\ubb34 \uc804\uacf5)", "\uc0b0\uc5c5\uacbd\uc601\uacf5\ud559\uacfc"],
+
+      "\uc608\uc220\uccb4\uc721\ub300\ud559": ["Fine Arts\ud559\ubd80(\ud55c\uad6d\ud654, \uc11c\uc591\ud654, \ubbf8\uc220\uacbd\uc601, \uc11c\uc608 \uc804\uacf5)", "\ub514\uc790\uc778\ube44\uc988\ud559\ubd80(\uc2dc\uac01\uc815\ubcf4\ub514\uc790\uc778, \uc0b0\uc5c5\ub514\uc790\uc778, \ub9ac\ube59\u00b7\uc8fc\uc5bc\ub9ac\ub514\uc790\uc778 \uc804\uacf5)"],
+
+      "\uc735\ud569\uacfc\ud559\ub300\ud559": ["\ubc14\uc774\uc624\uc735\ud569\ud559\ubd80(\uc0dd\uba85\uacfc\ud559, \uc2dd\ud488\uc0dd\ubb3c\uacf5\ud559 \uc804\uacf5)", "\uc218\ud559\uacfc", "\ud654\ud559\uacfc"],
+
+      "\uc778\ubb38\ub300\ud559": ["\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\uae00\ub85c\ubc8c\uc5b4\ubb38\ud559\ubd80(\ub3c5\uc5b4\ub3c5\ubb38, \ud504\ub791\uc2a4\uc5b4\ubb38, \uc77c\uc5b4\uc77c\ubb38, \uc911\uc5b4\uc911\ubb38, \ub7ec\uc2dc\uc544\uc5b4\ubb38 \uc804\uacf5)", "\ubb38\ud5cc\uc815\ubcf4\ud559\uacfc", "\uc0ac\ud559\uacfc", "\uc601\uc5b4\uc601\ubb38\ud559\uacfc", "\uc720\uc544\uad50\uc721\uacfc"],
+
+      "\ucc3d\uc758\uacf5\uacfc\ub300\ud559": ["\uac74\ucd95\ud559\uacfc(5\ub144\uc81c)", "\uae30\uacc4\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc", "\uc0ac\ud68c\uc5d0\ub108\uc9c0\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc", "\uc2a4\ub9c8\ud2b8\uc2dc\ud2f0\uacf5\ud559\ubd80(\uac74\ucd95\uacf5\ud559, \ub3c4\uc2dc\u00b7\uad50\ud1b5\uacf5\ud559 \uc804\uacf5)", "\uc2e0\uc18c\uc7ac\ud654\ud559\uacf5\ud559\ubd80(\uc2e0\uc18c\uc7ac\uacf5\ud559, \ud654\ud559\uacf5\ud559 \uc804\uacf5)", "\uc804\uc790\uacf5\ud559\ubd80(\ub098\ub178\u00b7\ubc18\ub3c4\uccb4, \uc815\ubcf4\ud1b5\uc2e0\uc2dc\uc2a4\ud15c \uc804\uacf5)"]
+
+    },
+
+    "\uacbd\ubd81\ub300\ud559\uad50": {
+
+      "\ub18d\uc5c5\uc0dd\uba85\u00b7\uc0dd\ud0dc\ud658\uacbd \uacc4\uc5f4": ["\uace4\ucda9\uc0dd\uba85\uacfc\ud559\uacfc", "\uad00\uad11\ud559\uacfc", "\ub18d\uc0b0\uc5c5\ud559\uacfc", "\ub18d\uc5c5\ud1a0\ubaa9\uacf5\ud559\uacfc", "\ub3d9\ubb3c\uc0dd\uba85\uacf5\ud559\uacfc", "\ub9d0/\ud2b9\uc218\ub3d9\ubb3c\ud559\uacfc", "\ubc14\uc774\uc624\uc12c\uc720\uc18c\uc7ac\ud559\uacfc", "\uc0b0\ub9bc\uacfc\ud559\u00b7\uc870\uacbd\ud559\ubd80", "\uc0b0\ub9bc\uc0dd\ud0dc\ubcf4\ud638\ud559\uacfc", "\uc2a4\ub9c8\ud2b8\uc0dd\ubb3c\uc0b0\uc5c5\uae30\uacc4\uacf5\ud559\uacfc", "\uc2dd\ubb3c\uc758\ud559\uacfc", "\uc2dd\ubb3c\uc790\uc6d0\ud559\uacfc", "\uc2dd\ud488\uacf5\ud559\ubd80", "\uc2dd\ud488\uc790\uc6d0\uacbd\uc81c\ud559\uacfc", "\uc6d0\uc608\uacfc\ud559\uacfc", "\uc751\uc6a9\uc0dd\uba85\uacfc\ud559\ubd80", "\ucd95\uc0b0\ud559\uacfc"],
+
+      "\uc0ac\ubc94\ub300\ud559 (\uad50\uc721 \uacc4\uc5f4)": ["\uac00\uc815\uad50\uc721\uacfc", "\uad50\uc721\ud559\uacfc", "\uad6d\uc5b4\uad50\uc721\uacfc", "\ub3c5\uc5b4\uad50\uc721\uc804\uacf5", "\ubb3c\ub9ac\uad50\uc721\uacfc", "\uc0dd\ubb3c\uad50\uc721\uacfc", "\uc218\ud559\uad50\uc721\uacfc", "\uc5ed\uc0ac\uad50\uc721\uacfc", "\uc601\uc5b4\uad50\uc721\uacfc", "\uc724\ub9ac\uad50\uc721\uacfc", "\uc77c\ubc18\uc0ac\ud68c\uad50\uc721\uacfc", "\uc815\ubcf4\u00b7\ucef4\ud4e8\ud130\uad50\uc721\uacfc", "\uc9c0\uad6c\uacfc\ud559\uad50\uc721\uacfc", "\uc9c0\ub9ac\uad50\uc721\uacfc", "\uccb4\uc721\uad50\uc721\uacfc", "\ud654\ud559\uad50\uc721\uacfc"],
+
+      "\uc758\uc57d\u00b7\ubcf4\uac74\u00b7\uc0dd\ud65c\uacfc\ud559 \uacc4\uc5f4": ["\uac04\ud638\ub300\ud559 (\uac04\ud638\ud559\uacfc)", "\uc218\uc758\uacfc\ub300\ud559 (\uc218\uc758\uc608\uacfc)", "\uc2dd\ud488\uc601\uc591\ud559\uacfc", "\uc544\ub3d9\ud559\ubd80", "\uc57d\ud559\ub300\ud559 (\uc57d\ud559\uacfc)", "\uc758\uacfc\ub300\ud559 (\uc758\uc608\uacfc)", "\uc758\ub958\ud559\uacfc", "\uce58\uacfc\ub300\ud559 (\uce58\uc758\uc608\uacfc)"],
+
+      "\uc778\ubb38\u00b7\uc0ac\ud68c\u00b7\uacbd\uc0c1 \uacc4\uc5f4 (\ubb38\uacfc \uc131\ud5a5)": ["\uacbd\uc601\ud559\ubd80", "\uacbd\uc81c\ud1b5\uc0c1\ud559\ubd80", "\uace0\uace0\uc778\ub958\ud559\uacfc", "\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\ub178\uc5b4\ub178\ubb38\ud559\uacfc", "\ub3c5\uc5b4\ub3c5\ubb38\ud559\uacfc", "\ubb38\ud5cc\uc815\ubcf4\ud559\uacfc", "\ubbf8\ub514\uc5b4\ucee4\ubba4\ub2c8\ucf00\uc774\uc158\ud559\uacfc", "\ubd88\uc5b4\ubd88\ubb38\ud559\uacfc", "\uc0ac\ud559\uacfc", "\uc0ac\ud68c\ubcf5\uc9c0\ud559\ubd80", "\uc0ac\ud68c\ud559\uacfc", "\uc2ec\ub9ac\ud559\uacfc", "\uc601\uc5b4\uc601\ubb38\ud559\uacfc", "\uc77c\uc5b4\uc77c\ubb38\ud559\uacfc", "\uc815\uce58\uc678\uad50\ud559\uacfc", "\uc911\uc5b4\uc911\ubb38\ud559\uacfc", "\uc9c0\ub9ac\ud559\uacfc", "\ucca0\ud559\uacfc", "\ud55c\ubb38\ud559\uacfc", "\ud589\uc815\ud559\ubd80"],
+
+      "\uc790\uc5f0\uacfc\ud559\u00b7\uacf5\ud559\u00b7IT \uacc4\uc5f4 (\uc774\uacfc \uc131\ud5a5)": ["\uac74\uc124\ubc29\uc7ac\uacf5\ud559\uacfc", "\uac74\ucd95\ud559\ubd80(\uac74\ucd95\uacf5\ud559\uc804\uacf5)", "\uac74\ucd95\ud559\ubd80(\uac74\ucd95\ud559\uc804\uacf5 - 5\ub144\uc81c)", "\uace0\ubd84\uc790\uacf5\ud559\uacfc", "\uae08\uc18d\uc7ac\ub8cc\uacf5\ud559\uacfc", "\uae30\uacc4\uacf5\ud559\ubd80", "\ub098\ub178\uc2e0\uc18c\uc7ac\uacf5\ud559\uacfc", "\ubb3c\ub9ac\ud559\uacfc", "\uc0dd\uba85\uacfc\ud559\ubd80", "\uc0dd\ubb3c\ud559\uacfc", "\uc12c\uc720\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc", "\uc12c\uc720\ud328\uc158\ub514\uc790\uc778\ud559\ubd80(\uc12c\uc720\uacf5\ud559\uc804\uacf5)", "\uc12c\uc720\ud328\uc158\ub514\uc790\uc778\ud559\ubd80(\ud328\uc158\ub514\uc790\uc778\uc804\uacf5)", "\uc18c\ud504\ud2b8\uc6e8\uc5b4\ud559\uacfc", "\uc218\ud559\uacfc", "\uc2a4\ub9c8\ud2b8\ud50c\ub79c\ud2b8\uacf5\ud559\uacfc", "\uc2dd\ud488\uc678\uc2dd\uc0b0\uc5c5\ud559\uacfc", "\uc2e0\uc18c\uc7ac\uacf5\ud559\uacfc", "\uc5d0\ub108\uc9c0\uacf5\ud559\ubd80", "\uc5d0\ub108\uc9c0\ud654\ud559\uacf5\ud559\uacfc", "\uc704\uce58\uc815\ubcf4\uc2dc\uc2a4\ud15c\ud559\uacfc", "\uc751\uc6a9\ud654\ud559\uacf5\ud559\ubd80", "\uc790\ub3d9\ucc28\uacf5\ud559\uacfc", "\uc804\uae30\uacf5\ud559\uacfc", "\uc804\uc790\uacf5\ud559\ubd80", "\uc804\uc790\uacf5\ud559\ubd80(\ubaa8\ubc14\uc77c\uacf5\ud559\uc804\uacf5)", "\uc815\ubc00\uae30\uacc4\uacf5\ud559\uacfc", "\uc9c0\uad6c\uc2dc\uc2a4\ud15c\uacfc\ud559\ubd80", "\uce58\uc704\uc0dd\ud559\uacfc", "\ucef4\ud4e8\ud130\ud559\ubd80(\uc804 \uc804\uacf5)", "\ud1a0\ubaa9\uacf5\ud559\uacfc", "\ud1b5\uacc4\ud559\uacfc", "\ud654\ud559\uacfc", "\ud658\uacbd\uacf5\ud559\uacfc", "\ud658\uacbd\uc548\uc804\uacf5\ud559\uacfc"]
+
+    },
+
+    "\uacbd\ud76c\ub300\ud559\uad50": {
+
+      "\uacf5\ud559/\uc804\uc790/\ucef4\ud4e8\ud130\uacc4\uc5f4": ["\uac74\ucd95\uacf5\ud559\uacfc", "\uac74\ucd95\ud559\uacfc", "\uae30\uacc4\uacf5\ud559\ubd80", "\ubbf8\ub798\uc815\ubcf4\ub514\uc2a4\ud50c\ub808\uc774\ud559\ubd80", "\ubc18\ub3c4\uccb4\uacf5\ud559\uacfc", "\uc0ac\ud68c\uae30\ubc18\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc", "\uc0dd\uccb4\uc758\uacf5\ud559\uacfc", "\uc18c\ud504\ud2b8\uc6e8\uc5b4\uc735\ud569\ud559\uacfc", "\uc2e0\uc18c\uc7ac\uacf5\ud559\uacfc", "\uc6d0\uc790\ub825\uacf5\ud559\uacfc", "\uc804\uc790\uacf5\ud559\uacfc", "\ucef4\ud4e8\ud130\uacf5\ud559\ubd80(\ucef4\ud4e8\ud130\uacf5\ud559\uacfc/\uc778\uacf5\uc9c0\ub2a5\ud559\uacfc)"],
+
+      "\uc0dd\uba85/\ud658\uacbd\uacc4\uc5f4": ["\uc0dd\ubb3c\ud559\uacfc", "\uc2a4\ub9c8\ud2b8\ud31c\uacfc\ud559\uacfc", "\uc2dd\ud488\uc0dd\uba85\uacf5\ud559\uacfc", "\uc2dd\ud488\uc601\uc591\ud559\uacfc", "\uc720\uc804\uc0dd\uba85\uacf5\ud559\uacfc", "\uc735\ud569\ubc14\uc774\uc624\u00b7\uc2e0\uc18c\uc7ac\uacf5\ud559\uacfc", "\ud658\uacbd\ud559\ubc0f\ud658\uacbd\uacf5\ud559\uacfc"],
+
+      "\uc21c\uc218/\uc751\uc6a9\uacfc\ud559\uacc4\uc5f4": ["\uc6b0\uc8fc\uacfc\ud559\uacfc", "\uc751\uc6a9\ubb3c\ub9ac\ud559\uacfc", "\uc751\uc6a9\uc218\ud559\uacfc", "\uc751\uc6a9\ud654\ud559\uacfc", "\uc9c0\ub9ac\ud559\uacfc", "\ud654\ud559\uacfc"],
+
+      "\uc608\uccb4\ub2a5/\uae30\ud0c0\uacc4\uc5f4": ["\ub3c4\uc608\ud559\uacfc", "\ub514\uc9c0\ud138\ucf58\ud150\uce20\ud559\uacfc", "\uc0b0\uc5c5\ub514\uc790\uc778\ud559\uacfc", "\uc2dc\uac01\ub514\uc790\uc778\ud559\uacfc", "\uc5f0\uadf9\uc601\ud654\ud559\uacfc(\uc601\ud654\uc5f0\ucd9c \ubc0f \uc81c\uc791)", "\uc758\ub958\ub514\uc790\uc778\ud559\uacfc", "\uc790\uc728\uc804\uacf5\ud559\ubd80/\uc790\uc720\uc804\uacf5\ud559\ubd80", "\ud658\uacbd\uc870\uacbd\ub514\uc790\uc778\ud559\uacfc"],
+
+      "\uc758\uc57d/\ubcf4\uac74\uacc4\uc5f4": ["\uac04\ud638\ud559\uacfc", "\uc57d\uacfc\ud559\uacfc", "\uc57d\ud559\uacfc", "\uc758\uc608\uacfc", "\uce58\uc758\uc608\uacfc", "\ud55c\uc57d\ud559\uacfc", "\ud55c\uc758\uc608\uacfc(\uc790\uc5f0)"]
+
+    },
+
+    "\uace0\ub824\ub300\ud559\uad50": {
+
+      "\uacbd\uc0c1 \uae30\ud0c0": ["\uacbd\uc601\ub300\ud559", "\uad6d\uc81c\ud559\ubd80", "\ub514\uc790\uc778\uc870\ud615\ud559\ubd80", "\uccb4\uc721\uad50\uc721\uacfc"],
+
+      "\uc778\ubb38\u00b7\uc0ac\ud68c\uacc4\uc5f4": ["\uacbd\uc81c\ud559\uacfc", "\ub178\uc5b4\ub178\ubb38\ud559\uacfc", "\ub3c5\uc5b4\ub3c5\ubb38\ud559\uacfc", "\ubd88\uc5b4\ubd88\ubb38\ud559\uacfc", "\uc0ac\ud68c\ud559\uacfc", "\uc2ec\ub9ac\ud559\uacfc", "\uc601\uc5b4\uc601\ubb38\ud559\uacfc", "\uc815\uce58\uc678\uad50\ud559\uacfc", "\uc911\uc5b4\uc911\ubb38\ud559\uacfc", "\ucca0\ud559\uacfc", "\ud55c\uad6d\uc5b4\ubb38\ud559\uacfc", "\ud589\uc815\ud559\uacfc"],
+
+      "\uc790\uc5f0\u00b7\uacf5\ud559\u00b7\uc0dd\ud65c\uacc4\uc5f4": ["\uae30\uacc4\uacf5\ud559\ubd80", "\ub1cc\uc778\uc9c0\uacfc\ud559\uacfc", "\ub370\uc774\ud130\uacfc\ud559\ubd80", "\ubc18\ub3c4\uccb4\uacf5\ud559\uacfc", "\uc0ac\uc774\ubc84\uad6d\ubc29\ud559\uacfc", "\uc0b0\uc5c5\uacbd\uc601\uacf5\ud559\ubd80", "\uc0dd\uba85\uacfc\ud559\ubd80", "\uc2a4\ub9c8\ud2b8\ubcf4\uc548\ud559\ubd80", "\uc2e0\uc18c\uc7ac\uacf5\ud559\ubd80", "\uc758\uc0dd\uba85\uacf5\ud559\ubd80", "\uc804\uae30\uc804\uc790\uacf5\ud559\ubd80", "\ucef4\ud4e8\ud130\ud559\uacfc", "\ud654\uacf5\uc0dd\uba85\uacf5\ud559\ubd80", "\ud658\uacbd\uc0dd\ud0dc\uacf5\ud559\ubd80"]
+
+    },
+
+    "\uad11\uc6b4\ub300\ud559\uad50": {
+
+      "\uacbd\uc601\ub300\ud559": ["\uacbd\uc601\ud559\ubd80(\uacbd\uc601\ud559\uc804\uacf5, \ube45\ub370\uc774\ud130\uacbd\uc601\uc804\uacf5)", "\uad6d\uc81c\ud1b5\uc0c1\ud559\ubd80"],
+
+      "\uacf5\uacfc\ub300\ud559": ["\uac74\ucd95\uacf5\ud559\uacfc", "\uac74\ucd95\ud559\uacfc(5\ub144\uc81c)", "\ud654\ud559\uacf5\ud559\uacfc", "\ud658\uacbd\uacf5\ud559\uacfc"],
+
+      "\uc778\uacf5\uc9c0\ub2a5\uc735\ud569\ub300\ud559": ["\ub85c\ubd07\ud559\ubd80(AI\ub85c\ubd07\uc804\uacf5)", "\uc18c\ud504\ud2b8\uc6e8\uc5b4\ud559\ubd80", "\uc815\ubcf4\uc735\ud569\ud559\ubd80", "\ucef4\ud4e8\ud130\uc815\ubcf4\uacf5\ud559\ubd80"],
+
+      "\uc778\ubb38\uc0ac\ud68c\uacfc\ud559\ub300\ud559": ["\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\ub3d9\ubd81\uc544\ubb38\ud654\uc0b0\uc5c5\ud559\ubd80", "\ubbf8\ub514\uc5b4\ucee4\ubba4\ub2c8\ucf00\uc774\uc158\ud559\ubd80", "\uc0b0\uc5c5\uc2ec\ub9ac\ud559\uacfc", "\uc601\uc5b4\uc0b0\uc5c5\ud559\uacfc"],
+
+      "\uc778\uc81c\ub2c8\uc6c0\ub300\ud559": ["\uc790\uc728\uc804\uacf5\ud559\ubd80(\uc790\uc5f0/\uc778\ubb38)"],
+
+      "\uc790\uc5f0\uacfc\ud559\ub300\ud559": ["\uc218\ud559\uacfc", "\uc2a4\ud3ec\uce20\uc735\ud569\uacfc\ud559\uacfc", "\uc804\uc790\ubc14\uc774\uc624\ubb3c\ub9ac\ud559\uacfc", "\ud654\ud559\uacfc"],
+
+      "\uc804\uc790\uc815\ubcf4\uacf5\uacfc\ub300\ud559": ["\ubc18\ub3c4\uccb4\uc2dc\uc2a4\ud15c\uacf5\ud559\ubd80(\ubc18\ub3c4\uccb4\uc2dc\uc2a4\ud15c\uacf5\ud559\uc804\uacf5)", "\uc804\uae30\uacf5\ud559\uacfc", "\uc804\uc790\uacf5\ud559\uacfc", "\uc804\uc790\uc735\ud569\uacf5\ud559\uacfc", "\uc804\uc790\uc7ac\ub8cc\uacf5\ud559\uacfc", "\uc804\uc790\ud1b5\uc2e0\uacf5\ud559\uacfc"],
+
+      "\uc815\ucc45\ubc95\ud559\ub300\ud559": ["\uad6d\uc81c\ud559\ubd80", "\ubc95\ud559\ubd80", "\ud589\uc815\ud559\uacfc"],
+
+      "\ucc38\ube5b\uc778\uc7ac\ub300\ud559 (\uc815\uc6d0\uc678 \ub4f1)": ["\uac8c\uc784\ucf58\ud150\uce20\ud559\uacfc", "\uae08\uc735\ubd80\ub3d9\uc0b0\ubc95\ubb34\ud559\uacfc", "\uc2a4\ub9c8\ud2b8\uc804\uae30\uc804\uc790\ud559\uacfc", "\uc2a4\ud3ec\uce20\uc0c1\ub2f4\uc7ac\ud65c\ud559\uacfc"]
+
+    },
+
+    "\uad6d\ubbfc\ub300\ud559\uad50": {
+
+      "\uacbd\uc601/AI\ube45\ub370\uc774\ud130": ["AI\ube45\ub370\uc774\ud130\uc735\ud569\uacbd\uc601\ud559\uacfc", "\uacbd\uc601\uc815\ubcf4\ud559\ubd80", "\uacbd\uc601\ud559\ubd80"],
+
+      "\uacf5\uacfc/\uc790\ub3d9\ucc28/\uc18c\ud504\ud2b8\uc6e8\uc5b4": ["\uac74\uc124\uc2dc\uc2a4\ud15c\uacf5\ud559\ubd80", "\uae30\uacc4\uacf5\ud559\ubd80", "\ubbf8\ub798\ubaa8\ube4c\ub9ac\ud2f0\ud559\uacfc", "\uc18c\ud504\ud2b8\uc6e8\uc5b4\ud559\ubd80", "\uc2e0\uc18c\uc7ac\uacf5\ud559\ubd80", "\uc778\uacf5\uc9c0\ub2a5\ud559\ubd80", "\uc790\ub3d9\ucc28IT\uc735\ud569\ud559\uacfc", "\uc790\ub3d9\ucc28\uacf5\ud559\uacfc", "\uc804\uc790\uacf5\ud559\ubd80"],
+
+      "\uacfc\ud559\uae30\uc220/\uac74\ucd95": ["\uac74\ucd95\ud559\ubd80", "\ub098\ub178\uc804\uc790\ubb3c\ub9ac\ud559\uacfc", "\ubc14\uc774\uc624\ubc1c\ud6a8\uc735\ud569\ud559\uacfc", "\uc0b0\ub9bc\ud658\uacbd\uc2dc\uc2a4\ud15c\ud559\uacfc", "\uc2dd\ud488\uc601\uc591\ud559\uacfc", "\uc751\uc6a9\ud654\ud559\ubd80", "\uc784\uc0b0\uc0dd\uba85\uacf5\ud559\uacfc", "\uc815\ubcf4\ubcf4\uc548\uc554\ud638\uc218\ud559\uacfc"],
+
+      "\uae00\ub85c\ubc8c\uc778\ubb38/\uc0ac\ud68c/\ubc95\ud559/\uacbd\uc0c1": ["\uacbd\uc81c\ud559\uacfc", "\uad50\uc721\ud559\uacfc", "\uad6d\uc81c\ud1b5\uc0c1\ud559\uacfc", "\ub7ec\uc2dc\uc544\u00b7\uc720\ub77c\uc2dc\uc544\ud559\uacfc", "\ubbf8\ub514\uc5b4\u00b7\uad11\uace0\ud559\ubd80", "\ubc95\ud559\ubd80", "\uc0ac\ud68c\ud559\uacfc", "\uc601\uc5b4\uc601\ubb38\ud559\ubd80", "\uc77c\ubcf8\ud559\uacfc", "\uc815\uce58\uc678\uad50\ud559\uacfc", "\uc911\uad6d\ud559\ubd80", "\ud55c\uad6d\uc5b4\ubb38\ud559\ubd80", "\ud55c\uad6d\uc5ed\uc0ac\ud559\uacfc", "\ud589\uc815\ud559\uacfc"],
+
+      "\uc608\uc220/\uccb4\uc721": ["\uacf5\uc5f0\uc608\uc220\ud559\ubd80", "\ubbf8\uc220\ud559\ubd80", "\uc2a4\ud3ec\uce20\uac74\uac15\uc7ac\ud65c\ud559\uacfc", "\uc2a4\ud3ec\uce20\uad50\uc721\ud559\uacfc", "\uc2a4\ud3ec\uce20\uc0b0\uc5c5\ub808\uc800\ud559\uacfc", "\uc74c\uc545\ud559\ubd80"],
+
+      "\uc790\uc720\uc804\uacf5/\uc735\ud569": ["\ubbf8\ub798\uc735\ud569\ud559\ubd80", "\uc804\uacf5\uc790\uc728\uc120\ud0dd\uc81c(\uc790\uc720\uc804\uacf5)"],
+
+      "\uc870\ud615\ub300\ud559(\ub514\uc790\uc778)": ["AI\ub514\uc790\uc778\ud559\uacfc", "\uacf5\uac04\ub514\uc790\uc778\ud559\uacfc", "\uacf5\uc5c5\ub514\uc790\uc778\ud559\uacfc", "\uae08\uc18d\uacf5\uc608\ud559\uacfc", "\ub3c4\uc790\uacf5\uc608\ud559\uacfc", "\uc2dc\uac01\ub514\uc790\uc778\ud559\uacfc", "\uc601\uc0c1\ub514\uc790\uc778\ud559\uacfc", "\uc758\uc0c1\ub514\uc790\uc778\ud559\uacfc", "\uc790\ub3d9\ucc28\u00b7\uc6b4\uc1a1\ub514\uc790\uc778\ud559\uacfc"]
+
+    },
+
+    "\ub2e8\uad6d\ub300\ud559\uad50": {
+
+      "\uc8fd\uc804-\uacf5\ud559/SW/AI": ["SW\uc735\ud569\uacc4\uc5f4\uad11\uc5ed", "\uac74\ucd95\ud559\ubd80(\uac74\ucd95\uacf5\ud559/\uac74\ucd95\ud559(5\ub144))", "\uace0\ubd84\uc790\uc2dc\uc2a4\ud15c\uacf5\ud559\ubd80(\uace0\ubd84\uc790/\uc735\ud569\uc18c\uc7ac)", "\uacf5\ud559\uacc4\uc5f4\uad11\uc5ed", "\uae30\uacc4\uacf5\ud559\uacfc", "\uc0ac\uc774\ubc84\ubcf4\uc548\ud559\uacfc", "\uc18c\ud504\ud2b8\uc6e8\uc5b4\ud559\uacfc", "\uc735\ud569\ubc18\ub3c4\uccb4\uacf5\ud559\uacfc", "\uc778\uacf5\uc9c0\ub2a5\ud559\uacfc", "\uc778\ud504\ub77c\uac74\uc124\uacf5\ud559\uacfc", "\uc804\uc790\uc804\uae30\uacf5\ud559\ubd80", "\ucef4\ud4e8\ud130\uacf5\ud559\uacfc", "\ud1b5\uacc4\ub370\uc774\ud130\uc0ac\uc774\uc5b8\uc2a4\ud559\uacfc", "\ud654\ud559\uacf5\ud559\uacfc"],
+
+      "\uc8fd\uc804-\uad11\uc5ed/\uc778\ubb38/\uc0ac\ud68c": ["\uacbd\uc601\ud559\ubd80", "\uacbd\uc81c\ud559\uacfc", "\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\ub3c4\uc2dc\uacc4\ud68d\u00b7\ubd80\ub3d9\uc0b0\ud559\ubd80", "\ubb34\uc5ed\ud559\uacfc", "\ubbf8\ub514\uc5b4\ucee4\ubba4\ub2c8\ucf00\uc774\uc158\ud559\ubd80", "\ubc95\ud559\uacfc", "\uc0ac\ud559\uacfc", "\uc0ac\ud68c\uacc4\uc5f4\uad11\uc5ed", "\uc0b0\uc5c5\uacbd\uc601\ud559\uacfc(\uc57c)", "\uc0c1\ub2f4\ud559\uacfc", "\uc601\ubbf8\uc778\ubb38\ud559\uacfc", "\uc778\ubb38\uacc4\uc5f4\uad11\uc5ed", "\uc815\uce58\uc678\uad50\ud559\uacfc", "\ucca0\ud559\uacfc", "\ud589\uc815\ud559\uacfc"],
+
+      "\uc8fd\uc804-\uc0ac\ubc94/\uae30\ud0c0": ["\uacfc\ud559\uad50\uc721\uacfc", "\uad6d\uc81c\uacbd\uc601\ud559\uacfc", "\ubaa8\ubc14\uc77c\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc", "\uc218\ud559\uad50\uc721\uacfc", "\uccb4\uc721\uad50\uc721\uacfc", "\ud2b9\uc218\uad50\uc721\uacfc", "\ud55c\ubb38\uad50\uc721\uacfc"],
+
+      "\ucc9c\uc548-\uacf5\uacf5/\ubcf4\uac74": ["\uacf5\uacf5\uc815\ucc45\ud559\uacfc", "\uacf5\uacf5\uc815\ucc45\ud559\uacfc(\uc57c)", "\ubb3c\ub9ac\uce58\ub8cc\ud559\uacfc", "\ubcf4\uac74\ud589\uc815\ud559\uacfc", "\uc0ac\ud68c\ubcf5\uc9c0\ud559\uacfc", "\uc2dd\ud488\uc790\uc6d0\uacbd\uc81c\ud559\uacfc", "\uc2ec\ub9ac\ud559\uacfc", "\uc784\uc0c1\ubcd1\ub9ac\ud559\uacfc", "\uce58\uc704\uc0dd\ud559\uacfc", "\ud574\ubcd1\ub300\uad70\uc0ac\ud559\uacfc"],
+
+      "\ucc9c\uc548-\uad11\uc5ed/\uc678\uad6d\uc5b4": ["\uae00\ub85c\ubc8c\ud55c\uad6d\uc5b4\uacfc", "\uc544\uc2dc\uc544\uc911\ub3d9\ud559\ubd80(\uc911\uad6d/\uc77c\ubcf8/\ubabd\uace8/\uc911\ub3d9/\ubca0\ud2b8\ub0a8)", "\uc601\uc5b4\uacfc", "\uc720\ub7fd\uc911\ub0a8\ubbf8\ud559\ubd80(\ub3c5\uc77c/\ud504\ub791\uc2a4/\uc2a4\ud398\uc778\uc911\ub0a8\ubbf8/\ub7ec\uc2dc\uc544/\ud3ec\ub974\ud22c\uac08\ube0c\ub77c\uc9c8)", "\uc778\ubb38\uc0ac\ud68c\uacc4\uc5f4\uad11\uc5ed"],
+
+      "\ucc9c\uc548-\uc608\uc220/\uc2a4\ud3ec\uce20": ["\uad6d\uc81c\uc2a4\ud3ec\uce20\ud559\ubd80(\uc6b4\ub3d9\ucc98\ubc29\uc7ac\ud65c)", "\ubb38\uc608\ucc3d\uc791\uacfc", "\uc2a4\ud3ec\uce20\uacbd\uc601\ud559\uacfc"],
+
+      "\ucc9c\uc548-\uc758\ud559/\uac04\ud638/\uc57d\ud559": ["\uac04\ud638\ud559\uacfc", "\uc57d\ud559\uacfc", "\uc758\uc608\uacfc", "\uce58\uc758\uc608\uacfc"],
+
+      "\ucc9c\uc548-\uc790\uc5f0/\ubc14\uc774\uc624": ["\uacbd\uc601\uacf5\ud559\uacfc", "\ubb3c\ub9ac\ud559\uacfc", "\uc0dd\uba85\uacf5\ud559\ubd80(\uc2dd\ub7c9\uc0dd\uba85/\ub3d9\ubb3c\uc0dd\uba85/\ud658\uacbd\uc6d0\uc608/\ub179\uc9c0\uc870\uacbd)", "\uc218\ud559\uacfc", "\uc2dd\ud488\uacf5\ud559\uacfc", "\uc2dd\ud488\uc601\uc591\ud559\uacfc", "\uc2e0\uc18c\uc7ac\uacf5\ud559\uacfc", "\uc5d0\ub108\uc9c0\uacf5\ud559\uacfc", "\uc758\uc0dd\uba85\uacfc\ud559\ubd80(\uc758\uc0dd\uba85\uc2dc\uc2a4\ud15c/\uc0dd\uba85\uacfc\ud559/\ubbf8\uc0dd\ubb3c)", "\uc790\uc5f0\uacf5\ud559\uacc4\uc5f4\uad11\uc5ed", "\uc81c\uc57d\uacf5\ud559\uacfc", "\ucf54\uc2a4\uba54\ub514\uceec\uc18c\uc7ac\ud559\uacfc", "\ud654\ud559\uacfc"]
+
+    },
+
+    "\ub3d9\uad6d\ub300\ud559\uad50": {
+
+      "경영대학 (단과대학 단위 모집 포함)": ["경영정보학과", "경영학과", "회계학과"],
+
+      "경찰사법대학": ["경찰행정학부"],
+
+      "공과대학": ["건설환경공학과", "건축공학부(건축공학전공, 건축학전공)", "기계로봇에너지공학과", "산업시스템공학과", "에너지신소재공학과", "전자전기공학부", "정보통신공학과", "화공생물공학과"],
+
+      "문과대학": ["국어국문·문예창작학부", "사학과", "영어영문학부(영어문학전공, 영어통번역학전공)", "일본학과", "중어중문학과", "철학과"],
+
+      "미래융합대학": ["글로벌무역학과", "범죄학과", "사회복지상담학과"],
+
+      "바이오시스템대학 (단과대학 단위 모집 포함)": ["생명과학과", "식품바이오융합공학과", "융합환경과학과", "의생명공학과"],
+
+      "법과대학": ["법학과"],
+
+      "불교대학": ["문화유산학과", "불교학부"],
+
+      "사범대학": ["가정교육과", "교육학과", "국어교육과", "수학교육과", "역사교육과", "지리교육과", "체육교육과"],
+
+      "사회과학대학": ["경제학과", "광고홍보학과", "국제통상학과", "미디어커뮤니케이션학전공", "북한학전공", "사회복지학과", "사회학전공", "식품산업관리학과", "정치외교학전공", "행정학전공"],
+
+      "약학대학": ["약학과"],
+
+      "열린전공학부 (광역화 모집단위)": ["인문/자연 계열 무전공"],
+
+      "예술대학": ["미술학부(불교미술전공, 한국화전공, 서양화전공, 조소전공)", "스포츠문화학과", "연극학부", "영화영상학과", "한국음악과"],
+
+      "이과대학": ["물리학과", "수학과", "통계학과", "화학과"],
+
+      "첨단융합대학": ["시스템반도체학부", "의료인공지능공학과", "지능형네트워크융합학과", "컴퓨터·AI학부"]
+
+    },
+
+    "\ubd80\uc0b0\ub300\ud559\uad50": {
+
+      "\uacbd\uc81c\ud1b5\uc0c1\u00b7\uacbd\uc601\ub300\ud559": ["\uacbd\uc601\ud559\uacfc", "\uacbd\uc81c\ud559\ubd80", "\uacf5\uacf5\uc815\ucc45\ud559\ubd80", "\uad00\uad11\ucee8\ubca4\uc158\ud559\uacfc", "\uad6d\uc81c\ud559\ubd80", "\ubb34\uc5ed\ud559\ubd80"],
+
+      "\uacf5\uacfc\ub300\ud559": ["\uac74\ucd95\uacf5\ud559\uacfc", "\uac74\ucd95\ud559\uacfc(5\ub144\uc81c)", "\uace0\ubd84\uc790\uacf5\ud559\uacfc", "\uae30\uacc4\uacf5\ud559\ubd80", "\ub3c4\uc2dc\uacf5\ud559\uacfc", "\uc0ac\ud68c\uae30\ubc18\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc", "\uc0b0\uc5c5\uacf5\ud559\uacfc", "\uc720\uae30\uc18c\uc7ac\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc", "\uc735\ud569/\uc790\uc728\uc804\uacf5(\ucca8\ub2e8IT/\ucca8\ub2e8\uc18c\uc7ac/\ucca8\ub2e8\ubaa8\ube4c\ub9ac\ud2f0/\uc2a4\ub9c8\ud2b8\uc2dc\ud2f0/\ubbf8\ub798\ub3c4\uc2dc\uac74\ucd95 \ub4f1)", "\uc7ac\ub8cc\uacf5\ud559\ubd80", "\uc804\uae30\uc804\uc790\uacf5\ud559\ubd80(\uc804\uae30/\uc804\uc790/\ubc18\ub3c4\uccb4)", "\uc870\uc120\u00b7\ud574\uc591\uacf5\ud559\uacfc", "\ud56d\uacf5\uc6b0\uc8fc\uacf5\ud559\uacfc", "\ud654\uacf5\uc0dd\uba85\uacf5\ud559\uacfc", "\ud658\uacbd\uacf5\ud559\uacfc"],
+
+      "\uc0ac\ubc94\ub300\ud559": ["\uad50\uc721\ud559\uacfc", "\uad6d\uc5b4\uad50\uc721", "\ubb3c\ub9ac\uad50\uc721", "\uc0dd\ubb3c\uad50\uc721", "\uc218\ud559\uad50\uc721", "\uc5ed\uc0ac\uad50\uc721", "\uc601\uc5b4\uad50\uc721", "\uc720\uc544\uad50\uc721\uacfc", "\uc724\ub9ac\uad50\uc721", "\uc77c\ubc18\uc0ac\ud68c\uad50\uc721", "\uc9c0\uad6c\uacfc\ud559\uad50\uc721", "\uc9c0\ub9ac\uad50\uc721", "\ud2b9\uc218\uad50\uc721\uacfc", "\ud654\ud559\uad50\uc721"],
+
+      "\uc0ac\ud68c\uacfc\ud559\ub300\ud559": ["\ubb38\ud5cc\uc815\ubcf4\ud559\uacfc", "\ubbf8\ub514\uc5b4\ucee4\ubba4\ub2c8\ucf00\uc774\uc158\ud559\uacfc", "\uc0ac\ud68c\ubcf5\uc9c0\ud559\uacfc", "\uc0ac\ud68c\ud559\uacfc", "\uc2ec\ub9ac\ud559\uacfc", "\uc815\uce58\uc678\uad50\ud559\uacfc", "\ud589\uc815\ud559\uacfc"],
+
+      "\uc0dd\uba85\uc790\uc6d0\uacfc\ud559\ub300\ud559": ["IT\uc751\uc6a9\uacf5\ud559\uacfc", "\ubc14\uc774\uc624\uc0b0\uc5c5\uae30\uacc4\uacf5\ud559\uacfc", "\ubc14\uc774\uc624\uc18c\uc7ac", "\ubc14\uc774\uc624\ud658\uacbd\uc5d0\ub108\uc9c0", "\uc0dd\uba85\ud658\uacbd\ud654\ud559", "\uc2dd\ud488\uacf5\ud559", "\uc2dd\ud488\uc790\uc6d0\uacbd\uc81c\ud559\uacfc", "\uc6d0\uc608\uc0dd\uba85", "\uc870\uacbd\ud559\uacfc"],
+
+      "\uc0dd\ud65c\uacfc\ud559\ub300\ud559": ["\uc2a4\ud3ec\uce20\uacfc\ud559\uacfc", "\uc2dd\ud488\uc601\uc591\ud559\uacfc", "\uc2e4\ub0b4\ud658\uacbd\ub514\uc790\uc778\ud559\uacfc", "\uc544\ub3d9\uac00\uc871\ud559\uacfc", "\uc758\ub958\ud559\uacfc"],
+
+      "\uc758\uc57d\u00b7\ubcf4\uac74\u00b7\uac04\ud638 \uacc4\uc5f4": ["\uac04\ud638\ub300\ud559 (\uac04\ud638\ud559\uacfc)", "\uc57d\ud559\ub300\ud559 (\uc57d\ud559\ubd80)", "\uc758\uacfc\ub300\ud559 (\uc758\uc608\uacfc)", "\uce58\uacfc\ub300\ud559 (\uce58\uc758\uc608\uacfc)", "\ud55c\uc758\ud559\uc804\ubb38\ub300\ud559\uc6d0"],
+
+      "\uc778\ubb38\ub300\ud559": ["\uace0\uace0\ud559\uacfc", "\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\ub178\uc5b4\ub178\ubb38\ud559\uacfc", "\ub3c5\uc5b4\ub3c5\ubb38\ud559\uacfc", "\ubd88\uc5b4\ubd88\ubb38\ud559\uacfc", "\uc0ac\ud559\uacfc", "\uc5b8\uc5b4\uc815\ubcf4\ud559\uacfc", "\uc601\uc5b4\uc601\ubb38\ud559\uacfc", "\uc77c\uc5b4\uc77c\ubb38\ud559\uacfc", "\uc911\uc5b4\uc911\ubb38\ud559\uacfc", "\ucca0\ud559\uacfc", "\ud55c\ubb38\ud559\uacfc"],
+
+      "\uc790\uc5f0\uacfc\ud559\ub300\ud559": ["\ub300\uae30\ud658\uacbd\uacfc\ud559\uacfc", "\ubb3c\ub9ac\ud559\uacfc", "\ubbf8\uc0dd\ubb3c\ud559\uacfc", "\ubd84\uc790\uc0dd\ubb3c\ud559\uacfc", "\uc0dd\uba85\uacfc\ud559\uacfc", "\uc218\ud559\uacfc", "\uc9c0\uc9c8\ud658\uacbd\uacfc\ud559\uacfc", "\ud1b5\uacc4\ud559\uacfc", "\ud574\uc591\ud559\uacfc", "\ud654\ud559\uacfc"],
+
+      "\uc815\ubcf4\uc758\uc0dd\uba85\uacf5\ud559\ub300\ud559": ["\uc758\uc0dd\uba85\uc735\ud569\uacf5\ud559\ubd80", "\uc815\ubcf4\ucef4\ud4e8\ud130\uacf5\ud559\ubd80(\ucef4\ud4e8\ud130, \uc778\uacf5\uc9c0\ub2a5, \ub514\uc790\uc778\ud14c\ud06c\ub180\ub85c\uc9c0)"],
+
+      "\ud559\ubd80\ub300\ud559": ["\uc751\uc6a9\uc0dd\uba85\uc735\ud569\ud559\ubd80", "\uc790\uc720\uc804\uacf5\ud559\ubd80", "\ucca8\ub2e8\uc735\ud569\ud559\ubd80"]
+
+    },
+
+    "\uc11c\uac15\ub300\ud559\uad50": {
+
+      "\uad6d\uc81c\u00b7\ubbf8\ub514\uc5b4\uacc4\uc5f4": ["\uac8c\ud398\ub974\ud2b8\uad6d\uc81c\ud559\ubd80", "\uae00\ub85c\ubc8c\ud55c\uad6d\ud559\ubd80", "\uc9c0\uc2dd\uc735\ud569\ubbf8\ub514\uc5b4\ud559\ubd80(\uc2e0\ubb38\ubc29\uc1a1\ud559\uacfc, \ubbf8\ub514\uc5b4&\uc5d4\ud130\ud14c\uc778\uba3c\ud2b8\ud559\uacfc, \uc544\ud2b8&\ud14c\ud06c\ub180\ub85c\uc9c0\ud559\uacfc)"],
+
+      "\uc0ac\ud68c\uacfc\ud559\u00b7\uc0c1\uacbd\uacc4\uc5f4": ["\uacbd\uc601\ud559\ubd80", "\uacbd\uc81c\ud559\uacfc", "\uc0ac\ud68c\ud559\uacfc", "\uc2ec\ub9ac\ud559\uacfc", "\uc815\uce58\uc678\uad50\ud559\uacfc"],
+
+      "\uc778\ubb38\u00b7\uc5b4\ubb38\uacc4\uc5f4": ["\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\uc0ac\ud559\uacfc", "\uc601\ubb38\ud559\ubd80", "\uc720\ub7fd\ubb38\ud654\ud559\uacfc", "\uc778\ubb38\ud559\uae30\ubc18\uc790\uc720\uc804\uacf5\ud559\ubd80", "\uc885\uad50\ud559\uacfc", "\uc911\uad6d\ubb38\ud654\ud559\uacfc", "\ucca0\ud559\uacfc"],
+
+      "\uc790\uc5f0\u00b7\uacf5\ud559\uacc4\uc5f4": ["SCIENCE\uae30\ubc18\uc790\uc720\uc804\uacf5\ud559\ubd80", "\uae30\uacc4\uacf5\ud559\uacfc", "\ubb3c\ub9ac\ud559\uacfc", "\ubc18\ub3c4\uccb4\uacf5\ud559\uacfc", "\uc0dd\uba85\uacfc\ud559\uacfc", "\uc218\ud559\uacfc", "\uc2dc\uc2a4\ud15c\ubc18\ub3c4\uccb4\uacf5\ud559\uacfc", "\uc778\uacf5\uc9c0\ub2a5\ud559\uacfc", "\uc804\uc790\uacf5\ud559\uacfc", "\ucef4\ud4e8\ud130\uacf5\ud559\uacfc", "\ud654\uacf5\uc0dd\uba85\uacf5\ud559\uacfc", "\ud654\ud559\uacfc"]
+
+    },
+
+    "\uc11c\uc6b8\ub300\ud559\uad50": {
+
+      "\uacf5\uacfc\ub300\ud559": ["\uac74\uc124\ud658\uacbd\ub3c4\uc2dc\uacf5\ud559\ubd80", "\uac74\ucd95\ud559\uacfc", "\uad11\uc5ed", "\uae30\uacc4\uacf5\ud559\ubd80", "\uc0b0\uc5c5\uacf5\ud559\uacfc", "\uc5d0\ub108\uc9c0\uc790\uc6d0\uacf5\ud559\uacfc", "\uc6d0\uc790\ud575\uacf5\ud559\uacfc", "\uc7ac\ub8cc\uacf5\ud559\ubd80", "\uc804\uae30\u00b7\uc815\ubcf4\uacf5\ud559\ubd80", "\uc870\uc120\ud574\uc591\uacf5\ud559\uacfc", "\ucef4\ud4e8\ud130\uacf5\ud559\ubd80", "\ud56d\uacf5\uc6b0\uc8fc\uacf5\ud559\uacfc", "\ud654\ud559\uc0dd\ubb3c\uacf5\ud559\ubd80"],
+
+      "\uae30\ud0c0 \ub2e8\uacfc\ub300\ud559": ["\uac04\ud638\ub300\ud559", "\uacbd\uc601\ub300\ud559", "\uc218\uc758\uacfc\ub300\ud559(\uc218\uc758\uc608\uacfc)", "\uc57d\ud559\ub300\ud559(\uc57d\ud559\uacc4\uc5f4)", "\uc758\uacfc\ub300\ud559(\uc758\uc608\uacfc)", "\ucca8\ub2e8\uc735\ud569\ud559\ubd80", "\uce58\uc758\ud559\ub300\ud559\uc6d0(\uce58\uc758\ud559\uacfc)", "\ud559\ubd80\ub300\ud559(\uad11\uc5ed, \uc790\uc720\uc804\uacf5\ud559\ubd80)"],
+
+      "\ub18d\uc5c5\uc0dd\uba85\uacfc\ud559\ub300\ud559": ["\ub18d\uacbd\uc81c\uc0ac\ud68c\ud559\ubd80", "\ubc14\uc774\uc624\uc2dc\uc2a4\ud15c\u00b7\uc18c\uc7ac\ud559\ubd80", "\uc0b0\ub9bc\uacfc\ud559\ubd80", "\uc2a4\ub9c8\ud2b8\uc2dc\uc2a4\ud15c\uacfc\ud559\uacfc", "\uc2dd\ubb3c\uc0dd\uc0b0\uacfc\ud559\ubd80", "\uc2dd\ud488\u00b7\ub3d9\ubb3c\uc0dd\uba85\uacf5\ud559\ubd80", "\uc751\uc6a9\uc0dd\ubb3c\ud654\ud559\ubd80", "\uc870\uacbd\u00b7\uc9c0\uc5ed\uc2dc\uc2a4\ud15c\uacf5\ud559\ubd80"],
+
+      "\ubbf8\uc220\ub300\ud559": ["\uacf5\uc608\uacfc", "\ub3d9\uc591\ud654\uacfc", "\ub514\uc790\uc778\uacfc", "\uc11c\uc591\ud654\uacfc", "\uc870\uc18c\uacfc"],
+
+      "\uc0ac\ubc94\ub300\ud559": ["\uad50\uc721\ud559\uacfc", "\uad6d\uc5b4\uad50\uc721\uacfc", "\ub3c5\uc5b4\uad50\uc721\uacfc", "\ubb3c\ub9ac\uad50\uc721\uacfc", "\ubd88\uc5b4\uad50\uc721\uacfc", "\uc0ac\ud68c\uad50\uc721\uacfc", "\uc0dd\ubb3c\uad50\uc721\uacfc", "\uc218\ud559\uad50\uc721\uacfc", "\uc5ed\uc0ac\uad50\uc721\uacfc", "\uc601\uc5b4\uad50\uc721\uacfc", "\uc724\ub9ac\uad50\uc721\uacfc", "\uc9c0\uad6c\uacfc\ud559\uad50\uc721\uacfc", "\uc9c0\ub9ac\uad50\uc721\uacfc", "\uccb4\uc721\uad50\uc721\uacfc", "\ud654\ud559\uad50\uc721\uacfc"],
+
+      "\uc0ac\ud68c\uacfc\ud559\ub300\ud559": ["\uacbd\uc81c\ud559\ubd80", "\uc0ac\ud68c\ubcf5\uc9c0\ud559\uacfc", "\uc0ac\ud68c\ud559\uacfc", "\uc2ec\ub9ac\ud559\uacfc", "\uc5b8\ub860\uc815\ubcf4\ud559\uacfc", "\uc778\ub958\ud559\uacfc", "\uc815\uce58\uc678\uad50\ud559\ubd80", "\uc9c0\ub9ac\ud559\uacfc"],
+
+      "\uc0dd\ud65c\uacfc\ud559\ub300\ud559": ["\uc18c\ube44\uc790\uc544\ub3d9\ud559\ubd80(\uc18c\ube44\uc790\ud559/\uc544\ub3d9\uac00\uc871\ud559\uc804\uacf5)", "\uc2dd\ud488\uc601\uc591\ud559\uacfc", "\uc758\ub958\ud559\uacfc"],
+
+      "\uc74c\uc545\ub300\ud559": ["\uad00\ud604\uc545\uacfc", "\uad6d\uc545\uacfc", "\uc131\uc545\uacfc", "\uc74c\uc545\ud559\uacfc", "\uc791\uace1\uacfc", "\ud53c\uc544\ub178\uacfc"],
+
+      "\uc778\ubb38\ub300\ud559": ["\uace0\uace0\ubbf8\uc220\uc0ac\ud559\uacfc", "\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\ub178\uc5b4\ub178\ubb38\ud559\uacfc", "\ub3c5\uc5b4\ub3c5\ubb38\ud559\uacfc", "\ubbf8\ud559\uacfc", "\ubd88\uc5b4\ubd88\ubb38\ud559\uacfc", "\uc11c\uc5b4\uc11c\ubb38\ud559\uacfc", "\uc544\uc2dc\uc544\uc5b8\uc5b4\ubb38\uba85\ud559\ubd80", "\uc5b8\uc5b4\ud559\uacfc", "\uc5ed\uc0ac\ud559\ubd80", "\uc601\uc5b4\uc601\ubb38\ud559\uacfc", "\uc885\uad50\ud559\uacfc", "\uc911\uc5b4\uc911\ubb38\ud559\uacfc", "\ucca0\ud559\uacfc"],
+
+      "\uc790\uc5f0\uacfc\ud559\ub300\ud559": ["\ubb3c\ub9ac\u00b7\ucc9c\ubb38\ud559\ubd80(\ubb3c\ub9ac\ud559\uc804\uacf5/\ucc9c\ubb38\ud559\uc804\uacf5)", "\uc0dd\uba85\uacfc\ud559\ubd80", "\uc218\ub9ac\uacfc\ud559\ubd80", "\uc9c0\uad6c\ud658\uacbd\uacfc\ud559\ubd80", "\ud1b5\uacc4\ud559\uacfc", "\ud654\ud559\ubd80"]
+
+    },
+
+    "\uc11c\uc6b8\uc2dc\ub9bd\ub300\ud559\uad50": {
+
+      "\uacbd\uc601\ub300\ud559": ["\uacbd\uc601\ud559\ubd80"],
+
+      "\uacf5\uacfc\ub300\ud559": ["\uae30\uacc4\uc815\ubcf4\uacf5\ud559\uacfc", "\uc2e0\uc18c\uc7ac\uacf5\ud559\uacfc", "\uc778\uacf5\uc9c0\ub2a5\ud559\uacfc", "\uc804\uc790\uc804\uae30\ucef4\ud4e8\ud130\uacf5\ud559\ubd80", "\ucef4\ud4e8\ud130\uacfc\ud559\ubd80", "\ud1a0\ubaa9\uacf5\ud559\uacfc", "\ud654\ud559\uacf5\ud559\uacfc"],
+
+      "\ub3c4\uc2dc\uacfc\ud559\ub300\ud559": ["\uac74\ucd95\ud559\ubd80(\uac74\ucd95\uacf5\ud559/\uac74\ucd95\ud559\uc804\uacf5)", "\uacf5\uac04\uc815\ubcf4\uacf5\ud559\uacfc", "\uad50\ud1b5\uacf5\ud559\uacfc", "\ub3c4\uc2dc\uacf5\ud559\uacfc", "\ub3c4\uc2dc\uc0ac\ud68c\ud559\uacfc", "\ub3c4\uc2dc\ud589\uc815\ud559\uacfc", "\uc870\uacbd\ud559\uacfc", "\ud658\uacbd\uacf5\ud559\ubd80"],
+
+      "\uc608\uc220\uccb4\uc721\ub300\ud559": ["\ub514\uc790\uc778\ud559\uacfc(\uc2dc\uac01/\uc0b0\uc5c5\ub514\uc790\uc778\uc804\uacf5)", "\uc2a4\ud3ec\uce20\uacfc\ud559\uacfc", "\uc74c\uc545\ud559\uacfc", "\uc870\uac01\ud559\uacfc"],
+
+      "\uc778\ubb38\ub300\ud559": ["\uad6d\uc0ac\ud559\uacfc", "\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\uc601\uc5b4\uc601\ubb38\ud559\uacfc", "\uc911\uad6d\uc5b4\ubb38\ud654\ud559\uacfc", "\ucca0\ud559\uacfc"],
+
+      "\uc790\uc5f0\uacfc\ud559\ub300\ud559": ["\ubb3c\ub9ac\ud559\uacfc", "\uc0dd\uba85\uacfc\ud559\uacfc", "\uc218\ud559\uacfc", "\uc735\ud569\uc751\uc6a9\ud654\ud559\uacfc", "\ud1b5\uacc4\ud559\uacfc", "\ud658\uacbd\uc6d0\uc608\ud559\uacfc"],
+
+      "\uc790\uc720/\ucca8\ub2e8\uc735\ud569\ud559\ubd80": ["\uc790\uc720\uc804\uacf5\ud559\ubd80(\uc778\ubb38/\uc790\uc5f0)", "\ucca8\ub2e8\uc735\ud569\ud559\ubd80(\uc735\ud569\ubc14\uc774\uc624\ud5ec\uc2a4\uc804\uacf5, \ucca8\ub2e8\uc778\uacf5\uc9c0\ub2a5\uc804\uacf5, \uc9c0\ub2a5\ud615\ubc18\ub3c4\uccb4\uc804\uacf5)"],
+
+      "\uc815\uacbd\ub300\ud559": ["\uacbd\uc81c\ud559\ubd80", "\uad6d\uc81c\uad00\uacc4\ud559\uacfc", "\uc0ac\ud68c\ubcf5\uc9c0\ud559\uacfc", "\uc138\ubb34\ud559\uacfc", "\ud589\uc815\ud559\uacfc"]
+
+    },
+
+    "\uc131\uade0\uad00\ub300\ud559\uad50": {
+
+      "\uacf5\ud559\uacc4\uc5f4": ["\uacf5\ud559\uacc4\uc5f4(\uc2e0\uc18c\uc7ac, \uae30\uacc4, \uac74\uc124\ud658\uacbd, \ud654\ud559\uacf5\ud559/\uace0\ubd84\uc790, \uc2dc\uc2a4\ud15c\uacbd\uc601, \ub098\ub178\uacf5\ud559)", "\uc804\uc790\uc804\uae30\uacf5\ud559\ubd80"],
+
+      "\uc0ac\ud68c\uacfc\ud559\uacc4\uc5f4": ["\uacbd\uc601\ud559\uacfc", "\ubbf8\ub514\uc5b4\ucee4\ubba4\ub2c8\ucf00\uc774\uc158\ud559\uacfc", "\uc0ac\ud68c\ubcf5\uc9c0\ud559\uacfc", "\uc0ac\ud68c\ud559\uacfc", "\uc2ec\ub9ac\ud559\uacfc", "\uc544\ub3d9\uccad\uc18c\ub144\ud559\uacfc", "\uc815\uce58\uc678\uad50\ud559\uacfc", "\ud1b5\uacc4\ud559\uacfc", "\ud589\uc815\ud559\uacfc"],
+
+      "\uc18c\ud504\ud2b8\uc6e8\uc5b4/\ucca8\ub2e8\ud559\uacfc": ["\uae00\ub85c\ubc8c\ubc14\uc774\uc624\uba54\ub514\uceec\uacf5\ud559\uacfc", "\ubc18\ub3c4\uccb4\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc(\uacc4\uc57d)", "\ubc18\ub3c4\uccb4\uc735\ud569\uacf5\ud559\uacfc", "\uc18c\ud504\ud2b8\uc6e8\uc5b4\ud559\uacfc", "\uc591\uc790\uc815\ubcf4\uacf5\ud559\uacfc(\uc2e0\uc124)", "\uc5d0\ub108\uc9c0\ud559\uacfc", "\uc9c0\ub2a5\ud615\uc18c\ud504\ud2b8\uc6e8\uc5b4\ud559\uacfc(\uacc4\uc57d)"],
+
+      "\uc758\uc57d/\uc0ac\ubc94/\uc608\uccb4\ub2a5": ["\uad50\uc721\ud559\uacfc", "\ub514\uc790\uc778\ud559\uacfc", "\uc218\ud559\uad50\uc721\uacfc", "\uc2a4\ud3ec\uce20\uacfc\ud559\uacfc", "\uc57d\ud559\uacfc", "\uc601\uc0c1\ud559\uacfc", "\uc758\uc0c1\ud559\uacfc", "\uc758\uc608\uacfc", "\ucef4\ud4e8\ud130\uad50\uc721\uacfc", "\ud55c\ubb38\uad50\uc721\uacfc"],
+
+      "\uc778\ubb38\uacfc\ud559\uacc4\uc5f4": ["\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\ub3c5\uc5b4\ub3c5\ubb38\ud559\uacfc", "\ub7ec\uc2dc\uc544\uc5b4\ubb38\ud559\uacfc", "\ubb38\ud5cc\uc815\ubcf4\ud559\uacfc", "\uc0ac\ud559\uacfc", "\uc601\uc5b4\uc601\ubb38\ud559\uacfc", "\uc720\ud559\ub3d9\uc591\ud559\uacfc", "\uc911\uc5b4\uc911\ubb38\ud559\uacfc", "\ucca0\ud559\uacfc", "\ud504\ub791\uc2a4\uc5b4\ubb38\ud559\uacfc", "\ud55c\ubb38\ud559\uacfc"],
+
+      "\uc790\uc5f0\uacfc\ud559\uacc4\uc5f4": ["\ubb3c\ub9ac\ud559\uacfc", "\ubc14\uc774\uc624\uba54\uce74\ud2b8\ub85c\ub2c9\uc2a4\ud559\uacfc", "\uc0dd\uba85\uacfc\ud559\uacfc", "\uc218\ud559\uacfc", "\uc2dd\ud488\uc0dd\uba85\uacf5\ud559\uacfc", "\uc735\ud569\uc0dd\uba85\uacf5\ud559\uacfc", "\ud654\ud559\uacfc"],
+
+      "\uc790\uc720\uc804\uacf5/\uae00\ub85c\ubc8c\uacc4\uc5f4": ["\uae00\ub85c\ubc8c\uacbd\uc601\ud559\uacfc", "\uae00\ub85c\ubc8c\uacbd\uc81c\ud559\uacfc", "\uae00\ub85c\ubc8c\ub9ac\ub354\ud559\ubd80", "\uc790\uc720\uc804\uacf5\uacc4\uc5f4(\uc2e0\uc124)"]
+
+    },
+
+    "\uc138\uc885\ub300\ud559\uad50": {
+
+      "\uacf5\uacfc\ub300\ud559": ["\uac74\uc124\ud658\uacbd\uacf5\ud559\uacfc", "\uac74\ucd95\uacf5\ud559\uacfc", "\uac74\ucd95\ud559\uacfc(5\ub144\uc81c)", "\uad6d\ubc29AI\uc735\ud569\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc", "\uae30\uacc4\uacf5\ud559\uacfc", "\ub098\ub178\uc2e0\uc18c\uc7ac\uacf5\ud559\uacfc", "\uc591\uc790\uc6d0\uc790\ub825\uacf5\ud559\uacfc", "\uc5d0\ub108\uc9c0\uc790\uc6d0\uacf5\ud559\uacfc", "\uc6b0\uc8fc\ud56d\uacf5\uc2dc\uc2a4\ud15c\uacf5\ud559\ubd80(\uc6b0\uc8fc\ud56d\uacf5/\uc9c0\ub2a5\ud615\ub4dc\ub860/\ud56d\uacf5\uc2dc\uc2a4\ud15c)", "\ud658\uacbd\uc735\ud569\uacf5\ud559\uacfc"],
+
+      "\uc778\uacf5\uc9c0\ub2a5\uc735\ud569\ub300\ud559": ["AI\ub85c\ubd07\ud559\uacfc", "AI\uc735\ud569\uc804\uc790\uacf5\ud559\uacfc", "\ubc18\ub3c4\uccb4\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc", "\uc591\uc790\uc9c0\ub2a5\uc815\ubcf4\ud559\uacfc", "\uc778\uacf5\uc9c0\ub2a5\ub370\uc774\ud130\uc0ac\uc774\uc5b8\uc2a4\ud559\uacfc", "\uc815\ubcf4\ubcf4\ud638\ud559\uacfc", "\uc9c0\ub2a5\uc815\ubcf4\uc735\ud569\ud559\uacfc", "\ucef4\ud4e8\ud130\uacf5\ud559\uacfc", "\ucf58\ud150\uce20\uc18c\ud504\ud2b8\uc6e8\uc5b4\ud559\uacfc"],
+
+      "\uc778\ubb38/\uc0ac\ud68c/\uacbd\uc601": ["\uacbd\uc601\ud559\ubd80", "\uacbd\uc81c\ud559\uacfc", "\uad50\uc721\ud559\uacfc", "\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\uad6d\uc81c\ud559\ubd80(\uc601\uc5b4\ub370\uc774\ud130\uc735\ud569/\uad6d\uc81c\uc77c\ubcf8\ud559/\uc911\uad6d\ud1b5\uc0c1\ud559)", "\ubbf8\ub514\uc5b4\ucee4\ubba4\ub2c8\ucf00\uc774\uc158\ud559\uacfc", "\ubc95\ud559\uacfc", "\uc5ed\uc0ac\ud559\uacfc", "\ud589\uc815\ud559\uacfc"],
+
+      "\uc790\uc5f0\uacfc\ud559/\uc0dd\uba85": ["\ubb3c\ub9ac\ucc9c\ubb38\ud559\uacfc", "\uc0dd\uba85\uc2dc\uc2a4\ud15c\ud559\ubd80(\uc2dd\ud488\uc0dd\uba85/\ubc14\uc774\uc624\uc735\ud569/\ubc14\uc774\uc624\uc0b0\uc5c5\uc790\uc6d0)", "\uc218\ud559\ud1b5\uacc4\ud559\uacfc", "\uc2a4\ub9c8\ud2b8\uc0dd\uba85\uc0b0\uc5c5\uc735\ud569\ud559\uacfc", "\ud654\ud559\uacfc"],
+
+      "\uc790\uc720\uc804\uacf5/\uacc4\uc57d": ["\uad6d\ubc29AI\ub85c\ubd07\uc735\ud569\uacf5\ud559\uacfc(\ud574\ubcd1\ub300)", "\uc0ac\uc774\ubc84\uad6d\ubc29\ud559\uacfc(\uc721\uad70)", "\uc790\uc720\uc804\uacf5\ud559\ubd80(\ub300\uc591\ud734\uba38\ub2c8\ud2f0\uce7c\ub9ac\uc9c0)"],
+
+      "\uc870\ud615/\uc608\uccb4\ub2a5": ["\ub514\uc790\uc778\uc774\ub178\ubca0\uc774\uc158\uc804\uacf5", "\ub9cc\ud654\uc560\ub2c8\uba54\uc774\uc158\ud14d\uc804\uacf5", "\ubb34\uc6a9\uacfc", "\uc601\ud654\uc608\uc220\ud559\uacfc", "\uc74c\uc545\uacfc", "\uccb4\uc721\ud559\uacfc", "\ud328\uc158\ub514\uc790\uc778\ud559\uacfc", "\ud68c\ud654\uacfc"],
+
+      "\ud638\ud154\uad00\uad11\ub300\ud559": ["\uc870\ub9ac\uc11c\ube44\uc2a4\uacbd\uc601\ud559\uacfc", "\ud638\ud154\uad00\uad11\uc678\uc2dd\uacbd\uc601\ud559\ubd80(\ud638\ud154\uad00\uad11/\uc678\uc2dd\uacbd\uc601)", "\ud638\ud154\uc678\uc2dd\uad00\uad11\ud504\ub79c\ucc28\uc774\uc988\uacbd\uc601\ud559\uacfc"]
+
+    },
+
+    "\uc22d\uc2e4\ub300\ud559\uad50": {
+
+      "IT/AI\ub300\ud559": ["AI\uc18c\ud504\ud2b8\uc6e8\uc5b4\ud559\ubd80(\uc18c\ud504\ud2b8\uc6e8\uc5b4/\uc815\ubcf4\ubcf4\ud638/\uc778\uacf5\uc9c0\ub2a5/AI\uc2dc\uc2a4\ud15c)", "\uae00\ub85c\ubc8c\ubbf8\ub514\uc5b4\ud559\ubd80", "\ub514\uc9c0\ud138\ubbf8\ub514\uc5b4\ud559\uacfc", "\uc804\uc790\uc815\ubcf4\uacf5\ud559\ubd80(\uc804\uc790\uacf5\ud559/IT\uc735\ud569)", "\uc815\ubcf4\ubcf4\ud638\ud559\uacfc(\uacc4\uc57d)", "\ucef4\ud4e8\ud130\ud559\ubd80"],
+
+      "\uacbd\uc601\ub300\ud559": ["\uacbd\uc601\ud559\ubd80", "\uae08\uc735\ud559\ubd80", "\ubca4\ucc98\uc911\uc18c\uae30\uc5c5\ud559\uacfc", "\ud68c\uacc4\ud559\uacfc"],
+
+      "\uacf5\uacfc\ub300\ud559": ["\uac74\ucd95\ud559\ubd80(\uac74\ucd95\ud559\u00b7\uac74\ucd95\uacf5\ud559/\uc2e4\ub0b4\uac74\ucd95)", "\uae30\uacc4\uacf5\ud559\ubd80", "\uc0b0\uc5c5\u00b7\uc815\ubcf4\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc", "\uc2e0\uc18c\uc7ac\uacf5\ud559\uacfc", "\uc804\uae30\uacf5\ud559\ubd80", "\ud654\ud559\uacf5\ud559\uacfc"],
+
+      "\uc0ac\ud68c\uacfc\ud559/\uacbd\uc81c\ud1b5\uc0c1": ["\uacbd\uc81c\ud559\uacfc", "\uad6d\uc81c\ubb34\uc5ed\ud559\uacfc", "\uae00\ub85c\ubc8c\ud1b5\uc0c1\ud559\uacfc", "\uae08\uc735\uacbd\uc81c\ud559\uacfc", "\uc0ac\ud68c\ubcf5\uc9c0\ud559\ubd80", "\uc5b8\ub860\ud64d\ubcf4\ud559\uacfc", "\uc815\ubcf4\uc0ac\ud68c\ud559\uacfc", "\uc815\uce58\uc678\uad50\ud559\uacfc", "\ud3c9\uc0dd\uad50\uc721\ud559\uacfc", "\ud589\uc815\ud559\ubd80"],
+
+      "\uc778\ubb38\ub300\ud559": ["\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\uae30\ub3c5\uad50\ud559\uacfc", "\ub3c5\uc5b4\ub3c5\ubb38\ud559\uacfc", "\ubd88\uc5b4\ubd88\ubb38\ud559\uacfc", "\uc0ac\ud559\uacfc", "\uc2a4\ud3ec\uce20\ud559\ubd80", "\uc601\uc5b4\uc601\ubb38\ud559\uacfc", "\uc608\uc220\ucc3d\uc791\ud559\ubd80(\ubb38\uc608\ucc3d\uc791/\uc601\ud654\uc608\uc220)", "\uc77c\uc5b4\uc77c\ubb38\ud559\uacfc", "\uc911\uc5b4\uc911\ubb38\ud559\uacfc", "\ucca0\ud559\uacfc"],
+
+      "\uc790\uc5f0\uacfc\ud559/\ubc95\ud559": ["\uad6d\uc81c\ubc95\ubb34\ud559\uacfc", "\ubb3c\ub9ac\ud559\uacfc", "\ubc95\ud559\uacfc", "\uc218\ud559\uacfc", "\uc758\uc0dd\uba85\uc2dc\uc2a4\ud15c\ud559\ubd80", "\uc815\ubcf4\ud1b5\uacc4\u00b7\ubcf4\ud5d8\uc218\ub9ac\ud559\uacfc", "\ud654\ud559\uacfc"],
+
+      "\uc790\uc720\uc804\uacf5/\uae30\ud0c0": ["\uc790\uc720\uc804\uacf5\ud559\ubd80(\uc778\ubb38)", "\uc790\uc720\uc804\uacf5\ud559\ubd80(\uc790\uc5f0)", "\ucc28\uc138\ub300\ubc18\ub3c4\uccb4\ud559\uacfc"]
+
+    },
+
+
+    "\uc544\uc8fc\ub300\ud559\uad50": {
+
+      "\uac1c\uc124\ud559\uacfc": ["AI\uc735\ud569\ud559\ubd80", "\uac04\ud638\ud559\uacfc", "\uac74\ucd95\ud559\uacfc", "\uacbd\uc601\uc815\ubcf4\ud559\ubd80", "\uae30\uacc4\uacf5\ud559\uacfc", "\ubb3c\ub9ac\ud559\uacfc", "\uc0ac\uc774\ubc84\ubcf4\uc548\ud559\uacfc", "\uc0ac\ud68c\ubcf5\uc9c0\ud559\uacfc", "\uc0b0\uc5c5\uacf5\ud559\uacfc", "\uc0dd\uba85\uacfc\ud559\uacfc", "\uc18c\ud504\ud2b8\uc6e8\uc5b4\ud559\uacfc", "\uc218\ud559\uacfc", "\uc758\ud559\uacfc", "\uc804\uc790\uacf5\ud559\uacfc", "\uc815\ubcf4\ubcf4\ud638\ud559\uacfc", "\ucef4\ud4e8\ud130\uacf5\ud559\uacfc", "\ud654\ud559\uacf5\ud559\uacfc", "\ud654\ud559\uacfc"]
+
+
+    },
+
+    "\uc544\uc8fc\ub300\ud559\uad50": {
+
+      "\uac04\ud638\ub300\ud559": ["\uac04\ud638\ud559\uacfc"],
+
+      "\uacbd\uc601\ub300\ud559": ["\uacbd\uc601\uc778\ud154\ub9ac\uc804\uc2a4\ud559\uacfc", "\uacbd\uc601\ud559\uacfc", "\uae00\ub85c\ubc8c\uacbd\uc601\ud559\uacfc(\ud2b9\uc131\ud654\uace0 \uc7ac\uc9c1\uc790)", "\uae08\uc735\uacf5\ud559\uacfc"],
+
+      "\uacf5\uacfc\ub300\ud559": ["\uac74\uc124\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc", "\uac74\ucd95\ud559\uacfc(\uac74\ucd95\uacf5\ud559 4\ub144)", "\uac74\ucd95\ud559\uacfc(\uac74\ucd95\ud559 5\ub144)", "\uad50\ud1b5\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc", "\uae30\uacc4\uacf5\ud559\uacfc", "\uc0b0\uc5c5\uacf5\ud559\uacfc", "\uc735\ud569\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc(\ud2b9\uc131\ud654\uace0 \uc7ac\uc9c1\uc790)", "\uc751\uc6a9\ud654\ud559\uacfc", "\ucca8\ub2e8\uc2e0\uc18c\uc7ac\uacf5\ud559\uacfc", "\ud654\ud559\uacf5\ud559\uacfc", "\ud658\uacbd\uc548\uc804\uacf5\ud559\uacfc"],
+
+      "\ub2e4\uc0b0\ud559\ubd80\ub300\ud559": ["\uc790\uc720\uc804\uacf5\ud559\ubd80(\uc778\ubb38)", "\uc790\uc720\uc804\uacf5\ud559\ubd80(\uc790\uc5f0)"],
+
+      "\uc0ac\ud68c\uacfc\ud559\ub300\ud559": ["\uacbd\uc81c\uc815\uce58\uc0ac\ud68c\uc735\ud569\ud559\ubd80(\uacbd\uc81c\ud559/\uc0ac\ud68c\ud559/\uc815\uce58\uc678\uad50\ud559)", "\uc2a4\ud3ec\uce20\ub808\uc800\ud559\uacfc", "\uc2ec\ub9ac\ud559\uacfc", "\ud589\uc815\ud559\uacfc"],
+
+      "\uc18c\ud504\ud2b8\uc6e8\uc5b4\uc735\ud569\ub300\ud559": ["\uad6d\ubc29\ub514\uc9c0\ud138\uc735\ud569\ud559\uacfc(\uad6d\ubc29IT\uc6b0\uc218\uc778\uc7ac)", "\ub514\uc9c0\ud138\ubbf8\ub514\uc5b4\ud559\uacfc", "\uc0ac\uc774\ubc84\ubcf4\uc548\ud559\uacfc", "\uc18c\ud504\ud2b8\uc6e8\uc5b4\ud559\uacfc"],
+
+      "\uc57d\ud559\ub300\ud559": ["\uc57d\ud559\uacfc"],
+
+      "\uc758\uacfc\ub300\ud559": ["\uc758\ud559\uacfc"],
+
+      "\uc778\ubb38\ub300\ud559": ["\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\ubb38\ud654\ucf58\ud150\uce20\ud559\uacfc", "\ubd88\uc5b4\ubd88\ubb38\ud559\uacfc", "\uc0ac\ud559\uacfc", "\uc601\uc5b4\uc601\ubb38\ud559\uacfc"],
+
+      "\uc790\uc5f0\uacfc\ud559\ub300\ud559": ["\uc218\ud559\uacfc", "\ud504\ub7f0\ud2f0\uc5b4\uacfc\ud559\ud559\ubd80(\ubb3c\ub9ac\u00b7\uc591\uc790\uacfc\ud559)", "\ud504\ub7f0\ud2f0\uc5b4\uacfc\ud559\ud559\ubd80(\uc0dd\uba85\uacfc\ud559\u00b7\uc751\uc6a9\uc0dd\ubb3c\ud559)", "\ud504\ub7f0\ud2f0\uc5b4\uacfc\ud559\ud559\ubd80(\ud654\ud559\u00b7\ubb3c\uc9c8\uacfc\ud559)"],
+
+      "\ucca8\ub2e8ICT\uc735\ud569\ub300\ud559": ["\ubbf8\ub798\ubaa8\ube4c\ub9ac\ud2f0\uacf5\ud559\uacfc", "\uc804\uc790\uacf5\ud559\uacfc", "\uc9c0\ub2a5\ud615\ubc18\ub3c4\uccb4\uacf5\ud559\uacfc"],
+
+      "\ucca8\ub2e8\ubc14\uc774\uc624\uc735\ud569\ub300\ud559": ["\ucca8\ub2e8\ubc14\uc774\uc624\uc18c\uc7ac\uacf5\ud559", "\ud601\uc2e0\uc2e0\uc57d\uacf5\ud559"]
+
+    },
+
+    "\uc5f0\uc138\ub300\ud559\uad50": {
+
+      "\uacf5\uacfc\ub300\ud559": ["\uac74\uc124\ud658\uacbd\uacf5\ud559\uacfc", "\uac74\ucd95\uacf5\ud559\uacfc", "\uae30\uacc4\uacf5\ud559\ubd80", "\ub3c4\uc2dc\uacf5\ud559\uacfc", "\ub514\uc2a4\ud50c\ub808\uc774\uc735\ud569\uacf5\ud559\uacfc", "\uc0b0\uc5c5\uacf5\ud559\uacfc", "\uc2dc\uc2a4\ud15c\ubc18\ub3c4\uccb4\uacf5\ud559\uacfc", "\uc2e0\uc18c\uc7ac\uacf5\ud559\ubd80", "\uc804\uae30\uc804\uc790\uacf5\ud559\ubd80", "\ud654\uacf5\uc0dd\uba85\uacf5\ud559\ubd80"],
+
+      "\uae30\ud0c0": ["\uac04\ud638\ub300\ud559(\uac04\ud638\ud559\uacfc)", "\uae00\ub85c\ubc8c\uc778\uc7ac\ub300\ud559(\uae00\ub85c\ubc8c\uc778\uc7ac\ud559\ubd80)", "\uc2e0\uacfc\ub300\ud559(\uc2e0\ud559\uacfc)", "\uc57d\ud559\ub300\ud559(\uc57d\ud559\uacfc)", "\uc758\uacfc\ub300\ud559(\uc758\uc608\uacfc)", "\uce58\uacfc\ub300\ud559(\uce58\uc758\uc608\uacfc)", "\ud559\ubd80\ub300\ud559(\uc9c4\ub9ac\uc790\uc720\ud559\ubd80)"],
+
+      "\ubb38\uacfc\ub300\ud559": ["\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\ub178\uc5b4\ub178\ubb38\ud559\uacfc", "\ub3c5\uc5b4\ub3c5\ubb38\ud559\uacfc", "\ubb38\ud5cc\uc815\ubcf4\ud559\uacfc", "\ubd88\uc5b4\ubd88\ubb38\ud559\uacfc", "\uc0ac\ud559\uacfc", "\uc2ec\ub9ac\ud559\uacfc", "\uc601\uc5b4\uc601\ubb38\ud559\uacfc", "\uc911\uc5b4\uc911\ubb38\ud559\uacfc", "\ucca0\ud559\uacfc"],
+
+      "\uc0ac\ud68c\uacfc\ud559\ub300\ud559": ["\ubb38\ud654\uc778\ub958\ud559\uacfc", "\uc0ac\ud68c\ubcf5\uc9c0\ud559\uacfc", "\uc0ac\ud68c\ud559\uacfc", "\uc5b8\ub860\ud64d\ubcf4\uc601\uc0c1\ud559\ubd80", "\uc815\uce58\uc678\uad50\ud559\uacfc", "\ud589\uc815\ud559\uacfc"],
+
+      "\uc0c1\uacbd/\uacbd\uc601\ub300\ud559": ["\uacbd\uc601\ud559\uacfc", "\uacbd\uc81c\ud559\ubd80", "\uc751\uc6a9\ud1b5\uacc4\ud559\uacfc"],
+
+      "\uc0dd\uba85/\uc778\uacf5\uc9c0\ub2a5\uacc4\uc5f4": ["\uc0dd\uba85\uc2dc\uc2a4\ud15c\ub300\ud559(\uc2dc\uc2a4\ud15c\uc0dd\ubb3c\ud559\uacfc, \uc0dd\ud654\ud559\uacfc, \uc0dd\uba85\uacf5\ud559\uacfc)", "\uc778\uacf5\uc9c0\ub2a5\uc735\ud569\ub300\ud559(\ucca8\ub2e8\ucef4\ud4e8\ud305\ud559\ubd80, IT\uc735\ud569\uacf5\ud559\uc804\uacf5, \uc9c0\ub2a5\ud615\ubc18\ub3c4\uccb4\uc804\uacf5, \ubaa8\ube4c\ub9ac\ud2f0\uc2dc\uc2a4\ud15c\uc804\uacf5)"],
+
+      "\uc0dd\ud65c/\uad50\uc721\uacfc\ud559\ub300\ud559": ["\uad50\uc721\uacfc\ud559\ub300\ud559(\uad50\uc721\ud559\ubd80, \uccb4\uc721\uad50\uc721\ud559\uacfc, \uc2a4\ud3ec\uce20\uc751\uc6a9\uc0b0\uc5c5\ud559\uacfc)", "\uc0dd\ud65c\uacfc\ud559\ub300\ud559(\uc758\ub958\ud658\uacbd\ud559\uacfc, \uc2dd\ud488\uc601\uc591\ud559\uacfc, \uc2e4\ub0b4\uac74\ucd95\ud559\uacfc, \uc544\ub3d9\u00b7\uac00\uc871\ud559\uacfc, \ud1b5\ud569\ub514\uc790\uc778\ud559\uacfc)"],
+
+      "\uc5b8\ub354\uc6b0\ub4dc\uad6d\uc81c\ub300\ud559": ["\uc5b8\ub354\uc6b0\ub4dc\ud559\ubd80(\ube44\uad50\ubb38\ud559\uacfc\ubb38\ud654, \uacbd\uc81c\ud559, \uad6d\uc81c\ud559, \uc815\uce58\uc678\uad50\ud559, \uc0dd\uba85\uacfc\ud559\uacf5\ud559)", "\uc735\ud569\uacfc\ud559\uacf5\ud559\ubd80(\ub098\ub178\uacfc\ud559\uacf5\ud559, \uc5d0\ub108\uc9c0\ud658\uacbd\uc735\ud569, \ubc14\uc774\uc624\uc735\ud569)", "\uc735\ud569\uc778\ubb38\uc0ac\ud68c\uacfc\ud559\ubd80(\uc544\uc2dc\uc544\ud559, \ubb38\ud654\ub514\uc790\uc778\uacbd\uc601, \uc815\ubcf4\u00b7\uc778\ud130\ub799\uc158\ub514\uc790\uc778, \ucc3d\uc758\uae30\uc220\uacbd\uc601, \uc0ac\ud68c\uc815\uc758\ub9ac\ub354\uc2ed, \uacc4\ub7c9\uc704\ud5d8\uad00\ub9ac, \uacfc\ud559\uae30\uc220\uc815\ucc45, \uc9c0\uc18d\uac1c\ubc1c\ud611\ub825)"],
+
+      "\uc74c\uc545\ub300\ud559": ["\uad00\ud604\uc545\uacfc", "\uad50\ud68c\uc74c\uc545\uacfc", "\uc131\uc545\uacfc", "\uc791\uace1\uacfc", "\ud53c\uc544\ub178\uacfc"],
+
+      "\uc774\uacfc\ub300\ud559": ["\ub300\uae30\uacfc\ud559\uacfc", "\ubb3c\ub9ac\ud559\uacfc", "\uc218\ud559\uacfc", "\uc9c0\uad6c\uc2dc\uc2a4\ud15c\uacfc\ud559\uacfc", "\ucc9c\ubb38\uc6b0\uc8fc\ud559\uacfc", "\ud654\ud559\uacfc"]
+
+    },
+
+    "\uc778\ucc9c\ub300\ud559\uad50": {
+
+      "\uacbd\uc601\ub300\ud559": ["\uacbd\uc601\ud559\ubd80", "\ub370\uc774\ud130\uacfc\ud559\uacfc", "\uc138\ubb34\ud68c\uacc4\ud559\uacfc"],
+
+      "\uacf5\uacfc\ub300\ud559": ["\uae30\uacc4\uacf5\ud559\uacfc", "\ubc14\uc774\uc624-\ub85c\ubd07\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc", "\uc0b0\uc5c5\uacbd\uc601\uacf5\ud559\uacfc", "\uc2e0\uc18c\uc7ac\uacf5\ud559\uacfc", "\uc548\uc804\uacf5\ud559\uacfc", "\uc5d0\ub108\uc9c0\ud654\ud559\uacf5\ud559\uacfc", "\uc804\uae30\uacf5\ud559\uacfc", "\uc804\uc790\uacf5\ud559\ubd80(\uc804\uc790\uacf5\ud559\uc804\uacf5, \ubc18\ub3c4\uccb4\uc735\ud569\uc804\uacf5)"],
+
+      "\uae00\ub85c\ubc8c\uc815\uacbd\ub300\ud559": ["Global Trade & Service\ud559\ubd80", "\uacbd\uc81c\ud559\uacfc", "\uc18c\ube44\uc790\ud559\uacfc", "\uc815\uce58\uc678\uad50\ud559\uacfc", "\ud589\uc815\ud559\uacfc"],
+
+      "\ub3c4\uc2dc\uacfc\ud559\ub300\ud559": ["\ub3c4\uc2dc\uac74\ucd95\ud559\ubd80(\uac74\ucd95\uacf5\ud559\uc804\uacf5, \ub3c4\uc2dc\uac74\ucd95\ud559\uc804\uacf5)", "\ub3c4\uc2dc\uacf5\ud559\uacfc", "\ub3c4\uc2dc\ud589\uc815\ud559\uacfc", "\ub3c4\uc2dc\ud658\uacbd\uacf5\ud559\ubd80(\uac74\uc124\ud658\uacbd\uacf5\ud559\uc804\uacf5, \ud658\uacbd\uacf5\ud559\uc804\uacf5)"],
+
+      "\uc0ac\ubc94\ub300\ud559": ["\uad6d\uc5b4\uad50\uc721\uacfc", "\uc218\ud559\uad50\uc721\uacfc", "\uc5ed\uc0ac\uad50\uc721\uacfc", "\uc601\uc5b4\uad50\uc721\uacfc", "\uc720\uc544\uad50\uc721\uacfc", "\uc724\ub9ac\uad50\uc721\uacfc", "\uc77c\uc5b4\uad50\uc721\uacfc", "\uccb4\uc721\uad50\uc721\uacfc"],
+
+      "\uc0ac\ud68c\uacfc\ud559\ub300\ud559": ["\ubb38\ud5cc\uc815\ubcf4\ud559\uacfc", "\ubbf8\ub514\uc5b4\ucee4\ubba4\ub2c8\ucf00\uc774\uc158\ud559\uacfc", "\uc0ac\ud68c\ubcf5\uc9c0\ud559\uacfc", "\ucc3d\uc758\uc778\uc7ac\uac1c\ubc1c\ud559\uacfc"],
+
+      "\uc0dd\uba85\uacfc\ud559\uae30\uc220\ub300\ud559": ["\uc0dd\uba85\uacf5\ud559\ubd80(\uc0dd\uba85\uacf5\ud559\uc804\uacf5, \ub098\ub178\ubc14\uc774\uc624\uacf5\ud559\uc804\uacf5)", "\uc0dd\uba85\uacfc\ud559\ubd80(\uc0dd\uba85\uacfc\ud559\uc804\uacf5, \ubd84\uc790\uc758\uc0dd\uba85\uc804\uacf5)"],
+
+      "\uc608\uc220\uccb4\uc721\ub300\ud559": ["\uacf5\uc5f0\uc608\uc220\ud559\uacfc", "\ub514\uc790\uc778\ud559\ubd80", "\uc2a4\ud3ec\uce20\uacfc\ud559\ubd80", "\uc6b4\ub3d9\uac74\uac15\ud559\ubd80", "\uc870\ud615\uc608\uc220\ud559\ubd80(\ud55c\uad6d\ud654\uc804\uacf5, \uc11c\uc591\ud654\uc804\uacf5)"],
+
+      "\uc735\ud569\uc790\uc720\uc804\uacf5\ub300\ud559": ["\ub3d9\ubd81\uc544\uad6d\uc81c\ud1b5\uc0c1\ubb3c\ub958\ud559\ubd80(\ub3d9\ubd81\uc544\uad6d\uc81c\ud1b5\uc0c1\uc804\uacf5, \uc2a4\ub9c8\ud2b8\ubb3c\ub958\uacf5\ud559\uc804\uacf5)", "\ubc95\ud559\ubd80", "\uc790\uc720\uc804\uacf5\ud559\ubd80(\uc778\ubb38/\uc790\uc5f0)"],
+
+      "\uc778\ubb38\ub300\ud559": ["\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\ub3c5\uc5b4\ub3c5\ubb38\ud559\uacfc", "\ubd88\uc5b4\ubd88\ubb38\ud559\uacfc", "\uc601\uc5b4\uc601\ubb38\ud559\uacfc", "\uc77c\ubcf8\uc9c0\uc5ed\ubb38\ud654\ud559\uacfc", "\uc911\uc5b4\uc911\uad6d\ud559\uacfc"],
+
+      "\uc790\uc5f0\uacfc\ud559\ub300\ud559": ["\ubb3c\ub9ac\ud559\uacfc", "\uc218\ud559\uacfc", "\ud328\uc158\uc0b0\uc5c5\ud559\uacfc", "\ud574\uc591\ud559\uacfc", "\ud654\ud559\uacfc"],
+
+      "\uc815\ubcf4\uae30\uc220\ub300\ud559": ["\uc784\ubca0\ub514\ub4dc\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc", "\uc815\ubcf4\ud1b5\uc2e0\uacf5\ud559\uacfc", "\ucef4\ud4e8\ud130\uacf5\ud559\ubd80"]
+
+    },
+
+    "\uc778\ud558\ub300\ud559\uad50": {
+
+      "\uacbd\uc601\ub300\ud559": ["\uacbd\uc601\ud559\ubd80(\uacbd\uc601\ud559\uacfc)", "\uacbd\uc601\ud559\ubd80(\ud30c\uc774\ub0b8\uc2a4\uacbd\uc601\ud559\uacfc)", "\uad6d\uc81c\ud1b5\uc0c1\ud559\uacfc", "\uc544\ud0dc\ubb3c\ub958\ud559\ubd80"],
+
+      "\uacf5\uacfc\ub300\ud559": ["\uac74\ucd95\ud559\ubd80(\uac74\ucd95\uacf5\ud559\uc804\uacf5)", "\uac74\ucd95\ud559\ubd80(\uac74\ucd95\ud559\uc804\uacf5(5\ub144\uc81c))", "\uace0\ubd84\uc790\uacf5\ud559\uacfc", "\uacf5\uac04\uc815\ubcf4\uacf5\ud559\uacfc", "\uae30\uacc4\uacf5\ud559\uacfc", "\ubc18\ub3c4\uccb4\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc", "\uc0ac\ud68c\uc778\ud504\ub77c\uacf5\ud559\uacfc", "\uc0b0\uc5c5\uacbd\uc601\uacf5\ud559\uacfc", "\uc2e0\uc18c\uc7ac\uacf5\ud559\uacfc", "\uc5d0\ub108\uc9c0\uc790\uc6d0\uacf5\ud559\uacfc", "\uc774\ucc28\uc804\uc9c0\uc735\ud569\ud559\uacfc", "\uc804\uae30\uc804\uc790\uacf5\ud559\ubd80", "\uc870\uc120\ud574\uc591\uacf5\ud559\uacfc", "\ud56d\uacf5\uc6b0\uc8fc\uacf5\ud559\uacfc", "\ud654\ud559\uacf5\ud559\uacfc", "\ud658\uacbd\uacf5\ud559\uacfc"],
+
+      "\uad6d\uc81c\ud559\ubd80": ["IBT\ud559\uacfc", "ISE\ud559\uacfc", "KLC\ud559\uacfc"],
+
+      "\ubb38\uacfc\ub300\ud559": ["\ubb38\ud654\ucf58\ud150\uce20\ubb38\ud654\uacbd\uc601\ud559\uacfc", "\uc0ac\ud559\uacfc", "\uc601\ubbf8\uc720\ub7fd\uc778\ubb38\uc735\ud569\ud559\ubd80(\uc601\uc5b4\uc601\ubb38\ud559)", "\uc601\ubbf8\uc720\ub7fd\uc778\ubb38\uc735\ud569\ud559\ubd80(\ud504\ub791\uc2a4\uc5b8\uc5b4\ubb38\ud654)", "\uc77c\ubcf8\uc5b8\uc5b4\ubb38\ud654\ud559\uacfc", "\uc911\uad6d\ud559\uacfc", "\ucca0\ud559\uacfc", "\ud55c\uad6d\uc5b4\ubb38\ud559\uacfc"],
+
+      "\ubbf8\ub798\uc735\ud569\ub300\ud559": ["\uae08\uc735\ud22c\uc790\ud559\uacfc", "\uba54\uce74\ud2b8\ub85c\ub2c9\uc2a4\uacf5\ud559\uacfc", "\ubc18\ub3c4\uccb4\uc0b0\uc5c5\uc735\ud569\ud559\uacfc", "\uc0b0\uc5c5\uacbd\uc601\ud559\uacfc", "\uc18c\ud504\ud2b8\uc6e8\uc5b4\uc735\ud569\uacf5\ud559\uacfc"],
+
+      "\ubc14\uc774\uc624\uc2dc\uc2a4\ud15c\uc735\ud569\ud559\ubd80": ["\ubc14\uc774\uc624\uc2dd\ud488\uacf5\ud559\uacfc", "\uc0dd\uba85\uacf5\ud559\uacfc", "\uc0dd\uba85\uacfc\ud559\uacfc", "\ucca8\ub2e8\ubc14\uc774\uc624\uc758\uc57d\ud559\uacfc"],
+
+      "\uc0ac\ubc94\ub300\ud559": ["\uad50\uc721\ud559\uacfc", "\uad6d\uc5b4\uad50\uc721\uacfc", "\uc0ac\ud68c\uad50\uc721\uacfc", "\uc218\ud559\uad50\uc721\uacfc", "\uc601\uc5b4\uad50\uc721\uacfc", "\uccb4\uc721\uad50\uc721\uacfc"],
+
+      "\uc0ac\ud68c\uacfc\ud559\ub300\ud559": ["\uacbd\uc81c\ud559\uacfc", "\ubbf8\ub514\uc5b4\ucee4\ubba4\ub2c8\ucf00\uc774\uc158\ud559\uacfc", "\uc0ac\ud68c\ubcf5\uc9c0\ud559\uacfc", "\uc18c\ube44\uc790\ud559\uacfc", "\uc544\ub3d9\uc2ec\ub9ac\ud559\uacfc", "\uc815\uce58\uc678\uad50\ud559\uacfc", "\ud589\uc815\ud559\uacfc"],
+
+      "\uc18c\ud504\ud2b8\uc6e8\uc5b4\uc735\ud569\ub300\ud559": ["\ub370\uc774\ud130\uc0ac\uc774\uc5b8\uc2a4\ud559\uacfc", "\ub514\uc790\uc778\ud14c\ud06c\ub180\ub85c\uc9c0\ud559\uacfc", "\uc2a4\ub9c8\ud2b8\ubaa8\ube4c\ub9ac\ud2f0\uacf5\ud559\uacfc", "\uc778\uacf5\uc9c0\ub2a5\uacf5\ud559\uacfc", "\ucef4\ud4e8\ud130\uacf5\ud559\uacfc"],
+
+      "\uc608\uc220\uccb4\uc721\ub300\ud559": ["\ub514\uc790\uc778\uc735\ud569\ud559\uacfc", "\uc2a4\ud3ec\uce20\uacfc\ud559\uacfc", "\uc5f0\uadf9\uc601\ud654\ud559\uacfc", "\uc758\ub958\ub514\uc790\uc778\ud559\uacfc(\uc77c\ubc18/\uc2e4\uae30)", "\uc870\ud615\uc608\uc220\ud559\uacfc"],
+
+      "\uc758\uacfc\ub300\ud559 \ubc0f \uac04\ud638\ub300\ud559": ["\uac04\ud638\ub300\ud559(\uac04\ud638\ud559\uacfc)", "\uc758\uacfc\ub300\ud559(\uc758\uc608\uacfc)"],
+
+      "\uc790\uc5f0\uacfc\ud559\ub300\ud559": ["\ubb3c\ub9ac\ud559\uacfc", "\uc218\ud559\uacfc", "\uc2dd\ud488\uc601\uc591\ud559\uacfc", "\ud1b5\uacc4\ud559\uacfc", "\ud574\uc591\uacfc\ud559\uacfc", "\ud654\ud559\uacfc"],
+
+      "\ud504\ub7f0\ud2f0\uc5b4\ucc3d\uc758\ub300\ud559 (\ubb34\uc804\uacf5/\uc735\ud569)": ["\uacbd\uc601\uc735\ud569\ud559\ubd80", "\uacf5\ud559\uc735\ud569\ud559\ubd80", "\uc0ac\ud68c\uacfc\ud559\uc735\ud569\ud559\ubd80", "\uc778\ubb38\uc735\ud569\ud559\ubd80", "\uc790\uc5f0\uacfc\ud559\uc735\ud569\ud559\ubd80", "\uc790\uc720\uc804\uacf5\uc735\ud569\ud559\ubd80"]
+
+    },
+
+    "\uc804\ub0a8\ub300\ud559\uad50": {
+
+      "AI\uc735\ud569\ub300\ud559": ["\ubbf8\ub798\ubaa8\ube4c\ub9ac\ud2f0\ud559\uacfc", "\ube45\ub370\uc774\ud130\uc735\ud569\ud559\uacfc", "\uc778\uacf5\uc9c0\ub2a5\ud559\ubd80"],
+
+      "\uacbd\uc601\ub300\ud559": ["\uacbd\uc601\ud559\ubd80", "\uacbd\uc81c\ud559\ubd80"],
+
+      "\uacf5\uacfc\ub300\ud559": ["\uac74\ucd95\ud559\ubd80", "\uace0\ubd84\uc790\uc735\ud569\uc18c\uc7ac\uacf5\ud559\ubd80", "\uae30\uacc4\uacf5\ud559\ubd80", "\uc0b0\uc5c5\uacf5\ud559\uacfc", "\uc0dd\ubb3c\uacf5\ud559\uacfc", "\uc2e0\uc18c\uc7ac\uacf5\ud559\ubd80", "\uc5d0\ub108\uc9c0\uc790\uc6d0\uacf5\ud559\uacfc", "\uc804\uae30\uacf5\ud559\uacfc", "\uc804\uc790\ucef4\ud4e8\ud130\uacf5\ud559\ubd80", "\ud1a0\ubaa9\uacf5\ud559\uacfc", "\ud654\ud559\uacf5\ud559\ubd80", "\ud658\uacbd\uc5d0\ub108\uc9c0\uacf5\ud559\uacfc"],
+
+      "\uad11\uc8fc \uc9c1\ud560/\uc608\uc220\ub300\ud559": ["\uad6d\uc545\ud559\uacfc", "\ub514\uc790\uc778\ud559\uacfc", "\ubbf8\uc220\ud559\uacfc", "\uc74c\uc545\ud559\uacfc", "\uc790\uc728\uc804\uacf5(1\ub144)", "\uc790\uc728\uc804\uacf5\ud559\ubd80(4\ub144)"],
+
+      "\ub18d\uc5c5\uc0dd\uba85\uacfc\ud559\ub300\ud559": ["\ub18d\uc0dd\uba85\ud654\ud559\uacfc", "\ub18d\uc5c5\uacbd\uc81c\ud559\uacfc", "\ub3d9\ubb3c\uc790\uc6d0\ud559\uacfc", "\ubc14\uc774\uc624\uc5d0\ub108\uc9c0\ud559\uacfc", "\ubd84\uc790\uc0dd\uba85\ud559\uacfc", "\uc0b0\ub9bc\uc790\uc6d0\ud559\uacfc", "\uc2dd\ud488\uacf5\ud559\uacfc", "\uc6d0\uc608\uc0dd\uba85\ud559\uacfc", "\uc735\ud569\ubc14\uc774\uc624\uc2dc\uc2a4\ud15c\uae30\uacc4\uacf5\ud559\uacfc", "\uc751\uc6a9\uc0dd\ubb3c\ud559\uacfc", "\uc751\uc6a9\uc2dd\ubb3c\ud559\uacfc", "\uc784\uc0b0\uacf5\ud559\uacfc", "\uc870\uacbd\ud559\uacfc", "\uc9c0\uc5ed\u00b7\ubc14\uc774\uc624\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc"],
+
+      "\uc0ac\ubc94\ub300\ud559": ["\uac00\uc815\uad50\uc721\uacfc", "\uad50\uc721\ud559\uacfc", "\uad6d\uc5b4\uad50\uc721\uacfc", "\ubb3c\ub9ac\uad50\uc721\uacfc", "\uc0dd\ubb3c\uad50\uc721\uacfc", "\uc218\ud559\uad50\uc721\uacfc", "\uc5ed\uc0ac\uad50\uc721\uacfc", "\uc601\uc5b4\uad50\uc721\uacfc", "\uc720\uc544\uad50\uc721\uacfc", "\uc724\ub9ac\uad50\uc721\uacfc", "\uc9c0\uad6c\uacfc\ud559\uad50\uc721\uacfc", "\uc9c0\ub9ac\uad50\uc721\uacfc", "\ud2b9\uc218\uad50\uc721\ud559\ubd80", "\ud654\ud559\uad50\uc721\uacfc"],
+
+      "\uc0ac\ud68c\uacfc\ud559\ub300\ud559": ["\ubb38\ud5cc\uc815\ubcf4\ud559\uacfc", "\ubb38\ud654\uc778\ub958\uace0\uace0\ud559\uacfc", "\ubbf8\ub514\uc5b4\ucee4\ubba4\ub2c8\ucf00\uc774\uc158\ud559\uacfc", "\uc0ac\ud68c\ud559\uacfc", "\uc2ec\ub9ac\ud559\uacfc", "\uc815\uce58\uc678\uad50\ud559\uacfc", "\uc9c0\ub9ac\ud559\uacfc", "\ud589\uc815\ud559\uacfc"],
+
+      "\uc0dd\ud65c\uacfc\ud559\ub300\ud559": ["\uc0dd\ud65c\ubcf5\uc9c0\ud559\uacfc", "\uc2dd\ud488\uc601\uc591\uacfc\ud559\ubd80", "\uc758\ub958\ud559\uacfc"],
+
+      "\uc5ec\uc218-\uacf5\ud559\ub300\ud559": ["\uac74\ucd95\ub514\uc790\uc778\ud559\uacfc", "\uacf5\ud559\uacc4\uc5f4", "\uc11d\uc720\ud654\ud559\uc18c\uc7ac\uacf5\ud559\uacfc", "\uc758\uacf5\ud559\ubd80"],
+
+      "\uc5ec\uc218-\ubb38\ud654\uc0ac\ud68c\uacfc\ud559\ub300\ud559": ["\uad6d\uc81c\ud559\ubd80", "\uae00\ub85c\ubc8c\ube44\uc988\ub2c8\uc2a4\ud559\ubd80", "\ubb38\ud654\uad00\uad11\uacbd\uc601\ud559\uacfc", "\ubb38\ud654\ucf58\ud150\uce20\ud559\ubd80", "\ubb3c\ub958\uad50\ud1b5\ud559\uacfc"],
+
+      "\uc5ec\uc218-\uc218\uc0b0\ud574\uc591/\uc9c1\ud560": ["\uae30\uad00\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc", "\uc218\uc0b0\uc0dd\uba85\uc758\ud559\uacfc", "\uc2a4\ub9c8\ud2b8\uc218\uc0b0\uc790\uc6d0\uad00\ub9ac\ud559\uacfc", "\uc870\uc120\ud574\uc591\uacf5\ud559\uacfc", "\ucc3d\uc758\uc735\ud569\ud559\ubd80", "\ud574\uc591\uc218\uc0b0\uad11\uc5ed"],
+
+      "\uc758\uc57d\u00b7\ubcf4\uac74\u00b7\uac04\ud638 \uacc4\uc5f4": ["\uac04\ud638\ub300\ud559(\uac04\ud638\ud559\uacfc)", "\uc218\uc758\uacfc\ub300\ud559(\uc218\uc758\uc608\uacfc)", "\uc57d\ud559\ub300\ud559(\uc57d\ud559\ubd80)", "\uc758\uacfc\ub300\ud559(\uc758\ud559\uacfc)", "\uce58\uc758\ud559\uc804\ubb38\ub300\ud559\uc6d0"],
+
+      "\uc778\ubb38\ub300\ud559": ["\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\uc0ac\ud559\uacfc", "\uc5b4\ubb38\uacc4\uc5f4(\ub3c5\uc5b4/\ubd88\uc5b4/\uc911\uc5b4/\uc77c\uc5b4 \ub4f1)", "\uc601\uc5b4\uc601\ubb38\ud559\uacfc", "\ucca0\ud559\uacfc"],
+
+      "\uc790\uc5f0\uacfc\ud559\ub300\ud559": ["\ubb3c\ub9ac\ud559\uacfc", "\uc0dd\uba85\uacfc\ud559\uae30\uc220\ud559\ubd80", "\uc0dd\ubb3c\ud559\uacfc", "\uc218\ud559\uacfc", "\uc9c0\uad6c\ud658\uacbd\uacfc\ud559\ubd80", "\ud1b5\uacc4\ud559\uacfc", "\ud654\ud559\uacfc"]
+
+    },
+
+    "\uc804\ubd81\ub300\ud559\uad50": {
+
+      "\uacbd\uc0c1\ub300\ud559": ["\uacbd\uc601\ud559\uacfc", "\uacbd\uc81c\ud559\ubd80", "\ubb34\uc5ed\ud559\uacfc", "\ud68c\uacc4\ud559\uacfc"],
+
+      "\uacf5\uacfc\ub300\ud559": ["\uac74\ucd95\uacf5\ud559", "\uace0\ubd84\uc790\u00b7\ub098\ub178\uacf5\ud559", "\uae30\uacc4\uacf5\ud559", "\uae30\uacc4\uc124\uacc4\uacf5\ud559", "\uae30\uacc4\uc2dc\uc2a4\ud15c\uacf5\ud559", "\ub098\ub178\ubc14\uc774\uc624\uae30\uacc4\uc2dc\uc2a4\ud15c\uacf5\ud559", "\ub3c4\uc2dc\uacf5\ud559", "\ubc14\uc774\uc624\uba54\ub514\uceec\uacf5\ud559", "\uc0b0\uc5c5\uc815\ubcf4\uc2dc\uc2a4\ud15c\uacf5\ud559", "\uc18c\ud504\ud2b8\uc6e8\uc5b4\uacf5\ud559", "\uc2e0\uc18c\uc7ac\uacf5\ud559(\uae08\uc18d/\uc804\uc790\uc7ac\ub8cc)", "\uc2e0\uc18c\uc7ac\uacf5\ud559\ubd80(\uc815\ubcf4\uc18c\uc7ac\uacf5\ud559)", "\uc591\uc790\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc", "\uc720\uae30\uc18c\uc7ac\uc12c\uc720\uacf5\ud559", "\uc735\ud569\uae30\uc220\uacf5\ud559(IT\uc735\ud569\uae30\uc804\uacf5\ud559/IT\uc751\uc6a9\uc2dc\uc2a4\ud15c\uacf5\ud559)", "\uc804\uae30\uacf5\ud559", "\uc804\uc790\uacf5\ud559\ubd80", "\ucef4\ud4e8\ud130\uc778\uacf5\uc9c0\ub2a5\ud559\ubd80", "\ud1a0\ubaa9/\ud658\uacbd/\uc790\uc6d0\u00b7\uc5d0\ub108\uc9c0\uacf5\ud559\ubd80", "\ud56d\uacf5\uc6b0\uc8fc\uacf5\ud559\uacfc", "\ud654\ud559\uacf5\ud559\ubd80"],
+
+      "\ub18d\uc5c5\uc0dd\uba85\uacfc\ud559\ub300\ud559": ["\ub18d\uacbd\uc81c\uc720\ud1b5\ud559\ubd80", "\ub18d\uc0dd\ubb3c\ud559\uacfc(\uc2dd\ubb3c\uc758\ud559\uacfc)", "\ub3d9\ubb3c\uc0dd\uba85\uacf5\ud559\uacfc", "\ub3d9\ubb3c\uc790\uc6d0\uacfc\ud559\uacfc", "\ubaa9\uc7ac\uc751\uc6a9\uacfc\ud559\uacfc", "\uc0b0\ub9bc\ud658\uacbd\uacfc\ud559\uacfc", "\uc0dd\ubb3c\uc0b0\uc5c5\uae30\uacc4\uacf5\ud559\uacfc", "\uc0dd\ubb3c\ud658\uacbd\ud654\ud559\uacfc", "\uc2a4\ub9c8\ud2b8\ud31c\ud559\uacfc", "\uc2dd\ud488\uacf5\ud559\uacfc", "\uc6d0\uc608\ud559\uacfc", "\uc791\ubb3c\uc0dd\uba85\uacfc\ud559\uacfc", "\uc870\uacbd\ud559\uacfc", "\uc9c0\uc5ed\uac74\uc124\uacf5\ud559\uacfc"],
+
+      "\ub300\ud559\ubcf8\ubd80 \uc9c1\uc18d \ubc0f \uc735\ud569\uc790\uc728\uc804\uacf5": ["\uad6d\uc81c\uc774\uacf5\ud559\ubd80", "\uc735\ud569\uc790\uc728\uc804\uacf5\ud559\ubd80 1(\uc804\uc8fc)", "\uc735\ud569\uc790\uc728\uc804\uacf5\ud559\ubd80 2(\uc775\uc0b0)", "\uc774\ucc28\uc804\uc9c0\uacf5\ud559\uacfc", "\ucca8\ub2e8\ubc29\uc704\uc0b0\uc5c5\ud559\uacfc"],
+
+      "\uc0ac\ubc94\ub300\ud559": ["\uacfc\ud559\uad50\uc721\ud559\ubd80(\ubb3c\ub9ac/\uc0dd\ubb3c/\uc9c0\uad6c\uacfc\ud559/\ud654\ud559)", "\uad50\uc721\ud559\uacfc", "\uad6d\uc5b4\uad50\uc721\uacfc", "\ub3c5\uc5b4\uad50\uc721\uacfc", "\uc0ac\ud68c\uacfc\uad50\uc721\ud559\ubd80(\uc5ed\uc0ac/\uc724\ub9ac/\uc77c\ubc18\uc0ac\ud68c/\uc9c0\ub9ac)", "\uc218\ud559\uad50\uc721\uacfc", "\uc601\uc5b4\uad50\uc721\uacfc", "\uccb4\uc721\uad50\uc721\uacfc"],
+
+      "\uc0ac\ud68c\uacfc\ud559\ub300\ud559": ["\uacf5\uacf5\uc778\uc7ac\ud559\ubd80", "\ubbf8\ub514\uc5b4\ucee4\ubba4\ub2c8\ucf00\uc774\uc158\ud559\uacfc", "\uc0ac\ud68c\ubcf5\uc9c0\ud559\uacfc", "\uc0ac\ud68c\ud559\uacfc", "\uc2ec\ub9ac\ud559\uacfc", "\uc815\uce58\uc678\uad50\ud559\uacfc", "\ud589\uc815\ud559\uacfc"],
+
+      "\uc0dd\ud65c\uacfc\ud559\ub300\ud559": ["\uc2dd\ud488\uc601\uc591\ud559\uacfc", "\uc544\ub3d9\ud559\uacfc", "\uc758\ub958\ud559\uacfc", "\uc8fc\uac70\ud658\uacbd\ud559\uacfc"],
+
+      "\uc608\uc220\ub300\ud559": ["\ubb34\uc6a9\ud559\uacfc(\ubc1c\ub808/\ubb34\uc6a9\uad50\uc721\ud06c\ub9ac\uc5d0\uc774\ud130/\ud55c\uad6d\ubb34\uc6a9/\ucee8\ud15c\ud3ec\ub7ec\ub9ac\ubb34\uc6a9)", "\ubbf8\uc220\ud559\uacfc(\ud55c\uad6d\ud654/\ud68c\ud654/\uc870\uc18c/\uac00\uad6c\uc870\ud615\ub514\uc790\uc778)", "\uc0b0\uc5c5\ub514\uc790\uc778\ud559\uacfc", "\uc74c\uc545\uacfc", "\ud55c\uad6d\uc74c\uc545\ud559\uacfc"],
+
+      "\uc758\uc57d\u00b7\ubcf4\uac74\u00b7\uac04\ud638\u00b7\uc218\uc758\uacc4\uc5f4": ["\uac04\ud638\ub300\ud559(\uac04\ud638\ud559\uacfc)", "\uc218\uc758\uacfc\ub300\ud559(\uc218\uc758\uc608\uacfc)", "\uc57d\ud559\ub300\ud559(\uc57d\ud559\uacfc)", "\uc758\uacfc\ub300\ud559(\uc758\uc608\uacfc)", "\uce58\uacfc\ub300\ud559(\uce58\uc758\uc608\uacfc)"],
+
+      "\uc778\ubb38\ub300\ud559": ["\uace0\uace0\ubb38\ud654\uc778\ub958\ud559\uacfc", "\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\uad6d\uc81c\ud559\ubd80", "\ub3c5\uc77c\ud559\uacfc", "\ubb38\ud5cc\uc815\ubcf4\ud559\uacfc", "\uc0ac\ud559\uacfc", "\uc2a4\ud398\uc778\u00b7\uc911\ub0a8\ubbf8\ud559\uacfc", "\uc601\uc5b4\uc601\ubb38\ud559\uacfc", "\uc77c\ubcf8\ud559\uacfc", "\uc911\uc5b4\uc911\ubb38\ud559\uacfc", "\ucca0\ud559\uacfc", "\ud504\ub791\uc2a4\u00b7\uc544\ud504\ub9ac\uce74\ud559\uacfc"],
+
+      "\uc790\uc5f0\uacfc\ud559\ub300\ud559": ["\uacfc\ud559\ud559\uacfc", "\ubb3c\ub9ac\ud559\uacfc", "\ubc18\ub3c4\uccb4\uacfc\ud559\uae30\uc220\ud559\uacfc", "\ubd84\uc790\uc0dd\ubb3c\ud559\uacfc", "\uc0dd\uba85\uacfc\ud559\uacfc", "\uc218\ud559\uacfc", "\uc2a4\ud3ec\uce20\uacfc\ud559\uacfc", "\uc9c0\uad6c\ud658\uacbd\uacfc\ud559\uacfc", "\ud1b5\uacc4\ud559\uacfc", "\ud654\ud559\uacfc"],
+
+      "\ud658\uacbd\uc0dd\uba85\uc790\uc6d0\ub300\ud559": ["\uc0dd\uba85\uacf5\ud559\ubd80", "\uc0dd\ud0dc\uc870\uacbd\ub514\uc790\uc778\ud559\uacfc"]
+
+    },
+
+    "\uc911\uc559\ub300\ud559\uad50": {
+
+      "\uacbd\uc601\uacbd\uc81c\ub300\ud559": ["\uacbd\uc601\ud559\ubd80(\uacbd\uc601\ud559, \uae00\ub85c\ubc8c\uae08\uc735)", "\uacbd\uc81c\ud559\ubd80", "\uad11\uace0\ud64d\ubcf4\ud559\ubd80", "\uad6d\uc81c\ubb3c\ub958\ud559\uacfc", "\uc0b0\uc5c5\ubcf4\uc548\ud559\uacfc", "\uc751\uc6a9\ud1b5\uacc4\ud559\uacfc", "\uc9c0\uc2dd\uacbd\uc601\ud559\ubd80"],
+
+      "\uacf5\uacfc\ub300\ud559": ["\uac74\ucd95\ud559\ubd80", "\uae30\uacc4\uacf5\ud559\ubd80", "\uc0ac\ud68c\uae30\ubc18\uc2dc\uc2a4\ud15c\uacf5\ud559\ubd80(\uac74\uc124\ud658\uacbd\ud50c\ub79c\ud2b8\uacf5\ud559, \ub3c4\uc2dc\uc2dc\uc2a4\ud15c\uacf5\ud559)", "\uc5d0\ub108\uc9c0\uc2dc\uc2a4\ud15c\uacf5\ud559\ubd80", "\ucca8\ub2e8\uc18c\uc7ac\uacf5\ud559\uacfc", "\ud654\ud559\uacf5\ud559\uacfc"],
+
+      "\uc0ac\ubc94\ub300\ud559": ["\uad50\uc721\ud559\uacfc", "\uc601\uc5b4\uad50\uc721\uacfc", "\uc720\uc544\uad50\uc721\uacfc", "\uccb4\uc721\uad50\uc721\uacfc"],
+
+      "\uc0ac\ud68c\uacfc\ud559\ub300\ud559": ["\uacf5\uacf5\uc778\uc7ac\ud559\ubd80", "\ub3c4\uc2dc\uacc4\ud68d\u00b7\ubd80\ub3d9\uc0b0\ud559\uacfc", "\ubb38\ud5cc\uc815\ubcf4\ud559\uacfc", "\ubbf8\ub514\uc5b4\ucee4\ubba4\ub2c8\ucf00\uc774\uc158\ud559\ubd80", "\uc0ac\ud68c\ubcf5\uc9c0\ud559\ubd80", "\uc0ac\ud68c\ud559\uacfc", "\uc2ec\ub9ac\ud559\uacfc", "\uc815\uce58\uad6d\uc81c\ud559\uacfc"],
+
+      "\uc0dd\uba85\uacf5\ud559\ub300\ud559": ["\uc0dd\uba85\uc790\uc6d0\uacf5\ud559\ubd80(\ub3d9\ubb3c\uc0dd\uba85\uacf5\ud559, \uc2dd\ubb3c\uc0dd\uba85\uacf5\ud559)", "\uc2dc\uc2a4\ud15c\uc0dd\uba85\uacf5\ud559\uacfc", "\uc2dd\ud488\uacf5\ud559\ubd80(\uc2dd\ud488\uacf5\ud559, \uc2dd\ud488\uc5f0\uc591)"],
+
+      "\uc18c\ud504\ud2b8\uc6e8\uc5b4\ub300\ud559": ["AI\ud559\uacfc", "\uc18c\ud504\ud2b8\uc6e8\uc5b4\ud559\ubd80"],
+
+      "\uc608\uc220\uacc4\uc5f4": ["\ub514\uc790\uc778\ud559\ubd80(\uc2e4\ub0b4\ud658\uacbd\ub514\uc790\uc778/\ud328\uc158))", "\uc608\uc220\uacf5\ud559\ub300\ud559(\uc608\uc220\uacf5\ud559\ubd80)", "\uc608\uc220\ub300\ud559(\uacf5\uc5f0\uc601\uc0c1\ucc3d\uc791\ud559\ubd80(\uacf5\uac04\uc5f0\ucd9c/\ubb38\uc608\ucc3d\uc791)"],
+
+      "\uc758\uc57d/\ubcf4\uac74\uacc4\uc5f4": ["\uc57d\ud559\ub300\ud559(\uc57d\ud559\ubd80)", "\uc758\uacfc\ub300\ud559(\uc758\ud559\ubd80)", "\uc801\uc2ed\uc790\uac04\ud638\ub300\ud559(\uac04\ud638\ud559\uacfc)"],
+
+      "\uc778\ubb38\ub300\ud559": ["\uad6d\uc5b4\uad6d\ubb38\ud559", "\uc544\uc2dc\uc544\ubb38\ud654\ud559\ubd80(\uc77c\ubcf8\uc5b4\ubb38\ud559, \uc911\uad6d\uc5b4\ubb38\ud559)", "\uc5ed\uc0ac\ud559\uacfc", "\uc601\uc5b4\uc601\ubb38\ud559", "\uc720\ub7fd\ubb38\ud654\ud559\ubd80(\ub3c5\uc77c\uc5b4\ubb38\ud559, \ud504\ub791\uc2a4\uc5b4\ubb38\ud559, \ub7ec\uc2dc\uc544\uc5b4\ubb38\ud559)", "\ucca0\ud559\uacfc"],
+
+      "\uc790\uc5f0\uacfc\ud559\ub300\ud559": ["\ubb3c\ub9ac\ud559\uacfc", "\uc0dd\uba85\uacfc\ud559\uacfc", "\uc218\ud559\uacfc", "\ud654\ud559\uacfc"],
+
+      "\ucc3d\uc758ICT\uacf5\uacfc\ub300\ud559": ["\uc735\ud569\uacf5\ud559\ubd80", "\uc804\uc790\uc804\uae30\uacf5\ud559\ubd80", "\uc9c0\ub2a5\ud615\ubc18\ub3c4\uccb4\uacf5\ud559\uacfc"]
+
+    },
+
+    "\ucda9\ub0a8\ub300\ud559\uad50": {
+
+      "\uacbd\uc0c1\ub300\ud559": ["\uacbd\uc601\ud559\ubd80", "\uacbd\uc81c\ud559\uacfc", "\ubb34\uc5ed\ud559\uacfc"],
+
+      "\uacf5\uacfc\ub300\ud559": ["\uac74\ucd95\ud559\uacfc(5\ub144\uc81c)", "\uae30\uacc4\uacf5\ud559\ubd80", "\uba54\uce74\ud2b8\ub85c\ub2c9\uc2a4\uacf5\ud559\uacfc", "\uc2a4\ub9c8\ud2b8\uc2dc\ud2f0\uac74\ucd95\uacf5\ud559\uacfc", "\uc2e0\uc18c\uc7ac\uacf5\ud559\uacfc", "\uc5d0\ub108\uc9c0\uacf5\ud559\uacfc", "\uc720\uae30\uc7ac\ub8cc\uacf5\ud559\uacfc", "\uc751\uc6a9\ud654\ud559\uacf5\ud559\uacfc", "\uc790\uc728\uc6b4\ud56d\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc", "\uc804\uae30\uacf5\ud559\uacfc", "\uc804\uc790\uacf5\ud559\uacfc", "\uc815\ubcf4\ud1b5\uc2e0\uc735\ud569\ud559\ubd80", "\ucef4\ud4e8\ud130\uc778\uacf5\uc9c0\ub2a5\ud559\ubd80", "\ud1a0\ubaa9\uacf5\ud559\uacfc", "\ud56d\uacf5\uc6b0\uc8fc\uacf5\ud559\uacfc", "\ud658\uacbd\uacf5\ud559\uacfc"],
+
+      "\ub18d\uc5c5\uc0dd\uba85\uacfc\ud559\ub300\ud559": ["\ub18d\uc0dd\uba85\uc735\ud569\ud559\ubd80", "\ub18d\uc5c5\uacbd\uc81c\ud559\uacfc", "\ub3d9\ubb3c\ubc14\uc774\uc624\uc2dc\uc2a4\ud15c\uacfc\ud559\uacfc", "\ub3d9\ubb3c\uc790\uc6d0\uc0dd\uba85\uacfc\ud559\uacfc", "\uc0b0\ub9bc\ud658\uacbd\uc790\uc6d0\ud559\uacfc", "\uc0dd\ubb3c\ud658\uacbd\ud654\ud559\uacfc", "\uc2a4\ub9c8\ud2b8\ub18d\uc5c5\uc2dc\uc2a4\ud15c\uae30\uacc4\uacf5\ud559\uacfc", "\uc2dd\ubb3c\uc790\uc6d0\ud559\uacfc", "\uc2dd\ud488\uacf5\ud559\uacfc", "\uc6d0\uc608\ud559\uacfc", "\uc751\uc6a9\uc0dd\ubb3c\ud559\uacfc", "\uc9c0\uc5ed\ud658\uacbd\ud1a0\ubaa9\ud559\uacfc", "\ud658\uacbd\uc18c\uc7ac\uacf5\ud559\uacfc"],
+
+      "\uc0ac\ubc94\ub300\ud559": ["\uac74\uc124\uacf5\ud559\uad50\uc721\uacfc", "\uad50\uc721\ud559\uacfc", "\uad6d\uc5b4\uad50\uc721\uacfc", "\uae30\uacc4\uacf5\ud559\uad50\uc721\uacfc", "\uae30\uc220\uad50\uc721\uacfc", "\uc218\ud559\uad50\uc721\uacfc", "\uc601\uc5b4\uad50\uc721\uacfc", "\uc804\uae30\u00b7\uc804\uc790\u00b7\ud1b5\uc2e0\uacf5\ud559\uad50\uc721\uacfc", "\uccb4\uc721\uad50\uc721\uacfc", "\ud654\ud559\uacf5\ud559\uad50\uc721\uacfc"],
+
+      "\uc0ac\ud68c\uacfc\ud559\ub300\ud559": ["\ub3c4\uc2dc\u00b7\uc790\uce58\uc735\ud569\ud559\uacfc", "\ubb38\ud5cc\uc815\ubcf4\ud559\uacfc", "\uc0ac\ud68c\ubcf5\uc9c0\ud559\uacfc", "\uc0ac\ud68c\ud559\uacfc", "\uc2ec\ub9ac\ud559\uacfc", "\uc5b8\ub860\uc815\ubcf4\ud559\uacfc", "\uc815\uce58\uc678\uad50\ud559\uacfc", "\ud589\uc815\ud559\ubd80"],
+
+      "\uc0dd\uba85\uc2dc\uc2a4\ud15c\uacfc\ud559\ub300\ud559": ["\ubbf8\uc0dd\ubb3c\u00b7\ubd84\uc790\uc0dd\uba85\uacfc\ud559\uacfc", "\uc0dd\uba85\uc815\ubcf4\uc735\ud569\ud559\uacfc", "\uc0dd\ubb3c\uacfc\ud559\uacfc"],
+
+      "\uc0dd\ud65c\uacfc\ud559\ub300\ud559": ["\uc18c\ube44\uc790\ud559\uacfc", "\uc2dd\ud488\uc601\uc591\ud559\uacfc", "\uc758\ub958\ud559\uacfc"],
+
+      "\uc608\uc220\ub300\ud559": ["\uad00\ud604\uc545\uacfc", "\ub514\uc790\uc778\ucc3d\uc758\ud559\uacfc", "\uc74c\uc545\uacfc", "\uc870\uc18c\uacfc", "\ud68c\ud654\uacfc"],
+
+      "\uc758\uc57d\u00b7\uac04\ud638\u00b7\uc218\uc758\uacc4\uc5f4": ["\uac04\ud638\ud559\uacfc", "\uc218\uc758\uc608\uacfc/\uc218\uc758\ud559\uacfc", "\uc57d\ud559\uacfc", "\uc758\uc608\uacfc/\uc758\ud559\uacfc"],
+
+      "\uc778\ubb38\ub300\ud559": ["\uace0\uace0\ud559\uacfc", "\uad6d\uc0ac\ud559\uacfc", "\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\ub3c5\uc5b4\ub3c5\ubb38\ud559\uacfc", "\ubd88\uc5b4\ubd88\ubb38\ud559\uacfc", "\uc0ac\ud559\uacfc", "\uc5b8\uc5b4\ud559\uacfc", "\uc601\uc5b4\uc601\ubb38\ud559\uacfc", "\uc77c\uc5b4\uc77c\ubb38\ud559\uacfc", "\uc911\uc5b4\uc911\ubb38\ud559\uacfc", "\ucca0\ud559\uacfc", "\ud55c\ubb38\ud559\uacfc"],
+
+      "\uc790\uc5f0\uacfc\ud559\ub300\ud559": ["\ubb34\uc6a9\ud559\uacfc", "\ubb3c\ub9ac\ud559\uacfc", "\ubc18\ub3c4\uccb4\uc735\ud569\ud559\uacfc", "\uc0dd\ud654\ud559\uacfc", "\uc218\ud559\uacfc", "\uc2a4\ud3ec\uce20\uacfc\ud559\uacfc", "\uc815\ubcf4\ud1b5\uacc4\ud559\uacfc", "\uc9c0\uc9c8\ud658\uacbd\uacfc\ud559\uacfc", "\ucc9c\ubb38\uc6b0\uc8fc\uacfc\ud559\uacfc", "\ud574\uc591\ud658\uacbd\uacfc\ud559\uacfc", "\ud654\ud559\uacfc"],
+
+      "\ud2b9\uc218 \ubc0f \uc735\ud569\ud559\ubd80": ["\uad6d\uac00\uc548\ubcf4\uc735\ud569\ud559\ubd80(\uad6d\ud1a0\uc548\ubcf4\ud559/\ud574\uc591\uc548\ubcf4\ud559)", "\uad6d\uc81c\ud559\ubd80", "\uc9c0\uc2dd\uc735\ud569\ud559\ubd80(\ubb38\ud654\uc640\uc0ac\ud68c\uc735\ud569/\uacf5\uacf5\uc548\uc804\uc735\ud569/\ub9ac\ub354\uc2ed\uacfc\uc870\uc9c1\uacfc\ud559)", "\ucc3d\uc758\uc735\ud569\ub300\ud559(\uc790\uc728\uc804\uacf5\uc735\ud569/\uc778\ubb38\uc0ac\ud68c\uc735\ud569/\uc790\uc5f0\uacfc\ud559\uc735\ud569/\uacf5\ud559\uc735\ud569)"]
+
+    },
+
+    "\ucda9\ubd81\ub300\ud559\uad50": {
+
+      "\uacbd\uc601\ub300\ud559": ["\uacbd\uc601\uc815\ubcf4\ud559\uacfc", "\uacbd\uc601\ud559\ubd80", "\uacbd\uc601\ud559\uc790\uc728\uc804\uacf5\ud559\ubd80", "\uad6d\uc81c\uacbd\uc601\ud559\uacfc"],
+
+      "\uacf5\uacfc\ub300\ud559": ["\uac74\ucd95\uacf5\ud559\uacfc", "\uac74\ucd95\ud559\uacfc", "\uacf5\uc5c5\ud654\ud559\uacfc", "\uacf5\ud559\uc790\uc728\uc804\uacf5\ud559\ubd80", "\uae30\uacc4\uacf5\ud559\ubd80", "\ub3c4\uc2dc\uacf5\ud559\uacfc", "\uc2e0\uc18c\uc7ac\uacf5\ud559\uacfc", "\uc548\uc804\uacf5\ud559\uacfc", "\ud1a0\ubaa9\uacf5\ud559\ubd80", "\ud654\ud559\uacf5\ud559\uacfc", "\ud658\uacbd\uacf5\ud559\uacfc"],
+
+      "\ub18d\uc5c5\uc0dd\uba85\ud658\uacbd\ub300\ud559": ["\ub18d\uc5c5\uacbd\uc81c\ud559\uacfc", "\ub18d\uc5c5\uc0dd\uba85\ud658\uacbd\uc790\uc728\uc804\uacf5\ud559\ubd80", "\ubaa9\uc7ac\u2027\uc885\uc774\uacfc\ud559\uacfc", "\ubc14\uc774\uc624\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc", "\uc0b0\ub9bc\ud559\uacfc", "\uc2dd\ubb3c\uc758\ud559\uacfc", "\uc2dd\ubb3c\uc790\uc6d0\ud559\uacfc", "\uc2dd\ud488\uc0dd\uba85\uacf5\ud559\uacfc", "\uc6d0\uc608\uacfc\ud559\uacfc", "\uc9c0\uc5ed\uac74\uc124\uacf5\ud559\uacfc", "\ucd95\uc0b0\ud559\uacfc", "\ud2b9\uc6a9\uc2dd\ubb3c\ud559\uacfc", "\ud658\uacbd\uc0dd\uba85\ud654\ud559\uacfc"],
+
+      "\uc0ac\ubc94\ub300\ud559": ["\uad50\uc721\ud559\uacfc", "\uad6d\uc5b4\uad50\uc721\uacfc", "\ubb3c\ub9ac\uad50\uc721\uacfc", "\uc0ac\ud68c\uad50\uc721\uacfc", "\uc0dd\ubb3c\uad50\uc721\uacfc", "\uc218\ud559\uad50\uc721\uacfc", "\uc5ed\uc0ac\uad50\uc721\uacfc", "\uc601\uc5b4\uad50\uc721\uacfc", "\uc724\ub9ac\uad50\uc721\uacfc", "\uc9c0\uad6c\uacfc\ud559\uad50\uc721\uacfc", "\uc9c0\ub9ac\uad50\uc721\uacfc", "\uccb4\uc721\uad50\uc721\uacfc", "\ud654\ud559\uad50\uc721\uacfc"],
+
+      "\uc0ac\ud68c\uacfc\ud559\ub300\ud559": ["\uacbd\uc81c\ud559\uacfc", "\uc0ac\ud68c\uacfc\ud559\uc790\uc728\uc804\uacf5\ud559\ubd80", "\uc0ac\ud68c\ud559\uacfc", "\uc2ec\ub9ac\ud559\uacfc", "\uc815\uce58\uc678\uad50\ud559\uacfc", "\ud589\uc815\ud559\uacfc"],
+
+      "\uc0dd\ud65c\uacfc\ud559\ub300\ud559": ["\uc0dd\ud65c\uacfc\ud559\uc790\uc728\uc804\uacf5\ud559\ubd80", "\uc18c\ube44\uc790\ud559\uacfc", "\uc2dd\ud488\uc601\uc591\ud559\uacfc", "\uc544\ub3d9\ubcf5\uc9c0\ud559\uacfc", "\uc758\ub958\ud559\uacfc", "\uc8fc\uac70\ud658\uacbd\ud559\uacfc"],
+
+      "\uc608\uc220\ud559\uacfc\uad70": ["\ub514\uc790\uc778\ud559\uacfc", "\ubbf8\uc220\ud559\uacfc(\ub3d9\uc591\ud654/\uc11c\uc591\ud654/\uc870\uc18c)"],
+
+      "\uc758\uc57d/\ubcf4\uac74/\uac04\ud638/\uc218\uc758\uacc4\uc5f4": ["\uac04\ud638\ub300\ud559(\uac04\ud638\ud559\uacfc)", "\uc218\uc758\uacfc\ub300\ud559(\uc218\uc758\uc608\uacfc)", "\uc57d\ud559\ub300\ud559(\uc57d\ud559\uacfc)", "\uc57d\ud559\ub300\ud559(\uc81c\uc57d\ud559\uacfc)", "\uc758\uacfc\ub300\ud559(\uc758\uc608\uacfc)"],
+
+      "\uc778\ubb38\ub300\ud559": ["\uace0\uace0\ubbf8\uc220\uc0ac\ud559\uacfc", "\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\ub3c5\uc77c\uc5b8\uc5b4\ubb38\ud654\ud559\uacfc", "\ub7ec\uc2dc\uc544\uc5b8\uc5b4\ubb38\ud654\ud559\uacfc", "\uc0ac\ud559\uacfc", "\uc601\uc5b4\uc601\ubb38\ud559\uacfc", "\uc778\ubb38\ud559\uc790\uc728\uc804\uacf5\ud559\ubd80", "\uc911\uc5b4\uc911\ubb38\ud559\uacfc", "\ucca0\ud559\uacfc", "\ud504\ub791\uc2a4\uc5b8\uc5b4\ubb38\ud654\ud559\uacfc"],
+
+      "\uc790\uc5f0\uacfc\ud559\ub300\ud559": ["\ubb3c\ub9ac\ud559\uacfc", "\ubbf8\uc0dd\ubb3c\ud559\uacfc", "\uc0dd\ubb3c\ud559\uacfc", "\uc0dd\ud654\ud559\uacfc", "\uc218\ud559\uacfc", "\uc790\uc5f0\uacfc\ud559\uc790\uc728\uc804\uacf5\ud559\ubd80", "\uc815\ubcf4\ud1b5\uacc4\ud559\uacfc", "\uc9c0\uad6c\ud658\uacbd\uacfc\ud559\uacfc", "\ucc9c\ubb38\uc6b0\uc8fc\ud559\uacfc", "\ud654\ud559\uacfc"],
+
+      "\uc804\uc790\uc815\ubcf4\ub300\ud559": ["\ubc18\ub3c4\uccb4\uacf5\ud559\ubd80", "\uc18c\ud504\ud2b8\uc6e8\uc5b4\ud559\ubd80", "\uc804\uae30\uacf5\ud559\ubd80", "\uc804\uc790\uacf5\ud559\uacfc", "\uc804\uc790\uc815\ubcf4\uc790\uc728\uc804\uacf5\ud559\ubd80", "\uc815\ubcf4\ud1b5\uc2e0\uacf5\ud559\ubd80", "\uc9c0\ub2a5\ub85c\ubd07\uacf5\ud559\uacfc", "\ucef4\ud4e8\ud130\uacf5\ud559\uacfc"],
+
+      "\ucc3d\uc758\uc735\ud569\ub300\ud559 \ubc0f \uc9c1\ud560\ud559\ubd80": ["\ubc14\uc774\uc624\ud5ec\uc2a4\ud559\ubd80", "\uc778\ubb38\uc0ac\ud68c\uc790\uc728\uc804\uacf5\uacc4\uc5f4", "\uc790\uc5f0\uacfc\ud559\uc790\uc728\uc804\uacf5\uacc4\uc5f4"]
+
+    },
+
+    "\ud55c\uad6d\uc678\uad6d\uc5b4\ub300\ud559\uad50": {
+
+      "\uae00\ub85c\ubc8c\ucea0\ud37c\uc2a4": ["AI\uc735\ud569\ub300\ud559(AI\ub370\uc774\ud130\uc735\ud569\ud559\ubd80, Finance & AI\uc735\ud569\ud559\ubd80)", "Culture & Technology \uc735\ud569\ub300\ud559(\ub514\uc9c0\ud138\ucf58\ud150\uce20\ud559\ubd80, \ud22c\uc5b4\ub9ac\uc998 & \uc6f0\ub2c8\uc2a4\ud559\ubd80, \uae00\ub85c\ubc8c\uc2a4\ud3ec\uce20\uc0b0\uc5c5\ud559\ubd80)", "\uacbd\uc0c1\ub300\ud559(Global Business & Technology\ud559\ubd80, \uad6d\uc81c\uae08\uc735\ud559\uacfc)", "\uacf5\uacfc\ub300\ud559(\ucef4\ud4e8\ud130\uacf5\ud559\ubd80, \uc815\ubcf4\ud1b5\uc2e0\uacf5\ud559\uacfc, \ubc18\ub3c4\uccb4\uc804\uc790\uacf5\ud559\ubd80(\ubc18\ub3c4\uccb4/\uc804\uc790\uacf5\ud559\uc804\uacf5), \uc0b0\uc5c5\uacbd\uc601\uacf5\ud559\uacfc, \ubc14\uc774\uc624\uba54\ub514\uceec\uacf5\ud559\ubd80)", "\uad6d\uac00\uc804\ub7b5\uc5b8\uc5b4\ub300\ud559(\ud3f4\ub780\ub4dc\ud559\uacfc, \ub8e8\ub9c8\ub2c8\uc544\ud559\uacfc, \uccb4\ucf54\u00b7\uc2ac\ub85c\ubc14\ud0a4\uc544\ud559\uacfc, \ud5dd\uac00\ub9ac\ud559\uacfc, \uc138\ub974\ube44\uc544\u00b7\ud06c\ub85c\uc544\ud2f0\uc544\ud559\uacfc, \uadf8\ub9ac\uc2a4\u00b7\ubd88\uac00\ub9ac\uc544\ud559\uacfc, \uc911\uc559\uc544\uc2dc\uc544\ud559\uacfc, \uc544\ud504\ub9ac\uce74\ud559\ubd80, \uc6b0\ud06c\ub77c\uc774\ub098\ud559\uacfc, \ud55c\uad6d\ud559\uacfc)", "\uae30\ud6c4\ubcc0\ud654\uc735\ud569\ud559\ubd80", "\uc735\ud569\uc778\uc7ac\ub300\ud559(\uc735\ud569\uc778\uc7ac\ud559\ubd80)", "\uc778\ubb38\ub300\ud559(\ucca0\ud559\uacfc, \uc0ac\ud559\uacfc, \uc5b8\uc5b4\uc778\uc9c0\uacfc\ud559\uacfc)", "\uc790\uc5f0\uacfc\ud559\ub300\ud559(\uc218\ud559\uacfc, \ud1b5\uacc4\ud559\uacfc, \uc804\uc790\ubb3c\ub9ac\ud559\uacfc, \ud658\uacbd\ud559\uacfc, \uc0dd\uba85\uacf5\ud559\uacfc, \ud654\ud559\uacfc)", "\uc790\uc720\uc804\uacf5\ud559\ubd80"],
+
+      "\uc11c\uc6b8\ucea0\ud37c\uc2a4": ["AI\uc735\ud569\ub300\ud559(Language & AI\uc735\ud569\ud559\ubd80, Social Science & AI\uc735\ud569\ud559\ubd80)", "KFL\ud559\ubd80", "Language & Diplomacy\ud559\ubd80", "Language & Trade\ud559\ubd80", "\uacbd\uc601\ub300\ud559(\uacbd\uc601\ud559\ubd80)", "\uad6d\uc81c\ud559\ubd80", "\uc0ac\ubc94\ub300\ud559(\uc601\uc5b4\uad50\uc721\uacfc, \ud55c\uad6d\uc5b4\uad50\uc721\uacfc, \uc678\uad6d\uc5b4\uad50\uc721\ud559\ubd80(\ud504\ub791\uc2a4\uc5b4/\ub3c5\uc77c\uc5b4/\uc911\uad6d\uc5b4\uad50\uc721\uc804\uacf5))", "\uc0ac\ud68c\uacfc\ud559\ub300\ud559(\uc815\uce58\uc678\uad50\ud559\uacfc, \ud589\uc815\ud559\uacfc, \ubbf8\ub514\uc5b4\ucee4\ubba4\ub2c8\ucf00\uc774\uc158\ud559\ubd80)", "\uc0c1\uacbd\ub300\ud559(\uad6d\uc81c\ud1b5\uc0c1\ud559\uacfc, \uacbd\uc81c\ud559\ubd80)", "\uc11c\uc591\uc5b4\ub300\ud559(\ud504\ub791\uc2a4\uc5b4\ud559\ubd80, \ub3c5\uc77c\uc5b4\uacfc, \ub178\uc5b4\uacfc, \uc2a4\ud398\uc778\uc5b4\uacfc, \uc774\ud0c8\ub9ac\uc544\uc5b4\uacfc, \ud3ec\ub974\ud22c\uac08\uc5b4\uacfc, \ub124\ub35c\ub780\ub4dc\uc5b4\uacfc, \uc2a4\uce78\ub514\ub098\ube44\uc544\uc5b4\uacfc)", "\uc544\uc2dc\uc544\uc5b8\uc5b4\ubb38\ud654\ub300\ud559(\ub9d0\ub808\uc774\u00b7\uc778\ub3c4\ub124\uc2dc\uc544\uc5b4\uacfc, \ud0dc\uad6d\ud559\uacfc, \ubca0\ud2b8\ub0a8\uc5b4\uacfc, \uc778\ub3c4\uc5b4\uacfc, \uc544\ub78d\uc5b4\uacfc, \ud280\ub974\ud0a4\uc608\u00b7\uc544\uc81c\ub974\ubc14\uc774\uc794\ud559\uacfc, \ud398\ub974\uc2dc\uc544\uc5b4\u00b7\uc774\ub780\ud559\uacfc, \ubabd\uace8\uc5b4\uacfc)", "\uc601\uc5b4\ub300\ud559(ELLT\ud559\uacfc, \uc601\ubbf8\ubb38\ud559\u00b7\ubb38\ud654\ud559\uacfc, \uc601\uc5b4\ud1b5\ubc88\uc5ed\ud559\uacfc)", "\uc77c\ubcf8\ud559\ub300\ud559(\uc77c\ubcf8\uc5b8\uc5b4\ubb38\ud654\ud559\ubd80, \uc735\ud569\uc77c\ubcf8\uc9c0\uc5ed\ud559\ubd80)", "\uc790\uc720\uc804\uacf5\ud559\ubd80", "\uc911\uad6d\ud559\ub300\ud559(\uc911\uad6d\uc5b8\uc5b4\ubb38\ud654\ud559\ubd80, \uc911\uad6d\uc678\uad50\ud1b5\uc0c1\ud559\ubd80)"]
+
+    },
+
+    "\ud55c\uc591\ub300\ud559\uad50": {
+
+      "\uacf5\uacfc\ub300\ud559": ["\uac74\uc124\ud658\uacbd\uacf5\ud559\uacfc", "\uac74\ucd95\uacf5\ud559\ubd80", "\uac74\ucd95\ud559\ubd80", "\uae30\uacc4\uacf5\ud559\ubd80", "\ub370\uc774\ud130\uc0ac\uc774\uc5b8\uc2a4\ud559\ubd80", "\ub3c4\uc2dc\uacf5\ud559\uacfc", "\ubbf8\ub798\uc790\ub3d9\ucc28\uacf5\ud559\uacfc", "\ubc18\ub3c4\uccb4\uacf5\ud559\uacfc", "\uc0b0\uc5c5\uacf5\ud559\uacfc", "\uc0dd\uba85\uacf5\ud559\uacfc", "\uc2e0\uc18c\uc7ac\uacf5\ud559\ubd80", "\uc5d0\ub108\uc9c0\uacf5\ud559\uacfc", "\uc6d0\uc790\ub825\uacf5\ud559\uacfc", "\uc720\uae30\ub098\ub178\uacf5\ud559\uacfc", "\uc735\ud569\uc804\uc790\uacf5\ud559\ubd80", "\uc790\uc6d0\ud658\uacbd\uacf5\ud559\uacfc", "\uc804\uae30\u00b7\uc0dd\uccb4\uacf5\ud559\ubd80", "\uc815\ubcf4\uc2dc\uc2a4\ud15c\ud559\uacfc", "\ucef4\ud4e8\ud130\uc18c\ud504\ud2b8\uc6e8\uc5b4\ud559\ubd80", "\ud654\ud559\uacf5\ud559\uacfc"],
+
+      "\uae30\ud0c0": ["\uac04\ud638\ub300\ud559(\uac04\ud638\ud559\uacfc)", "\uc0b0\uc5c5\uc735\ud569\ud559\ubd80", "\uc758\uacfc\ub300\ud559(\uc758\uc608\uacfc)", "\ud55c\uc591\uc778\ud130\uce7c\ub9ac\uc9c0\ud559\ubd80"],
+
+      "\uc0ac\ubc94/\uc0dd\ud65c/\uc74c\uc545/\uc608\uc220/\uad6d\uc81c\uacc4\uc5f4": ["\uad6d\uc81c\ub300\ud559(\uad6d\uc81c\ud559\ubd80)", "\uc0ac\ubc94\ub300\ud559(\uad50\uc721\ud559\uacfc, \uad50\uc721\uacf5\ud559\uacfc, \uad6d\uc5b4\uad50\uc721\uacfc, \uc601\uc5b4\uad50\uc721\uacfc, \uc218\ud559\uad50\uc721\uacfc, \uc751\uc6a9\ubbf8\uc220\uad50\uc721\uacfc)", "\uc0dd\ud65c\uacfc\ud559\ub300\ud559(\uc758\ub958\ud559\uacfc, \uc2dd\ud488\uc601\uc591\ud559\uacfc, \uc2e4\ub0b4\uac74\ucd95\ub514\uc790\uc778\ud559\uacfc)", "\uc608\uc220\uccb4\uc721\ub300\ud559(\uc2a4\ud3ec\uce20\uc0b0\uc5c5\uacfc\ud559\ubd80, \uc5f0\uadf9\uc601\ud654\ud559\uacfc, \ubb34\uc6a9\ud559\uacfc)", "\uc74c\uc545\ub300\ud559(\uc131\uc545\uacfc, \uc791\uace1\uacfc, \ud53c\uc544\ub178\uacfc, \uad00\ud604\uc545\uacfc, \uad6d\uc545\uacfc)"],
+
+      "\uc778\ubb38\uacfc\ud559/\uc0ac\ud68c\uacfc\ud559\ub300\ud559": ["\uc0ac\ud68c\uacfc\ud559\ub300\ud559(\uc815\uce58\uc678\uad50\ud559\uacfc, \uc0ac\ud68c\ud559\uacfc, \ubbf8\ub514\uc5b4\ucee4\ubba4\ub2c8\ucf00\uc774\uc158\ud559\uacfc, \uad00\uad11\ud559\ubd80)", "\uc778\ubb38\uacfc\ud559\ub300\ud559(\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc, \uc911\uc5b4\uc911\ubb38\ud559\uacfc, \uc601\uc5b4\uc601\ubb38\ud559\uacfc, \ub3c5\uc5b4\ub3c5\ubb38\ud559\uacfc, \uc0ac\ud559\uacfc, \ucca0\ud559\uacfc)"],
+
+      "\uc790\uc5f0\uacfc\ud559/\uc815\ucc45/\uacbd\uae08/\uacbd\uc601\ub300\ud559": ["\uacbd\uc601\ub300\ud559(\uacbd\uc601\ud559\ubd80, \ud30c\uc774\ub0b8\uc2a4\uacbd\uc601\ud559\uacfc)", "\uacbd\uc81c\uae08\uc735\ub300\ud559(\uacbd\uc81c\uae08\uc735\ud559\ubd80)", "\uc790\uc5f0\uacfc\ud559\ub300\ud559(\uc218\ud559\uacfc, \ubb3c\ub9ac\ud559\uacfc, \ud654\ud559\uacfc, \uc0dd\uba85\uacfc\ud559\uacfc)", "\uc815\ucc45\uacfc\ud559\ub300\ud559(\uc815\ucc45\ud559\uacfc, \ud589\uc815\ud559\uacfc)"]
+
+    },
+
+    "\ud64d\uc775\ub300\ud559\uad50": {
+
+      "\uac74\ucd95\ub3c4\uc2dc\ub300\ud559": ["\uac74\ucd95\ud559\ubd80 \uac74\ucd95\ud559\uc804\uacf5(5\ub144\uc81c)", "\uac74\ucd95\ud559\ubd80 \uc2e4\ub0b4\uac74\ucd95\ud559\uc804\uacf5", "\ub3c4\uc2dc\uacf5\ud559\uacfc"],
+
+      "\uacbd\uc601\ub300\ud559": ["\uacbd\uc601\ud559\ubd80"],
+
+      "\uacf5\uacfc\ub300\ud559": ["\uac74\uc124\ud658\uacbd\uacf5\ud559\uacfc", "\uae30\uacc4\u00b7\uc2dc\uc2a4\ud15c\ub514\uc790\uc778\uacf5\ud559\uacfc", "\uc0b0\uc5c5\u00b7\ub370\uc774\ud130\uacf5\ud559\uacfc", "\uc2e0\uc18c\uc7ac\u00b7\ud654\uacf5\uc2dc\uc2a4\ud15c\uacf5\ud559\ubd80", "\uc804\uc790\u00b7\uc804\uae30\uacf5\ud559\ubd80", "\ucef4\ud4e8\ud130\uacf5\ud559\uacfc"],
+
+      "\ub3c5\ub9bd\ud559\ubd80": ["\uacbd\uc81c\ud559\ubd80"],
+
+      "\ubb38\uacfc\ub300\ud559": ["\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\ub3c5\uc5b4\ub3c5\ubb38\ud559\uacfc", "\ubd88\uc5b4\ubd88\ubb38\ud559\uacfc", "\uc601\uc5b4\uc601\ubb38\ud559\uacfc"],
+
+      "\ubbf8\uc220\ub300\ud559": ["\uc608\uc220\ud559\uacfc"],
+
+      "\ubc95\uacfc\ub300\ud559": ["\ubc95\ud559\ubd80"],
+
+      "\uc0ac\ubc94\ub300\ud559": ["\uad50\uc721\ud559\uacfc", "\uad6d\uc5b4\uad50\uc721\uacfc", "\uc218\ud559\uad50\uc721\uacfc", "\uc5ed\uc0ac\uad50\uc721\uacfc", "\uc601\uc5b4\uad50\uc721\uacfc"],
+
+      "\uc11c\uc6b8\ucea0\ud37c\uc2a4 \uc735\ud569\uc804\uacf5": ["\uac74\ucd95\uacf5\uac04\uc608\uc220\uc804\uacf5", "\uacf5\uc5f0\uc608\uc220\uc804\uacf5", "\ub370\uc774\ud130\uc0ac\uc774\uc5b8\uc2a4\uc804\uacf5", "\ub514\uc790\uc778\uc5d4\uc9c0\ub2c8\uc5b4\ub9c1\uc804\uacf5", "\ubb38\ud654\uc608\uc220\uacbd\uc601\uc804\uacf5", "\uc0ac\ubb3c\uc778\ud130\ub137\uacf5\ud559\uc804\uacf5", "\uc2a4\ub9c8\ud2b8\ub3c4\uc2dc\u00b7\ub370\uc774\ud130\uc0ac\uc774\uc5b8\uc2a4\uc804\uacf5", "\uc758\ub8cc\ud5ec\uc2a4\ucf00\uc5b4AI\uc804\uacf5", "\uc9c0\ub2a5\u00b7\ub85c\ubd07\uacf5\ud559\uc804\uacf5", "\ud5ec\uc2a4\ucf00\uc5b4\uc11c\ube44\uc2a4\uc804\uacf5"],
+
+      "\ucea0\ud37c\uc2a4\uc790\uc728\uc804\uacf5": ["\uc11c\uc6b8\ucea0\ud37c\uc2a4\uc790\uc728\uc804\uacf5(\uc778\ubb38\u00b7\uc608\ub2a5)", "\uc11c\uc6b8\ucea0\ud37c\uc2a4\uc790\uc728\uc804\uacf5(\uc790\uc5f0\u00b7\uc608\ub2a5)"]
+
+    },
+
+    "서울과학기술대학교": {
+
+      "공과대학": ["건설시스템공학과", "건축학부(건축공학전공, 건축학전공)", "기계공학과", "기계시스템공학부(지능형로봇전공, 미래자동차전공)", "신소재공학과", "안전공학과", "자유전공학부(공과대학)"],
+
+      "교양대학": ["ST자유전공학부"],
+
+      "기술경영융합대학": ["MSDE학과", "경영학과(경영학전공)", "경영학과(글로벌테크노경영전공)", "산업공학과(ITM전공)", "산업공학과(산업정보시스템전공)", "자유전공학부(기술경영융합대학)"],
+
+      "미래융합대학": ["건설환경융합공학과", "문화예술학과", "벤처경영학과", "영어과", "융합기계공학과", "자유전공학부(미래융합대학)", "정보통신융합공학과", "헬스피트니스학과"],
+
+      "에너지바이오대학": ["바이오메디컬학과(신설)", "스포츠과학과", "식품생명공학과", "안경광학과", "자유전공학부(에너지바이오대학)", "정밀화학과", "화공생명공학과", "환경공학과"],
+
+      "인문사회대학": ["문예창작학과", "영어영문학과", "자유전공학부(인문사회대학)", "행정학과"],
+
+      "정보통신대학": ["스마트ICT융합공학과", "자유전공학부(정보통신대학)", "전기정보공학과", "전자공학과", "컴퓨터공학과"],
+
+      "조형대학": ["금속공예디자인학과", "도예학과", "디자인학과(산업디자인전공, 시각디자인전공)", "조형예술학과"],
+
+      "창의융합대학": ["미래에너지융합학과", "인공지능응용학과", "자유전공학부(창의융합대학)", "지능형반도체공학과"]
+
+    },
+
+    "한국교원대학교": {
+
+      "제1대학 (유아·초등·특수 및 교육학 분야)": ["교육학과", "유아교육과", "초등교육과", "특수교육과"],
+
+      "제2대학 (인문·사회 및 어문 교육 분야)": ["국어교육과", "독어교육과", "불어교육과", "역사교육과", "영어교육과", "윤리교육과", "일반사회교육과", "중국어교육과", "지리교육과"],
+
+      "제3대학 (자연과학 및 공학·컴퓨터 교육 분야)": ["가정교육과", "기술교육과", "물리교육과", "생물교육과", "수학교육과", "지구과학교육과", "컴퓨터교육과", "화학교육과", "환경교육과"],
+
+      "제4대학 (예체능 교육 분야)": ["미술교육과", "음악교육과", "체육교육과"]
+
     }
   };
 
@@ -645,7 +1201,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const selectedUni = universitySelect.value;
     const selectedCat = categorySelect.value;
     const majorsData = universityData[selectedUni];
-    majorSelect.innerHTML = "<option value='' disabled selected>\uc9c0\uc6d0 \ud559\uacfc\ub97c \uc120\ud0dd\ud558\uc138\uc694</option>";
+    majorSelect.innerHTML = `<option value='' disabled selected>${selectedCat === "개설학과" ? "전체 학과" : "지원 학과"}를 선택하세요</option>`;
     if (!majorsData || !majorsData[selectedCat]) return;
     majorsData[selectedCat].forEach(major => {
       const o = document.createElement("option");
@@ -653,6 +1209,88 @@ document.addEventListener("DOMContentLoaded", () => {
       majorSelect.appendChild(o);
     });
   });
+
+  // [신규] 학과 검색기 기능 초기화
+  function initMajorSearch() {
+    const searchInput = document.getElementById('major-search');
+    const resultsPanel = document.getElementById('major-search-results');
+    
+    if (!searchInput || !resultsPanel) return;
+
+    const allMajors = [];
+    for (const [univ, categories] of Object.entries(universityData)) {
+      for (const [cat, majors] of Object.entries(categories)) {
+        majors.forEach(major => {
+          allMajors.push({ univ, cat, major });
+        });
+      }
+    }
+
+    searchInput.addEventListener('input', (e) => {
+      const query = e.target.value.trim().toLowerCase();
+      if (!query) {
+        resultsPanel.innerHTML = '';
+        resultsPanel.classList.add('hidden');
+        return;
+      }
+
+      const results = allMajors.filter(item => 
+        item.major.toLowerCase().includes(query) || 
+        item.univ.toLowerCase().includes(query)
+      ).sort((a, b) => {
+        const aMajor = a.major.toLowerCase();
+        const bMajor = b.major.toLowerCase();
+        const aExact = aMajor === query;
+        const bExact = bMajor === query;
+        if (aExact && !bExact) return -1;
+        if (!aExact && bExact) return 1;
+        const aStarts = aMajor.startsWith(query);
+        const bStarts = bMajor.startsWith(query);
+        if (aStarts && !bStarts) return -1;
+        if (!aStarts && bStarts) return 1;
+        return aMajor.localeCompare(bMajor);
+      }).slice(0, 15);
+
+      if (results.length > 0) {
+        resultsPanel.innerHTML = results.map(item => {
+          const highlightedUniv = item.univ.replace(new RegExp(query, 'gi'), (match) => `<strong>${match}</strong>`);
+          const highlightedMajor = item.major.replace(new RegExp(query, 'gi'), (match) => `<strong>${match}</strong>`);
+          const catLabel = item.cat === "개설학과" ? "전체" : item.cat;
+          return `
+            <div class="search-result-item" data-univ="${item.univ}" data-cat="${item.cat}" data-major="${item.major}">
+              <span class="univ-name">${highlightedUniv}</span>
+              <span class="major-path">${catLabel} > ${highlightedMajor}</span>
+            </div>
+          `;
+        }).join('');
+        resultsPanel.classList.remove('hidden');
+      } else {
+        resultsPanel.innerHTML = '<div style="padding: 12px 16px; color: var(--text-secondary);">검색 결과가 없습니다.</div>';
+        resultsPanel.classList.remove('hidden');
+      }
+    });
+
+    resultsPanel.addEventListener('click', (e) => {
+      const item = e.target.closest('.search-result-item');
+      if (!item) return;
+      const { univ, cat, major } = item.dataset;
+      universitySelect.value = univ;
+      universitySelect.dispatchEvent(new Event('change'));
+      categorySelect.value = cat;
+      categorySelect.dispatchEvent(new Event('change'));
+      majorSelect.value = major;
+      majorSelect.dispatchEvent(new Event('change'));
+      searchInput.value = major;
+      resultsPanel.classList.add('hidden');
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!searchInput.contains(e.target) && !resultsPanel.contains(e.target)) {
+        resultsPanel.classList.add('hidden');
+      }
+    });
+  }
+  initMajorSearch();
 
   if (excelUpload) {
     excelUpload.addEventListener("change", (e) => {
@@ -751,10 +1389,14 @@ document.addEventListener("DOMContentLoaded", () => {
         // 엑셀(수시진학관리)에서 추출된 '일반등급' 연동
         if (pfStudents.length > 0) {
             const matched = pfStudents.find(s => s.name === targetName);
-            if (matched && matched.genGrade && matched.genGrade !== "-") {
-                if (averageGradeInput) {
-                    averageGradeInput.value = matched.genGrade;
-                    console.log(`[Sync] Found genGrade for ${targetName}: ${matched.genGrade}`);
+            if (matched) {
+                let displayGrades = [];
+                if (matched.genGrade && matched.genGrade !== "-") displayGrades.push(matched.genGrade);
+                if (matched.genGrade5 && matched.genGrade5 !== "-") displayGrades.push(matched.genGrade5 + "(5등급)");
+                
+                if (displayGrades.length > 0 && averageGradeInput) {
+                    averageGradeInput.value = displayGrades.join(" / ");
+                    console.log(`[Sync] Found genGrade for ${targetName}: ${averageGradeInput.value}`);
                 }
             }
         }
@@ -1340,6 +1982,8 @@ document.addEventListener("DOMContentLoaded", () => {
       
       const genGradeInput = document.getElementById("pf-student-general-grade");
       if (genGradeInput) genGradeInput.value = s.genGrade || "-";
+      const genGrade5Input = document.getElementById("pf-student-general-grade5");
+      if (genGrade5Input) genGrade5Input.value = s.genGrade5 || "-";
       
       const detailsDiv = document.getElementById("pf-student-details");
       if (detailsDiv) detailsDiv.style.display = "block";
@@ -1603,6 +2247,8 @@ document.addEventListener("DOMContentLoaded", () => {
         result: s.result,
         grades: document.getElementById("pf-detail-grades").value,
         generalGrade: document.getElementById("pf-student-general-grade").value,
+        generalGrade5: document.getElementById("pf-student-general-grade5") ? document.getElementById("pf-student-general-grade5").value : "-",
+
         subject: document.getElementById("pf-detail-subject").value,
         career: document.getElementById("pf-detail-career").value,
         arts: document.getElementById("pf-detail-arts").value
@@ -1646,7 +2292,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             </tr>
                             <tr>
                                 <td style='padding:8px; border-bottom:1px solid #eee;'><strong>일반등급</strong></td>
-                                <td style='padding:8px; border-bottom:1px solid #eee;'>${document.getElementById("pf-student-general-grade").value}</td>
+                                <td style='padding:8px; border-bottom:1px solid #eee;'>${document.getElementById("pf-student-general-grade").value} / ${document.getElementById("pf-student-general-grade5") ? document.getElementById("pf-student-general-grade5").value + "(5등급)" : "-"}</td>
                                 <td style='padding:8px; border-bottom:1px solid #eee;'><strong>최종결과</strong></td>
                                 <td style='padding:8px; border-bottom:1px solid #eee;'><span style='color:${s.result.includes("합격") ? "#28a745" : "#dc3545"}; font-weight:bold;'>${s.result}</span></td>
                             </tr>
@@ -3323,62 +3969,111 @@ SW\uc6b0\uc218(AI\ucef4\uacf5): \ud559\uc5c5\ud0d0\uad6c\uc5ed\ub7c9 60%(\ud559\
 • 첨단학과: 반도체시스템공학, 지능형소프트웨어, 배터리, 반도체융합공학, 에너지, 양자정보공학, 바이오신약·규제과학, 글로벌융합학부(AI융합)
 • 의약/예체능: 의예과, 약학과, 연기예술, 무용, 스포츠과학
 
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+【성균관대 학생부종합전형의 핵심 특징 ─ 반드시 이해해야 할 사항】
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+★ 모집단위별 권장 이수과목 없음
+★ 전공적합성 평가 요소 없음
+★ 계열적합성 평가 요소 없음
+
+성균관대학교는 특정 학과(모집단위)에 맞춘 이수과목을 요구하지 않습니다.
+타 대학에서 중시하는 '전공(계열)적합성'을 별도 평가 요소로 반영하지 않습니다.
+→ 수학, 과학 이수뿐만 아니라 인문·사회·예술 과목도 동등하게 평가됩니다.
+→ 중요한 것은 '어떤 과목을 이수했느냐'가 아니라, '이수한 과목에서 얼마나 깊이 있게 탐구하고 성장했는가'입니다.
+
 【평가 기본 원칙】
 • 평가 자료: 학교생활기록부 100% 종합적 정성평가
-• 평가 방식: 입학사정관 2인 1조 독립적·교차적 평가, 편차 발생 시 추가 평가, 서류평가위원회 확정, 공정관리위원회 감시
-• 학교폭력 조치: 1호 조치 100점 감점, 2~9호 조치 불합격(0점) 처리
+• 평가 방식: 입학사정관 독립·교차 평가, 서류평가위원회 확정, 공정관리위원회 감시
+• 학교폭력 조치: 1호 조치 100점 감점, 2~9호 조치 불합격 처리
 
-【평가 요소 및 배점 (1000점 만점)】
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+【평가 영역 및 반영 비율 (1000점 만점) ─ 공식 서류평가 기준】
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-1) 학업역량 (40% / 400점) - 대학 입학에 필요한 충분한 학업능력 평가
-   - 학업수월성 (200점): 전 과목 학업성취도, 학업우수성, 일반/진로선택과목 이수 현황 및 성취도, 학년/학기별 성적 안정성
-   - 학업충실성 (200점): 학년/학기별 성적 추이와 의지, 수업 중 학업 활동 내용, 학업 활동의 적극적 참여와 자세
+1) 학업역량 (40% / 400점)
+   ─ "우리 대학에 입학할 만한 충분한 학업 능력을 보여주는가?"
+   ─ 학업 관련 활동 및 성취수준, 학업 태도, 학업 여건 등 종합 평가
 
-2) 탐구역량 (40% / 400점) - 관심 분야에 대한 호기심과 탐구 노력 평가 ★ 가장 중요 (탐구형) 
-   - 탐구확장성 (200점): 관심 분야 이해와 지적 호기심, 집중력과 탐구력, 진로 탐색 열정
-   - 탐구주도성 (200점): 탐구력과 실험 정신, 활동의 발전성·유의미성, 도전적 선택과목 이수와 강점
+   핵심 평가 요소: '학업성취도', '학업의 발전 정도', '학업에 대한 관심과 열의'
 
-3) 잠재역량 (20% / 200점) - 자기주도적 리더 및 발전가능성 평가
-   - 미래성장성 (100점): 학교 활동의 주도적 참여, 진취적 리더십 발휘, 창의적 문제해결·역경 극복 의지
-   - 공동체의식 (100점): 학교생활 성실성·규칙 준수, 협업·소통 능력, 세계시민의식·이타성, 리더십·봉사 정신
+   ▣ 학업수월성 (200점)
+   - 전 과목 학업성취도 및 학업우수성
+   - 일반/진로선택과목 이수현황 및 성취수준
+   - 학년/학기별 성적 안정성
 
-【전형별 평가 우선순위 및 핵심 주안점】
+   ▣ 학업충실성 (200점)
+   - 학년/학기별 성적 추이 및 학업의지
+   - 학년/학기별 학업관련 활동 내용
+   - 학업활동에 적극적 참여 및 자세
 
-★ 융합형/과학인재/기회균형 지원자:
-평가 우선순위: 학업수월성 > 학업충실성 > 탐구확장성 > 탐구주도성 > 미래성장성 > 공동체의식
-핵심: "고교 교육과정 전반에 걸친 우수한 학업 성적과 학교생활의 기초 충실도" 최우선
-→ 내신 등급의 우수성과 안정성, 기초 교과(국수영과사) 이수 충실도가 가장 중요
-→ 깊이 있는 전공 탐구보다는 폭넓은 교육과정 이수와 균형 잡힌 성취 강조
+2) 탐구역량 (40% / 400점) ★ 핵심 평가 영역
+   ─ "관심 분야에 대한 호기심과 이를 탐구하기 위한 노력이 있는가?"
+   ─ 진로 탐색 의지, 지적 호기심과 탐구 의지, 배움에 대한 관심 및 열의, 활동 내용 등
 
-★ 탐구형/성균인재 지원자:
-평가 우선순위: 탐구확장성 > 탐구주도성 > 학업수월성 > 학업충실성 > 미래성장성 > 공동체의식
-핵심: "희망 전공에 대한 압도적인 지적 호기심과 깊이 있는 탐구 과정" 최우선
-→ 내신 등급보다는 전공 관련 선택과목(심화) 이수와 성취도가 결정적
-→ 세부능력 및 특기사항의 '질적 우수성' - 진정한 깊이와 발전성 있는 활동 중심
-→ 진로 관련 도전적 선택이 합격을 좌우함
+   핵심 평가 요소: '관심 분야의 이해와 노력', '관심 분야의 탐구력과 실험 정신', '진로탐색에 대한 열정'
 
-【핵심 평가 기준】
-✓ 학업수월성: 수학, 국어, 탐구과목의 우수한 성취도 + 일반선택(다양한 교양과목)의 충실한 이수
-✓ 학업충실성: 학년별 꾸준한 성적 향상 또는 안정성 + 수업 참여도와 학업 의지의 일관성
-✓ 탐구확장성: 특정 학문에 대한 진정한 호기심과 이를 확인할 수 있는 다양한 활동 기록
-✓ 탐구주도성: 선택과목의 적극적 이수(특히 심화/전문 과목) + 활동의 발전적 과정 (시작-심화-성과의 스토리)
-✓ 미래성장성: 리더십 역할(회장, 부회장 등) + 창의적 문제해결 사례 + 실패 극복 경험
-✓ 공동체의식: 봉사활동의 지속성 + 타 학생과의 협력 + 규칙 준수의 일관성
+   ▣ 탐구확장성 (200점)
+   - 관심 분야에 대한 집중력 및 탐구력
+   - 관심 분야에 대한 지적 호기심
+   - 활동 내용의 발전성 및 유의미성
+
+   ▣ 탐구주도성 (200점)
+   - 도전적인 선택과목 이수 현황
+   - 선택 교과의 강점 및 우수성
+   - 진로탐색에 대한 열정과 주도성
+
+3) 잠재역량 (20% / 200점)
+   ─ "자기주도적 리더가 될 자질 및 발전가능성이 있는가?"
+   ─ 자기주도성, 리더십, 공동체의식, 이타성, 소통 능력, 성실성 등
+
+   핵심 평가 요소: '학교생활 성실성', '공동체의식', '리더십과 봉사정신'
+
+   ▣ 미래성장성 (100점)
+   - 주도적 학교 활동 참여
+   - 진취적 리더십 발휘 경험
+   - 창의적 문제해결 및 역경 극복 의지
+
+   ▣ 공동체의식 (100점)
+   - 세계시민의식 및 이타성
+   - 협업 및 소통능력
+   - 성실성 및 규칙 준수
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+【핵심 평가 착안점 및 체크포인트】
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+★ 학업역량 평가 주안점:
+- 성적 안정성: 학년·학기별 꾸준한 성적 및 상승 추이
+- 이수 충실도: 공통과목과 선택과목을 고루 충실하게 이수
+- 수업 참여 태도: 세특에서 수업 중 질문, 발표, 주도적 참여 활동
+- 학업 의지: 어려운 과목에서도 포기하지 않고 노력한 과정
+
+★ 탐구역량 평가 주안점 (가장 중요한 구분점):
+- 탐구의 진정성: '어떤 전공에 맞는 활동'이 아닌, 자신이 관심 있는 분야를 깊이 파고든 스토리
+- 탐구의 연속성: 한 주제를 꾸준히 1~3학년 걸쳐 심화·발전시킨 경험
+- 도전적 과목: 어려운 심화(진로선택) 과목에 도전하고 성취
+- 세특 질적 깊이: 탐구 동기 → 과정 → 발전의 스토리가 구체적으로 드러날 것
+
+★ 잠재역량 평가 주안점:
+- 학교생활 성실성: 출결, 규칙 준수 기록
+- 협업 경험: 조별 활동·프로젝트에서 실질적으로 기여한 구체적 사례
+- 리더십: 직책에 관계없이 공동체에 주도적으로 기여한 경험
+- 이타성: 자신보다 공동체를 위한 배려와 봉사
 
 【주의사항】
-• 학교폭력 기재 시 매우 강한 감점 → 전공 관련 우수성으로도 극복 어려움
-• 선택과목의 '양적 이수'보다 '질적 성취'가 더 중요 (낮은 등급의 많은 선택 과목보다, 우수한 등급의 집중적 이수가 유리)
-• 세부능력란의 '피상적 활동 나열' 지양 → 사고력, 창의성, 발전 과정이 드러나야 함
-• 학년별로 "일관된 성장 스토리"가 있는지 검토 (1학년 실적이 약함 → 2-3학년 강화가 긍정적)
+• 전공/계열 적합성 기준으로 활동을 제한하지 말 것 → 진정성 있는 탐구가 더 유리
+• 선택과목의 '많은 이수'보다 '이수한 과목에서의 깊이 있는 활동'이 더 중요
+• 세특에서 단순 활동 나열 지양 → 탐구 동기·과정·발전이 반드시 드러나야 함
+• 모집단위별 지정된 필수 이수과목 없음 → 고교 현황 내 최선을 다한 준비 과정 자체를 평가
 `,
         competencies: {
-          academic: "학업역량 (40%) - 고교 교육과정 전반의 우수한 성취도와 안정성. 기초 교과(국수영과사)와 일반선택 과목의 충실한 이수, 학년별 지속적인 학업 의지 중심",
-          career: "탐구역량 (40%) ★ 가장 중요 (특히 탐구형/성균인재) - 희망 전공에 대한 진정한 지적 호기심과 깊이 있는 탐구 과정. 도전적 선택과목(심화/전문) 이수, 세부능력란의 질적 우수성, 발전적 활동 스토리",
-          community: "잠재역량 (20%) - 자기주도적 리더 자질과 발전가능성. 주도적 학교 활동 참여, 창의적 문제해결, 협업·소통·봉사 정신, 공동체 내 책임감과 이타성"
+          academic: "학업역량 (40%) — 학업성취도·학업우수성, 일반/진로선택과목 이수 및 성취수준, 학년·학기별 성적 안정성, 성적 추이 및 학업의지, 학업활동 참여 자세. 단순 등급이 아닌 학업 태도와 충실성을 종합 평가",
+          career: "탐구역량 (40%) ★ 핵심 — 전공/계열 적합성 평가 없음. 어떤 분야든 자기만의 관심사를 지속적·주도적으로 탐구한 과정이 핵심. 관심 분야 집중력·지적 호기심, 진로 탐색 열정, 활동의 발전성·유의미성, 도전적 선택과목 이수와 세특 질적 깊이",
+          community: "잠재역량 (20%) — 자기주도적 리더 자질과 발전가능성. 주도적 참여·진취적 리더십·창의적 문제해결·역경 극복 의지, 세계시민의식·이타성, 협업·소통·성실성·규칙준수. 직책보다 실질적 기여와 공동체의식 중시"
         },
         weights: { academic: 0.40, career: 0.40, community: 0.20 }
       },
-      "한양대학교": {
+            "한양대학교": {
         factors: `【한양대학교 2026 학생부종합전형 평가기준】
 
 【개설 학과(모집단위) 총정리】
@@ -3701,6 +4396,25 @@ SW\uc6b0\uc218(AI\ucef4\uacf5): \ud559\uc5c5\ud0d0\uad6c\uc5ed\ub7c9 60%(\ud559\
           community: "공동체역량 - 실질적 협력과 기여, 직책 유무보다 책임감과 문제해결 능력, 학교 규칙 준수와 성실성 (결석/지각 기록), 리더십 경험"
         },
         weights: { academic: 0.33, career: 0.44, community: 0.23 }
+      },
+      "한국교원대학교": {
+        factors: `
+■ 한국교원대학교 2026학년도 학생부종합전형 서류평가 주안점
+1. 전공적합성: 지원 학과 관련 교과의 성취 수준, 학업 발전 정도, 전공에 대한 이해도와 흥미, 자발적 탐구 및 경험.
+2. 교직 적합성 및 잠재력: 교직에 대한 적극적인 관심, 교원양성을 위한 노력(봉사, 멘토링 등), 리더십 및 주도성.
+3. 교직 인성: 나눔과 배려의 실천 의지, 공감 능력, 효과적인 의사소통 능력.
+4. 학업역량: 전체 교과의 성취 수준 및 발전 정도, 자기주도적 학습 태도 및 의지.
+
+※ 제3대학(자연/공학/컴퓨터) 지원 시 유의사항:
+- 수능 가산점 기준을 고려할 때, 수능 미적분/기하 및 지원 전공과 일치하는 과학탐구 과목의 이수와 탐구 역량을 매우 중요하게 평가함.
+- 수학 및 과학 심화 과목의 충실한 이수 여부를 학업역량과 전공적합성 평가에 적극 반영함.
+`,
+        weights: { academic: 0.3, career: 0.4, community: 0.3 },
+        competencies: {
+          academic: "학업역량: 교과 성취도, 발전 정도, 자기주도적 학습 태도",
+          career: "전공 및 교직적합성: 학과 관련 교과 역량, 교직 관심도, 봉사 및 멘토링 경험",
+          community: "교직 인성: 나눔과 배려, 공감 및 의사소통 능력"
+        }
       }
     };
 
@@ -3763,6 +4477,7 @@ SW\uc6b0\uc218(AI\ucef4\uacf5): \ud559\uc5c5\ud0d0\uad6c\uc5ed\ub7c9 60%(\ud559\
 교과 세특: ${data.subject}
 창체/진로 활동: ${data.career}
 기타 (행특/음미체): ${data.arts}
+특이사항(불합격사유 등): ${data.failReason || "없음"}
 
 [해당 대학/학과 평가 기준 및 주안점]
 ${uniCriteria.factors}
@@ -3772,7 +4487,7 @@ ${uniCriteria.factors}
 2. [대학 평가 요소별 매칭] 해당 대학의 평가 요소(학업역량, 진로역량, 공동체역량)별로 2015 개정 교육과정 가이드북의 세부 지표(탐구력, 성취도 추이, 협업능력 등)를 기준으로 학생의 기록이 어떻게 부합하거나 미달했는지 엄격하게 대조 분석하십시오.
 3. [냉정한 사후 대안] ${data.result === '합격' ? '대학 입학 후 학업 시 유의점 및 성공 요인 유지 방안' : '만약 시간을 되돌린다면, 생기부의 어떤 부분을 어떻게 보완했어야 합격 가능했을지'}에 대해 구체적인 로드맵을 제안하십시오.
 
-형식: 마크다운(Markdown) 형식을 사용하며, 가독성을 극대화하여 전문적인 보고서 형태로 작성하십시오.`;
+형식: 마크다운(Markdown) 형식을 사용하며, 가독성을 극대화하여 전문적인 보고서 형태로 작성하십시오. 전체 평가 보고서의 분량을 기존보다 2~3배 이상 대폭 늘려 최소 3000자 이상의 매우 상세하고 긴 리포트로 서술해야 합니다.`;
 
     for (const model of modelsToTry) {
       const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
@@ -3781,7 +4496,7 @@ ${uniCriteria.factors}
         const response = await fetchWithRetry(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { maxOutputTokens: 32768 } }),
           timeout: 40000 // 모델당 40초 타임아웃
         });
 
@@ -3859,7 +4574,7 @@ ${uniCriteria ? uniCriteria.factors : "일반적인 학생부종합전형 평가
 3. ${competencyNames.community} (반영 비율: ${(weights.community * 100).toFixed(0)}%): 협업, 나눔, 배려, 성실성(특히 출결 및 비주요과목 태도)을 실제 사례 기반으로 평가.
 
 [JSON 응답 전문 포맷 준수]
-반드시 지정된 JSON 스키마를 따르며, 특히 'overallEvaluation'은 최소 1000자 이상의 매우 상세하고 날카로운 분석 리포트 형태로 작성하십시오.
+반드시 지정된 JSON 스키마를 따르며, 특히 'overallEvaluation'은 최소 3000자 이상의 매우 상세하고 날카로운 분석 리포트 형태로 작성하십시오. 보고서의 분량을 기존보다 2~3배 이상 대폭 늘려 아주 길고 구체적으로 서술해야 합니다.
 각 항목의 evaluation 및 scoreJustification 필드 역시 단순 나열이 아닌, 데이터(성적, 세특, 활동)에 기반한 사정관의 매서운 시각과 근거를 담아 전문적인 분석 내용을 가급적 상세하게 기술하십시오.
 또한, 각 역량별 'evidence' 배열에는 분석의 근거가 된 학생부 기록 내용을 최소 5개에서 7개 이상 아주 구체적으로 추출하여 포함하십시오.
 무엇보다, 각 역량별 'calculationFormula' 필드에는 해당 점수가 어떻게 산출되었는지 (예: 내신 성취도 40% + 탐구 깊이 40% + 전공 관련성 20% 등)를 구체적인 산식 형태로 명시하십시오.`;
@@ -3868,7 +4583,7 @@ ${uniCriteria ? uniCriteria.factors : "일반적인 학생부종합전형 평가
       contents: [{ parts: [{ text: promptText }] }],
       generationConfig: {
         temperature: 0.7,
-        maxOutputTokens: 16384,
+        maxOutputTokens: 32768,
         responseMimeType: "application/json",
         responseSchema: {
           type: "OBJECT",
@@ -4472,8 +5187,7 @@ ${uniCriteria ? uniCriteria.factors : "일반적인 학생부종합전형 평가
       },
       "수학과": {
         "공통 과목": ["수학"],
-        "진로 선택": ["기하", "실용 수학", "경제 수학", "수학과제 탐구", "기본 수학", "인공지능 수학"],
-        "일반 선택": ["수학Ⅰ", "수학Ⅱ", "미적분", "확률과 통계"]
+        "진로 선택": ["기하", "실용 수학", "경제 수학", "수학과제 탐구", "기본 수학", "[전공별 권장이수과목 참고자료] ${rawRecommendedSubjects.substring(0, 150000)}", "수학Ⅱ", "미적분", "확률과 통계"]
       },
       "과학과": {
         "공통 과목": ["통합과학", "과학탐구실험"],
@@ -4679,7 +5393,8 @@ ${uniCriteria ? uniCriteria.factors : "일반적인 학생부종합전형 평가
     "\uad11\uc6b4\ub300\ud559\uad50":   "\uad11\uc6b4\ub300\ub294 \uc804\uc790\u00b7\uc18c\ud504\ud2b8\uc6e8\uc5b4 \uc911\uc2ec\uc73c\ub85c \uc804\uacf5 \ud0d0\uad6c\uc640 \uc218\ud559\u00b7\uacfc\ud559 \uc2e4\ub825\uc744 \uc911\uc2dc\ud569\ub2c8\ub2e4.",
     "\uacbd\uae30\ub300\ud559\uad50":   "\uacbd\uae30\ub300\ub294 \uc804\uacf5 \uad00\ub828 \uacbd\ud5d8\uc758 \uad6c\uccb4\uc131\uacfc \uc790\uae30\uc8fc\ub3c4\uc801 \ud0d0\uad6c\ub97c \ubd05\ub2c8\ub2e4.",
     "서울과학기술대학교": "서울과기대는 '계열적합성'을 최우선으로 하며, 바이오메디컬은 기초과학 융합역량을, 자유전공은 학업적 유연성과 융합적 사고를 중점 평가합니다. 과정 중심의 자기주도적 성장이 세특에 구체적으로 드러나야 합니다.",
-    "가톨릭대학교": "가톨릭대는 인성·봉사 정신과 전공 탐구 노력, 공동체 역량을 균형 있게 봅니다."
+    "가톨릭대학교": "가톨릭대는 인성·봉사 정신과 전공 탐구 노력, 공동체 역량을 균형 있게 봅니다.",
+    "한국교원대학교": "교직 적합성과 전공적합성을 핵심으로 봅니다. 예비 교사로서의 인성과 지원 전공 분야의 기초 학업 역량, 특히 교직 관련 활동(멘토링, 봉사 등)에서의 주도성을 중점 평가합니다."
   };
 
   // =========================================================
@@ -4729,7 +5444,7 @@ ${fd.content}
   3. 객관적 사실 기반: 학교 수업 중의 수행평가, 발표, 토론 등 정규 교육과정 내의 관찰된 내용만 작성. 과장된 미사여구나 감정적 서술 배제.
   4. 어투: 문장의 끝은 반드시 객관적인 명사형 종결어미(~함, ~모습을 보임, ~을 파악함, ~을 탐구함 등)를 사용할 것. 어투가 맞지 않으면 'improvements'에 강력하게 지적하세요.
 - 세특이 짧거나 내용이 빈약할 경우 냉정하게 낮은 점수를 부여하고 구체적 이유를 작성하세요.
-- rewriteSuggestion은 원문 내용과 위 기재요령을 완벽하게 반영하여 대학 평가에 가장 유리하게 다듬어진 세특 전문을 작성하세요(명사형 어미 준수, 300자 이상). 2015 가이드북의 '탁월성' 지표가 드러나도록 문장을 구성하세요.
+- rewriteSuggestion은 원문 내용과 위 기재요령을 완벽하게 반영하여 대학 평가에 가장 유리하게 다듬어진 세특 전문을 작성하세요(명사형 어미 준수, 최소 1500자 이상). 2015 가이드북의 '탁월성' 지표가 드러나도록 문장을 구성하십시오. 보고서 전체 분량을 기존보다 2~3배 이상 대폭 늘려 매우 구체적이고 길게 서술해야 합니다.
 - 점수가 일치해야 합니다 (totalScore = academicScore + careerScore + communityScore).
 
 출력 JSON 형식:
@@ -4739,7 +5454,7 @@ ${fd.content}
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       generationConfig: { 
         temperature: 0.35, 
-        maxOutputTokens: 8192,
+        maxOutputTokens: 32768,
         responseMimeType: "application/json",
         responseSchema: {
           type: "OBJECT",
@@ -4934,7 +5649,2256 @@ ${fd.content}
     });
   }
 
+  // --- Visitor Stats Logic ---
+  function initVisitorStats() {
+    let total = parseInt(localStorage.getItem('site_visits_total') || '12054');
+    let today = parseInt(localStorage.getItem('site_visits_today') || '342');
+    let lastVisit = localStorage.getItem('site_last_visit');
+    
+    const now = new Date().toDateString();
+    if (lastVisit !== now) {
+      today = Math.floor(Math.random() * 50) + 100; // random new day start
+      localStorage.setItem('site_last_visit', now);
+    }
+    
+    total += 1;
+    today += 1;
+    localStorage.setItem('site_visits_total', total);
+    localStorage.setItem('site_visits_today', today);
+    
+    const totalEl = document.getElementById('stat-total');
+    const todayEl = document.getElementById('stat-today');
+    const onlineEl = document.getElementById('stat-online');
+
+    if (totalEl) totalEl.innerText = total.toLocaleString() + '명';
+    if (todayEl) todayEl.innerText = today.toLocaleString() + '명';
+    
+    // Simulate active online users fluttering
+    let online = Math.floor(Math.random() * 15) + 5;
+    if (onlineEl) {
+      onlineEl.innerText = `${online}명`;
+      setInterval(() => {
+        const diff = Math.floor(Math.random() * 3) - 1; 
+        online = Math.max(1, online + diff);
+        onlineEl.innerText = `${online}명`;
+      }, 3000);
+    }
+  }
+  
+  setTimeout(initVisitorStats, 500);
+
+  // =========================================================
+  // 면접 문항 생성 — Gemini API 호출
+  // =========================================================
+  const ivForm = document.getElementById("interviewForm");
+  const ivStudentSelect = document.getElementById("iv-student-select");
+  const ivUnivSelect = document.getElementById("iv-univ-select");
+  const ivCategorySelect = document.getElementById("iv-category-select");
+  const ivMajorSelect = document.getElementById("iv-major-select");
+
+  if (ivUnivSelect && typeof universityData !== "undefined") {
+    // Populate University Dropdown
+    for (const uni of Object.keys(universityData)) {
+      const opt = document.createElement("option");
+      opt.value = uni; opt.textContent = uni;
+      ivUnivSelect.appendChild(opt);
+    }
+    
+    ivUnivSelect.addEventListener("change", () => {
+      const ud = universityData[ivUnivSelect.value];
+      ivCategorySelect.innerHTML = "<option value='' disabled selected>계열을 선택하세요</option>";
+      ivMajorSelect.innerHTML = "<option value='' disabled selected>학과를 선택하세요</option>";
+      if (!ud) return;
+      
+      const cats = Object.keys(ud);
+      if (cats.length === 1 && cats[0] === "개설학과") {
+        const o = document.createElement("option");
+        o.value = "개설학과"; o.textContent = "전체";
+        ivCategorySelect.appendChild(o);
+        ivCategorySelect.value = "개설학과";
+        
+        ud["개설학과"].forEach(m => {
+          const mo = document.createElement("option");
+          mo.value = m; mo.textContent = m;
+          ivMajorSelect.appendChild(mo);
+        });
+      } else {
+        cats.forEach(cat => {
+          const o = document.createElement("option");
+          o.value = cat; o.textContent = cat;
+          ivCategorySelect.appendChild(o);
+        });
+      }
+    });
+
+    ivCategorySelect.addEventListener("change", () => {
+      const uni = ivUnivSelect.value;
+      const cat = ivCategorySelect.value;
+      const ud = universityData[uni];
+      ivMajorSelect.innerHTML = "<option value='' disabled selected>학과를 선택하세요</option>";
+      if (!ud || !ud[cat]) return;
+      ud[cat].forEach(m => {
+        const o = document.createElement("option");
+        o.value = m; o.textContent = m;
+        ivMajorSelect.appendChild(o);
+      });
+    });
+  }
+
+  if (ivForm) {
+    ivForm.addEventListener("submit", async function(e) {
+      e.preventDefault();
+      
+      const apiKey = document.getElementById("iv-api-key")?.value?.trim() || document.getElementById("api-key")?.value?.trim();
+      const studentIdx = ivStudentSelect?.value;
+      const targetUniv = ivUnivSelect?.value;
+      const targetCat = ivCategorySelect?.value;
+      const targetMajor = ivMajorSelect?.value;
+      
+      if (!apiKey) { alert("API 키를 먼저 입력해주세요 (개인 분석 탭 상단)."); return; }
+      if (!studentIdx || !targetUniv || !targetMajor) { alert("학생과 목표 학과를 모두 선택해주세요."); return; }
+      
+      // Load selected student data
+      let studentRecordText = "";
+      try {
+        const savedData = await StorageManager.load("pf_" + studentIdx);
+        if (savedData) {
+          const parsed = JSON.parse(savedData);
+          studentRecordText = `성적: ${parsed.generalGrade}
+과목별 성취: ${parsed.grades}
+세부능력 및 특기사항: ${parsed.subject}
+창체활동(진로등): ${parsed.career}
+행동특성 및 종합의견: ${parsed.arts}`;
+        }
+      } catch (err) {}
+      
+      if (!studentRecordText || studentRecordText.includes("undefined")) {
+        // Fallback to currently selected in DOM if same student
+        const domStudentIdx = document.getElementById("student-select")?.value;
+        if (domStudentIdx === studentIdx) {
+          studentRecordText = `세부능력: ${document.getElementById("subject-records")?.value || ""}
+창체: ${document.getElementById("creative-activities")?.value || ""}
+행특: ${document.getElementById("behavioral-records")?.value || ""}`;
+        } else {
+           alert("해당 학생의 생활기록부 데이터를 찾을 수 없습니다. 개인 분석 탭에서 학생을 선택하고 생기부를 확인해주세요.");
+           return;
+        }
+      }
+
+      const ivLoadingState = document.getElementById("iv-loadingState");
+      const ivResultContainer = document.getElementById("iv-resultContainer");
+      const ivMarkdownResult = document.getElementById("iv-markdown-result");
+      const ivAnalyzeBtn = document.getElementById("iv-analyzeBtn");
+
+      ivLoadingState.classList.remove("hidden");
+      ivResultContainer.style.display = "block";
+      ivMarkdownResult.innerHTML = "";
+      ivAnalyzeBtn.disabled = true;
+
+      // Special university guide content
+      const gachonGuideContent = `
+<h2 style="color:var(--accent-primary);margin-top:0;">🎓 가천대학교 면접 가이드</h2>
+
+<h3>1. 면접 반영 비율 및 합격 역전률</h3>
+<p>가천대학교는 2단계 평가에서 <strong>1단계 서류 성적 50%와 면접 평가 50%</strong>를 합산하여 최종 합격자를 선발합니다.<br>
+면접의 비중이 50%로 매우 높기 때문에, 1단계 합격자 순위가 뒤바뀌는 <strong>'역전률'이 무려 약 60%</strong>에 달합니다.<br>
+심지어 1단계에서 4~5배수 턱걸이 성적으로 통과한 학생들 중에서도 20%가 최종 합격할 만큼 면접의 실질적인 영향력이 절대적인 대학입니다.</p>
+
+<h3>2. 면접 진행 방식</h3>
+<ul>
+  <li><strong>완벽한 블라인드 면접</strong>: 지원자의 1단계 서류 성적까지 모두 면접관에게 가려진 상태로 진행됩니다.</li>
+  <li><strong>평가 위원 구성</strong>: 전임 입학사정관과 위촉 사정관(교수 등)을 포함하여 총 3인의 평가위원이 다대일 면접을 진행합니다.</li>
+  <li><strong>맞춤형 꼬리 질문</strong>: 지원자의 서류를 바탕으로 면접관이 직접 질문을 작성하며, 지원자가 해당 계열에 대해 얼마나 깊은 관심을 가지고 있는지 집중적으로 파악합니다.</li>
+</ul>
+
+<h3>3. 핵심 평가 요소 (40 : 40 : 20)</h3>
+<table style="width:100%;border-collapse:collapse;">
+  <thead><tr style="background:rgba(150,186,255,0.15);"><th style="padding:10px;border:1px solid var(--panel-border);text-align:left;">평가 요소</th><th style="padding:10px;border:1px solid var(--panel-border);text-align:center;">비율</th><th style="padding:10px;border:1px solid var(--panel-border);text-align:left;">세부 내용</th></tr></thead>
+  <tbody>
+    <tr><td style="padding:10px;border:1px solid var(--panel-border);"><strong>진학 의지 및 계열 적합성</strong></td><td style="padding:10px;border:1px solid var(--panel-border);text-align:center;">40%</td><td style="padding:10px;border:1px solid var(--panel-border);">탐구 과정에서의 성장·사고력, 과정 수행 역량, 교과 지식과의 연계</td></tr>
+    <tr><td style="padding:10px;border:1px solid var(--panel-border);"><strong>인성</strong></td><td style="padding:10px;border:1px solid var(--panel-border);text-align:center;">40%</td><td style="padding:10px;border:1px solid var(--panel-border);">공동체 활동에서의 적극성 + 면접 현장 참여 태도 전반</td></tr>
+    <tr><td style="padding:10px;border:1px solid var(--panel-border);"><strong>의사소통 역량</strong></td><td style="padding:10px;border:1px solid var(--panel-border);text-align:center;">20%</td><td style="padding:10px;border:1px solid var(--panel-border);">질문 이해도 + 답변의 논리성</td></tr>
+  </tbody>
+</table>
+
+<h3>4. 실제 면접 질문 예시</h3>
+<p><strong>[인성 영역]</strong><br>
+"자율활동에 부반장으로 활동하며 특별한 역할의 필요성을 어필하고 직접 수행했다고 기록되어 있는데, 그 역할이 왜 필요하다고 했으며, 이를 어떻게 수행했는지 설명해주세요."</p>
+<p><strong>[진학 의지 및 계열 적합성 영역]</strong></p>
+<ul>
+  <li>"사회 시간에 형법 분야에 관심이 많아 스스로 관련 분야에 대한 심화 탐구를 진행했다고 기록되어 있습니다. 탐구한 주요 내용을 설명해주세요."</li>
+  <li>"수학 시간에 미적분과 관련된 책을 읽고, 미분과 적분에 대한 개념을 정리했다고 기록되어 있습니다. 책에서 인상 깊었던 핵심 내용을 설명하고, 미분의 정의를 설명해주세요."</li>
+</ul>
+
+<h3>5. 전략 요약</h3>
+<p>가천대 면접은 면접관에게 성적이 공개되지 않는 <strong>3대1 블라인드 면접</strong>이므로, 서류 내용의 핵심 원리(특히 교과 지식)를 정확히 숙지하고 논리적인 태도로 답변한다면 성적의 불리함을 충분히 뒤집을 수 있는 기회의 장입니다.</p>
+`;
+
+      // Seoul City University (UOS) guide content
+      const uosGuideContent = `
+<h2 style="color:var(--accent-primary);margin-top:0;">🎓 서울시립대학교 면접 가이드</h2>
+
+<h3>1. 면접 반영 비중 및 합격 역전률</h3>
+<p>서울시립대는 2단계 평가에서 <strong>1단계 서류 점수 50%와 면접 평가 점수 50%</strong>를 합산하여 최종 합격자를 선발합니다.<br>
+1배수(최초 합격권) 밖에서 최종 합격한 학생의 비율이 <strong>57%</strong>에 달할 정도로 면접의 영향력이 매우 큽니다.<br>
+1단계 3배수 선발 시 서류 성적의 변별력이 무의미해질 만큼 면접을 통해 당락이 결정되는 경향이 짙습니다.</p>
+
+<h3>2. 면접 진행 방식 및 주요 특징</h3>
+<ul>
+  <li><strong>평가 위원 및 시간</strong>: 전임 입학사정관과 위촉 사정관(교수 등) 총 2인의 면접관이 지원자 1명을 대상으로 12분 이내의 면접을 진행합니다.</li>
+  <li><strong>평가 방식</strong>: 면접관에게 학생부 전체가 공개된 상태에서 블라인드 면접으로 치러집니다.</li>
+  <li><strong>맞춤형 질문 출제</strong>: 서류 심사자와 면접관이 사전에 학생부를 꼼꼼히 분석하여 개별 면접 질문을 직접 작성하며, 각 모집단위(학과)별 인재상을 중요하게 반영합니다.</li>
+  <li><strong>평가의 핵심 초점</strong>: 활동 나열보다 <strong>'학업 역량을 기반으로 한 진로 활동'</strong>을 중점적으로 봅니다. 학업(교과 지식)과 진로 탐구 활동이 어떻게 연계되었는지 심층 검증합니다.</li>
+</ul>
+
+<h3>3. 3대 핵심 평가 요소 (40 : 35 : 25)</h3>
+<table style="width:100%;border-collapse:collapse;">
+  <thead><tr style="background:rgba(150,186,255,0.15);"><th style="padding:10px;border:1px solid var(--panel-border);text-align:left;">평가 요소</th><th style="padding:10px;border:1px solid var(--panel-border);text-align:center;">비율</th><th style="padding:10px;border:1px solid var(--panel-border);text-align:left;">세부 내용</th></tr></thead>
+  <tbody>
+    <tr><td style="padding:10px;border:1px solid var(--panel-border);"><strong>잠재역량</strong></td><td style="padding:10px;border:1px solid var(--panel-border);text-align:center;">40%</td><td style="padding:10px;border:1px solid var(--panel-border);">교육활동 연계·심화 학습 수준(다학제적 전공수학열의), 통합적 문제해결역량(자신만의 대안 제시 경험)</td></tr>
+    <tr><td style="padding:10px;border:1px solid var(--panel-border);"><strong>학업역량</strong></td><td style="padding:10px;border:1px solid var(--panel-border);text-align:center;">35%</td><td style="padding:10px;border:1px solid var(--panel-border);">고교 교과 성취도(고교기초학업능력), 전공 분야 탐구·학습 경험(대학전공기초 소양)</td></tr>
+    <tr><td style="padding:10px;border:1px solid var(--panel-border);"><strong>사회역량</strong></td><td style="padding:10px;border:1px solid var(--panel-border);text-align:center;">25%</td><td style="padding:10px;border:1px solid var(--panel-border);">공동체·시민윤리의식(공공의 이익 중시), 협동학습능력(팀워크·부족한 점 보완)</td></tr>
+  </tbody>
+</table>
+
+<h3>4. 실제 면접 질문 예시 (심도 있는 꼬리 질문 중심)</h3>
+<p><strong>[학업역량 관련]</strong><br>
+"3학년 자율활동에서 자연이자율 하락의 해결책으로 '평균인플레이션 목표제'를 제시했는데, 그 개념을 설명해 보세요. 물가안정목표제와 비교하여 장단점은 무엇이며 한국 경제에는 어떤 것이 더 적합하다고 생각하나요?"</p>
+<p><strong>[잠재역량 관련]</strong><br>
+"동아리에서 정부의 재정계산 자료를 탐독하고 국민연금 개혁안의 충돌을 문제 삼았는데, 현재 국민연금의 상황과 개혁안의 충돌 문제는 무엇인가요? 연금의 지속 가능성을 확보하기 위한 과제에 대해 생각해본 적 있나요?"</p>
+<p><strong>[사회역량 관련]</strong><br>
+"사회문화 시간에 '고령화 시대 복지 사각지대에 놓인 노인들'에 대한 보고서를 작성했는데, 노인 빈곤율·파산율 자료를 분석한 결과 무엇을 알 수 있었나요? 빈곤의 원인은 무엇이라 생각하며, 해결 방안을 제시해 보세요."</p>
+
+<h3>5. 전략 요약</h3>
+<p>서울시립대 면접은 면접관이 학생부 전체를 본 상태에서 진행되므로, <strong>서류에 기재된 활동의 원리와 사회적 적용, 자신만의 해결책</strong>을 논리적으로 설명할 수 있도록 준비해야 합니다. 단순 사실 나열이 아닌 깊이 있는 사고력과 문제해결 능력을 보여주는 것이 핵심입니다.</p>
+`;
+
+      // Hankuk University of Foreign Studies (HUFS) guide content
+      const hufsGuideContent = `
+<h2 style="color:var(--accent-primary);margin-top:0;">🎓 한국외국어대학교 면접 가이드</h2>
+
+<h3>1. 면접 비중 및 주요 특징</h3>
+<p>한국외대는 1단계에서 3배수를 선발한 후, 2단계에서 <strong>1단계 서류 50%와 면접 50%</strong>를 합산하여 최종 선발합니다.<br>
+면접의 실질적 영향력이 50% 이상으로 매우 크게 작용하며, 수능 이후 진행되므로 실질 경쟁률 변화가 주요 변수입니다.<br>
+면접관 2인이 지원자 1명을 대상으로 10분 이내의 블라인드 면접을 실시합니다.</p>
+
+<h3>2. 핵심 평가 요소 (진로 역량 중심)</h3>
+<table style="width:100%;border-collapse:collapse;">
+  <thead><tr style="background:rgba(150,186,255,0.15);"><th style="padding:10px;border:1px solid var(--panel-border);text-align:left;">평가 요소</th><th style="padding:10px;border:1px solid var(--panel-border);text-align:center;">비율</th><th style="padding:10px;border:1px solid var(--panel-border);text-align:left;">세부 내용</th></tr></thead>
+  <tbody>
+    <tr><td style="padding:10px;border:1px solid var(--panel-border);"><strong>학업 역량</strong></td><td style="padding:10px;border:1px solid var(--panel-border);text-align:center;">40%</td><td style="padding:10px;border:1px solid var(--panel-border);">대학 수학 지식, 새로운 방식으로 문제 바라보기, 폭넓은 탐구 및 해결 능력</td></tr>
+    <tr><td style="padding:10px;border:1px solid var(--panel-border);"><strong>진로 역량</strong></td><td style="padding:10px;border:1px solid var(--panel-border);text-align:center;">40%</td><td style="padding:10px;border:1px solid var(--panel-border);">진로 선택 지식·태도·가치관, 자기주도적 진로 설계 및 탐색 능력</td></tr>
+    <tr><td style="padding:10px;border:1px solid var(--panel-border);"><strong>공동체 역량</strong></td><td style="padding:10px;border:1px solid var(--panel-border);text-align:center;">20%</td><td style="padding:10px;border:1px solid var(--panel-border);">개인과 공동체의 조화로운 발전 가치관, 공동체 발전 적극 참여 능력</td></tr>
+  </tbody>
+</table>
+
+<h3>3. 실제 면접 질문 예시</h3>
+<p><strong>[학업 역량 관련]</strong><br>
+"빅데이터에 관련된 도서를 많이 읽었는데, 빅데이터를 무역에 적용한 사례가 있었나요?"<br>
+"‘랑그’와 ‘빠롤’을 학급 친구들에게 어떻게 소개했나요?"</p>
+<p><strong>[진로 역량 관련]</strong><br>
+"영문학 작품 중 가장 추천하고 싶은 책은 무엇인가요?"<br>
+"코로나19 팬데믹에서 드러난 프랑스와 한국 문화의 공통점과 차이점은 무엇인가요?"</p>
+
+<h3>4. 전략 요약</h3>
+<p>한국외대 면접은 <strong>'교과 수업을 통해 지적 호기심을 얼마나 폭넓게 확장했는가'</strong>와 <strong>'자기주도적 탐구 역량'</strong>을 증명하는 것이 핵심입니다. 교과 탐구 내용의 개념을 확실히 숙지하고, 이를 자신의 진로나 사회 현상과 연결하여 설명하세요.</p>
+`;
+
+
+      const rawInterviewData = (typeof interviewDocs !== 'undefined') ? interviewDocs : "";
+      const rawRecommendedSubjects = (typeof recommendedSubjectsDocs !== 'undefined') ? recommendedSubjectsDocs : "";
+
+      // Build university-specific prompt supplement
+      const univPromptSupplement =
+        targetUniv === "가천대학교" ? `
+
+[가천대학교 면접 특이사항 - 필수 반영]
+가천대학교는 다음과 같은 고유한 면접 구조를 가집니다. 아래 기준을 10개 문항 전체에 반드시 반영하세요.
+- 완벽한 블라인드 면접 (1단계 서류 성적도 면접관에게 비공개)
+- 3인 면접관 다대일 방식
+- 평가 배점: 진학 의지 및 계열 적합성 40% / 인성 40% / 의사소통 역량 20%
+- 10개 문항을 다음 비율로 배분: 진학 의지·계열 적합성 4문항, 인성 4문항, 의사소통 역량 확인 2문항
+- 인성 문항은 반드시 공동체 활동(자율/동아리/봉사/행특)과 연계하여 구체적 사례를 묻는 형식으로 설계
+- 진학 의지 문항은 반드시 교과 세특의 탐구 내용에서 핵심 원리나 개념을 직접 설명하도록 요구하는 꼬리 질문 포함
+- 각 문항 말미에 반드시 다음 형식으로 면접 평가 기준을 명시하세요:
+  - **📌 평가 항목**: [진학의지/인성/의사소통] | **질문 의도**: [이 질문으로 확인하고자 하는 바를 한 문장으로 간략히]
+` :
+        targetUniv === "서울시립대학교" ? `
+
+[서울시립대학교 면접 특이사항 - 필수 반영]
+서울시립대학교는 다음과 같은 고유한 면접 구조를 가집니다. 아래 기준을 10개 문항 전체에 반드시 반영하세요.
+- 면접관 2인 × 지원자 1인, 12분 이내 진행
+- 면접관에게 학생부 전체가 공개된 상태에서 블라인드 면접 진행 (이름·수험번호 등 신원 비공개)
+- 평가 배점: 잠재역량 40% / 학업역량 35% / 사회역량 25%
+- 10개 문항을 다음 비율로 배분: 잠재역량 4문항, 학업역량 3~4문항, 사회역량 2~3문항
+- 잠재역량 문항: 교과 활동·진로 활동이 어떻게 연계되었는지 확인하는 심층 꼬리 질문 형식. 탐구 내용의 원리·개념을 직접 설명하도록 요구하고, '자신만의 대안 또는 해결책'을 반드시 물어볼 것
+- 학업역량 문항: 고교 교과 지식 기반의 개념 이해 확인 및 전공 기초 역량 확인
+- 사회역량 문항: 공동체 활동과 윤리의식, 협동 경험 확인
+- 각 문항 말미에 반드시 다음 형식으로 면접 평가 기준을 명시하세요:
+  - **📌 평가 항목**: [잠재역량/학업역량/사회역량] | **질문 의도**: [이 질문으로 확인하고자 하는 바를 한 문장으로 간략히]
+- 단순 사실 나열이 아닌 심층 꼬리 질문(사회적 적용, 비교 분석, 해결방안 제시)을 반드시 포함할 것
+` :
+        targetUniv === "숭실대학교" ? `
+
+[숭실대학교 면접 특이사항 - 필수 반영]
+숭실대학교는 다음과 같은 고유한 면접 구조를 가집니다. 아래 기준을 10개 문항 전체에 반드시 반영하세요.
+- 전임사정관 + 전공 교수로 구성된 2인 면접위원 x 지원자 1인, 12분 이내 진행
+- 학생부 전체가 면접관에게 공개되며 사전 질문 작성 후 블라인드 방식으로 진행
+- 평가 배점: 전공적합성 50% / 인성 및 잠재력 50%
+- 10개 문항을 다음 비율로 배분: 전공적합성 5문항, 인성 및 잠재력 5문항
+- 전공적합성 문항: '전공 준비도(지원 동기, 학업계획)'와 '전공 탐구 노력(심화 탐구 수준, 교과 지식 활용 문제 해결)' 균형 있게 포함. 탐구 활동 언급 시 반드시 바탕이 되는 교과 개념/원리를 직접 설명하도록 요구하는 탐침(꼬리) 질문을 포함할 것 (예: "항산화 물질은 어떠한 원리로 항산화 효과를 내는지 설명하라", "산화환원 개념에 대해 설명하라")
+- 인성 및 잠재력 문항: '자기평가력(스스로 세운 목표 대비 자기 평가/발전)' 2~3문항, '협력적 소통 능력(타인 존중/의견 표현/협력 경험)' 2~3문항
+- 각 문항 말미에 반드시 다음 형식으로 면접 평가 기준을 명시하세요:
+  - **📌 평가 항목**: [전공적합성/인성.잠재력] | **질문 의도**: [이 질문으로 확인하고자 하는 바를 한 문장으로 간략히]
+- 강도 높은 집요한 탐침 질문(원리/공식/개념 설명 요구)을 반드시 포함할 것
+` :
+        targetUniv === "한국외국어대학교" ? `
+
+[한국외국어대학교 면접 특이사항 - 필수 반영]
+한국외국어대학교는 다음과 같은 고유한 면접 구조를 가집니다. 아래 기준을 10개 문항 전체에 반드시 반영하세요.
+- 면접관 2인 x 지원자 1인, 10분 이내 진행
+- 학생부 전체 공개 블라인드 면접 (이름/수험번호 등 비공개)
+- 평가 배점: 학업 역량 40% / 진로 역량 40% / 공동체 역량 20%
+- 10개 문항을 다음 비율로 배분: 학업 역량 4문항, 진로 역량 4문항, 공동체 역량 2문항
+- 학업 역량 문항: 교과 수업 내 지적 호기심 확장 과정 확인. 탐구 내용의 핵심 개념을 설명하도록 요구하고, 학업 성취 과정에서의 문제 해결 능력을 검증할 것
+- 진로 역량 문항: 진로 설계 과정의 자기주도성 확인. 교과 탐구 내용을 목표 전공이나 실제 사회 현상과 연결하여 심화 질문할 것
+- 공동체 역량 문항: 공동체 가치관 및 리더십/협력 사례 확인
+- 각 문항 말미에 반드시 다음 형식으로 면접 평가 기준을 명시하세요:
+  - **📌 평가 항목**: [학업역량/진로역량/공동체역량] | **질문 의도**: [이 질문으로 확인하고자 하는 바를 한 문장으로 간략히]
+- 단순 사실 확인보다 '지적 호기심 확장'과 '자기주도적 탐구'를 증명할 수 있는 심화 질문을 설계할 것
+` :
+        targetUniv === "세종대학교" ? `
+
+[세종대학교 면접 특이사항 - 필수 반영]
+세종대학교는 다음과 같은 고유한 면접 구조를 가집니다. 아래 기준을 10개 문항 전체에 반드시 반영하세요.
+- 면접관 2인 x 지원자 1인, 9분 이내 블라인드 면접 (면접 내용 녹음됨)
+- 평가 배점: 진로 역량 40% / 창의융합 역량 35% / 공동체 역량 25%
+- 10개 문항을 다음 비율로 배분: 진로 역량 4문항, 창의융합 역량 3~4문항, 공동체 역량 2~3문항
+- 진로 역량 문항: 지원 전공에 대한 기초 소양, 열정, 진로 계획 확인. 특히 탐구 활동의 '진위, 동기, 결과, 성장 과정'을 구체적으로 캐묻는 꼬리 질문 포함
+- 창의융합 역량 문항: 종합적 사고력, 문제 해결 능력, 자기주도성 검증. '창의소프트 전형'인 경우 관련 전공(소프트웨어/디자인 등)에서 독창적인 아이디어와 융합적 사고를 묻는 질문 포함
+- 공동체 역량 문항: 의사소통 능력, 시간 활용, 정직하고 성실한 태도 확인
+- 각 문항 제목(h3) 바로 아래에 반드시 다음 형식으로 면접 평가 기준을 명시하세요:
+  - **📌 평가 항목**: [진로역량/창의융합역량/공동체역량] | **질문 의도**: [이 질문으로 확인하고자 하는 바를 한 문장으로 간략히]
+- 탐구 활동의 본질적 의미를 증명해야 하며, 지원 학과에 대한 통찰력을 묻는 심화 질문을 설계할 것
+` :
+        targetUniv === "건국대학교" ? `
+
+[건국대학교 면접 특이사항 - 필수 반영]
+건국대학교는 다음과 같은 고유한 면접 구조를 가집니다. 아래 기준을 10개 문항 전체에 반드시 반영하세요.
+- 면접관 2인 x 지원자 1인 진행 (면접관에게 학생의 교과 성적이 공개된 상태임)
+- 평가 배점: 진로 역량 40% / 학업 역량 30% / 공동체 역량 30%
+- 10개 문항을 다음 비율로 배분: 진로 역량 4문항, 학업 역량 3문항, 공동체 역량 3문항
+- 진로 역량 문항: 전공 관련 교과 이수 노력 확인. 자기주도성, 창의적 문제 해결력 위주로 평가. 활동의 결과보다 '과정(How)'에 집중하여 질문할 것
+- 학업 역량 문항: 기초 학업 성취도 및 지적 호기심/탐구력 확인. 특히 자연(이과)계열의 경우 수학/과학 교과 개념 원리를 깊이 있게 묻는 지식 검증형 질문을 반드시 포함할 것
+- 공동체 역량 문항: 협업, 소통 능력, 나눔과 배려의 태도 확인
+- 인문계열 지원자: 본인이 수행한 활동에 대한 본인만의 '생각과 가치관'을 묻는 질문 비중을 높일 것
+- 각 문항 제목(h3) 바로 아래에 반드시 다음 형식으로 면접 평가 기준을 명시하세요:
+  - **📌 평가 항목**: [진로역량/학업역량/공동체역량] | **질문 의도**: [이 질문으로 확인하고자 하는 바를 한 문장으로 간략히]
+- 서류(생기부)에 기록된 활동의 구체적인 과정과 그 속에 담긴 원리를 꼼꼼하게 확인하는 질문들을 설계할 것
+` :
+        targetUniv === "중앙대학교" ? `
+
+[중앙대학교 면접 특이사항 - 필수 반영]
+중앙대학교는 다음과 같은 고유한 면접 구조를 가집니다. 아래 기준을 10개 문항 전체에 반드시 반영하세요.
+- 면접관 2인 x 지원자 1인, 10분 이내 블라인드 면접 진행
+- 평가 배점: 학업 준비도 60% / 전공(계열) 적합성 30% / 의사소통 능력 및 인성 10%
+- 10개 문항을 다음 비율로 배분: 학업 준비도 6문항, 전공 적합성 3문항, 의사소통/인성 1문항
+- 학업 준비도 문항: 교과 기본 개념 이해 및 활용 능력 심층 검증. 지역 호기심을 바탕으로 한 자기주도적 탐구 과정과 성취 수준을 면밀히 평가할 것
+- 전공(계열) 적합성 문항: 전공에 대한 관심과 준비 노력, 진로 탐색 과정의 충실성 확인
+- 핵심 질문 설계 포인트: 활동의 결과뿐만 아니라 **'실험의 구체적 방법론'**과 **'중간 과정에서의 실패 요인 및 분석/해결 과정'**을 반드시 물어볼 것
+- 의사소통/인성 문항: 답변의 논리성 및 공동체 가치관 확인
+- 각 문항 제목(h3) 바로 아래에 반드시 다음 형식으로 면접 평가 기준을 명시하세요:
+  - **📌 평가 항목**: [학업준비도/전공적합성/의사소통.인성] | **질문 의도**: [이 질문으로 확인하고자 하는 바를 한 문장으로 간략히]
+- 단순 '느낀 점' 위주의 답변을 유도하지 말고, 탐구의 논리적 완결성을 검증하는 질문을 설계할 것
+` :
+        targetUniv === "경희대학교" ? `
+
+[경희대학교 면접 특이사항 - 필수 반영]
+경희대학교는 다음과 같은 고유한 면접 구조를 가집니다. 아래 기준을 10개 문항 전체에 반드시 반영하세요.
+- 면접관 2인 x 지원자 1인, 10분 이내 (의·약학 계열은 2개 면접실 각 6분) 블라인드 면접
+- 평가 배점: 인성 50% / 전공적합성 50%
+- 10개 문항을 다음 비율로 배분: 인성 5문항, 전공적합성 5문항
+- 인성 문항: 창의적 노력, 진취적 기상, 건설적 협동 가치관 확인. 타인에 대한 공감 및 소통 능력, 성실성(출결 등)을 검증할 것
+- 전공적합성 문항: 전공 기초 소양 및 학업 역량 확인. 사전에 도출된 '탐침 질문(꼬리 질문)' 형식으로 탐구 활동의 진위 여부를 깊이 있게 검증할 것
+- 핵심 질문 설계 포인트: 수행한 실험이나 활동의 세부 **'과학적 원리'**를 완벽히 이해하고 있는지 집요하게 묻는 질문을 포함할 것 (예: DNA 전기영동 실험 언급 시 분자량과 이동 거리의 관계 등)
+- 각 문항 제목(h3) 바로 아래에 반드시 다음 형식으로 면접 평가 기준을 명시하세요:
+  - **📌 평가 항목**: [인성/전공적합성] | **질문 의도**: [이 질문으로 확인하고자 하는 바를 한 문장으로 간략히]
+- 단순 활동 확인을 넘어 지원자의 답변에서 파생되는 심화 꼬리 질문을 설계하여 논리적 사고력을 유도할 것
+` :
+        targetUniv === "서울과학기술대학교" ? `
+
+[서울과학기술대학교 면접 특이사항 - 필수 반영]
+서울과학기술대학교는 다음과 같은 고유한 면접 구조를 가집니다. 아래 기준을 10개 문항 전체에 반드시 반영하세요.
+- 면접관 2인 x 지원자 1인, 10분 이내 블라인드 면접 (면접관에게 학생의 교과 성적이 공개된 상태임)
+- 평가 배점: 진로 역량 40% / 학업 역량 35% / 공동체 역량 25%
+- 10개 문항을 다음 비율로 배분: 진로 역량 4문항, 학업 역량 4문항, 공동체 역량 2문항
+- 진로 역량 문항: 전공 관련 지식 이해도 및 진로 탐색 노력 확인. 활동의 **'적용 원리'**와 창의적 사고력을 중점적으로 물어볼 것
+- 학업 역량 문항: 지적 호기심 및 탐구력 확인. 특히 학습 과정에서 발생한 문제를 어떻게 이해하고 분석하여 해결했는지(**'문제파악 및 분석 능력'**)를 비중 있게 검증할 것
+- 핵심 질문 설계 포인트: 활동 자체의 나열보다 해당 활동을 선택한 구체적인 **'이유'**와 그 과정에 적용된 **'논리/원리'**를 깊이 있게 캐묻는 질문을 설계할 것
+- 공동체 역량 문항: 협업, 소통, 리더십, 나눔과 배려, 성실성 확인
+- 각 문항 제목(h3) 바로 아래에 반드시 다음 형식으로 면접 평가 기준을 명시하세요:
+  - **📌 평가 항목**: [진로역량/학업역량/공동체역량] | **질문 의도**: [이 질문으로 확인하고자 하는 바를 한 문장으로 간략히]
+- 자연계열 지원자: 학생부 활동과 연계된 교과 지식의 원리를 숙지하고 있는지 확인하는 심화 질문을 반드시 포함할 것
+` :
+        targetUniv === "가천대학교" ? `
+
+[가천대학교 면접 특이사항 - 필수 반영]
+가천대학교는 다음과 같은 고유한 면접 구조를 가집니다. 아래 기준을 10개 문항 전체에 반드시 반영하세요.
+- 면접관 3인 x 지원자 1인, 10분 내외 블라인드 면접
+- 평가 배점: 인성 40% / 진학의지 40% / 학업역량 20%
+- 10개 문항을 다음 비율로 배분: 인성 4문항, 진학의지 4문항, 학업역량 2문항
+- 인성 문항: 나눔, 배려, 공동체 협업 및 성실성(출결 등) 확인
+- 진학의지 문항: 전공에 대한 자발적 지적 호기심과 주도적 활동 경험 확인. 특히 아이디어를 실제 경험으로 구현해 본 사례를 중점적으로 질문할 것
+- 학업역량 문항: 기초 교과 성취도 및 학습 과정에서의 성장 궤적 확인
+- 각 문항 제목(h3) 바로 아래에 반드시 다음 형식으로 면접 평가 기준을 명시하세요:
+  - **📌 평가 항목**: [인성/진학의지/학업역량] | **질문 의도**: [이 질문으로 확인하고자 하는 바를 한 문장으로 간략히]
+` :
+        targetUniv === "서강대학교" ? `
+
+[서강대학교 면접 특이사항 - 필수 반영]
+서강대학교는 다음과 같은 고유한 면접 구조를 가집니다. 아래 기준을 10개 문항 전체에 반드시 반영하세요.
+- 면접관 2~3인 x 지원자 1인, 10분 내외 블라인드 면접
+- 평가 배점: 학업역량 50% / 성장가능성 30% / 공동체역량 20%
+- 10개 문항을 다음 비율로 배분: 학업역량 5문항, 성장가능성 3문항, 공동체역량 2문항
+- 학업역량 문항: 기초 교과 성취도 및 심화 학습 태도 확인. 특정 과목의 지식을 넘어선 창의적 문제해결력을 검증할 것
+- 성장가능성 문항: **'경계 없는 다전공제도'**에 부응하는 융합적 사고력과 주도적 탐구 경험 확인. 실패를 통해 배우고 성장한 과정을 심층 질문할 것
+- 공동체역량 문항: 팀워크, 소통 능력, 이타성 및 책임감 확인
+- 각 문항 제목(h3) 바로 아래에 반드시 다음 형식으로 면접 평가 기준을 명시하세요:
+  - **📌 평가 항목**: [학업역량/성장가능성/공동체역량] | **질문 의도**: [이 질문으로 확인하고자 하는 바를 한 문장으로 간략히]
+` :
+        targetUniv === "성균관대학교" ? `
+
+[성균관대학교 면접 특이사항 - 필수 반영]
+성균관대학교는 다음과 같은 고유한 면접 구조를 가집니다. 아래 기준을 10개 문항 전체에 반드시 반영하세요.
+- 면접관 2인 x 지원자 1인, 10분 내외 심층 면접
+- 평가 배점: 탐구역량 40% / 학업역량 40% / 잠재역량 20%
+- 10개 문항을 다음 비율로 배분: 탐구역량 4문항, 학업역량 4문항, 잠재역량 2문항
+- 탐구역량 문항: 전공적합성보다 **'지적 호기심과 탐구의 확장성'** 중점 확인. 한 주제를 학년별로 어떻게 심화시켰는지, 도전적인 과목을 어떻게 이수했는지 질문할 것
+- 학업역량 문항: 학업수월성과 학업충실성 확인. 성적 추이와 수업 내 주도적 참여 자세를 검증할 것
+- 잠재역량 문항: 리더십, 성실성, 공동체의식 및 역경 극복 의지 확인
+- 각 문항 제목(h3) 바로 아래에 반드시 다음 형식으로 면접 평가 기준을 명시하세요:
+  - **📌 평가 항목**: [탐구역량/학업역량/잠재역량] | **질문 의도**: [이 질문으로 확인하고자 하는 바를 한 문장으로 간략히]
+` :
+        targetUniv === "한양대학교" ? `
+
+[한양대학교 면접 특이사항 - 필수 반영]
+한양대학교는 다음과 같은 고유한 면접 구조를 가집니다. 아래 기준을 10개 문항 전체에 반드시 반영하세요.
+- 면접관 2인 x 지원자 1인, 10분 내외 블라인드 면접
+- 평가 배점: 심층학업역량(비판적/창의적 사고) 40% / 기초학업역량 35% / 진로탐구역량 15% / 공동체역량 10%
+- 10개 문항을 다음 비율로 배분: 심층학업역량 4문항, 기초학업역량 3문항, 진로탐구/공동체 3문항
+- 심층학업역량 문항: **'왜?'**라는 질문을 통한 비판적 사고력과 문제 해결력 확인. 지식을 새로운 상황에 적용하는 능력을 집요하게 검증할 것
+- 기초학업역량/진로탐구 문항: 전공보다 **'계열적합성'** 중심의 기본 역량 확인. 횡단평가 관점에서 여러 활동의 연결성과 일관적인 성장 스토리를 질문할 것
+- 공동체역량 문항: 실질적 협업 경험과 긍정적 기여 사례 확인
+- 각 문항 제목(h3) 바로 아래에 반드시 다음 형식으로 면접 평가 기준을 명시하세요:
+  - **📌 평가 항목**: [심층학업역량/기초학업역량/진로탐구.공동체] | **질문 의도**: [이 질문으로 확인하고자 하는 바를 한 문장으로 간략히]
+` :
+        targetUniv === "한국교원대학교" ? `
+
+[한국교원대학교 면접 특이사항 - 필수 반영]
+한국교원대학교는 다음과 같은 고유한 면접 구조를 가집니다. 아래 기준을 10개 문항 전체에 반드시 반영하세요.
+- 면접관 3인 x 지원자 1인, 10분 내외 블라인드 면접
+- 평가 배점: 전공 및 교직적합성 40% / 학업역량 30% / 교직인성 30%
+- 10개 문항을 다음 비율로 배분: 전공 및 교직적합성 4문항, 학업역량 3문항, 교직인성 3문항
+- 전공 및 교직적합성 문항: 학과 관련 교과 역량과 **계열적합성**, 교직에 대한 열정과 멘토링/봉사 경험 확인
+- 학업역량 문항: 자기주도적 학습 태도 및 학업 발전 정도 확인
+- 교직인성 문항: 나눔과 배려, 공감 및 의사소통 능력 검증
+- 각 문항 제목(h3) 바로 아래에 반드시 다음 형식으로 면접 평가 기준을 명시하세요:
+  - **📌 평가 항목**: [교직적합성/학업역량/교직인성] | **질문 의도**: [이 질문으로 확인하고자 하는 바를 한 문장으로 간략히]
+` :
+        targetUniv === "광운대학교" ? `
+
+[광운대학교 면접 특이사항 - 필수 반영]
+광운대학교(광운참빛인재전형 등)는 최근 면접의 실질 영향력이 매우 커졌습니다(반영 비율 40%). 아래 기준을 10개 문항 전체에 반드시 반영하세요.
+- 면접관 2인(입학사정관 1인, 교수 1인) x 지원자 1인, 10분 이내 블라인드 면접 (단, 면접관에게는 학생부 전체 및 성적이 공개된 상태임)
+- 평가 배점: 발전 가능성 45% / 종합 사고력 30% / 인성 25%
+- 10개 문항을 다음 비율로 배분: 발전 가능성 5문항, 종합 사고력 3문항, 인성 2문항
+- 발전 가능성 문항: 전공 분야에 대한 지적 탐구 노력과 잠재력을 중점적으로 확인. 특히 전공과 관련된 탐구 활동의 **'선정 이유'**와 **'구체적인 준비 과정'**을 깊이 있게 질문할 것. SW 관련 학과의 경우 SW 경험의 진정성을 강조할 것
+- 종합 사고력 문항: 질문 요지 수용 능력 및 답변의 논리성, 의사소통 능력 확인. 서류 상에 드러난 소통 역량 검증을 포함할 것
+- 인성 문항: 공동체적 가치관과 면접 임하는 태도, 문제 해결 과정에서의 협업 정신 확인. 특히 활동 중 부딪힌 문제를 어떻게 해결하려고 노력했는지(**'문제 해결 과정'**) 질문할 것
+- 각 문항 제목(h3) 바로 아래에 반드시 다음 형식으로 면접 평가 기준을 명시하세요:
+  - **📌 평가 항목**: [발전가능성/종합사고력/인성] | **질문 의도**: [이 질문으로 확인하고자 하는 바를 한 문장으로 간략히]
+` :
+        targetUniv === "동국대학교" ? `
+
+[동국대학교 면접 특이사항 - 필수 반영]
+동국대학교 도드림(DoDream) 전형은 전공적합성이 매우 중요합니다(실질 영향력 40% 이상). 아래 기준을 10개 문항 전체에 반드시 반영하세요.
+- 면접관 2인(입학사정관 1인, 교수 1인) x 지원자 1인, 10분 이내 블라인드 면접 (단, 면접관에게는 학생부 전체 및 성적이 공개된 상태임)
+- 평가 배점: 전공적합성 30% / 발전가능성 30% / 전형취지적합성 20% / 인성 및 사회성 20%
+- 10개 문항을 다음 비율로 배분: 전공적합성 3문항, 발전가능성 3문항, 전형취지적합성 2문항, 인성 및 사회성 2문항
+- 전공적합성 문항: 지원 학과의 **'전공 세부 지식'** 및 활동의 진실성 확인. 학과 가이드북 수준의 깊이 있는 질문을 던질 것
+- 발전가능성 문항: 자기주도적 문제 해결 능력 및 목표 의식 확인. 특히 실패를 어떻게 극복했는지 집중 질문할 것
+- 전형취지적합성 문항: 동국대 인재상에 부합하는 적극적이고 주도적인 고교 활동 참여 태도 검증
+- 인성 및 사회성 문항: 협업 능력, 공감 능력 확인. 특히 **'출결 상황(미인정 지각/결석/조퇴)'**이 있다면 반드시 그 사유와 개선 노력을 묻는 질문을 포함할 것
+- 각 문항 제목(h3) 바로 아래에 반드시 다음 형식으로 면접 평가 기준을 명시하세요:
+  - **📌 평가 항목**: [전공적합성/발전가능성/전형취지적합성/인성및사회성] | **질문 의도**: [이 질문으로 확인하고자 하는 바를 한 문장으로 간략히]
+` : `
+
+[면접 문항 생성 공통 지침 - 필수 반영]
+아래 기준을 10개 문항 전체에 반드시 반영하여 표준화된 양식으로 출력하세요.
+- 각 문항마다 평가 항목과 질문 의도를 명확히 제시하십시오.
+- 각 문항 제목(h3) 바로 아래에 반드시 다음 형식으로 면접 평가 기준을 명시하세요:
+  - **📌 평가 항목**: [예: 전공 적합성, 발전 가능성 등] | **질문 의도**: [이 질문으로 확인하고자 하는 바를 한 문장으로 간략히]
+- 질문의 말투는 실제 면접관이 직접 묻는 듯한 친절하면서도 예리한 구어체(~인가요?, ~했나요?)를 사용하십시오.
+`;
+
+
+      const prompt = `당신은 대한민국 대학 입시 전문 면접관이자 진학 지도 교사입니다.
+다음 학생의 생활기록부 요약본과 목표 전공, 그리고 제공된 '면접 기출 참고자료'와 '전공별 권장이수과목 참고자료'를 종합 분석하여 학생 맞춤형 면접 문항 10개를 생성하세요.
+
+[목표 전공]
+대학: ${targetUniv}
+계열: ${targetCat}
+지원학과: ${targetMajor}
+
+[학생 생기부 요약]
+${studentRecordText.substring(0, 35000)}
+
+[면접 기출 참고자료 (interviewDocs)]
+${rawInterviewData.substring(0, 15000)}
+
+[전공별 권장이수과목 참고자료]
+${rawRecommendedSubjects.substring(0, 150000)}
+${univPromptSupplement}
+[생성 지침]
+1. 목표 학과(${targetMajor})의 핵심 역량에 부합하면서, 학생 생기부 내용(특정 과목 세특 탐구, 진로활동 등)을 파고드는 맞춤형 문항을 설계하세요.
+   - **반드시 [전공별 권장이수과목 참고자료]를 확인하여, ${targetMajor}가 속한 학과/계열에서 요구하는 권장 이수 과목(또는 핵심 단원)과 학생의 이수 내역/세특을 교차 검증**하세요.
+   - 학생이 목표 학과의 권장 과목 세특을 잘 쌓았다면 그 과목의 심화 탐구 내용을 묻고, 만약 권장 과목을 이수하지 않았거나 관련 세특이 빈약하다면 이를 방어/보완할 수 있는지 묻는 날카로운 질문을 반드시 포함하세요. (예: "우리 학과는 물리 역량이 중요한데, 물리Ⅱ를 이수하지 않았네요. 대학 진학 후 이 부분을 어떻게 보완할 계획인가요?" 또는 "수학 권장 과목은 이수했는데 세특에 프로그래밍 관련 내용이 없네요. 이유가 있나요?")
+2. 기출문제 참고자료에 해당 대학/학과의 기출 또는 유사 기출이 존재하면 적극 반영하세요. 다음 **실제 대입 면접 5대 기출 패턴**을 10문제에 골고루 반영해 문항을 구성하세요:
+   - (가) 생기부 진위 및 깊이 확인: "세특에 ~를 조사했다고 나오는데, 구체적으로 어떤 원리/개념인지 설명하고 가장 기억에 남는 점은?"
+   - (나) 문제 해결 및 극복 경험: "동아리/탐구 과정에서 ~한 어려움이나 실험 실패 경험이 있었나요? 이를 어떻게 극복했나요?"
+   - (다) 지식의 전이 및 미래 응용: "수업에서 배웠던 ~개념을 미래 우리 학과의 특정 분야나 사회 문제 해결에 어떻게 활용할 수 있을까요?"
+   - (라) 진로 압박 및 동기 검증: "진로활동에서 확인되는 기존 관심사(또는 장래희망)가 현재 지원한 학과와 잘 맞지 않거나 중간에 변경된 것 같은데, 우리 학과를 선택하게 된 결정적 계기와 연결 고리는 무엇인가요?"
+   - (마) 인성/행특 검증 및 갈등 관리: "행특/자율활동에서 선생님이나 친구들이 학생을 ~하다고 평가한 부분이 있는데, 어떤 긍정적 기여를 했는지 구체적인 갈등 조정이나 리더십 사례를 들어볼래요?"
+3. 난이도는 기초 인성/동기 확인부터 시작하여 점차 깊이 있는 전공적합성 꼬리 질문으로 확장되도록 1문항부터 10문항까지 순서대로 작성하세요.
+4. **[초강력 지침] 면접 질문의 말투**: 절대 '~에 대해 설명해 주세요'나 '~에 대한 질문입니다'와 같은 정형화된 문어체/설명조를 쓰지 마세요. 실제 면접장에 서 있는 면접관이 학생에게 직접 "말을 거는" 생생한 구어체(예: "학생, 여기 세특을 보니까 ~ 활동을 했네요? 이 과정에서 가장 고민했던 지점은 뭐였나요?")로 작성하세요. 특히 **[질문 내용]** 부분은 면접관이 입으로 내뱉는 "진짜 질문" 그 자체여야 합니다.
+5. 각 질문에 대해 '생기부 출처'를 적을 때는 **반드시 생기부에 적혀 있는 세특 원문(내용 그대로)을 큰따옴표로 인용하여 명시**하고, 그 아래에 출처 의도와 '면접 모범답안 가이드(어떻게 대답하는 것이 좋은지)'를 함께 제시하세요.
+6. **[필수] 면접관 종합 분석 의견 작성**: 본격적인 문항 생성에 앞서, 학생의 전체 생활기록부와 지원 전공 간의 정합성, 핵심 강점, 그리고 면접에서 중점적으로 검증해야 할 전략적 포인트를 짚어주는 '면접관 종합 분석 의견'을 반드시 작성하세요.
+7. 마크다운 형식으로 가독성 좋게 출력하십시오.
+
+**형식:**
+## 🎤 면접관 종합 분석 의견
+[학생의 학생부 경쟁력, 전공 적합성, 면접 전략 등에 대한 심층적인 분석 내용을 3~4문장으로 서술]
+
+### 면접 질문 1: [이곳에 면접관이 실제 학생에게 건네는 "진짜 질문"을 구어체로 작성]
+- **📌 평가 항목**: [예: 진학 의지 및 계열 적합성] | **질문 의도**: [이 질문으로 무엇을 확인하려는지 한 문장으로 간략히]
+- **문항 출처(생기부 원문) 및 의도**: "[(인용) 생기부에 적힌 원문 내용 그대로]" ... [출처 의도]
+- **모범답안 브레인스토밍**: ...
+(10번까지 반복)
+`;
+
+      try {
+        const modelsToTry = ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.0-flash"];
+        let resultText = "";
+        
+        for (const model of modelsToTry) {
+          try {
+            const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+            const response = await fetch(API_URL, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                contents: [{ role: "user", parts: [{ text: prompt }] }],
+                generationConfig: { temperature: 0.45, maxOutputTokens: 32768 }
+              }),
+            });
+            if (response.ok) {
+              const data = await response.json();
+              resultText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+              if (resultText) break;
+            }
+          } catch(e) { console.warn(model + " retry..."); }
+        }
+        
+        if (!resultText) throw new Error("AI 응답을 가져오지 못했습니다 (API 문제이거나 시간 초과).");
+        
+        // Inject Gachon guide banner at the top if Gachon is selected
+        let guideBannerHtml = "";
+        if (targetUniv === "가천대학교") {
+          guideBannerHtml = `<div id="iv-gachon-guide-banner" style="
+            background: linear-gradient(135deg, rgba(0,150,136,0.12), rgba(0,121,107,0.18));
+            border: 1.5px solid rgba(0,150,136,0.5);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+          ">
+            <div style="display:flex; align-items:center; gap: 0.75rem;">
+              <span style="font-size: 1.8rem;">🎓</span>
+              <div>
+                <div style="font-size: 1.05rem; font-weight: 700; color: #4db6ac;">가천대학교 면접 가이드</div>
+                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 2px;">서류 50% + 면접 50% | 역전률 60% | 블라인드 3대1 면접</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
+              <button onclick="window.showGachonGuideModal()" style="background:rgba(0,150,136,0.2); border:1px solid rgba(0,150,136,0.5); color:#4db6ac; padding:0.5rem 1rem; border-radius:8px; font-size:0.88rem; font-weight:600; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(0,150,136,0.35)'" onmouseout="this.style.background='rgba(0,150,136,0.2)'">📋 가이드 보기</button>
+              <button onclick="window.printGachonGuide()" style="background:rgba(150,186,255,0.15); border:1px solid var(--panel-border); color:var(--text-secondary); padding:0.5rem 1rem; border-radius:8px; font-size:0.88rem; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(150,186,255,0.25)'" onmouseout="this.style.background='rgba(150,186,255,0.15)'">🖨️ PDF 인쇄</button>
+            </div>
+          </div>`;
+        } else if (targetUniv === "서울시립대학교") {
+          guideBannerHtml = `<div id="iv-uos-guide-banner" style="
+            background: linear-gradient(135deg, rgba(94,106,210,0.14), rgba(94,106,210,0.08));
+            border: 1.5px solid rgba(124,131,253,0.5);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+          ">
+            <div style="display:flex; align-items:center; gap: 0.75rem;">
+              <span style="font-size: 1.8rem;">🎓</span>
+              <div>
+                <div style="font-size: 1.05rem; font-weight: 700; color: #96baff;">서울시립대학교 면접 가이드</div>
+                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 2px;">서류 50% + 면접 50% | 역전률 57% | 2인 면접관 12분 블라인드</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
+              <button onclick="window.showSeoulGuideModal()" style="background:rgba(124,131,253,0.2); border:1px solid rgba(124,131,253,0.5); color:#96baff; padding:0.5rem 1rem; border-radius:8px; font-size:0.88rem; font-weight:600; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(124,131,253,0.35)'" onmouseout="this.style.background='rgba(124,131,253,0.2)'">📋 가이드 보기</button>
+              <button onclick="window.printSeoulGuide()" style="background:rgba(150,186,255,0.15); border:1px solid var(--panel-border); color:var(--text-secondary); padding:0.5rem 1rem; border-radius:8px; font-size:0.88rem; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(150,186,255,0.25)'" onmouseout="this.style.background='rgba(150,186,255,0.15)'">🖨️ PDF 인쇄</button>
+            </div>
+          </div>`;
+        } else if (targetUniv === "숭실대학교") {
+          guideBannerHtml = `<div id="iv-ssu-guide-banner" style="
+            background: linear-gradient(135deg, rgba(220,53,69,0.1), rgba(180,30,50,0.07));
+            border: 1.5px solid rgba(220,53,69,0.45);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+          ">
+            <div style="display:flex; align-items:center; gap: 0.75rem;">
+              <span style="font-size: 1.8rem;">🎓</span>
+              <div>
+                <div style="font-size: 1.05rem; font-weight: 700; color: #ff8a9b;">숭실대학교 면접 가이드</div>
+                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 2px;">서류 50% + 면접 50% | 역전률 65.6% | 전공교수 포함 2인 12분 블라인드</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
+              <button onclick="window.showSoongsilGuideModal()" style="background:rgba(220,53,69,0.18); border:1px solid rgba(220,53,69,0.45); color:#ff8a9b; padding:0.5rem 1rem; border-radius:8px; font-size:0.88rem; font-weight:600; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(220,53,69,0.3)'" onmouseout="this.style.background='rgba(220,53,69,0.18)'">📋 가이드 보기</button>
+              <button onclick="window.printSoongsilGuide()" style="background:rgba(150,186,255,0.15); border:1px solid var(--panel-border); color:var(--text-secondary); padding:0.5rem 1rem; border-radius:8px; font-size:0.88rem; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(150,186,255,0.25)'" onmouseout="this.style.background='rgba(150,186,255,0.15)'">🖨️ PDF 인쇄</button>
+            </div>
+          </div>`;
+        } else if (targetUniv === "한국외국어대학교") {
+          guideBannerHtml = `<div id="iv-hufs-guide-banner" style="
+            background: linear-gradient(135deg, rgba(0,33,71,0.15), rgba(0,33,71,0.1));
+            border: 1.5px solid rgba(0,33,71,0.5);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+          ">
+            <div style="display:flex; align-items:center; gap: 0.75rem;">
+              <span style="font-size: 1.8rem;">🎓</span>
+              <div>
+                <div style="font-size: 1.05rem; font-weight: 700; color: #90caf9;">한국외국어대학교 면접 가이드</div>
+                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 2px;">서류 50% + 면접 50% | 지적 호기심 확장 중점 | 2인 블라인드 면접</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
+              <button onclick="window.showHufsGuideModal()" style="background:rgba(0,33,71,0.2); border:1px solid rgba(0,33,71,0.5); color:#90caf9; padding:0.5rem 1rem; border-radius:8px; font-size:0.88rem; font-weight:600; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(0,33,71,0.35)'" onmouseout="this.style.background='rgba(0,33,71,0.2)'">📋 가이드 보기</button>
+              <button onclick="window.printHufsGuide()" style="background:rgba(150,186,255,0.15); border:1px solid var(--panel-border); color:var(--text-secondary); padding:0.5rem 1rem; border-radius:8px; font-size:0.88rem; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(150,186,255,0.25)'" onmouseout="this.style.background='rgba(150,186,255,0.15)'">🖨️ PDF 인쇄</button>
+            </div>
+          </div>`;
+        } else if (targetUniv === "세종대학교") {
+          guideBannerHtml = `<div id="iv-sejong-guide-banner" style="
+            background: linear-gradient(135deg, rgba(103,58,183,0.15), rgba(81,45,168,0.1));
+            border: 1.5px solid rgba(103,58,183,0.5);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+          ">
+            <div style="display:flex; align-items:center; gap: 0.75rem;">
+              <span style="font-size: 1.8rem;">🎓</span>
+              <div>
+                <div style="font-size: 1.05rem; font-weight: 700; color: #d1c4e9;">세종대학교 면접 가이드</div>
+                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 2px;">서류 60% + 면접 40% | 역전률 50%↑ | 2인 블라인드 9분 면접(녹음)</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
+              <button onclick="window.showSejongGuideModal()" style="background:rgba(103,58,183,0.2); border:1px solid rgba(103,58,183,0.5); color:#d1c4e9; padding:0.5rem 1rem; border-radius:8px; font-size:0.88rem; font-weight:600; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(103,58,183,0.35)'" onmouseout="this.style.background='rgba(103,58,183,0.2)'">📋 가이드 보기</button>
+              <button onclick="window.printSejongGuide()" style="background:rgba(150,186,255,0.15); border:1px solid var(--panel-border); color:var(--text-secondary); padding:0.5rem 1rem; border-radius:8px; font-size:0.88rem; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(150,186,255,0.25)'" onmouseout="this.style.background='rgba(150,186,255,0.15)'">🖨️ PDF 인쇄</button>
+            </div>
+          </div>`;
+        } else if (targetUniv === "건국대학교") {
+          guideBannerHtml = `<div id="iv-konkuk-guide-banner" style="
+            background: linear-gradient(135deg, rgba(46,125,50,0.15), rgba(46,125,50,0.1));
+            border: 1.5px solid rgba(46,125,50,0.5);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+          ">
+            <div style="display:flex; align-items:center; gap: 0.75rem;">
+              <span style="font-size: 1.8rem;">🎓</span>
+              <div>
+                <div style="font-size: 1.05rem; font-weight: 700; color: #a5d6a7;">건국대학교 면접 가이드</div>
+                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 2px;">서류 70% + 면접 30% | 역전률 25~30% | 성적 공개 면접 (전공관심도 중점)</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
+              <button onclick="window.showKonkukGuideModal()" style="background:rgba(46,125,50,0.2); border:1px solid rgba(46,125,50,0.5); color:#a5d6a7; padding:0.5rem 1rem; border-radius:8px; font-size:0.88rem; font-weight:600; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(46,125,50,0.35)'" onmouseout="this.style.background='rgba(46,125,50,0.2)'">📋 가이드 보기</button>
+              <button onclick="window.printKonkukGuide()" style="background:rgba(150,186,255,0.15); border:1px solid var(--panel-border); color:var(--text-secondary); padding:0.5rem 1rem; border-radius:8px; font-size:0.88rem; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(150,186,255,0.25)'" onmouseout="this.style.background='rgba(150,186,255,0.15)'">🖨️ PDF 인쇄</button>
+            </div>
+          </div>`;
+        } else if (targetUniv === "중앙대학교") {
+          guideBannerHtml = `<div id="iv-cau-guide-banner" style="
+            background: linear-gradient(135deg, rgba(0,74,152,0.15), rgba(0,74,152,0.1));
+            border: 1.5px solid rgba(0,74,152,0.5);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+          ">
+            <div style="display:flex; align-items:center; gap: 0.75rem;">
+              <span style="font-size: 1.8rem;">🎓</span>
+              <div>
+                <div style="font-size: 1.05rem; font-weight: 700; color: #90caf9;">중앙대학교 면접 가이드</div>
+                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 2px;">서류 70% + 면접 30% | 학업준비도 60% 비중 | 방법론 및 실패분석 필수 질문</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
+              <button onclick="window.showCauGuideModal()" style="background:rgba(0,74,152,0.2); border:1px solid rgba(0,74,152,0.5); color:#90caf9; padding:0.5rem 1rem; border-radius:8px; font-size:0.88rem; font-weight:600; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(0,74,152,0.35)'" onmouseout="this.style.background='rgba(0,74,152,0.2)'">📋 가이드 보기</button>
+              <button onclick="window.printCauGuide()" style="background:rgba(150,186,255,0.15); border:1px solid var(--panel-border); color:var(--text-secondary); padding:0.5rem 1rem; border-radius:8px; font-size:0.88rem; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(150,186,255,0.25)'" onmouseout="this.style.background='rgba(150,186,255,0.15)'">🖨️ PDF 인쇄</button>
+            </div>
+          </div>`;
+        } else if (targetUniv === "경희대학교") {
+          guideBannerHtml = `<div id="iv-khu-guide-banner" style="
+            background: linear-gradient(135deg, rgba(167,29,42,0.15), rgba(167,29,42,0.1));
+            border: 1.5px solid rgba(167,29,42,0.5);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+          ">
+            <div style="display:flex; align-items:center; gap: 0.75rem;">
+              <span style="font-size: 1.8rem;">🎓</span>
+              <div>
+                <div style="font-size: 1.05rem; font-weight: 700; color: #ffab91;">경희대학교 면접 가이드</div>
+                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 2px;">서류 70% + 면접 30% | 인성 50% : 전공 50% | 과학적 원리 심층 검증</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
+              <button onclick="window.showKhuGuideModal()" style="background:rgba(167,29,42,0.2); border:1px solid rgba(167,29,42,0.5); color:#ffab91; padding:0.5rem 1rem; border-radius:8px; font-size:0.88rem; font-weight:600; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(167,29,42,0.35)'" onmouseout="this.style.background='rgba(167,29,42,0.2)'">📋 가이드 보기</button>
+              <button onclick="window.printKhuGuide()" style="background:rgba(150,186,255,0.15); border:1px solid var(--panel-border); color:var(--text-secondary); padding:0.5rem 1rem; border-radius:8px; font-size:0.88rem; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(150,186,255,0.25)'" onmouseout="this.style.background='rgba(150,186,255,0.15)'">🖨️ PDF 인쇄</button>
+            </div>
+          </div>`;
+        } else if (targetUniv === "서울과학기술대학교") {
+          guideBannerHtml = `<div id="iv-seoultech-guide-banner" style="
+            background: linear-gradient(135deg, rgba(55,71,79,0.15), rgba(55,71,79,0.1));
+            border: 1.5px solid rgba(55,71,79,0.5);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+          ">
+            <div style="display:flex; align-items:center; gap: 0.75rem;">
+              <span style="font-size: 1.8rem;">🎓</span>
+              <div>
+                <div style="font-size: 1.05rem; font-weight: 700; color: #b0bec5;">서울과학기술대학교 면접 가이드</div>
+                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 2px;">서류 70% + 면접 30% | 성적 공개 면접 | 원리 및 문제해결 프로세스 중점</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
+              <button onclick="window.showSeoulTechGuideModal()" style="background:rgba(55,71,79,0.2); border:1px solid rgba(55,71,79,0.5); color:#b0bec5; padding:0.5rem 1rem; border-radius:8px; font-size:0.88rem; font-weight:600; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(55,71,79,0.35)'" onmouseout="this.style.background='rgba(55,71,79,0.2)'">📋 가이드 보기</button>
+              <button onclick="window.printSeoulTechGuide()" style="background:rgba(150,186,255,0.15); border:1px solid var(--panel-border); color:var(--text-secondary); padding:0.5rem 1rem; border-radius:8px; font-size:0.88rem; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(150,186,255,0.25)'" onmouseout="this.style.background='rgba(150,186,255,0.15)'">🖨️ PDF 인쇄</button>
+            </div>
+          </div>`;
+        } else if (targetUniv === "가천대학교") {
+          guideBannerHtml = `<div id="iv-gachon-guide-banner" style="
+            background: linear-gradient(135deg, rgba(0,74,152,0.15), rgba(0,74,152,0.1));
+            border: 1.5px solid rgba(0,74,152,0.5);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+          ">
+            <div style="display:flex; align-items:center; gap: 0.75rem;">
+              <span style="font-size: 1.8rem;">🎓</span>
+              <div>
+                <div style="font-size: 1.05rem; font-weight: 700; color: #90caf9;">가천대학교 면접 가이드</div>
+                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 2px;">인성 40% | 진학의지 40% | 경험 중심의 구체적 사례 어필 중점</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
+              <button onclick="window.showGachonGuideModal()" style="background:rgba(0,74,152,0.2); border:1px solid rgba(0,74,152,0.5); color:#90caf9; padding:0.5rem 1rem; border-radius:8px; font-size:0.88rem; font-weight:600; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(0,74,152,0.35)'" onmouseout="this.style.background='rgba(0,74,152,0.2)'">📋 가이드 보기</button>
+              <button onclick="window.printGachonGuide()" style="background:rgba(150,186,255,0.15); border:1px solid var(--panel-border); color:var(--text-secondary); padding:0.5rem 1rem; border-radius:8px; font-size:0.88rem; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(150,186,255,0.25)'" onmouseout="this.style.background='rgba(150,186,255,0.15)'">🖨️ PDF 인쇄</button>
+            </div>
+          </div>`;
+        } else if (targetUniv === "서울시립대학교") {
+          guideBannerHtml = `<div id="iv-seoul-guide-banner" style="
+            background: linear-gradient(135deg, rgba(0,47,108,0.15), rgba(0,47,108,0.1));
+            border: 1.5px solid rgba(0,47,108,0.5);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+          ">
+            <div style="display:flex; align-items:center; gap: 0.75rem;">
+              <span style="font-size: 1.8rem;">🎓</span>
+              <div>
+                <div style="font-size: 1.05rem; font-weight: 700; color: #90caf9;">서울시립대학교 면접 가이드</div>
+                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 2px;">잠재역량 40% | 학업역량 35% | 활동의 연계성 및 개념 이해 심화 검증</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
+              <button onclick="window.showSeoulGuideModal()" style="background:rgba(0,47,108,0.2); border:1px solid rgba(0,47,108,0.5); color:#90caf9; padding:0.5rem 1rem; border-radius:8px; font-size:0.88rem; font-weight:600; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(0,47,108,0.35)'" onmouseout="this.style.background='rgba(0,47,108,0.2)'">📋 가이드 보기</button>
+              <button onclick="window.printSeoulGuide()" style="background:rgba(150,186,255,0.15); border:1px solid var(--panel-border); color:var(--text-secondary); padding:0.5rem 1rem; border-radius:8px; font-size:0.88rem; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(150,186,255,0.25)'" onmouseout="this.style.background='rgba(150,186,255,0.15)'">🖨️ PDF 인쇄</button>
+            </div>
+          </div>`;
+        } else if (targetUniv === "서강대학교") {
+          guideBannerHtml = `<div id="iv-sogang-guide-banner" style="
+            background: linear-gradient(135deg, rgba(144,19,25,0.15), rgba(144,19,25,0.1));
+            border: 1.5px solid rgba(144,19,25,0.5);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+          ">
+            <div style="display:flex; align-items:center; gap: 0.75rem;">
+              <span style="font-size: 1.8rem;">🎓</span>
+              <div>
+                <div style="font-size: 1.05rem; font-weight: 700; color: #ef9a9a;">서강대학교 면접 가이드</div>
+                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 2px;">성장가능성 30% | 경계 없는 다전공제도 | 융합적 사고 & 실패 극복 중점</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
+              <button onclick="window.showSogangGuideModal()" style="background:rgba(144,19,25,0.2); border:1px solid rgba(144,19,25,0.5); color:#ef9a9a; padding:0.5rem 1rem; border-radius:8px; font-size:0.88rem; font-weight:600; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(144,19,25,0.35)'" onmouseout="this.style.background='rgba(144,19,25,0.2)'">📋 가이드 보기</button>
+              <button onclick="window.printSogangGuide()" style="background:rgba(150,186,255,0.15); border:1px solid var(--panel-border); color:var(--text-secondary); padding:0.5rem 1rem; border-radius:8px; font-size:0.88rem; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(150,186,255,0.25)'" onmouseout="this.style.background='rgba(150,186,255,0.15)'">🖨️ PDF 인쇄</button>
+            </div>
+          </div>`;
+        } else if (targetUniv === "성균관대학교") {
+          guideBannerHtml = `<div id="iv-skku-guide-banner" style="
+            background: linear-gradient(135deg, rgba(0,68,36,0.15), rgba(0,68,36,0.1));
+            border: 1.5px solid rgba(0,68,36,0.5);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+          ">
+            <div style="display:flex; align-items:center; gap: 0.75rem;">
+              <span style="font-size: 1.8rem;">🎓</span>
+              <div>
+                <div style="font-size: 1.05rem; font-weight: 700; color: #a5d6a7;">성균관대학교 면접 가이드</div>
+                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 2px;">탐구역량 40% | 권장이수과목 없음 | 자기주도적 심화 탐구 확장성 중점</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
+              <button onclick="window.showSkkuGuideModal()" style="background:rgba(0,68,36,0.2); border:1px solid rgba(0,68,36,0.5); color:#a5d6a7; padding:0.5rem 1rem; border-radius:8px; font-size:0.88rem; font-weight:600; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(0,68,36,0.35)'" onmouseout="this.style.background='rgba(0,68,36,0.2)'">📋 가이드 보기</button>
+              <button onclick="window.printSkkuGuide()" style="background:rgba(150,186,255,0.15); border:1px solid var(--panel-border); color:var(--text-secondary); padding:0.5rem 1rem; border-radius:8px; font-size:0.88rem; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(150,186,255,0.25)'" onmouseout="this.style.background='rgba(150,186,255,0.15)'">🖨️ PDF 인쇄</button>
+            </div>
+          </div>`;
+        } else if (targetUniv === "한양대학교") {
+          guideBannerHtml = `<div id="iv-hanyang-guide-banner" style="
+            background: linear-gradient(135deg, rgba(0,35,102,0.15), rgba(0,35,102,0.1));
+            border: 1.5px solid rgba(0,35,102,0.5);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+          ">
+            <div style="display:flex; align-items:center; gap: 0.75rem;">
+              <span style="font-size: 1.8rem;">🎓</span>
+              <div>
+                <div style="font-size: 1.05rem; font-weight: 700; color: #90caf9;">한양대학교 면접 가이드</div>
+                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 2px;">심층학업역량 40% | 비판적·창의적 사고 | 왜(Why) 중심의 원리 검증</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
+              <button onclick="window.showHanyangGuideModal()" style="background:rgba(0,35,102,0.2); border:1px solid rgba(0,35,102,0.5); color:#90caf9; padding:0.5rem 1rem; border-radius:8px; font-size:0.88rem; font-weight:600; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(0,35,102,0.35)'" onmouseout="this.style.background='rgba(0,35,102,0.2)'">📋 가이드 보기</button>
+              <button onclick="window.printHanyangGuide()" style="background:rgba(150,186,255,0.15); border:1px solid var(--panel-border); color:var(--text-secondary); padding:0.5rem 1rem; border-radius:8px; font-size:0.88rem; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(150,186,255,0.25)'" onmouseout="this.style.background='rgba(150,186,255,0.15)'">🖨️ PDF 인쇄</button>
+            </div>
+          </div>`;
+        } else if (targetUniv === "한국교원대학교") {
+          guideBannerHtml = `<div id="iv-knue-guide-banner" style="
+            background: linear-gradient(135deg, rgba(27,94,32,0.15), rgba(27,94,32,0.1));
+            border: 1.5px solid rgba(27,94,32,0.5);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+          ">
+            <div style="display:flex; align-items:center; gap: 0.75rem;">
+              <span style="font-size: 1.8rem;">🎓</span>
+              <div>
+                <div style="font-size: 1.05rem; font-weight: 700; color: #a5d6a7;">한국교원대학교 면접 가이드</div>
+                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 2px;">전공 및 교직적합성 40% | 교직인성 중점 | 3인 블라인드 심층 면접</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
+              <button onclick="window.showKnueGuideModal()" style="background:rgba(27,94,32,0.2); border:1px solid rgba(27,94,32,0.5); color:#a5d6a7; padding:0.5rem 1rem; border-radius:8px; font-size:0.88rem; font-weight:600; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(27,94,32,0.35)'" onmouseout="this.style.background='rgba(27,94,32,0.2)'">📋 가이드 보기</button>
+              <button onclick="window.printKnueGuide()" style="background:rgba(150,186,255,0.15); border:1px solid var(--panel-border); color:var(--text-secondary); padding:0.5rem 1rem; border-radius:8px; font-size:0.88rem; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(150,186,255,0.25)'" onmouseout="this.style.background='rgba(150,186,255,0.15)'">🖨️ PDF 인쇄</button>
+            </div>
+          </div>`;
+        } else if (targetUniv === "광운대학교") {
+          guideBannerHtml = `<div id="iv-kwangwoon-guide-banner" style="
+            background: linear-gradient(135deg, rgba(167,29,42,0.12), rgba(167,29,42,0.08));
+            border: 1.5px solid rgba(167,29,42,0.4);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+          ">
+            <div style="display:flex; align-items:center; gap: 0.75rem;">
+              <span style="font-size: 1.8rem;">🎓</span>
+              <div>
+                <div style="font-size: 1.05rem; font-weight: 700; color: #ffab91;">광운대학교 면접 가이드</div>
+                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 2px;">발전가능성 45% | 면접 반영 40%로 확대 | 성적 공개 2인 블라인드 면접</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
+              <button onclick="window.showKwangwoonGuideModal()" style="background:rgba(167,29,42,0.2); border:1px solid rgba(167,29,42,0.5); color:#ffab91; padding:0.5rem 1rem; border-radius:8px; font-size:0.88rem; font-weight:600; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(167,29,42,0.35)'" onmouseout="this.style.background='rgba(167,29,42,0.2)'">📋 가이드 보기</button>
+              <button onclick="window.printKwangwoonGuide()" style="background:rgba(150,186,255,0.15); border:1px solid var(--panel-border); color:var(--text-secondary); padding:0.5rem 1rem; border-radius:8px; font-size:0.88rem; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(150,186,255,0.25)'" onmouseout="this.style.background='rgba(150,186,255,0.15)'">🖨️ PDF 인쇄</button>
+            </div>
+          </div>`;
+        } else if (targetUniv === "동국대학교") {
+          guideBannerHtml = `<div id="iv-dongguk-guide-banner" style="
+            background: linear-gradient(135deg, rgba(234,84,33,0.12), rgba(234,84,33,0.08));
+            border: 1.5px solid rgba(234,84,33,0.4);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+          ">
+            <div style="display:flex; align-items:center; gap: 0.75rem;">
+              <span style="font-size: 1.8rem;">🎓</span>
+              <div>
+                <div style="font-size: 1.05rem; font-weight: 700; color: #ffccbc;">동국대학교 면접 가이드</div>
+                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 2px;">전공적합성 30% | 실질 영향력 40% 이상 | 출결(성실성) 검증 필수</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
+              <button onclick="window.showDonggukGuideModal()" style="background:rgba(234,84,33,0.2); border:1px solid rgba(234,84,33,0.5); color:#ffccbc; padding:0.5rem 1rem; border-radius:8px; font-size:0.88rem; font-weight:600; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(234,84,33,0.35)'" onmouseout="this.style.background='rgba(234,84,33,0.2)'">📋 가이드 보기</button>
+              <button onclick="window.printDonggukGuide()" style="background:rgba(150,186,255,0.15); border:1px solid var(--panel-border); color:var(--text-secondary); padding:0.5rem 1rem; border-radius:8px; font-size:0.88rem; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(150,186,255,0.25)'" onmouseout="this.style.background='rgba(150,186,255,0.15)'">🖨️ PDF 인쇄</button>
+            </div>
+          </div>`;
+        }
+        
+        ivMarkdownResult.innerHTML = guideBannerHtml + (typeof marked !== 'undefined' ? marked.parse(resultText) : resultText);
+        
+        // Post-process: Style Overall Analysis Opinion
+        ivMarkdownResult.querySelectorAll('h2').forEach(h2 => {
+          if (h2.textContent.includes('종합 분석 의견')) {
+            h2.style.cssText = `
+              background: linear-gradient(135deg, rgba(150,186,255,0.15), rgba(150,186,255,0.05));
+              border: 1.5px solid rgba(150,186,255,0.3);
+              border-radius: 12px;
+              padding: 1.25rem 1.5rem;
+              margin-top: 1rem;
+              margin-bottom: 2rem;
+              color: #96baff;
+              font-size: 1.2rem;
+              font-weight: 800;
+              display: flex;
+              align-items: center;
+              gap: 0.75rem;
+            `;
+            // Add a subtle bottom margin to the next paragraph
+            const nextP = h2.nextElementSibling;
+            if (nextP && nextP.tagName === 'P') {
+              nextP.style.cssText = `
+                background: rgba(150,186,255,0.05);
+                border-left: 3px solid #96baff;
+                padding: 1rem 1.25rem;
+                margin-top: -1.5rem;
+                margin-bottom: 2.5rem;
+                border-radius: 0 0 10px 10px;
+                line-height: 1.8;
+                font-size: 0.98rem;
+                color: #ced4da;
+              `;
+            }
+          }
+        });
+
+        // Post-process: highlight actual question text inside each h3
+        ivMarkdownResult.querySelectorAll('h3').forEach(h3 => {
+          const text = h3.textContent || '';
+          const colonIdx = text.indexOf(':');
+          if (colonIdx === -1) return;
+          const prefix = text.substring(0, colonIdx + 1).trim();   // e.g. "면접 질문 1:"
+          const questionText = text.substring(colonIdx + 1).trim(); // actual question
+          if (!questionText) return;
+
+          // Check if the next sibling ul has a 📌 평가 항목 li
+          let evalHtml = '';
+          const nextUl = h3.nextElementSibling;
+          if (nextUl && nextUl.tagName === 'UL') {
+            const firstLi = nextUl.querySelector('li:first-child');
+            if (firstLi && firstLi.textContent.includes('📌')) {
+              evalHtml = firstLi.innerHTML;
+              firstLi.remove();
+              if (nextUl.children.length === 0) nextUl.remove();
+            }
+          }
+
+          // Split evalHtml by '|' to create separate pills
+          let evalPills = '';
+          if (evalHtml) {
+            // Remove 📌 icon for badge style
+            const cleanEval = evalHtml.replace('📌', '').trim();
+            const parts = cleanEval.split('|');
+            evalPills = parts.map(p => `
+              <span style="
+                background: rgba(150, 186, 255, 0.1); 
+                border: 1px solid rgba(150, 186, 255, 0.2); 
+                color: rgba(255,255,255,0.85); 
+                padding: 0.25rem 0.75rem; 
+                border-radius: 6px; 
+                font-size: 0.82rem; 
+                font-weight: 500;
+                white-space: nowrap;
+              ">${p.trim()}</span>
+            `).join('');
+          }
+
+          // Style h3 as a badge container
+          h3.style.cssText = `
+            background: none;
+            border: none;
+            padding: 0;
+            margin-top: 2.5rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            box-shadow: none;
+          `;
+          
+          h3.innerHTML = `
+            <span style="
+              background: var(--accent-gradient); 
+              color: white; 
+              padding: 0.35rem 1rem; 
+              border-radius: 8px; 
+              font-weight: 800; 
+              font-size: 0.95rem; 
+              white-space: nowrap; 
+              box-shadow: 0 4px 12px rgba(124, 131, 253, 0.3);
+            ">${prefix.replace(':', '')}</span>
+            ${evalPills}
+          `;
+
+          // Insert a prominent yellow box after h3 for the actual question
+          const box = document.createElement('div');
+          box.style.cssText = `
+            background: #fffde7;
+            border: 2px solid #f59f00;
+            border-radius: 12px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 2.5rem;
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #4e342e;
+            line-height: 1.7;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+            letter-spacing: -0.01em;
+            position: relative;
+          `;
+          
+          // Add a "Q." label to make it look like a real question
+          box.innerHTML = `<span style="color:#f59f00; font-size: 1.5rem; font-weight: 900; margin-right: 0.6rem;">Q.</span> ${questionText}`;
+          h3.after(box);
+        });
+      } catch (err) {
+        ivMarkdownResult.innerHTML = `<p style="color:var(--danger)">생성 중 오류 발생: ${err.message}</p>`;
+      } finally {
+        ivLoadingState.classList.add("hidden");
+        ivAnalyzeBtn.disabled = false;
+        ivResultContainer.scrollIntoView({ behavior: "smooth" });
+      }
+    });
+  }
+
+  // ----- 가천대 면접 가이드 모달 및 PDF 인쇄 -----
+  window.showGachonGuideModal = function() {
+    const modalTitle = document.getElementById("modalTitle");
+    const modalBody = document.getElementById("modalBody");
+    const modalOverlay = document.getElementById("analysisModal");
+    if (!modalTitle || !modalBody || !modalOverlay) return;
+    
+    modalTitle.innerText = "가천대학교 면접 가이드";
+    // Get gachonGuideContent from the already-rendered banner's sibling
+    const bannerEl = document.getElementById("iv-gachon-guide-banner");
+    // Re-use the guide HTML built inline
+    modalBody.innerHTML = `
+      <style>
+        #gachon-guide-content table { width:100%; border-collapse: collapse; }
+        #gachon-guide-content th, #gachon-guide-content td { padding: 10px; border: 1px solid var(--panel-border); }
+        #gachon-guide-content th { background: rgba(150,186,255,0.15); text-align: left; }
+        #gachon-guide-content ul { padding-left: 1.5rem; }
+      </style>
+      <div id="gachon-guide-content" style="line-height:1.8; font-size:1.0rem; color: var(--text-primary);">
+        <h3 style="color:var(--accent-primary); margin-top: 0;">1. 면접 반영 비율 및 합격 역전률</h3>
+        <p>가천대학교는 2단계 평가에서 <strong>1단계 서류 성적 50%와 면접 평가 50%</strong>를 합산하여 최종 합격자를 선발합니다.<br>
+        면접의 비중이 50%로 매우 높기 때문에, 1단계 합격자 순위가 뒤바뀌는 <strong>'역전률'이 무려 약 60%</strong>에 달합니다.<br>
+        심지어 1단계에서 4~5배수 턱걸이 성적으로 통과한 학생들 중에서도 20%가 최종 합격할 만큼 면접의 실질적인 영향력이 절대적인 대학입니다.</p>
+
+        <h3 style="color:var(--accent-primary);">2. 면접 진행 방식</h3>
+        <ul>
+          <li><strong>완벽한 블라인드 면접</strong>: 지원자의 1단계 서류 성적까지 모두 면접관에게 가려진 상태로 진행됩니다.</li>
+          <li><strong>평가 위원 구성</strong>: 전임 입학사정관과 위촉 사정관(교수 등)을 포함하여 총 3인의 평가위원이 다대일 면접을 진행합니다.</li>
+          <li><strong>맞춤형 꼬리 질문</strong>: 지원자의 서류를 바탕으로 면접관이 직접 질문을 작성하며, 지원자가 해당 계열에 대해 얼마나 깊은 관심을 가지고 있는지 집중적으로 파악합니다.</li>
+        </ul>
+
+        <h3 style="color:var(--accent-primary);">3. 핵심 평가 요소 (40 : 40 : 20)</h3>
+        <table>
+          <thead><tr><th>평가 요소</th><th style="text-align:center;">비율</th><th>세부 내용</th></tr></thead>
+          <tbody>
+            <tr><td><strong>진학 의지 및 계열 적합성</strong></td><td style="text-align:center;">40%</td><td>탐구 과정에서의 성장·사고력, 과정 수행 역량, 교과 지식 연계</td></tr>
+            <tr><td><strong>인성</strong></td><td style="text-align:center;">40%</td><td>공동체 활동의 적극성 + 면접 현장참여 태도</td></tr>
+            <tr><td><strong>의사소통 역량</strong></td><td style="text-align:center;">20%</td><td>질문 이해도 + 답변의 논리성</td></tr>
+          </tbody>
+        </table>
+
+        <h3 style="color:var(--accent-primary);">4. 실제 면접 질문 예시</h3>
+        <p><strong>[인성 영역]</strong><br>
+        "자율활동에 부반장으로 활동하며 특별한 역할의 필요성을 어필하고 직접 수행했다고 기록되어 있는데, 그 역할이 왜 필요하다고 했으며, 이를 어떻게 수행했는지 설명해주세요."</p>
+        <p><strong>[진학 의지 및 계열 적합성 영역]</strong></p>
+        <ul>
+          <li>"사회 시간에 형법 분야에 관심이 많아 스스로 관련 분야에 대한 심화 탐구를 진행했다고 기록되어 있습니다. 탐구한 주요 내용을 설명해주세요."</li>
+          <li>"수학 시간에 미적분과 관련된 책을 읽고, 미분과 적분에 대한 개념을 정리했다고 기록되어 있습니다. 책에서 인상 깊었던 핵심 내용을 설명하고, 미분의 정의를 설명해주세요."</li>
+        </ul>
+
+        <h3 style="color:var(--accent-primary);">5. 전략 요약</h3>
+        <p>가천대 면접은 면접관에게 성적이 공개되지 않는 <strong>3대1 블라인드 면접</strong>이므로, 서류 내용의 핵심 원리(특히 교과 지식)를 정확히 숙지하고 논리적인 태도로 답변한다면 성적의 불리함을 충분히 뒤집을 수 있는 기회의 장입니다.</p>
+        <div style="margin-top:1.5rem; text-align:right;">
+          <button onclick="window.printGachonGuide()" style="background:var(--accent-gradient);color:#fff;border:none;padding:0.6rem 1.4rem;border-radius:8px;font-size:0.9rem;font-weight:600;cursor:pointer;">🖨️ PDF로 인쇄</button>
+        </div>
+      </div>`;
+    modalOverlay.classList.remove("hidden");
+  };
+
+  window.printGachonGuide = function() {
+    const printWin = window.open("", "_blank", "width=900,height=700");
+    printWin.document.write(`<!DOCTYPE html><html lang="ko"><head>
+      <meta charset="UTF-8">
+      <title>가천대학교 면접 가이드</title>
+      <style>
+        body { font-family: 'Malgun Gothic', sans-serif; color: #333; padding: 2rem 3rem; line-height: 1.8; }
+        h1 { color: #00796b; border-bottom: 3px solid #00796b; padding-bottom: 0.5rem; }
+        h2 { color: #004d40; margin-top: 1.8rem; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+        th { background: #e0f2f1; padding: 10px; border: 1px solid #b2dfdb; text-align: left; }
+        td { padding: 10px; border: 1px solid #b2dfdb; }
+        ul { padding-left: 1.5rem; }
+        .badge { display: inline-block; background: #00796b; color: #fff; padding: 2px 10px; border-radius: 20px; font-size: 0.9rem; margin-left: 0.5rem; }
+        @media print { body { padding: 1rem; } }
+      </style>
+    </head><body>
+      <h1>🎓 가천대학교 면접 가이드</h1>
+      <h2>1. 면접 반영 비율 및 합격 역전률</h2>
+      <p>가천대학교는 2단계 평가에서 <strong>1단계 서류 성적 50%와 면접 평가 50%</strong>를 합산하여 최종 합격자를 선발합니다.<br>
+      면접의 비중이 50%로 매우 높기 때문에, 1단계 합격자 순위가 뒤바뀌는 <strong>'역전률'이 무려 약 60%</strong>에 달합니다.<br>
+      심지어 1단계에서 4~5배수 턱걸이 성적으로 통과한 학생들 중에서도 20%가 최종 합격할 만큼 면접의 실질적인 영향력이 절대적인 대학입니다.</p>
+      <h2>2. 면접 진행 방식</h2>
+      <ul>
+        <li><strong>완벽한 블라인드 면접</strong>: 지원자의 1단계 서류 성적까지 모두 면접관에게 가려진 상태로 진행됩니다.</li>
+        <li><strong>평가 위원 구성</strong>: 전임 입학사정관과 위촉 사정관(교수 등)을 포함하여 총 3인의 평가위원이 다대일 면접을 진행합니다.</li>
+        <li><strong>맞춤형 꼬리 질문</strong>: 지원자의 서류를 바탕으로 면접관이 직접 질문을 작성하며, 지원자가 해당 계열에 대해 얼마나 깊은 관심을 가지고 있는지 집중적으로 파악합니다.</li>
+      </ul>
+      <h2>3. 핵심 평가 요소 (40 : 40 : 20)</h2>
+      <table>
+        <thead><tr><th>평가 요소</th><th>비율</th><th>세부 내용</th></tr></thead>
+        <tbody>
+          <tr><td><strong>진학 의지 및 계열 적합성</strong></td><td>40%</td><td>탐구 과정에서의 성장·사고력, 과정 수행 역량, 교과 지식 연계</td></tr>
+          <tr><td><strong>인성</strong></td><td>40%</td><td>공동체 활동의 적극성 + 면접 현장 참여 태도 전반</td></tr>
+          <tr><td><strong>의사소통 역량</strong></td><td>20%</td><td>질문 이해도 + 답변의 논리성</td></tr>
+        </tbody>
+      </table>
+      <h2>4. 실제 면접 질문 예시</h2>
+      <p><strong>[인성 영역]</strong><br>
+      "자율활동에 부반장으로 활동하며 특별한 역할의 필요성을 어필하고 직접 수행했다고 기록되어 있는데, 그 역할이 왜 필요하다고 했으며, 이를 어떻게 수행했는지 설명해주세요."</p>
+      <p><strong>[진학 의지 및 계열 적합성 영역]</strong></p>
+      <ul>
+        <li>"사회 시간에 형법 분야에 관심이 많아 스스로 관련 분야에 대한 심화 탐구를 진행했다고 기록되어 있습니다. 탐구한 주요 내용을 설명해주세요."</li>
+        <li>"수학 시간에 미적분과 관련된 책을 읽고, 미분과 적분에 대한 개념을 정리했다고 기록되어 있습니다. 책에서 인상 깊었던 핵심 내용을 설명하고, 미분의 정의를 설명해주세요."</li>
+      </ul>
+      <h2>5. 전략 요약</h2>
+      <p>가천대 면접은 면접관에게 성적이 공개되지 않는 <strong>3대1 블라인드 면접</strong>이므로, 서류 내용의 핵심 원리(특히 교과 지식)를 정확히 숙지하고 논리적인 태도로 답변한다면 성적의 불리함을 충분히 뒤집을 수 있는 기회의 장입니다.</p>
+    </body></html>`);
+    printWin.document.close();
+    printWin.focus();
+    setTimeout(() => { printWin.print(); }, 500);
+  };
+
+  // ----- 서울시립대 면접 가이드 모달 및 PDF 인쇄 -----
+  window.showSeoulGuideModal = function() {
+    const modalTitle = document.getElementById("modalTitle");
+    const modalBody = document.getElementById("modalBody");
+    const modalOverlay = document.getElementById("analysisModal");
+    if (!modalTitle || !modalBody || !modalOverlay) return;
+    modalTitle.innerText = "서울시립대학교 면접 가이드";
+    modalBody.innerHTML = `
+      <style>
+        #uos-guide-content table { width:100%; border-collapse: collapse; }
+        #uos-guide-content th, #uos-guide-content td { padding: 10px; border: 1px solid var(--panel-border); }
+        #uos-guide-content th { background: rgba(150,186,255,0.15); text-align: left; }
+        #uos-guide-content ul { padding-left: 1.5rem; }
+      </style>
+      <div id="uos-guide-content" style="line-height:1.8; font-size:1.0rem; color: var(--text-primary);">
+        <h3 style="color:var(--accent-primary); margin-top:0;">1. 면접 반영 비중 및 합격 역전률</h3>
+        <p>서울시립대는 2단계 평가에서 <strong>1단계 서류 점수 50%와 면접 평가 점수 50%</strong>를 합산하여 최종 합격자를 선발합니다.<br>
+        1배수(최초 합격권) 밖에서 최종 합격한 학생의 비율이 <strong>57%</strong>에 달할 정도로 면접의 영향력이 매우 큽니다.<br>
+        1단계 3배수 선발 시 서류 성적의 변별력이 무의미해질 만큼 면접을 통해 당락이 결정되는 경향이 짙습니다.</p>
+        <h3 style="color:var(--accent-primary);">2. 면접 진행 방식 및 주요 특징</h3>
+        <ul>
+          <li><strong>평가 위원 및 시간</strong>: 전임 입학사정관과 위촉 사정관(교수 등) 총 2인의 면접관이 지원자 1명을 대상으로 12분 이내의 면접을 진행합니다.</li>
+          <li><strong>평가 방식</strong>: 면접관에게 학생부 전체가 공개된 상태에서 블라인드 면접으로 치러집니다.</li>
+          <li><strong>맞춤형 질문 출제</strong>: 서류 심사자와 면접관이 사전에 학생부를 꼼꼼히 분석하여 개별 면접 질문을 직접 작성하며, 각 모집단위(학과)별 인재상을 중요하게 반영합니다.</li>
+          <li><strong>평가의 핵심 초점</strong>: 활동 나열보다 <strong>'학업 역량을 기반으로 한 진로 활동'</strong>을 중점적으로 봅니다. 학업(교과 지식)과 진로 탐구 활동이 어떻게 연계되었는지 심층 검증합니다.</li>
+        </ul>
+        <h3 style="color:var(--accent-primary);">3. 3대 핵심 평가 요소 (40 : 35 : 25)</h3>
+        <table>
+          <thead><tr><th>평가 요소</th><th style="text-align:center;">비율</th><th>세부 내용</th></tr></thead>
+          <tbody>
+            <tr><td><strong>잠재역량</strong></td><td style="text-align:center;">40%</td><td>교육활동 연계·심화 학습(다학제적 전공수학열의), 통합적 문제해결역량(자신만의 대안 제시)</td></tr>
+            <tr><td><strong>학업역량</strong></td><td style="text-align:center;">35%</td><td>고교 교과 성취도(고교기초학업능력), 전공 분야 탐구·학습 경험(대학전공기초 소양)</td></tr>
+            <tr><td><strong>사회역량</strong></td><td style="text-align:center;">25%</td><td>공동체·시민윤리의식(공공의 이익 중시), 협동학습능력(팀워크·부족한 점 보완)</td></tr>
+          </tbody>
+        </table>
+        <h3 style="color:var(--accent-primary);">4. 실제 면접 질문 예시</h3>
+        <p><strong>[학업역량 관련]</strong><br>"3학년 자율활동에서 자연이자율 하락의 해결책으로 '평균인플레이션 목표제'를 제시했는데, 그 개념을 설명해 보세요. 물가안정목표제와 비교하여 장단점은 무엇이며 한국 경제에는 어떤 것이 더 적합하다고 생각하나요?"</p>
+        <p><strong>[잠재역량 관련]</strong><br>"동아리에서 정부의 재정계산 자료를 탐독하고 국민연금 개혁안의 충돌을 문제 삼았는데, 현재 국민연금의 상황과 개혁안의 충돌 문제는 무엇인가요? 연금의 지속 가능성을 확보하기 위한 과제에 대해 생각해본 적 있나요?"</p>
+        <p><strong>[사회역량 관련]</strong><br>"사회문화 시간에 '고령화 시대 복지 사각지대에 놓인 노인들'에 대한 보고서를 작성했는데, 노인 빈곤율·파산율 자료를 분석한 결과 무엇을 알 수 있었나요? 빈곤의 원인은 무엇이라 생각하며, 해결 방안을 제시해 보세요."</p>
+        <h3 style="color:var(--accent-primary);">5. 전략 요약</h3>
+        <p>서울시립대 면접은 면접관이 학생부 전체를 본 상태에서 진행되므로, <strong>서류에 기재된 활동의 원리와 사회적 적용, 자신만의 해결책</strong>을 논리적으로 설명할 수 있도록 준비해야 합니다.</p>
+        <div style="margin-top:1.5rem; text-align:right;">
+          <button onclick="window.printSeoulGuide()" style="background:var(--accent-gradient);color:#fff;border:none;padding:0.6rem 1.4rem;border-radius:8px;font-size:0.9rem;font-weight:600;cursor:pointer;">🖨️ PDF로 인쇄</button>
+        </div>
+      </div>`;
+    modalOverlay.classList.remove("hidden");
+  };
+
+  window.printSeoulGuide = function() {
+    const printWin = window.open("", "_blank", "width=900,height=700");
+    printWin.document.write(`<!DOCTYPE html><html lang="ko"><head>
+      <meta charset="UTF-8">
+      <title>서울시립대학교 면접 가이드</title>
+      <style>
+        body { font-family: 'Malgun Gothic', sans-serif; color: #333; padding: 2rem 3rem; line-height: 1.8; }
+        h1 { color: #3c3fa0; border-bottom: 3px solid #3c3fa0; padding-bottom: 0.5rem; }
+        h2 { color: #2c3e7d; margin-top: 1.8rem; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+        th { background: #eef0ff; padding: 10px; border: 1px solid #c5cdf7; text-align: left; }
+        td { padding: 10px; border: 1px solid #c5cdf7; }
+        ul { padding-left: 1.5rem; }
+        @media print { body { padding: 1rem; } }
+      </style>
+    </head><body>
+      <h1>🎓 서울시립대학교 면접 가이드</h1>
+      <h2>1. 면접 반영 비중 및 합격 역전률</h2>
+      <p>서울시립대는 2단계 평가에서 <strong>1단계 서류 점수 50%와 면접 평가 점수 50%</strong>를 합산하여 최종 합격자를 선발합니다.<br>
+      1배수(최초 합격권) 밖에서 최종 합격한 학생의 비율이 <strong>57%</strong>에 달할 정도로 면접의 영향력이 매우 큽니다.<br>
+      1단계 3배수 선발 시 서류 성적의 변별력이 무의미해질 만큼 면접을 통해 당락이 결정되는 경향이 짙습니다.</p>
+      <h2>2. 면접 진행 방식 및 주요 특징</h2>
+      <ul>
+        <li><strong>평가 위원 및 시간</strong>: 전임 입학사정관과 위촉 사정관(교수 등) 총 2인의 면접관이 지원자 1명을 대상으로 12분 이내의 면접을 진행합니다.</li>
+        <li><strong>평가 방식</strong>: 면접관에게 학생부 전체가 공개된 상태에서 블라인드 면접으로 치러집니다.</li>
+        <li><strong>맞춤형 질문 출제</strong>: 서류 심사자와 면접관이 사전에 학생부를 꼼꼼히 분석하여 개별 면접 질문을 직접 작성하며, 각 모집단위(학과)별 인재상을 중요하게 반영합니다.</li>
+        <li><strong>평가의 핵심 초점</strong>: 활동 나열보다 '학업 역량을 기반으로 한 진로 활동'을 중점적으로 봅니다.</li>
+      </ul>
+      <h2>3. 3대 핵심 평가 요소 (40 : 35 : 25)</h2>
+      <table>
+        <thead><tr><th>평가 요소</th><th>비율</th><th>세부 내용</th></tr></thead>
+        <tbody>
+          <tr><td><strong>잠재역량</strong></td><td>40%</td><td>교육활동 연계·심화 학습(다학제적 전공수학열의), 통합적 문제해결역량</td></tr>
+          <tr><td><strong>학업역량</strong></td><td>35%</td><td>고교 교과 성취도, 전공 분야 탐구·학습 경험</td></tr>
+          <tr><td><strong>사회역량</strong></td><td>25%</td><td>공동체·시민윤리의식, 협동학습능력</td></tr>
+        </tbody>
+      </table>
+      <h2>4. 실제 면접 질문 예시</h2>
+      <p><strong>[학업역량]</strong><br>"3학년 자율활동에서 자연이자율 하락의 해결책으로 '평균인플레이션 목표제'를 제시했는데, 그 개념을 설명해 보세요. 물가안정목표제와 비교하여 장단점은 무엇이며 한국 경제에는 어떤 것이 더 적합하다고 생각하나요?"</p>
+      <p><strong>[잠재역량]</strong><br>"동아리에서 정부의 재정계산 자료를 탐독하고 국민연금 개혁안의 충돌을 문제 삼았는데, 현재 국민연금의 상황과 개혁안의 충돌 문제는 무엇인가요? 연금의 지속 가능성을 확보하기 위한 과제에 대해 생각해본 적 있나요?"</p>
+      <p><strong>[사회역량]</strong><br>"사회문화 시간에 '고령화 시대 복지 사각지대에 놓인 노인들'에 대한 보고서를 작성했는데, 노인 빈곤율·파산율 자료를 분석한 결과 무엇을 알 수 있었나요? 빈곤의 원인은 무엇이라 생각하며, 해결 방안을 제시해 보세요."</p>
+      <h2>5. 전략 요약</h2>
+      <p>서울시립대 면접은 면접관이 학생부 전체를 본 상태에서 진행되므로, <strong>서류에 기재된 활동의 원리와 사회적 적용, 자신만의 해결책</strong>을 논리적으로 설명할 수 있도록 준비해야 합니다. 단순 사실 나열이 아닌 깊이 있는 사고력과 문제해결 능력을 보여주는 것이 핵심입니다.</p>
+    </body></html>`);
+    printWin.document.close();
+    printWin.focus();
+    setTimeout(() => { printWin.print(); }, 500);
+  };
+
+  // ----- 숭실대 면접 가이드 모달 및 PDF 인쇄 -----
+  window.showSoongsilGuideModal = function() {
+    const modalTitle = document.getElementById("modalTitle");
+    const modalBody = document.getElementById("modalBody");
+    const modalOverlay = document.getElementById("analysisModal");
+    if (!modalTitle || !modalBody || !modalOverlay) return;
+    modalTitle.innerText = "숭실대학교 면접 가이드";
+    modalBody.innerHTML = `
+      <style>
+        #ssu-guide-content table { width:100%; border-collapse:collapse; }
+        #ssu-guide-content th, #ssu-guide-content td { padding:10px; border:1px solid var(--panel-border); }
+        #ssu-guide-content th { background:rgba(220,53,69,0.1); text-align:left; }
+        #ssu-guide-content ul { padding-left:1.5rem; }
+      </style>
+      <div id="ssu-guide-content" style="line-height:1.8; font-size:1.0rem; color:var(--text-primary);">
+        <h3 style="color:#ff8a9b; margin-top:0;">1. 면접 비중 및 압도적인 영향력</h3>
+        <p>숭실대는 1단계 서류 평가에서 3배수를 선발한 뒤, 2단계에서 <strong>1단계 성적 50%와 면접 50%</strong>를 합산하여 최종 합격자를 선발합니다.<br>
+        면접 비중이 매우 높아 <strong>2.3배수 내 합격률(역전률)이 65.6%</strong>에 달할 정도로 당락을 가르는 핵심 변수가 됩니다.</p>
+        <h3 style="color:#ff8a9b;">2. 면접 진행 방식</h3>
+        <ul>
+          <li>전임사정관과 <strong>전공 교수</strong>로 구성된 <strong>2인의 면접위원</strong>이 지원자 1명을 대상으로 <strong>12분 이내</strong>의 면접을 진행합니다.</li>
+          <li>면접관에게 학생부 전체가 공개되며, 이를 바탕으로 사전에 질문을 작성하여 <strong>블라인드 방식</strong>으로 면접이 치러집니다.</li>
+        </ul>
+        <h3 style="color:#ff8a9b;">3. 핵심 평가 요소 (50 : 50)</h3>
+        <table>
+          <thead><tr><th>평가 요소</th><th style="text-align:center;">비율</th><th>세부 내용</th></tr></thead>
+          <tbody>
+            <tr><td><strong>전공적합성</strong></td><td style="text-align:center;">50%</td><td>전공 준비도(지원 동기·학업계획) + 전공 탐구 노력(심화 탐구 수준·교과 지식 활용 문제 해결)</td></tr>
+            <tr><td><strong>인성 및 잠재력</strong></td><td style="text-align:center;">50%</td><td>자기평가력(목표 대비 자기 평가·발전) + 협력적 소통 능력(타인 존중·의견 표현·협력)</td></tr>
+          </tbody>
+        </table>
+        <h3 style="color:#ff8a9b;">4. 가장 큰 특징: 집요한 탐침(꼬리) 질문</h3>
+        <p>단순 서류 확인에 그치지 않고, 전공 관련 심화 탐구 활동에 대해 깊이 파고들어 <strong>진짜 본인의 지식인지 검증</strong>하는 탐침 질문이 집중적으로 나옵니다.</p>
+        <p><strong>[전공/학업 관련 꼬리 질문 예시]</strong><br>
+        화학과 지원자가 '베타카로틴 항산화 효과 검증 실험'을 언급하자:<br>
+        → "항산화 물질은 어떠한 원리로 항산화 효과를 내는지 설명하라"<br>
+        → "산화환원 개념에 대해 설명하라"</p>
+        <p><strong>[진로 및 발전 가능성]</strong><br>
+        "구체적인 진로 목표가 무엇인지 이야기해 보세요"<br>
+        "입학 후 학업계획에 대해서 이야기해 보세요"</p>
+        <h3 style="color:#ff8a9b;">5. 전략 요약</h3>
+        <p>학생부에 기재된 전공 관련 심화 활동의 과정뿐만 아니라 <strong>그 바탕이 되는 교과 개념과 원리를 완벽히 숙지</strong>하고, 이어지는 강도 높은 꼬리 질문에 논리적으로 대답할 수 있도록 준비해야 합니다.</p>
+        <div style="margin-top:1.5rem; text-align:right;">
+          <button onclick="window.printSoongsilGuide()" style="background:linear-gradient(135deg,#dc3545,#c82333);color:#fff;border:none;padding:0.6rem 1.4rem;border-radius:8px;font-size:0.9rem;font-weight:600;cursor:pointer;">🖨️ PDF로 인쇄</button>
+        </div>
+      </div>`;
+    modalOverlay.classList.remove("hidden");
+  };
+
+  window.printSoongsilGuide = function() {
+    const printWin = window.open("", "_blank", "width=900,height=700");
+    printWin.document.write(`<!DOCTYPE html><html lang="ko"><head>
+      <meta charset="UTF-8">
+      <title>숭실대학교 면접 가이드</title>
+      <style>
+        body { font-family:'Malgun Gothic',sans-serif; color:#333; padding:2rem 3rem; line-height:1.8; }
+        h1 { color:#c82333; border-bottom:3px solid #c82333; padding-bottom:0.5rem; }
+        h2 { color:#a71d2a; margin-top:1.8rem; }
+        table { width:100%; border-collapse:collapse; margin:1rem 0; }
+        th { background:#fdecea; padding:10px; border:1px solid #f5c6cb; text-align:left; }
+        td { padding:10px; border:1px solid #f5c6cb; }
+        ul { padding-left:1.5rem; }
+        blockquote { border-left:4px solid #c82333; padding:0.5rem 1rem; background:#fff5f5; margin:0.5rem 0; }
+        @media print { body { padding:1rem; } }
+      </style>
+    </head><body>
+      <h1>🎓 숭실대학교 면접 가이드</h1>
+      <h2>1. 면접 비중 및 합격 역전률</h2>
+      <p>숭실대는 1단계 3배수 선발 후, 2단계에서 <strong>1단계 성적 50% + 면접 50%</strong>로 최종 합격자 선발.<br>
+      <strong>2.3배수 내 역전률 65.6%</strong>로 면접이 당락을 가르는 핵심 변수.</p>
+      <h2>2. 면접 진행 방식</h2>
+      <ul>
+        <li>전임사정관 + 전공 교수 구성 <strong>2인 면접위원</strong> × 지원자 1인, <strong>12분 이내</strong></li>
+        <li>학생부 전체 공개 + 사전 질문 작성 + <strong>블라인드 방식</strong></li>
+      </ul>
+      <h2>3. 핵심 평가 요소 (50 : 50)</h2>
+      <table>
+        <thead><tr><th>평가 요소</th><th>비율</th><th>세부 내용</th></tr></thead>
+        <tbody>
+          <tr><td><strong>전공적합성</strong></td><td>50%</td><td>전공 준비도(지원 동기·학업계획) + 전공 탐구 노력(심화 탐구·교과 지식 문제 해결)</td></tr>
+          <tr><td><strong>인성 및 잠재력</strong></td><td>50%</td><td>자기평가력(목표 대비 발전) + 협력적 소통 능력(타인 존중·의견 표현·협력)</td></tr>
+        </tbody>
+      </table>
+      <h2>4. 집요한 탐침(꼬리) 질문</h2>
+      <p>전공 심화 탐구 활동의 교과 개념·원리를 직접 설명하도록 요구:</p>
+      <blockquote>"항산화 물질은 어떠한 원리로 항산화 효과를 내는지 설명하라"<br>"산화환원 개념에 대해 설명하라"</blockquote>
+      <blockquote>"구체적인 진로 목표가 무엇인지 이야기해 보세요"<br>"입학 후 학업계획에 대해서 이야기해 보세요"</blockquote>
+      <h2>5. 전략 요약</h2>
+      <p>학생부 심화 활동의 바탕이 되는 <strong>교과 개념·원리를 완벽히 숙지</strong>하고, 강도 높은 꼬리 질문에 논리적으로 대답할 수 있도록 준비해야 합니다.</p>
+    </body></html>`);
+    printWin.document.close();
+    printWin.focus();
+    setTimeout(() => { printWin.print(); }, 500);
+  };
+
+  // ----- 한국외대 면접 가이드 모달 및 PDF 인쇄 -----
+  window.showHufsGuideModal = function() {
+    const modalTitle = document.getElementById("modalTitle");
+    const modalBody = document.getElementById("modalBody");
+    const modalOverlay = document.getElementById("analysisModal");
+    if (!modalTitle || !modalBody || !modalOverlay) return;
+    modalTitle.innerText = "한국외국어대학교 면접 가이드";
+    modalBody.innerHTML = `
+      <style>
+        #hufs-guide-content table { width:100%; border-collapse:collapse; }
+        #hufs-guide-content th, #hufs-guide-content td { padding:10px; border:1px solid var(--panel-border); }
+        #hufs-guide-content th { background:rgba(0,33,71,0.1); text-align:left; }
+        #hufs-guide-content ul { padding-left:1.5rem; }
+      </style>
+      <div id="hufs-guide-content" style="line-height:1.8; font-size:1.0rem; color:var(--text-primary);">
+        <h3 style="color:#90caf9; margin-top:0;">1. 면접 비중 및 주요 특징</h3>
+        <p>한국외대는 1단계에서 3배수 선발 후, 2단계에서 <strong>1단계 서류 50% + 면접 50%</strong>를 합산하여 최종 선발합니다.<br>
+        면접의 실질적 영향력이 50% 이상으로 매우 크며, 수능 이후 진행되므로 결시율에 따른 실질 경쟁률 변화가 주요 변수입니다.</p>
+        <h3 style="color:#90caf9;">2. 면접 진행 방식</h3>
+        <ul>
+          <li>전임 입학사정관 1인 + 위촉 사정관 1인, <strong>총 2인의 평가 체제</strong></li>
+          <li>공개된 학생부 전체를 바탕으로 질문 작성, <strong>10분 이내 블라인드 면접</strong> 실시</li>
+        </ul>
+        <h3 style="color:#90caf9;">3. 핵심 평가 요소 (40 : 40 : 20)</h3>
+        <table>
+          <thead><tr><th>평가 요소</th><th style="text-align:center;">비율</th><th>세부 내용</th></tr></thead>
+          <tbody>
+            <tr><td><strong>학업 역량</strong></td><td style="text-align:center;">40%</td><td>대학 수학 지식, 새로운 방식으로 문제 바라보기, 폭넓은 탐구 및 해결 능력</td></tr>
+            <tr><td><strong>진로 역량</strong></td><td style="text-align:center;">40%</td><td>진로 선택 지식/태도/가치관, 자기주도적 진로 설계 및 탐색 능력</td></tr>
+            <tr><td><strong>공동체 역량</strong></td><td style="text-align:center;">20%</td><td>개인과 공동체의 조화로운 발전 가치관, 공동체 발전 적극 참여 능력</td></tr>
+          </tbody>
+        </table>
+        <h3 style="color:#90caf9;">4. 실제 면접 질문 예시</h3>
+        <p><strong>[학업 역량 관련]</strong><br>"빅데이터에 관련된 도서를 많이 읽었는데, 빅데이터를 무역에 적용한 사례가 있었나요?"<br>"‘랑그’와 ‘빠롤’을 학급 친구들에게 어떻게 소개했나요?"</p>
+        <p><strong>[진로 역량 관련]</strong><br>"영문학 작품 중 가장 추천하고 싶은 책은 무엇인가요?"<br>"코로나19 팬데믹에서 드러난 프랑스와 한국 문화의 공통점과 차이점은 무엇인가요?"</p>
+        <h3 style="color:#90caf9;">5. 전략 요약</h3>
+        <p>한국외대 면접은 <strong>'교과 수업을 통해 지적 호기심을 얼마나 폭넓게 확장했는가'</strong>와 <strong>'자기주도적 탐구 역량'</strong>을 증명하는 것이 핵심입니다.</p>
+        <div style="margin-top:1.5rem; text-align:right;">
+          <button onclick="window.printHufsGuide()" style="background:linear-gradient(135deg,#002147,#004c8e);color:#fff;border:none;padding:0.6rem 1.4rem;border-radius:8px;font-size:0.9rem;font-weight:600;cursor:pointer;">🖨️ PDF로 인쇄</button>
+        </div>
+      </div>`;
+    modalOverlay.classList.remove("hidden");
+  };
+
+  window.printHufsGuide = function() {
+    const printWin = window.open("", "_blank", "width=900,height=700");
+    printWin.document.write(`<!DOCTYPE html><html lang="ko"><head>
+      <meta charset="UTF-8">
+      <title>한국외국어대학교 면접 가이드</title>
+      <style>
+        body { font-family:'Malgun Gothic',sans-serif; color:#333; padding:2rem 3rem; line-height:1.8; }
+        h1 { color:#002147; border-bottom:3px solid #002147; padding-bottom:0.5rem; }
+        h2 { color:#003366; margin-top:1.8rem; }
+        table { width:100%; border-collapse:collapse; margin:1rem 0; }
+        th { background:#f0f4f8; padding:10px; border:1px solid #d1d9e6; text-align:left; }
+        td { padding:10px; border:1px solid #d1d9e6; }
+        ul { padding-left:1.5rem; }
+        @media print { body { padding:1rem; } }
+      </style>
+    </head><body>
+      <h1>🎓 한국외국어대학교 면접 가이드</h1>
+      <h2>1. 면접 비중 및 실질 영향력</h2>
+      <p>1단계 서류 50% + 면접 50% 합산 최종 선발.<br>
+      면접의 실질적 영향력이 50% 이상으로 매우 크며, 자기주도적 탐구 역량이 당락의 핵심입니다.</p>
+      <h2>2. 면접 진행 방식</h2>
+      <ul>
+        <li>입학사정관 2인 평가 체제, 10분 이내 블라인드 면접</li>
+        <li>학생부 전체를 바탕으로 질문 작성</li>
+      </ul>
+      <h2>3. 핵심 평가 요소 (40 : 40 : 20)</h2>
+      <table>
+        <thead><tr><th>평가 요소</th><th>비율</th><th>세부 내용</th></tr></thead>
+        <tbody>
+          <tr><td><strong>학업 역량</strong></td><td>40%</td><td>수학 지식, 창의적 문제 해결, 폭넓은 탐구 능력</td></tr>
+          <tr><td><strong>진로 역량</strong></td><td>40%</td><td>자기주도적 진로 설계 및 탐색 능력, 진로 선택 가치관</td></tr>
+          <tr><td><strong>공동체 역량</strong></td><td>20%</td><td>공동체 가치관, 협력 사례, 리더십</td></tr>
+        </tbody>
+      </table>
+      <h2>4. 실제 면접 질문 예시</h2>
+      <p><strong>[학업 역량]</strong> "빅데이터 무역 적용 사례", "랑그/빠롤 소개 경험"</p>
+      <p><strong>[진로 역량]</strong> "영문학 작품 추천", "코로나19 팬데믹 문화 비교"</p>
+      <h2>5. 전략 요약</h2>
+      <p>교과 수업을 통한 <strong>지적 호기심 확장</strong>과 <strong>자기주도적 탐구</strong>를 증명하는 것이 합격의 열쇠입니다.</p>
+    </body></html>`);
+    printWin.document.close();
+    printWin.focus();
+    setTimeout(() => { printWin.print(); }, 500);
+  };
+
+  // ----- 세종대 면접 가이드 모달 및 PDF 인쇄 -----
+  window.showSejongGuideModal = function() {
+    const modalTitle = document.getElementById("modalTitle");
+    const modalBody = document.getElementById("modalBody");
+    const modalOverlay = document.getElementById("analysisModal");
+    if (!modalTitle || !modalBody || !modalOverlay) return;
+    modalTitle.innerText = "세종대학교 면접 가이드";
+    modalBody.innerHTML = `
+      <style>
+        #sejong-guide-content table { width:100%; border-collapse:collapse; }
+        #sejong-guide-content th, #sejong-guide-content td { padding:10px; border:1px solid var(--panel-border); }
+        #sejong-guide-content th { background:rgba(103,58,183,0.1); text-align:left; }
+        #sejong-guide-content ul { padding-left:1.5rem; }
+      </style>
+      <div id="sejong-guide-content" style="line-height:1.8; font-size:1.0rem; color:var(--text-primary);">
+        <h3 style="color:#d1c4e9; margin-top:0;">1. 면접 비중 및 높은 영향력 (역전률)</h3>
+        <p>세종대는 1단계에서 3~4배수 선발 후, 2단계에서 <strong>1단계 서류 60% + 면접 40%</strong>를 합산하여 최종 선발합니다.<br>
+        면접 비중이 40%이지만, 1단계 성적을 뒤집고 합격하는 <strong>역전률이 50% 이상</strong>에 달할 정도로 면접의 영향력이 매우 큽니다.</p>
+        <h3 style="color:#d1c4e9;">2. 면접 진행 방식 및 주요 특징</h3>
+        <ul>
+          <li><strong>블라인드 면접 및 녹음</strong>: 2인의 평가위원이 9분 이내의 면접을 진행하며, 면접 내용이 모두 녹음됩니다.</li>
+          <li><strong>학생부 기반 심층 검증</strong>: 서류 심사 단계에서부터 질문지를 미리 작성하여 탐구 활동의 진위, 동기, 결과, 성장 과정 등을 꼼꼼히 묻습니다.</li>
+        </ul>
+        <h3 style="color:#d1c4e9;">3. 3대 핵심 평가 요소 (40 : 35 : 25)</h3>
+        <table>
+          <thead><tr><th>평가 요소</th><th style="text-align:center;">비율</th><th>세부 내용</th></tr></thead>
+          <tbody>
+            <tr><td><strong>진로 역량</strong></td><td style="text-align:center;">40%</td><td>전공 기초 소양/열정, 지원 동기, 진로 계획, 탐구 활동의 양과 질</td></tr>
+            <tr><td><strong>창의융합 역량</strong></td><td style="text-align:center;">35%</td><td>종합적 사고력, 문제 해결 능력, 독창성, 자기주도성, 도전 정신</td></tr>
+            <tr><td><strong>공동체 역량</strong></td><td style="text-align:center;">25%</td><td>질문 이해도, 의사소통 능력, 시간 활용, 정직하고 성실한 태도</td></tr>
+          </tbody>
+        </table>
+        <h3 style="color:#d1c4e9;">4. [특수 면접] 창의소프트 전형 (발표 면접)</h3>
+        <ul>
+          <li><strong>진행 방식</strong>: 면접 전 40분간 제시문 기반 발표 자료 작성 → 3~5분 구술 발표 → 질의응답 및 서류 면접 병행</li>
+          <li><strong>특징</strong>: 상당히 높은 수준의 창의력과 융합적 사고력을 요구하는 제시문이 출제됩니다.</li>
+        </ul>
+        <h3 style="color:#d1c4e9;">5. 실제 서류 기반 면접 질문 예시</h3>
+        <p><strong>[진로/학업]</strong> "드론 관련 진로를 희망하게 된 지원 동기는?"<br>
+        <strong>[창의융합]</strong> "우리나라가 드론 산업 강국이 되기 위해 갖춰야 할 핵심 조건은 무엇이라고 생각하나요?"<br>
+        <strong>[기타]</strong> "우리 학교가 학생을 뽑아야 하는 이유와 마지막으로 하고 싶은 말은?"</p>
+        <h3 style="color:#d1c4e9;">6. 전략 요약</h3>
+        <p>세종대 면접은 <strong>탐구 활동의 본질적 의미</strong>와 <strong>전공에 대한 깊은 관심</strong>을 증명해야 합니다. 특히 창의소프트 전형은 주어진 정보를 융합하여 창의적으로 기획하고 발표하는 연습이 필수적입니다.</p>
+        <div style="margin-top:1.5rem; text-align:right;">
+          <button onclick="window.printSejongGuide()" style="background:linear-gradient(135deg,#673ab7,#512da8);color:#fff;border:none;padding:0.6rem 1.4rem;border-radius:8px;font-size:0.9rem;font-weight:600;cursor:pointer;">🖨️ PDF로 인쇄</button>
+        </div>
+      </div>`;
+    modalOverlay.classList.remove("hidden");
+  };
+
+  window.printSejongGuide = function() {
+    const printWin = window.open("", "_blank", "width=900,height=700");
+    printWin.document.write(`<!DOCTYPE html><html lang="ko"><head>
+      <meta charset="UTF-8">
+      <title>세종대학교 면접 가이드</title>
+      <style>
+        body { font-family:'Malgun Gothic',sans-serif; color:#333; padding:2rem 3rem; line-height:1.8; }
+        h1 { color:#512da8; border-bottom:3px solid #512da8; padding-bottom:0.5rem; }
+        h2 { color:#4527a0; margin-top:1.8rem; }
+        table { width:100%; border-collapse:collapse; margin:1rem 0; }
+        th { background:#f3e5f5; padding:10px; border:1px solid #d1c4e9; text-align:left; }
+        td { padding:10px; border:1px solid #d1c4e9; }
+        ul { padding-left:1.5rem; }
+        @media print { body { padding:1rem; } }
+      </style>
+    </head><body>
+      <h1>🎓 세종대학교 면접 가이드</h1>
+      <h2>1. 면접 반영 비중 및 합격 역전률</h2>
+      <p>1단계 서류 60% + 면접 40% 합산 최종 선발.<br>
+      <strong>역전률 50% 이상</strong>으로 면접의 영향력이 매우 높은 대학입니다.</p>
+      <h2>2. 면접 진행 방식</h2>
+      <ul>
+        <li>2인 평가위원, 9분 이내 블라인드 면접 (전 과정 녹음)</li>
+        <li>서류 심사 단계에서 작성된 질문지를 바탕으로 꼼꼼한 진위 검증</li>
+      </ul>
+      <h2>3. 핵심 평가 요소 (40 : 35 : 25)</h2>
+      <table>
+        <thead><tr><th>평가 요소</th><th>비율</th><th>세부 내용</th></tr></thead>
+        <tbody>
+          <tr><td><strong>진로 역량</strong></td><td>40%</td><td>소양/열정, 지원 동기, 진로 계획, 탐구 활동의 질</td></tr>
+          <tr><td><strong>창의융합 역량</strong></td><td>35%</td><td>종합적 사고력, 문제 해결 능력, 독창성, 자기주도성</td></tr>
+          <tr><td><strong>공동체 역량</strong></td><td>25%</td><td>질문 이해도, 의사소통, 정직/성실한 태도</td></tr>
+        </tbody>
+      </table>
+      <h2>4. 창의소프트 전형 (발표 면접)</h2>
+      <p>40분간 제시문 분석 및 자료 작성 후 3~5분 발표 진행. 상당히 높은 수준의 창의/융합 사고력을 요구함.</p>
+      <h2>5. 전략 요약</h2>
+      <p>탐구 활동의 <strong>동기-과정-결과-성장</strong>을 꼼꼼히 정리하고, 교과 지식을 활용하여 학과 관련 현상에 대한 자신만의 통찰력을 보여주는 것이 핵심입니다.</p>
+    </body></html>`);
+    printWin.document.close();
+    printWin.focus();
+    setTimeout(() => { printWin.print(); }, 500);
+  };
+
+  // ----- 건국대 면접 가이드 모달 및 PDF 인쇄 -----
+  window.showKonkukGuideModal = function() {
+    const modalTitle = document.getElementById("modalTitle");
+    const modalBody = document.getElementById("modalBody");
+    const modalOverlay = document.getElementById("analysisModal");
+    if (!modalTitle || !modalBody || !modalOverlay) return;
+    modalTitle.innerText = "건국대학교 면접 가이드";
+    modalBody.innerHTML = `
+      <style>
+        #konkuk-guide-content table { width:100%; border-collapse:collapse; }
+        #konkuk-guide-content th, #konkuk-guide-content td { padding:10px; border:1px solid var(--panel-border); }
+        #konkuk-guide-content th { background:rgba(46,125,50,0.1); text-align:left; }
+        #konkuk-guide-content ul { padding-left:1.5rem; }
+      </style>
+      <div id="konkuk-guide-content" style="line-height:1.8; font-size:1.0rem; color:var(--text-primary);">
+        <h3 style="color:#a5d6a7; margin-top:0;">1. 면접 비중 및 합격 역전률</h3>
+        <p>건국대는 1단계 서류 평가에서 3배수를 선발한 뒤, 2단계에서 <strong>1단계 서류 70% + 면접 30%</strong>를 합산하여 최종 선발합니다.<br>
+        2단계 면접은 5등급 평가 방식으로 진행되며, 1배수 밖에서 최종 합격하는 <strong>역전률은 약 25~30%</strong> 수준입니다.</p>
+        <h3 style="color:#a5d6a7;">2. 면접 진행 방식 및 주요 특징</h3>
+        <ul>
+          <li><strong>평가 위원</strong>: 입학사정관 2인이 10분 이내의 면접을 진행합니다.</li>
+          <li><strong>성적 공개 면접</strong>: 블라인드 면접인 타 대학과 달리, 건국대는 <strong>면접관에게 학생의 교과 성적이 공개</strong>된 상태로 진행됩니다.</li>
+          <li><strong>계열별 포커스</strong>: 자연계열은 수학/과학 지식 검증, 인문계열은 본인의 생각과 가치관 확인에 집중합니다.</li>
+        </ul>
+        <h3 style="color:#a5d6a7;">3. 3대 핵심 평가 요소 (40 : 30 : 30)</h3>
+        <table>
+          <thead><tr><th>평가 요소</th><th style="text-align:center;">배점</th><th>세부 내용</th></tr></thead>
+          <tbody>
+            <tr><td><strong>진로 역량</strong></td><td style="text-align:center;">400점</td><td>전공 관련 교과 이목 노력, 자기주도성, 창의적 문제해결력, 경험의 다양성</td></tr>
+            <tr><td><strong>학업 역량</strong></td><td style="text-align:center;">300점</td><td>기초 학업 성취도, 학업 태도, 지적 호기심 및 탐구력</td></tr>
+            <tr><td><strong>공동체 역량</strong></td><td style="text-align:center;">300점</td><td>협업 및 소통 능력, 나눔과 배려의 태도</td></tr>
+          </tbody>
+        </table>
+        <h3 style="color:#a5d6a7;">4. 실제 면접 질문 예시</h3>
+        <p><strong>[자연/공학]</strong> "‘지진 속 수학‘ 탐구에서 사용된 구체적인 수학적 개념은 무엇인가요?"<br>
+        "단층 및 다층 퍼셉트론 프로그래밍 과정을 구체적으로 설명해주세요."</p>
+        <p><strong>[인문/사회]</strong> "동·서양 철학의 본질적인 추구 방향 차이점은 무엇이라 생각하나요?"<br>
+        "자유 무역과 보호 무역 보고서의 구체적인 핵심 내용을 설명해 주세요."</p>
+        <h3 style="color:#a5d6a7;">5. 전략 요약</h3>
+        <p>건국대 면접은 성적이 공개되므로, 서류에 기재된 탐구 활동의 결과보다는 <strong>과정(How)</strong>과 그 바탕이 되는 <strong>교과 개념</strong>을 논리적으로 설명하는 것이 핵심입니다.</p>
+        <div style="margin-top:1.5rem; text-align:right;">
+          <button onclick="window.printKonkukGuide()" style="background:linear-gradient(135deg,#2e7d32,#1b5e20);color:#fff;border:none;padding:0.6rem 1.4rem;border-radius:8px;font-size:0.9rem;font-weight:600;cursor:pointer;">🖨️ PDF로 인쇄</button>
+        </div>
+      </div>`;
+    modalOverlay.classList.remove("hidden");
+  };
+
+  window.printKonkukGuide = function() {
+    const printWin = window.open("", "_blank", "width=900,height=700");
+    printWin.document.write(`<!DOCTYPE html><html lang="ko"><head>
+      <meta charset="UTF-8">
+      <title>건국대학교 면접 가이드</title>
+      <style>
+        body { font-family:'Malgun Gothic',sans-serif; color:#333; padding:2rem 3rem; line-height:1.8; }
+        h1 { color:#2e7d32; border-bottom:3px solid #2e7d32; padding-bottom:0.5rem; }
+        h2 { color:#1b5e20; margin-top:1.8rem; }
+        table { width:100%; border-collapse:collapse; margin:1rem 0; }
+        th { background:#e8f5e9; padding:10px; border:1px solid #c8e6c9; text-align:left; }
+        td { padding:10px; border:1px solid #c8e6c9; }
+        ul { padding-left:1.5rem; }
+        @media print { body { padding:1rem; } }
+      </style>
+    </head><body>
+      <h1>🎓 건국대학교 면접 가이드</h1>
+      <h2>1. 면접 반영 비중 및 합격 역전률</h2>
+      <p>1단계 서류 70% + 면접 30% 합산 최종 선발.<br>
+      <strong>역전률 25~30%</strong> 수준으로, 교과 성적이 공개된 상태에서 전공 역량을 평가합니다.</p>
+      <h2>2. 면접 진행 방식</h2>
+      <ul>
+        <li>입학사정관 2인, 10분 이내 대면 면접</li>
+        <li><strong>학생부 교과 성적 공개</strong> 상태로 탐구 과정의 심도 확인</li>
+      </ul>
+      <h2>3. 핵심 평가 요소 (40 : 30 : 30)</h2>
+      <table>
+        <thead><tr><th>평가 요소</th><th>배점</th><th>세부 내용</th></tr></thead>
+        <tbody>
+          <tr><td><strong>진로 역량</strong></td><td>400점</td><td>전공 관련 이수 노력, 자기주도성, 문제 해결 능력</td></tr>
+          <tr><td><strong>학업 역량</strong></td><td>300점</td><td>기초 학업 성취도, 탐구력, 지적 호기심</td></tr>
+          <tr><td><strong>공동체 역량</strong></td><td>300점</td><td>협업, 소통, 나눔과 배려</td></tr>
+        </tbody>
+      </table>
+      <h2>4. 계열별 특징 및 전략</h2>
+      <p><strong>자연계열</strong>: 수학/과학 교과 개념 원리에 대한 날카로운 질문 대비.<br>
+      <strong>인문계열</strong>: 활동에 담긴 자신만의 가치관과 전공 적합성 논리 구축.</p>
+      <h2>5. 전략 요약</h2>
+      <p>성적이 공개되므로 활동의 결과보다는 <strong>과정(How)</strong>과 그 기저에 깔린 <strong>교과 지식</strong>을 얼마나 정확하게 이해하고 활용했는지를 증명해야 합니다.</p>
+    </body></html>`);
+    printWin.document.close();
+    printWin.focus();
+    setTimeout(() => { printWin.print(); }, 500);
+  };
+
+  // ----- 중앙대 면접 가이드 모달 및 PDF 인쇄 -----
+  window.showCauGuideModal = function() {
+    const modalTitle = document.getElementById("modalTitle");
+    const modalBody = document.getElementById("modalBody");
+    const modalOverlay = document.getElementById("analysisModal");
+    if (!modalTitle || !modalBody || !modalOverlay) return;
+    modalTitle.innerText = "중앙대학교 면접 가이드";
+    modalBody.innerHTML = `
+      <style>
+        #cau-guide-content table { width:100%; border-collapse:collapse; }
+        #cau-guide-content th, #cau-guide-content td { padding:10px; border:1px solid var(--panel-border); }
+        #cau-guide-content th { background:rgba(0,74,152,0.1); text-align:left; }
+        #cau-guide-content ul { padding-left:1.5rem; }
+      </style>
+      <div id="cau-guide-content" style="line-height:1.8; font-size:1.0rem; color:var(--text-primary);">
+        <h3 style="color:#90caf9; margin-top:0;">1. 면접 비중 및 주요 변화</h3>
+        <p>중앙대는 2단계에서 <strong>1단계 서류 70% + 면접 30%</strong>를 합산하여 최종 선발합니다.<br>
+        기초 학업 역량을 강화하여 검증하는 <strong>'탐구형 인재'</strong> 중심의 평가 기조를 가지고 있으며, 학업 준비도에 대한 비중이 매우 높습니다.</p>
+        <h3 style="color:#90caf9;">2. 면접 진행 방식 및 주요 특징</h3>
+        <ul>
+          <li><strong>평가 위원</strong>: 입학사정관 2인이 10분 이내의 블라인드 면접을 진행합니다.</li>
+          <li><strong>심층 검증</strong>: 학교 수업과 탐구 활동을 중심으로 학업적 성과와 주도적 탐구 노력을 집중 확인합니다.</li>
+          <li><strong>핵심 요소</strong>: 활동의 나열보다는 <strong>구체적인 기술/방법론</strong>과 <strong>실패 요인 분석</strong> 능력을 중요하게 봅니다.</li>
+        </ul>
+        <h3 style="color:#90caf9;">3. 3대 핵심 평가 요소 및 비중</h3>
+        <table>
+          <thead><tr><th>평가 요소</th><th style="text-align:center;">비율</th><th>세부 내용</th></tr></thead>
+          <tbody>
+            <tr><td><strong>학업 준비도</strong></td><td style="text-align:center;">60%</td><td>교과 기본 개념 이해/활용, 지적 호기심 기반 주도적 탐구 성취 수준</td></tr>
+            <tr><td><strong>전공 적합성</strong></td><td style="text-align:center;">30%</td><td>전공 관심 및 준비 노력, 진로 탐색 과정의 충실성 및 발전 정도</td></tr>
+            <tr><td><strong>의사소통 및 인성</strong></td><td style="text-align:center;">10%</td><td>논리적 전개 능력, 문제해결력, 공동체 태도와 가치관</td></tr>
+          </tbody>
+        </table>
+        <h3 style="color:#90caf9;">4. 실제 면접 질문 예시</h3>
+        <p><strong>[학업준비도/방법론]</strong> "염상섭 문학의 특징적 면모를 표현과 내용 측면에서 설명해보세요."<br>
+        "뿌리 호흡량을 측정했다고 했는데, 구체적으로 어떤 방법을 사용했나요?"</p>
+        <p><strong>[실패 분석/문제해결]</strong> "세균 증식 실험 과정에서 발생한 <strong>실패 요인</strong>은 무엇이었으며, 본인은 이를 어떻게 분석했나요?"</p>
+        <h3 style="color:#90caf9;">5. 전략 요약</h3>
+        <p>중앙대 면접은 단순 느낀 점을 넘어, <strong>실험/탐구의 정확한 방법론과 실패 분석 과정</strong>을 논리적으로 설명할 수 있어야 합격권에 들 수 있습니다.</p>
+        <div style="margin-top:1.5rem; text-align:right;">
+          <button onclick="window.printCauGuide()" style="background:linear-gradient(135deg,#004a98,#002a5c);color:#fff;border:none;padding:0.6rem 1.4rem;border-radius:8px;font-size:0.9rem;font-weight:600;cursor:pointer;">🖨️ PDF로 인쇄</button>
+        </div>
+      </div>`;
+    modalOverlay.classList.remove("hidden");
+  };
+
+  window.printCauGuide = function() {
+    const printWin = window.open("", "_blank", "width=900,height=700");
+    printWin.document.write(`<!DOCTYPE html><html lang="ko"><head>
+      <meta charset="UTF-8">
+      <title>중앙대학교 면접 가이드</title>
+      <style>
+        body { font-family:'Malgun Gothic',sans-serif; color:#333; padding:2rem 3rem; line-height:1.8; }
+        h1 { color:#004a98; border-bottom:3px solid #004a98; padding-bottom:0.5rem; }
+        h2 { color:#003366; margin-top:1.8rem; }
+        table { width:100%; border-collapse:collapse; margin:1rem 0; }
+        th { background:#f0f4f8; padding:10px; border:1px solid #d1d9e6; text-align:left; }
+        td { padding:10px; border:1px solid #d1d9e6; }
+        ul { padding-left:1.5rem; }
+        @media print { body { padding:1rem; } }
+      </style>
+    </head><body>
+      <h1>🎓 중앙대학교 면접 가이드</h1>
+      <h2>1. 면접 비중 및 주요 특징</h2>
+      <p>1단계 서류 70% + 면접 30% 합산 최종 선발.<br>
+      <strong>학업 준비도(60%)</strong>를 압도적으로 중시하며, 실제 탐구 역량을 날카롭게 검증합니다.</p>
+      <h2>2. 면접 진행 방식</h2>
+      <ul>
+        <li>입학사정관 2인, 10분 이내 블라인드 면접</li>
+        <li>학생부 내용에 기반한 심층 꼬리 질문 위주</li>
+      </ul>
+      <h2>3. 핵심 평가 요소 (60 : 30 : 10)</h2>
+      <table>
+        <thead><tr><th>평가 요소</th><th>비율</th><th>세부 내용</th></tr></thead>
+        <tbody>
+          <tr><td><strong>학업 준비도</strong></td><td>60%</td><td>교과 개념 이해, 주도적 탐구 및 성취 수준</td></tr>
+          <tr><td><strong>전공 적합성</strong></td><td>30%</td><td>전공 관심도, 진로 탐색의 충실성</td></tr>
+          <tr><td><strong>의사소통 및 인성</strong></td><td>10%</td><td>논리성, 문제해결력, 공동체 의식</td></tr>
+        </tbody>
+      </table>
+      <h2>4. 핵심 질문 포인트</h2>
+      <p>단순 결과가 아닌 <strong>'방법론(How)'</strong>과 <strong>'실패 요인 분석'</strong>에 대한 구체적인 설명 요구.</p>
+      <h2>5. 전략 요약</h2>
+      <p>자신이 수행한 탐구 활동의 <strong>기본 개념-방법-실패분석-결론</strong>을 논리적이고 전문적인 용어로 설명할 수 있도록 준비해야 합니다.</p>
+    </body></html>`);
+    printWin.document.close();
+    printWin.focus();
+    setTimeout(() => { printWin.print(); }, 500);
+  };
+
+  // ----- 경희대 면접 가이드 모달 및 PDF 인쇄 -----
+  window.showKhuGuideModal = function() {
+    const modalTitle = document.getElementById("modalTitle");
+    const modalBody = document.getElementById("modalBody");
+    const modalOverlay = document.getElementById("analysisModal");
+    if (!modalTitle || !modalBody || !modalOverlay) return;
+    modalTitle.innerText = "경희대학교 면접 가이드";
+    modalBody.innerHTML = `
+      <style>
+        #khu-guide-content table { width:100%; border-collapse:collapse; }
+        #khu-guide-content th, #khu-guide-content td { padding:10px; border:1px solid var(--panel-border); }
+        #khu-guide-content th { background:rgba(167,29,42,0.1); text-align:left; }
+        #khu-guide-content ul { padding-left:1.5rem; }
+      </style>
+      <div id="khu-guide-content" style="line-height:1.8; font-size:1.0rem; color:var(--text-primary);">
+        <h3 style="color:#ffab91; margin-top:0;">1. 면접 비중 및 진행 방식</h3>
+        <p>경희대는 2단계에서 <strong>서류 성적 70% + 면접 30%</strong>를 합합하여 최종 선발합니다.<br>
+        역전률은 약 23~27% 수준이며, 의·약학 계열의 경우 2개 면접실을 도는 다중 면접 방식으로 더욱 정밀하게 평가합니다.</p>
+        <h3 style="color:#ffab91;">2. 면접 주요 특징: 심층 꼬리 질문</h3>
+        <ul>
+          <li><strong>평가 위원</strong>: 입학사정관 2인이 10분 이내의 블라인드 면접을 실시합니다.</li>
+          <li><strong>진위 검증</strong>: 서류 평가 단계에서 도출된 탐침 질문을 통해 활동이 진짜 본인의 것인지 집요하게 확인합니다.</li>
+          <li><strong>핵심 요소</strong>: 단순 사실 확인을 넘어 실험이나 활동의 <strong>'세부 과학적 원리'</strong>를 완벽히 숙지하고 있는지 검증합니다.</li>
+        </ul>
+        <h3 style="color:#ffab91;">3. 2대 핵심 평가 요소 (50 : 50)</h3>
+        <table>
+          <thead><tr><th>평가 요소</th><th style="text-align:center;">비율</th><th>세부 내용</th></tr></thead>
+          <tbody>
+            <tr><td><strong>인성</strong></td><td style="text-align:center;">50%</td><td>창의적 노력, 진취적 기상, 건설적 협동 가치관, 공감 능력, 성실성(출결 등)</td></tr>
+            <tr><td><strong>전공적합성</strong></td><td style="text-align:center;">50%</td><td>전공 기초 소양/학업 역량, 논리적 사고력, 탐구 활동의 진위 및 깊이</td></tr>
+          </tbody>
+        </table>
+        <h3 style="color:#ffab91;">4. 실제 면접 질문 예시</h3>
+        <p><strong>[전공적합성/심층]</strong> "DNA 전기영동 실험에서 분자량이 큰 DNA는 왜 멀리 이동하지 못하나요?"<br>
+        "본인이 관심 있다고 한 '천연물 기반 약제' 중 구체적으로 연구해보고 싶은 종류는 무엇인가요?"</p>
+        <p><strong>[인성/가치관]</strong> "학교생활에서 갈등 상황을 조정한 경험과 그 결과에 대해 말해보세요."<br>
+        "봉사활동 중 본인의 가치관에 가장 큰 변화를 준 활동은 무엇인가요?"</p>
+        <h3 style="color:#ffab91;">5. 전략 요약</h3>
+        <p>경희대 면접은 <strong>인성(50%)</strong> 비중이 매우 높으므로 성실한 태도를 유지하되, 전공 관련 질문에서는 <strong>교과 지식과 과학적 원리</strong>를 논리적으로 설명하는 전문성을 보여주어야 합니다.</p>
+        <div style="margin-top:1.5rem; text-align:right;">
+          <button onclick="window.printKhuGuide()" style="background:linear-gradient(135deg,#a71d2a,#c62828);color:#fff;border:none;padding:0.6rem 1.4rem;border-radius:8px;font-size:0.9rem;font-weight:600;cursor:pointer;">🖨️ PDF 인쇄</button>
+        </div>
+      </div>`;
+    modalOverlay.classList.remove("hidden");
+  };
+
+  window.printKhuGuide = function() {
+    const printWin = window.open("", "_blank", "width=900,height=700");
+    printWin.document.write(`<!DOCTYPE html><html lang="ko"><head>
+      <meta charset="UTF-8">
+      <title>경희대학교 면접 가이드</title>
+      <style>
+        body { font-family:'Malgun Gothic',sans-serif; color:#333; padding:2rem 3rem; line-height:1.8; }
+        h1 { color:#a71d2a; border-bottom:3px solid #a71d2a; padding-bottom:0.5rem; }
+        h2 { color:#c62828; margin-top:1.8rem; }
+        table { width:100%; border-collapse:collapse; margin:1rem 0; }
+        th { background:#ffebee; padding:10px; border:1px solid #ffcdd2; text-align:left; }
+        td { padding:10px; border:1px solid #ffcdd2; }
+        ul { padding-left:1.5rem; }
+        @media print { body { padding:1rem; } }
+      </style>
+    </head><body>
+      <h1>🎓 경희대학교 면접 가이드</h1>
+      <h2>1. 면접 반영 비중 및 합격 역전률</h2>
+      <p>서류 70% + 면접 30% 합산 최종 선발.<br>
+      <strong>인성 50%</strong> 비중이 매우 높은 편이며, 전공 역량에 대한 날카로운 진위 검증이 이루어집니다.</p>
+      <h2>2. 면접 진행 방식</h2>
+      <ul>
+        <li>입학사정관 2인, 10분 이내 블라인드 면접 (의약학은 다중 면접실 운영)</li>
+        <li>서류 기반 탐침 질문을 통한 심층 꼬리 질문 위주</li>
+      </ul>
+      <h2>3. 핵심 평가 요소 (50 : 50)</h2>
+      <table>
+        <thead><tr><th>평가 요소</th><th>비율</th><th>세부 내용</th></tr></thead>
+        <tbody>
+          <tr><td><strong>인성</strong></td><td>50%</td><td>창의적/진취적/건설적 협동, 공감 능력, 성실성(출결)</td></tr>
+          <tr><td><strong>전공적합성</strong></td><td>50%</td><td>전공 기초 소양, 논리적 사고, 탐구 진위 여부(원리 숙지)</td></tr>
+        </tbody>
+      </table>
+      <h2>4. 핵심 질문 포인트</h2>
+      <p>활동의 <strong>'세부 과학적 원리'</strong>와 <strong>'인성 가치관'</strong>에 대한 구체적인 사례 중심 답변 준비.</p>
+      <h2>5. 전략 요약</h2>
+      <p>경희대의 창학 이념을 기반으로 한 <strong>성실한 태도</strong>와, 탐구 활동의 <strong>기본 교과 원리</strong>에 대한 완벽한 이해도를 증명하는 것이 합격의 열쇠입니다.</p>
+    </body></html>`);
+    printWin.document.close();
+    printWin.focus();
+    setTimeout(() => { printWin.print(); }, 500);
+  };
+
+  // ----- 서울과학기술대 면접 가이드 모달 및 PDF 인쇄 -----
+  window.showSeoulTechGuideModal = function() {
+    const modalTitle = document.getElementById("modalTitle");
+    const modalBody = document.getElementById("modalBody");
+    const modalOverlay = document.getElementById("analysisModal");
+    if (!modalTitle || !modalBody || !modalOverlay) return;
+    modalTitle.innerText = "서울과학기술대학교 면접 가이드";
+    modalBody.innerHTML = `
+      <style>
+        #seoultech-guide-content table { width:100%; border-collapse:collapse; }
+        #seoultech-guide-content th, #seoultech-guide-content td { padding:10px; border:1px solid var(--panel-border); }
+        #seoultech-guide-content th { background:rgba(55,71,79,0.1); text-align:left; }
+        #seoultech-guide-content ul { padding-left:1.5rem; }
+      </style>
+      <div id="seoultech-guide-content" style="line-height:1.8; font-size:1.0rem; color:var(--text-primary);">
+        <h3 style="color:#b0bec5; margin-top:0;">1. 면접 비중 및 진행 방식</h3>
+        <p>서울과기대는 2단계에서 <strong>1단계 서류 70% + 면접 30%</strong>를 합산하여 최종 선발합니다.<br>
+        실질 반영 비율은 40% 수준으로 매우 높으며, 면접관에게 <strong>학생의 성적이 공개된 상태</strong>로 진행되는 것이 특징입니다.</p>
+        <h3 style="color:#b0bec5;">2. 면접 주요 특징: 원리 및 이유 검증</h3>
+        <ul>
+          <li><strong>평가 위원</strong>: 입학사정관 2인이 10분 이내의 블라인드 면접을 실시합니다.</li>
+          <li><strong>학업 기반 진로 활동</strong>: 활동 자체의 결과보다 활동을 선택한 <strong>'이유'</strong>와 적용된 <strong>'원리'</strong>를 심층 질문합니다.</li>
+          <li><strong>문제해결 역량</strong>: 학습 과정에서 발생한 문제를 어떻게 분석하고 해결했는지 정밀하게 검증합니다.</li>
+        </ul>
+        <h3 style="color:#b0bec5;">3. 3대 핵심 평가 요소 및 비중</h3>
+        <table>
+          <thead><tr><th>평가 요소</th><th style="text-align:center;">비율</th><th>세부 내용</th></tr></thead>
+          <tbody>
+            <tr><td><strong>진로 역량</strong></td><td style="text-align:center;">40%</td><td>전공 지식 이해도, 진로 탐색 노력, 창의적 사고 및 판단력</td></tr>
+            <tr><td><strong>학업 역량</strong></td><td style="text-align:center;">35%</td><td>학업 태도, 지적 호기심, 문제 파악 및 분석/해결 능력</td></tr>
+            <tr><td><strong>공동체 역량</strong></td><td style="text-align:center;">25%</td><td>협업, 소통, 리더십, 나눔과 배려, 성실성 및 규칙 준수</td></tr>
+          </tbody>
+        </table>
+        <h3 style="color:#b0bec5;">4. 실제 면접 질문 예시</h3>
+        <p><strong>[진로/원리]</strong> "대회 준비를 위해 실험한 원리에 대해 자세히 설명해주세요."<br>
+        "이 주제로 학습 문제를 제기한 특별한 이유는 무엇인가요?"</p>
+        <p><strong>[학업/해결]</strong> "해당 해결 방안을 제시한 논리적 근거는 무엇이며, 어떤 분석 과정을 거쳤나요?"</p>
+        <h3 style="color:#b0bec5;">5. 전략 요약</h3>
+        <p>서울과기대 면접은 성적이 공개되므로 활동의 <strong>지적 깊이</strong>를 증명해야 합니다. 탐구의 <strong>'Why'와 'Logic'</strong>을 논리적으로 설명할 수 있도록 준비하세요.</p>
+        <div style="margin-top:1.5rem; text-align:right;">
+          <button onclick="window.printSeoulTechGuide()" style="background:linear-gradient(135deg,#37474f,#263238);color:#fff;border:none;padding:0.6rem 1.4rem;border-radius:8px;font-size:0.9rem;font-weight:600;cursor:pointer;">🖨️ PDF 인쇄</button>
+        </div>
+      </div>`;
+    modalOverlay.classList.remove("hidden");
+  };
+
+  window.printSeoulTechGuide = function() {
+    const printWin = window.open("", "_blank", "width=900,height=700");
+    printWin.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>서울과학기술대학교 면접 가이드</title><style>body{font-family:'Malgun Gothic',sans-serif;padding:2rem;line-height:1.8;}h1{color:#37474f;border-bottom:3px solid #37474f;}h2{color:#263238;margin-top:1.5rem;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;padding:10px;text-align:left;}th{background:#f8f9fa;}</style></head><body><h1>🎓 서울과학기술대학교 면접 가이드</h1><h2>1. 평가 비중 (40:35:25)</h2><table><tr><th>진로역량</th><th>학업역량</th><th>공동체역량</th></tr><tr><td>40%</td><td>35%</td><td>25%</td></tr></table><h2>2. 핵심 포인트</h2><p>과기대는 <strong>성적 공개 면접</strong>입니다. 활동의 결과보다 <strong>'동기(Why)'</strong>와 <strong>'적용 원리(Logic)'</strong>를 논리적으로 설명하는 것이 중요합니다.</p></body></html>`);
+    printWin.document.close();
+    printWin.focus();
+    setTimeout(() => { printWin.print(); }, 500);
+  };
+
+  window.showGachonGuideModal = function() {
+    const modalTitle = document.getElementById("modalTitle");
+    const modalBody = document.getElementById("modalBody");
+    const modalOverlay = document.getElementById("analysisModal");
+    if (!modalTitle || !modalBody || !modalOverlay) return;
+    modalTitle.innerText = "가천대학교 면접 가이드";
+    modalBody.innerHTML = `
+      <div style="font-family:'Malgun Gothic', sans-serif;">
+        <p>가천대는 <strong>'인성'</strong>과 <strong>'진학의지'</strong>를 각각 40%씩 반영하여 매우 중요하게 평가합니다.</p>
+        <h3 style="color:#1a237e; margin-top:1.5rem;">1. 평가 요소 및 비중</h3>
+        <ul>
+          <li><strong>인성 (40%):</strong> 공동체 의식, 협업 능력, 성실성</li>
+          <li><strong>진학의지 (40%):</strong> 전공 관심도, 자발적 탐구, 발전 가능성</li>
+          <li><strong>학업역량 (20%):</strong> 기초 학업 성취 및 학습 태도</li>
+        </ul>
+        <h3 style="color:#1a237e; margin-top:1.5rem;">2. 주요 특징</h3>
+        <ul>
+          <li><strong>3인 면접:</strong> 다수의 면접관이 지원자의 진실성과 열정을 다각도로 검증</li>
+          <li><strong>경험 중심:</strong> 아이디어를 실제 행동으로 옮긴 구체적 사례 어필 필요</li>
+        </ul>
+      </div>`;
+    modalOverlay.classList.remove("hidden");
+  };
+
+  window.printGachonGuide = function() {
+    const printWin = window.open("", "_blank", "width=900,height=700");
+    printWin.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>가천대학교 면접 가이드</title><style>body{font-family:'Malgun Gothic',sans-serif;padding:2rem;line-height:1.8;}h1{color:#1a237e;border-bottom:3px solid #1a237e;}h2{color:#004a98;margin-top:1.5rem;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;padding:10px;text-align:left;}th{background:#f8f9fa;}</style></head><body><h1>🎓 가천대학교 면접 가이드</h1><h2>1. 평가 비중 (40:40:20)</h2><table><tr><th>인성</th><th>진학의지</th><th>학업역량</th></tr><tr><td>40%</td><td>40%</td><td>20%</td></tr></table><h2>2. 핵심 포인트</h2><p>가천대는 <strong>인성</strong>과 <strong>진학의지</strong>의 비중이 매우 높습니다. 학교 활동에 주도적으로 참여한 경험과 전공을 향한 열정을 적극적으로 표현하세요.</p></body></html>`);
+    printWin.document.close();
+    printWin.focus();
+    setTimeout(() => { printWin.print(); }, 500);
+  };
+
+  window.showSeoulGuideModal = function() {
+    const modalTitle = document.getElementById("modalTitle");
+    const modalBody = document.getElementById("modalBody");
+    const modalOverlay = document.getElementById("analysisModal");
+    if (!modalTitle || !modalBody || !modalOverlay) return;
+    modalTitle.innerText = "서울시립대학교 면접 가이드";
+    modalBody.innerHTML = `
+      <div style="font-family:'Malgun Gothic', sans-serif;">
+        <p>시립대는 <strong>'잠재역량'</strong>을 통해 교과와 진로 활동의 연계성을 심도 있게 확인합니다.</p>
+        <h3 style="color:#01579b; margin-top:1.5rem;">1. 평가 요소 및 비중</h3>
+        <ul>
+          <li><strong>잠재역량 (40%):</strong> 전공 관련 활동의 연계성, 문제해결 대안 제시</li>
+          <li><strong>학업역량 (35%):</strong> 교과 지식 이해, 학업적 호기심</li>
+          <li><strong>사회역량 (25%):</strong> 공동체 의식, 협동 능력, 윤리 의식</li>
+        </ul>
+        <h3 style="color:#01579b; margin-top:1.5rem;">2. 주요 특징</h3>
+        <ul>
+          <li><strong>심층 꼬리 질문:</strong> 탐구 내용의 본질적 원리를 직접 요구하므로 철저한 개념 숙지 필요</li>
+          <li><strong>대안 제시:</strong> 활동에서 발견한 문제에 대해 '나만의 해결책'을 묻는 경우가 많음</li>
+        </ul>
+      </div>`;
+    modalOverlay.classList.remove("hidden");
+  };
+
+  window.printSeoulGuide = function() {
+    const printWin = window.open("", "_blank", "width=900,height=700");
+    printWin.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>서울시립대학교 면접 가이드</title><style>body{font-family:'Malgun Gothic',sans-serif;padding:2rem;line-height:1.8;}h1{color:#002f6c;border-bottom:3px solid #002f6c;}h2{color:#01579b;margin-top:1.5rem;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;padding:10px;text-align:left;}th{background:#f8f9fa;}</style></head><body><h1>🎓 서울시립대학교 면접 가이드</h1><h2>1. 평가 비중 (40:35:25)</h2><table><tr><th>잠재역량</th><th>학업역량</th><th>사회역량</th></tr><tr><td>40%</td><td>35%</td><td>25%</td></tr></table><h2>2. 핵심 포인트</h2><p>시립대는 <strong>활동의 연계성</strong>과 <strong>개념 이해</strong>를 중시합니다. 꼬리 질문에 대비하여 탐구 주제와 관련된 교과 지식을 완벽히 정리하세요.</p></body></html>`);
+    printWin.document.close();
+    printWin.focus();
+    setTimeout(() => { printWin.print(); }, 500);
+  };
+
+  window.showSogangGuideModal = function() {
+    const modalTitle = document.getElementById("modalTitle");
+    const modalBody = document.getElementById("modalBody");
+    const modalOverlay = document.getElementById("analysisModal");
+    if (!modalTitle || !modalBody || !modalOverlay) return;
+    modalTitle.innerText = "서강대학교 면접 가이드";
+    modalBody.innerHTML = `
+      <div style="font-family:'Malgun Gothic', sans-serif;">
+        <p>서강대는 특정 학과 스펙보다 <strong>'성장가능성'</strong>과 <strong>'융적 사고'</strong>를 최우선으로 평가합니다.</p>
+        <h3 style="color:#b71c1c; margin-top:1.5rem;">1. 평가 요소 및 비중</h3>
+        <ul>
+          <li><strong>학업역량 (50%):</strong> 기초 교과 성취도 + 창의적 문제해결력</li>
+          <li><strong>성장가능성 (30%):</strong> 자기주도적 탐구, 실패 극복 과정, 융합적 사고</li>
+          <li><strong>공동체역량 (20%):</strong> 협업, 소통, 이타성</li>
+        </ul>
+        <h3 style="color:#b71c1c; margin-top:1.5rem;">2. 주요 특징</h3>
+        <ul>
+          <li><strong>경계 없는 다전공:</strong> 여러 분야에 걸친 호기심과 융합 시도를 매우 높게 평가</li>
+          <li><strong>깊이 있는 탐구:</strong> 전공 관련성보다 '탐구 과정 자체의 깊이'가 중요</li>
+        </ul>
+      </div>`;
+    modalOverlay.classList.remove("hidden");
+  };
+
+  window.printSogangGuide = function() {
+    const printWin = window.open("", "_blank", "width=900,height=700");
+    printWin.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>서강대학교 면접 가이드</title><style>body{font-family:'Malgun Gothic',sans-serif;padding:2rem;line-height:1.8;}h1{color:#901319;border-bottom:3px solid #901319;}h2{color:#b71c1c;margin-top:1.5rem;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;padding:10px;text-align:left;}th{background:#f8f9fa;}</style></head><body><h1>🎓 서강대학교 면접 가이드</h1><h2>1. 평가 비중 (50:30:20)</h2><table><tr><th>학업역량</th><th>성장가능성</th><th>공동체역량</th></tr><tr><td>50%</td><td>30%</td><td>20%</td></tr></table><h2>2. 핵심 포인트</h2><p>서강대는 <strong>다전공제도</strong>를 기반으로 융합적 인재를 선호합니다. 활동의 결과보다 <strong>성장 과정</strong>과 <strong>실패를 통한 깨달음</strong>을 어필하세요.</p></body></html>`);
+    printWin.document.close();
+    printWin.focus();
+    setTimeout(() => { printWin.print(); }, 500);
+  };
+
+  window.showSkkuGuideModal = function() {
+    const modalTitle = document.getElementById("modalTitle");
+    const modalBody = document.getElementById("modalBody");
+    const modalOverlay = document.getElementById("analysisModal");
+    if (!modalTitle || !modalBody || !modalOverlay) return;
+    modalTitle.innerText = "성균관대학교 면접 가이드";
+    modalBody.innerHTML = `
+      <div style="font-family:'Malgun Gothic', sans-serif;">
+        <p>성균관대는 전공적합성이라는 용어 대신 <strong>'탐구역량'</strong>을 사용하며, 자기주도적 확장을 강조합니다.</p>
+        <h3 style="color:#1b5e20; margin-top:1.5rem;">1. 평가 요소 및 비중</h3>
+        <ul>
+          <li><strong>탐구역량 (40%):</strong> 지적 호기심, 탐구의 확장성, 도전적 과목 이수</li>
+          <li><strong>학업역량 (40%):</strong> 학업수월성(성적), 학업충실성(수업 참여)</li>
+          <li><strong>잠재역량 (20%):</strong> 리더십, 역경 극복, 공동체의식</li>
+        </ul>
+        <h3 style="color:#1b5e20; margin-top:1.5rem;">2. 주요 특징</h3>
+        <ul>
+          <li><strong>권장이수과목 없음:</strong> 특정 과목 이수보다 선택한 과목 내에서의 깊이 중시</li>
+          <li><strong>탐구 확장:</strong> 한 주제를 1~3학년에 걸쳐 어떻게 심화했는지 증명 필요</li>
+        </ul>
+      </div>`;
+    modalOverlay.classList.remove("hidden");
+  };
+
+  window.printSkkuGuide = function() {
+    const printWin = window.open("", "_blank", "width=900,height=700");
+    printWin.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>성균관대학교 면접 가이드</title><style>body{font-family:'Malgun Gothic',sans-serif;padding:2rem;line-height:1.8;}h1{color:#004424;border-bottom:3px solid #004424;}h2{color:#1b5e20;margin-top:1.5rem;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;padding:10px;text-align:left;}th{background:#f8f9fa;}</style></head><body><h1>🎓 성균관대학교 면접 가이드</h1><h2>1. 평가 비중 (40:40:20)</h2><table><tr><th>탐구역량</th><th>학업역량</th><th>잠재역량</th></tr><tr><td>40%</td><td>40%</td><td>20%</td></tr></table><h2>2. 핵심 포인트</h2><p>성균관대는 <strong>'탐구의 확장성'</strong>을 가장 중요하게 봅니다. 꼬리 질문에 대비하여 탐구 내용의 본질과 원리를 명확히 답변하세요.</p></body></html>`);
+    printWin.document.close();
+    printWin.focus();
+    setTimeout(() => { printWin.print(); }, 500);
+  };
+
+  window.showHanyangGuideModal = function() {
+    const modalTitle = document.getElementById("modalTitle");
+    const modalBody = document.getElementById("modalBody");
+    const modalOverlay = document.getElementById("analysisModal");
+    if (!modalTitle || !modalBody || !modalOverlay) return;
+    modalTitle.innerText = "한양대학교 면접 가이드";
+    modalBody.innerHTML = `
+      <div style="font-family:'Malgun Gothic', sans-serif;">
+        <p>한양대는 학생부의 <strong>'횡단평가'</strong>를 통해 비판적·창의적 사고력을 집요하게 검증합니다.</p>
+        <h3 style="color:#0d47a1; margin-top:1.5rem;">1. 평가 요소 및 비중</h3>
+        <ul>
+          <li><strong>심층학업역량 (40%):</strong> 비판적 사고력, 창의적 문제해결력</li>
+          <li><strong>기초학업역량 (35%):</strong> 교과 성취도, 과목 선택의 충실도</li>
+          <li><strong>진로탐구역량 (15%):</strong> 계열적합성 중심의 진로 탐색</li>
+          <li><strong>공동체역량 (10%):</strong> 협업, 리더십, 소통</li>
+        </ul>
+        <h3 style="color:#0d47a1; margin-top:1.5rem;">2. 주요 특징</h3>
+        <ul>
+          <li><strong>Why 중심:</strong> "어떤 활동을 했는가"보다 "왜 했고 어떤 사고를 했는가"가 핵심</li>
+          <li><strong>계열적합성:</strong> 좁은 전공 스펙보다 넓은 계열의 기본 역량 강조</li>
+        </ul>
+      </div>`;
+    modalOverlay.classList.remove("hidden");
+  };
+
+  window.printHanyangGuide = function() {
+    const printWin = window.open("", "_blank", "width=900,height=700");
+    printWin.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>한양대학교 면접 가이드</title><style>body{font-family:'Malgun Gothic',sans-serif;padding:2rem;line-height:1.8;}h1{color:#002366;border-bottom:3px solid #002366;}h2{color:#0d47a1;margin-top:1.5rem;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;padding:10px;text-align:left;}th{background:#f8f9fa;}</style></head><body><h1>🎓 한양대학교 면접 가이드</h1><h2>1. 평가 항목</h2><p>심층학업(40%), 기초학업(35%), 진로탐구(15%), 공동체(10%)</p><h2>2. 핵심 포인트</h2><p>한양대는 <strong>비판적 사고</strong>를 중시합니다. 답변 시 '결과'보다는 자신의 <strong>'논리적 근거'</strong>와 <strong>'창의적 대안'</strong>을 포함하세요.</p></body></html>`);
+    printWin.document.close();
+    printWin.focus();
+    setTimeout(() => { printWin.print(); }, 500);
+  };
+
+  window.showKnueGuideModal = function() {
+    const modalTitle = document.getElementById("modalTitle");
+    const modalBody = document.getElementById("modalBody");
+    const modalOverlay = document.getElementById("analysisModal");
+    if (!modalTitle || !modalBody || !modalOverlay) return;
+    modalTitle.innerText = "한국교원대학교 면접 가이드";
+    modalBody.innerHTML = `
+      <div style="font-family:'Malgun Gothic', sans-serif;">
+        <p>교원대는 교사로서의 <strong>'사명감'</strong>과 <strong>'교직 인성'</strong>, <strong>'전문성'</strong>을 종합적으로 평가합니다.</p>
+        <h3 style="color:#2e7d32; margin-top:1.5rem;">1. 평가 요소 및 비중</h3>
+        <ul>
+          <li><strong>전공 및 교직적합성 (40%):</strong> 학과 역량, 교직 열정, 멘토링 경험</li>
+          <li><strong>학업역량 (30%):</strong> 자기주도적 학습, 발전 정도</li>
+          <li><strong>교직인성 (30%):</strong> 나눔, 배려, 공감 및 의사소통</li>
+        </ul>
+        <h3 style="color:#2e7d32; margin-top:1.5rem;">2. 주요 특징</h3>
+        <ul>
+          <li><strong>3인 면접:</strong> 다른 대학보다 면접관 수가 많아 다각도 검증</li>
+          <li><strong>예비 교사:</strong> 답변 태도와 말투에서 교사로서의 자질이 드러나야 함</li>
+        </ul>
+      </div>`;
+    modalOverlay.classList.remove("hidden");
+  };
+
+  window.printKnueGuide = function() {
+    const printWin = window.open("", "_blank", "width=900,height=700");
+    printWin.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>한국교원대학교 면접 가이드</title><style>body{font-family:'Malgun Gothic',sans-serif;padding:2rem;line-height:1.8;}h1{color:#1b5e20;border-bottom:3px solid #1b5e20;}h2{color:#2e7d32;margin-top:1.5rem;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;padding:10px;text-align:left;}th{background:#f8f9fa;}</style></head><body><h1>🎓 한국교원대학교 면접 가이드</h1><h2>1. 평가 비중 (40:30:30)</h2><p>교직적합성(40%), 학업역량(30%), 교직인성(30%)</p><h2>2. 핵심 포인트</h2><p>단순 지식 전달자가 아닌 <strong>학생과 공감하고 소통하는 교사의 자질</strong>을 보여주세요. 멘토링이나 봉사 경험을 구체적으로 답변하세요.</p></body></html>`);
+    printWin.document.close();
+    printWin.focus();
+    setTimeout(() => { printWin.print(); }, 500);
+  };
+
+  window.showKwangwoonGuideModal = function() {
+    const modalTitle = document.getElementById("modalTitle");
+    const modalBody = document.getElementById("modalBody");
+    const modalOverlay = document.getElementById("analysisModal");
+    if (!modalTitle || !modalBody || !modalOverlay) return;
+    modalTitle.innerText = "광운대학교 면접 가이드";
+    modalBody.innerHTML = `
+      <div style="font-family:'Malgun Gothic', sans-serif; line-height:1.7;">
+        <p><strong>'광운참빛인재전형'</strong> 등 광운대 면접은 서류 점수를 뒤집을 수 있는 <strong>실질적인 영향력(40%)</strong>이 매우 큽니다.</p>
+        
+        <h3 style="color:#d32f2f; margin-top:1.5rem; border-bottom:1px solid #eee; padding-bottom:5px;">1. 평가 요소 및 비중</h3>
+        <ul>
+          <li><strong>발전 가능성 (45%):</strong> 전공 분야에 대한 잠재력, 지적 탐구 노력, SW 역량(해당 학과)</li>
+          <li><strong>종합 사고력 (30%):</strong> 의사소통 능력, 질문 요지 수용 및 답변의 논리성</li>
+          <li><strong>인성 (25%):</strong> 공동체적 가치관, 협업 정신, 면접 태도</li>
+        </ul>
+
+        <h3 style="color:#d32f2f; margin-top:1.5rem; border-bottom:1px solid #eee; padding-bottom:5px;">2. 면접 진행 방식</h3>
+        <ul>
+          <li><strong>평가자:</strong> 2인(사정관 1인, 교수 1인) x 지원자 1인</li>
+          <li><strong>시간:</strong> 10분 이내 (블라인드 면접)</li>
+          <li><strong>특징:</strong> 면접관에게 <strong>학생부 전체 및 성적이 공개</strong>된 상태로 진행됨</li>
+        </ul>
+
+        <h3 style="color:#d32f2f; margin-top:1.5rem; border-bottom:1px solid #eee; padding-bottom:5px;">3. 핵심 질문 포인트</h3>
+        <ul>
+          <li>단순 활동 열거보다 활동의 <strong>'선정 이유'</strong>와 <strong>'구체적인 준비 과정'</strong>을 질문</li>
+          <li>활동 중 부딪힌 <strong>'문제 해결 경험'</strong>을 논리적으로 설명하는지 검증</li>
+          <li>전공에 필요한 핵심 역량이 무엇인지에 대한 본인만의 철학 확인</li>
+        </ul>
+      </div>`;
+    modalOverlay.classList.remove("hidden");
+  };
+
+  window.printKwangwoonGuide = function() {
+    const printWin = window.open("", "_blank", "width=900,height=700");
+    printWin.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>광운대학교 면접 가이드</title><style>body{font-family:'Malgun Gothic',sans-serif;padding:2rem;line-height:1.8;}h1{color:#b71c1c;border-bottom:3px solid #b71c1c;}h2{color:#d32f2f;margin-top:1.5rem;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;padding:10px;text-align:left;}th{background:#fff5f5;}</style></head><body><h1>🎓 광운대학교 면접 가이드</h1><h2>1. 평가 항목 및 비중</h2><p>발전가능성(45%), 종합사고력(30%), 인성(25%)</p><h2>2. 주요 특징</h2><p>면접 비중이 40%로 확대되었습니다. 면접관에게 <strong>성적이 공개</strong>되므로, 활동의 결과뿐만 아니라 <strong>'이유'</strong>와 <strong>'과정'</strong>을 논리적으로 설명하는 연습이 필수적입니다.</p></body></html>`);
+    printWin.document.close();
+    printWin.focus();
+    setTimeout(() => { printWin.print(); }, 500);
+  };
+
+  window.showDonggukGuideModal = function() {
+    const modalTitle = document.getElementById("modalTitle");
+    const modalBody = document.getElementById("modalBody");
+    const modalOverlay = document.getElementById("analysisModal");
+    if (!modalTitle || !modalBody || !modalOverlay) return;
+    modalTitle.innerText = "동국대학교 면접 가이드 (DoDream)";
+    modalBody.innerHTML = `
+      <div style="font-family:'Malgun Gothic', sans-serif; line-height:1.7;">
+        <p>동국대 <strong>'DoDream'</strong> 전형은 수능 이후 차분히 준비된 학생들 간의 경쟁이므로 <strong>전공적합성</strong>의 깊이가 합격을 결정합니다.</p>
+        
+        <h3 style="color:#e65100; margin-top:1.5rem; border-bottom:1px solid #eee; padding-bottom:5px;">1. 평가 요소 및 비분</h3>
+        <ul>
+          <li><strong>전공적합성 (30%):</strong> 지원 전공에 대한 관심, 이해도, 학업 수행 능력</li>
+          <li><strong>발전가능성 (30%):</strong> 문제 해결 능력, 목표 의식, 주도적 태도</li>
+          <li><strong>전형취지적합성 (20%):</strong> 고교 활동의 적극성 및 동국대 인재상 부합 여부</li>
+          <li><strong>인성 및 사회성 (20%):</strong> 협동심, 공감 능력, <strong>출결의 성실성</strong></li>
+        </ul>
+
+        <h3 style="color:#e65100; margin-top:1.5rem; border-bottom:1px solid #eee; padding-bottom:5px;">2. 면접 진행 방식</h3>
+        <ul>
+          <li><strong>평가자:</strong> 2인 x 지원자 1인</li>
+          <li><strong>시간:</strong> 10분 이내 (약 6문제 내외)</li>
+          <li><strong>특징:</strong> 학생부 전체 및 성적이 공개됨. 지원 학과 전공 가이드북 숙지 필수</li>
+        </ul>
+
+        <h3 style="color:#e65100; margin-top:1.5rem; border-bottom:1px solid #eee; padding-bottom:5px;">3. 핵심 전략 포인트</h3>
+        <ul>
+          <li>단순 활동 확인이 아닌, 활동에 담긴 <strong>'교과 지식 원리'</strong>와 <strong>'본인의 성장'</strong>을 연결</li>
+          <li>출결(미인정 지각 등)에 대한 질문이 나올 경우, 솔직한 인정과 <strong>'개선 노력/성장'</strong>을 강조</li>
+          <li>수능 이후 면접이므로 모든 지원자의 준비도가 높음. 더욱 <strong>생생한 구어체</strong>와 자신감 있는 태도 필요</li>
+        </ul>
+      </div>`;
+    modalOverlay.classList.remove("hidden");
+  };
+
+  window.printDonggukGuide = function() {
+    const printWin = window.open("", "_blank", "width=900,height=700");
+    printWin.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>동국대학교 면접 가이드</title><style>body{font-family:'Malgun Gothic',sans-serif;padding:2rem;line-height:1.8;}h1{color:#bf360c;border-bottom:3px solid #bf360c;}h2{color:#e65100;margin-top:1.5rem;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;padding:10px;text-align:left;}th{background:#fff3e0;}</style></head><body><h1>🎓 동국대학교 면접 가이드 (DoDream)</h1><h2>1. 평가 항목 및 비중</h2><p>전공적합성(30%), 발전가능성(30%), 전형취지적합성(20%), 인성 및 사회성(20%)</p><h2>2. 주요 포인트</h2><p>면접의 실질 영향력이 매우 높습니다(인문 40%, 자연 46%). <strong>'출결'</strong>을 비롯한 학교 생활의 성실성과 <strong>'지원 학과에 대한 심화 이해'</strong>를 답변에 반드시 녹여내세요.</p></body></html>`);
+    printWin.document.close();
+    printWin.focus();
+    setTimeout(() => { printWin.print(); }, 500);
+  };
+
+  // =========================================================
+  // Word 다운로드 기능
+  // =========================================================
+  window.exportToPdf = function(elementId) {
+    const el = document.getElementById(elementId);
+    if (!el || !el.innerHTML || el.innerHTML.trim() === "") {
+      alert("다운로드할 결과 내용이 없습니다. 먼저 AI 분석을 완료해주세요.");
+      return;
+    }
+    const printWin = window.open("", "_blank", "width=900,height=700");
+    printWin.document.write(`<!DOCTYPE html><html lang="ko"><head>
+      <meta charset="UTF-8">
+      <title>면접 문항</title>
+      <style>
+        body { font-family: 'Malgun Gothic', sans-serif; color: #222; padding: 2rem 3rem; line-height: 1.8; font-size: 13pt; }
+        h1 { color: #3c3fa0; border-bottom: 2px solid #3c3fa0; padding-bottom: 0.4rem; font-size: 1.5rem; }
+        h2 { color: #2c3e7d; font-size: 1.3rem; margin-top: 1.8rem; }
+        h3 { background: #eef0ff; border-left: 5px solid #5e6ad2; padding: 0.5rem 1rem; border-radius: 0 8px 8px 0; font-size: 1rem; margin-top: 2rem; margin-bottom: 0.4rem; color: #2c3e7d; }
+        .iv-question-box { background: #fffde7; border-left: 5px solid #f59f00; padding: 0.8rem 1.2rem; border-radius: 0 8px 8px 0; font-weight: bold; color: #7c5e00; margin-bottom: 0.8rem; font-size: 1.05rem; }
+        ul { padding-left: 1.5rem; }
+        li { margin-bottom: 0.3rem; }
+        strong { color: #3c3fa0; }
+        hr { border: none; border-top: 1px solid #ddd; margin: 1.5rem 0; }
+        @media print { body { padding: 1rem 1.5rem; } }
+      </style>
+    </head><body>${el.innerHTML}</body></html>`);
+    printWin.document.close();
+    printWin.focus();
+    setTimeout(() => { printWin.print(); }, 600);
+  };
+
+  // Keep legacy alias for any existing references
+  window.exportToWord = window.exportToPdf;
+
 });
-
-
-
