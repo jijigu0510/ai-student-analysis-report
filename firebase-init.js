@@ -56,7 +56,9 @@
   // ── 접속자 세션 관리 (onDisconnect 사용) ──────────────────
   const sessionRef = db.ref('sessions').push();
   sessionRef.onDisconnect().remove();
-  sessionRef.set({ connectedAt: firebase.database.ServerValue.TIMESTAMP });
+  sessionRef.set({ connectedAt: firebase.database.ServerValue.TIMESTAMP }).catch(err => {
+    console.error("Firebase Error (Session Set):", err);
+  });
 
   // 실시간 접속자 수 리스닝
   db.ref('sessions').on('value', snap => {
@@ -72,22 +74,33 @@
 
   // 세션당 한 번만 카운트 증가 (새로고침 시 중복 방지)
   if (!sessionStorage.getItem('visited_today')) {
-    dayRef.transaction(cur => (cur || 0) + 1);
-    totalRef.transaction(cur => (cur || 0) + 1);
+    dayRef.transaction(cur => (cur || 0) + 1).then(() => {
+        console.log("Firebase: Daily visit incremented.");
+    }).catch(err => console.error("Firebase Error (Daily Transaction):", err));
+
+    totalRef.transaction(cur => (cur || 0) + 1).then(() => {
+        console.log("Firebase: Total visit incremented.");
+    }).catch(err => console.error("Firebase Error (Total Transaction):", err));
+
     sessionStorage.setItem('visited_today', 'true');
-    console.log("Firebase: Visit count incremented.");
   }
 
   // 오늘 방문자 수 리스닝
   dayRef.on('value', snap => {
-    console.log("Firebase: Today visits ->", snap.val());
-    if (elToday) elToday.textContent = fmt(snap.val());
+    const val = snap.val();
+    console.log("Firebase: Today visits ->", val);
+    if (elToday) elToday.textContent = fmt(val);
+  }, err => {
+    console.error("Firebase Error (Daily Listen):", err);
   });
 
   // 누적 방문자 수 리스닝
   totalRef.on('value', snap => {
-    console.log("Firebase: Total visits ->", snap.val());
-    if (elTotal) elTotal.textContent = fmt(snap.val());
+    const val = snap.val();
+    console.log("Firebase: Total visits ->", val);
+    if (elTotal) elTotal.textContent = fmt(val);
+  }, err => {
+    console.error("Firebase Error (Total Listen):", err);
   });
 
 })();
