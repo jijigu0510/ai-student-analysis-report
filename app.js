@@ -388,8 +388,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 const dept = dCol !== -1 ? String(row[dCol]||"").trim() : "";
                 const admType = finalTCol !== -1 ? String(row[finalTCol]||"").trim() : "";
                 
-                // 학생부위주(종합) 애들만 보여주기 위한 필터 추가
-                if (!admType.includes("\uc885\ud569")) continue; 
+                // 학생부위주(종합) 필터 - 종합, 학종, 서류 등 포함
+                const isComprehensive = admType.includes("종합") || admType.includes("\uc885\ud569") || admType.includes("\ud559\uc885") || admType.includes("\uc11c\ub958") || admType.includes("학종") || admType.includes("서류");
+                if (!isComprehensive && admType !== "") continue; 
                 
                 let raw = finalRCol !== -1 ? String(row[finalRCol]||"").replace(/\s+/g,"") : "";
                 let res = raw || "\ud655\uc778\ubd88\uac00"; // '확인불가'로 수정
@@ -400,7 +401,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 
                 let genGrade = finalGCol !== -1 ? String(row[finalGCol]||"").trim() : "-";
                 let genGrade5 = finalGCol5 !== -1 && finalGCol5 !== undefined ? String(row[finalGCol5]||"").trim() : "-";
-                let failReason = finalFRCol !== -1 ? String(row[finalFRCol]||"").trim() : "";
+                let failReason = ""; // 불합격 사유 (현재 미사용)
                 
                 pfStudents.push({ name, univ, dept, result: res, type: admType, genGrade, genGrade5, failReason });
                 const opt = document.createElement("option");
