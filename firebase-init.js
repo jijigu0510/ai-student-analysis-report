@@ -9,13 +9,11 @@
   const firebaseConfig = {
     apiKey: "AIzaSyCxMRyt2sMVhtYwBneWdU9RwCe_XaU1NyM",
     authDomain: "buan-highschool-program.firebaseapp.com",
+    databaseURL: "https://buan-highschool-program-default-rtdb.asia-southeast1.firebasedatabase.app",
     projectId: "buan-highschool-program",
     storageBucket: "buan-highschool-program.firebasestorage.app",
     messagingSenderId: "194782601446",
-    appId: "1:194782601446:web:2384c5cfa70ca5d6585b27",
-    measurementId: "G-6LE15ERCLK",
-    // ⚠️ Realtime Database URL: https://buan-highschool-program-default-rtdb.asia-southeast1.firebasedatabase.app/
-    databaseURL: "https://buan-highschool-program-default-rtdb.asia-southeast1.firebasedatabase.app/"
+    appId: "1:194782601446:web:2384c5cfa70ca5d6585b27"
   };
 
   console.log("Firebase Init: Starting...");
