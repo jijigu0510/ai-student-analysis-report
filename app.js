@@ -263,18 +263,18 @@ document.addEventListener("DOMContentLoaded", () => {
       return true;
     });
 
-    let html = '<div class="csat-matrix">';
+    let html = '<div class="csat-matrix" style="grid-template-columns: 80px repeat(14, minmax(60px, 1fr));">';
     
-    // Header Row: Empty top-left cell, then columns 2 to 13
+    // Header Row: Empty top-left cell, then columns 1 to 14
     html += '<div class="matrix-header" style="background:transparent; border:none;"></div>';
-    for (let x = 2; x <= 13; x++) {
-      html += `<div class="matrix-header">${x}</div>`;
+    for (let x = 1; x <= 14; x++) {
+      html += `<div class="matrix-header">${x}합</div>`;
     }
 
     // Rows: Y from 4 down to 1
     for (let y = 4; y >= 1; y--) {
-      html += `<div class="matrix-label-y">${y}합</div>`;
-      for (let x = 2; x <= 13; x++) {
+      html += `<div class="matrix-label-y">${y}과목</div>`;
+      for (let x = 1; x <= 14; x++) {
         // Find items matching this (x, y)
         const cellItems = filtered.filter(item => parseInt(item.등급합) === x && parseInt(item.과목수) === y);
         html += '<div class="matrix-cell">';
