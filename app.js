@@ -1893,10 +1893,12 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       document.getElementById("overallScore").textContent = reportData.totalScore || 0;
-      // overallEvaluation: ==강조== -> 색상 강조 span으로 변환 후 marked 렌더
+      // overallEvaluation: 소제목(##) 앞 빈줄 강제 삽입 + ==강조== 변환 후 marked 렌더
       const overallRaw = (reportData.overallEvaluation || "")
+        .replace(/\n?(##\s)/g, '\n\n$1')   // ## 앞 빈줄 보장 (marked가 h2로 파싱)
         .replace(/==([^=]+)==/g, '<span class="eval-highlight">$1</span>');
       document.getElementById("overallText").innerHTML = marked.parse(overallRaw);
+
 
       document.getElementById("academicScore").textContent = reportData.competencies?.academic?.score || "-";
       document.getElementById("careerScore").textContent = reportData.competencies?.career?.score || "-";
