@@ -1418,63 +1418,8 @@ textarea::-webkit-scrollbar-thumb {
   visibility: visible;
 }
 
-/* =============== Visitor Stats Layout =============== */
-.visitor-stats-container {
-  margin-top: auto;
-  padding: 1.5rem 1rem;
-  background: rgba(15, 20, 35, 0.4);
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-}
 
-.stat-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-  font-weight: 500;
-}
 
-.stat-row .stat-label {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-
-.stat-val {
-  font-family: 'Inter', sans-serif;
-  font-weight: 700;
-  color: var(--text-primary);
-  font-size: 0.95rem;
-  letter-spacing: 0.5px;
-}
-
-.stat-val.highlight {
-  color: #10b981; /* Emerald Green */
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-
-.stat-val.highlight::before {
-  content: '';
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  background: #10b981;
-  border-radius: 50%;
-  box-shadow: 0 0 8px #10b981;
-  animation: pulse-dot 2s infinite ease-in-out;
-}
-
-@keyframes pulse-dot {
-  0% { transform: scale(0.9); opacity: 0.7; }
-  50% { transform: scale(1.4); opacity: 1; }
-  100% { transform: scale(0.9); opacity: 0.7; }
-}
 
 @keyframes pulse {
   0% { box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.4); transform: scale(1); }

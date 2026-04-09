@@ -14,10 +14,7 @@
   <script src="csat_data.js"></script>
   <script src="interview_data.js"></script>
   <script src="recommended_subjects.js"></script>
-  <!-- Firebase SDK (early load) -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics-compat.js"></script>
+
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -60,13 +57,6 @@
       </nav>
 
 
-      
-      <!-- Visitor Stats Widget -->
-      <div id="visitor-stats" class="visitor-stats-container">
-        <div class="stat-row"><span class="stat-label">현재 접속</span><span id="stat-online" class="stat-val highlight">0명</span></div>
-        <div class="stat-row"><span class="stat-label">오늘 방문</span><span id="stat-today" class="stat-val">0</span></div>
-        <div class="stat-row"><span class="stat-label">누적 방문</span><span id="stat-total" class="stat-val">0</span></div>
-      </div>
     </div>
 
   <main id="view-individual" class="main-container view-section active">
@@ -653,7 +643,7 @@
     </div>
   </footer>
   <script src="app.js?v=5"></script>
-  <script src="firebase-init.js?v=4"></script>
+
   <!-- 인쇄용 히든 컨테이너 -->
   <div id="print-area" class="print-only"></div>
 </body>
