@@ -1894,9 +1894,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
       document.getElementById("overallScore").textContent = reportData.totalScore || 0;
       // overallEvaluation: 소제목(##) 앞 빈줄 강제 삽입 + ==강조== 변환 후 marked 렌더
-      const overallRaw = (reportData.overallEvaluation || "")
-        .replace(/\n?(##\s)/g, '\n\n$1')   // ## 앞 빈줄 보장 (marked가 h2로 파싱)
-        .replace(/==([^=]+)==/g, '<span class="eval-highlight">$1</span>');
+      function applyEvalHighlight(text) {
+        return (text || "")
+          .replace(/\n?(##\s)/g, '\n\n$1')
+          .replace(/==([^=]+)==/g, '<span class="eval-highlight">$1</span>');
+      }
+      const overallRaw = applyEvalHighlight(reportData.overallEvaluation);
       document.getElementById("overallText").innerHTML = marked.parse(overallRaw);
 
 
@@ -1923,11 +1926,11 @@ document.addEventListener("DOMContentLoaded", () => {
           document.getElementById("modalTitle").textContent = title + " \uc0c1\uc138 \ubd84\uc11d";
           document.getElementById("modalBody").innerHTML =
             "<div style='background:rgba(255,255,255,0.05);padding:15px;border-radius:8px;margin-bottom:20px;border-left:4px solid var(--accent-primary)'>" +
-            "<h4 style='margin-top:0;color:#96baff;margin-bottom:8px'>\ud3c9\uac00 \uc694\uc57d</h4>" + marked.parse(compData.evaluation || "\ud3c9\uac00 \ub0b4\uc6a9\uc774 \uc5c6\uc2b5\ub2c8\ub2e4.") + "</div>" +
+            "<h4 style='margin-top:0;color:#96baff;margin-bottom:8px'>\ud3c9\uac00 \uc694\uc57d</h4>" + marked.parse(applyEvalHighlight(compData.evaluation) || "\ud3c9\uac00 \ub0b4\uc6a9\uc774 \uc5c6\uc2b5\ub2c8\ub2e4.") + "</div>" +
             (compData.scoreJustification ?
               "<div style='background:rgba(150,186,255,0.08);padding:15px;border-radius:8px;margin-bottom:20px;border-left:4px solid var(--success-color)'>" +
-              "<h4 style='margin-top:0;color:var(--success-color);margin-bottom:8px'>\uc810\uc218 \uc0b0\ucd9c \uadfc\uac70</h4>" + marked.parse(compData.scoreJustification) + "</div>" : "") +
-            "<div style='padding:0 5px'><h4 style='color:#96baff;margin-bottom:10px'>\uadfc\uac70 \ud65c\ub3d9 \uc790\ub8cc</h4>" + marked.parse(evidenceText) + "</div>";
+              "<h4 style='margin-top:0;color:var(--success-color);margin-bottom:8px'>\uc810\uc218 \uc0b0\ucd9c \uadfc\uac70</h4>" + marked.parse(applyEvalHighlight(compData.scoreJustification)) + "</div>" : "") +
+            "<div style='padding:0 5px'><h4 style='color:#96baff;margin-bottom:10px'>\uadfc\uac70 \ud65c\ub3d9 \uc790\ub8cc</h4>" + marked.parse(applyEvalHighlight(evidenceText)) + "</div>";
           document.getElementById("analysisModal").classList.remove("hidden");
         };
       };
@@ -4919,12 +4922,22 @@ overallEvaluation 필드는 아래 형식을 반드시 따르십시오:
             padding: 40px; 
             font-family: 'Outfit', 'Inter', -apple-system, sans-serif; 
             background: white;
+            font-size: 14px;
+            color: #111;
+            line-height: 1.7;
           }
           .markdown-body { 
             background: white !important; 
-            font-size: 14px; 
+            font-size: 14px !important; 
             color: #111;
+            box-sizing: border-box;
           }
+          .markdown-body h1 { font-size: 1.5em; }
+          .markdown-body h2 { font-size: 1.3em; }
+          .markdown-body h3 { font-size: 1.15em; }
+          .markdown-body h4 { font-size: 1.0em; }
+          .markdown-body p { margin: 0.5em 0; white-space: pre-wrap; word-break: keep-all; }
+          .eval-highlight { background: rgba(255, 220, 0, 0.35); color: #7a5800; padding: 1px 4px; border-radius: 3px; font-weight: 600; }
           .print-header { border-bottom: 2px solid #5e6ad2; padding-bottom: 1rem; margin-bottom: 2rem; }
           .blur-name { filter: blur(4px); }
           .total-score-box { background: #5e6ad2 !important; color: white !important; padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; }
@@ -4934,7 +4947,7 @@ overallEvaluation 필드는 아래 형식을 반드시 따르십시오:
           }
         </style>
       </head>
-      <body class="markdown-body">
+      <body>
         ${htmlContent}
       </body>
       </html>
@@ -4996,7 +5009,7 @@ overallEvaluation 필드는 아래 형식을 반드시 따르십시오:
 
       <div class="overall-evaluation" style="margin-bottom: 2.5rem; background: #f9f9f9; padding: 2rem; border-radius: 12px; border: 1px solid #eee;">
         <h3 style="font-size: 1.4rem; color: #333; margin-bottom: 1.2rem; border-left: 6px solid #5e6ad2; padding-left: 1rem;">종합 평가 의견</h3>
-        <div class="markdown-body" style="color: #111; line-height: 1.8;">${marked.parse(data.overallEvaluation || "")}</div>
+        <div class="markdown-body" style="color: #111; line-height: 1.8;">${marked.parse((data.overallEvaluation || "").replace(/\n?(?=## )/g, '\n\n').replace(/==([^=]+)==/g, '<span class="eval-highlight">$1</span>'))}</div>
       </div>
     `;
 
