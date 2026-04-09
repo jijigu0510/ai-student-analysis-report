@@ -366,15 +366,23 @@ document.addEventListener("DOMContentLoaded", () => {
                 return s.includes("\uc804\ud615\uba85") || s.includes("\uc804\ud615\uc720\ud615") || s.includes("\uc804\ud615\uc885\ub958") || s.includes("\uc804\ud615\uad6c\ubd84") || s.includes("\uc804\ud615");
               });
               
-               // 일반등급 컬럼 찾기
-              const gCol = h.findIndex(c => c && String(c).replace(/\s+/g,"").includes("일반등급") && !String(c).replace(/\s+/g,"").includes("5등급"));
-              const gCol5 = h.findIndex(c => c && String(c).replace(/\s+/g,"").includes("일반등급(5등급)"));
+               // 일반등급 컬럼 찾기 (띄어쓰기, 괄호 형태 다양하게 매칭)
+              const gCol5 = h.findIndex(c => {
+                if (!c) return false;
+                const s = String(c).replace(/\s+/g, "");
+                return s.includes("일반등급") && (s.includes("5등급") || s.includes("(5)") || s.includes("5급"));
+              });
+              const gCol = h.findIndex(c => {
+                if (!c) return false;
+                const s = String(c).replace(/\s+/g, "");
+                return s.includes("일반등급") && !s.includes("5등급") && !s.includes("(5)");
+              });
               
               // 인덱스 기반 폴백 (최종단계는 보통 하단/옆에 위치)
               let finalRCol = rCol !== -1 ? rCol : 22; // 23번째 열 폴백
               let finalTCol = tCol !== -1 ? tCol : 8;  // 9번째 열 폴백
               let finalGCol = gCol !== -1 ? gCol : 17; // 18번째 열 폴백
-              let finalGCol5 = gCol5; // 5등급 열 추가              let finalGCol5 = gCol5; // 5등급 컬럼
+              let finalGCol5 = gCol5 !== -1 ? gCol5 : 18; // 19번째 열 폴백
               
               console.log(`\uc2dc\ud2b8(${sheetName}) \ud5e4\ub354 \ubc1c\uacb0:`, h, "RCol:", finalRCol, "TCol:", finalTCol);
 
