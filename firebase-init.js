@@ -47,12 +47,16 @@
     console.log("Firebase DOM Check: stat-today  =", elToday);
     console.log("Firebase DOM Check: stat-total  =", elTotal);
 
-    // ── 접속자 세션 관리 (Heartbeat 방식) ─────────────────────
-    // 브라우저 강제 종료 등으로 남는 유령 세션 방지:
-    // 세션에 타임스탬프를 기록하고 2분마다 갱신.
-    // 리스너에서 3분 이상 오래된 세션은 비활성으로 간주.
-    const HEARTBEAT_INTERVAL = 2 * 60 * 1000; // 2분
-    const SESSION_TIMEOUT    = 3 * 60 * 1000; // 3분
+    // ── 접속자 세션 관리 (Heartbeat + 서버시간 보정) ──────────
+    const HEARTBEAT_INTERVAL = 2 * 60 * 1000; // 2분마다 갱신
+    const SESSION_TIMEOUT    = 4 * 60 * 1000; // 4분 이상 갱신없으면 유령 세션
+
+    // 서버 시간 오프셋 (클라이언트↔서버 시계 차이 보정)
+    let serverTimeOffset = 0;
+    db.ref('.info/serverTimeOffset').on('value', snap => {
+      serverTimeOffset = snap.val() || 0;
+    });
+    function serverNow() { return Date.now() + serverTimeOffset; }
 
     const sessionRef = db.ref('sessions').push();
     sessionRef.onDisconnect().remove();
@@ -65,22 +69,26 @@
     const heartbeatTimer = setInterval(writeHeartbeat, HEARTBEAT_INTERVAL);
 
     // 페이지 언로드 시 세션 즉시 삭제 + 타이머 정리
-    window.addEventListener('beforeunload', () => {
-      clearInterval(heartbeatTimer);
-      sessionRef.remove();
-    });
+    window.addEventListener('pagehide',   () => { clearInterval(heartbeatTimer); sessionRef.remove(); });
+    window.addEventListener('beforeunload', () => { clearInterval(heartbeatTimer); sessionRef.remove(); });
 
     db.ref('sessions').on('value', snap => {
-      const now = Date.now();
+      const now = serverNow();
       let count = 0;
       snap.forEach(child => {
-        const ts = child.val()?.ts;
-        if (ts && (now - ts) < SESSION_TIMEOUT) count++;
+        const data = child.val();
+        const ts   = typeof data?.ts === 'number' ? data.ts : null;
+        if (ts && (now - ts) < SESSION_TIMEOUT) {
+          count++;
+        } else if (ts && (now - ts) >= SESSION_TIMEOUT) {
+          // 본인 세션이 만료됐다면 직접 삭제
+          if (child.ref.toString() === sessionRef.toString()) {
+            child.ref.remove();
+          }
+        }
       });
       console.log("Firebase: Online count ->", count, "| elOnline null?", !elOnline);
-      if (elOnline) {
-        elOnline.textContent = fmt(count) + '명';
-      }
+      if (elOnline) elOnline.textContent = fmt(count) + '명';
     });
 
     // ── 방문 횟수 기록 ──────────────────────────────────────────
