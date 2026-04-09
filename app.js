@@ -1893,7 +1893,11 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       document.getElementById("overallScore").textContent = reportData.totalScore || 0;
-      document.getElementById("overallText").innerHTML = marked.parse(reportData.overallEvaluation || "");
+      // overallEvaluation: ==강조== -> 색상 강조 span으로 변환 후 marked 렌더
+      const overallRaw = (reportData.overallEvaluation || "")
+        .replace(/==([^=]+)==/g, '<span class="eval-highlight">$1</span>');
+      document.getElementById("overallText").innerHTML = marked.parse(overallRaw);
+
       document.getElementById("academicScore").textContent = reportData.competencies?.academic?.score || "-";
       document.getElementById("careerScore").textContent = reportData.competencies?.career?.score || "-";
       document.getElementById("communityScore").textContent = reportData.competencies?.community?.score || "-";
@@ -4151,6 +4155,7 @@ SW\uc6b0\uc218(AI\ucef4\uacf5): \ud559\uc5c5\ud0d0\uad6c\uc5ed\ub7c9 60%(\ud559\
 - 새로운 사물이나 현상을 접했을 때 표면적인 정보에 그치지 않고, "왜 이런 결과가 나왔을까?", "다른 관점은 없을까?"와 같이 스스로 질문을 던지고 논리적으로 탐구하는 능력
 - 교사의 설명을 일방적으로 받아들이지 않고, 자신의 의문점을 표현하고 합리적 근거로 자신의 해석 제시
 
+
 ✓ 창의적 사고력:
 - 여러 분야의 지식이나 개념을 융합하고, 배운 지식을 새로운 상황에 적용하여 자신만의 방법으로 문제를 해결해 나가는 능력
 - 기존의 해결책을 비판적으로 검토하고 더 나은 대안 제시
@@ -4578,7 +4583,16 @@ ${uniCriteria ? uniCriteria.factors : "일반적인 학생부종합전형 평가
 반드시 지정된 JSON 스키마를 따르며, 특히 'overallEvaluation'은 최소 3000자 이상의 매우 상세하고 날카로운 분석 리포트 형태로 작성하십시오. 보고서의 분량을 기존보다 2~3배 이상 대폭 늘려 아주 길고 구체적으로 서술해야 합니다.
 각 항목의 evaluation 및 scoreJustification 필드 역시 단순 나열이 아닌, 데이터(성적, 세특, 활동)에 기반한 사정관의 매서운 시각과 근거를 담아 전문적인 분석 내용을 가급적 상세하게 기술하십시오.
 또한, 각 역량별 'evidence' 배열에는 분석의 근거가 된 학생부 기록 내용을 최소 5개에서 7개 이상 아주 구체적으로 추출하여 포함하십시오.
-무엇보다, 각 역량별 'calculationFormula' 필드에는 해당 점수가 어떻게 산출되었는지 (예: 내신 성취도 40% + 탐구 깊이 40% + 전공 관련성 20% 등)를 구체적인 산식 형태로 명시하십시오.`;
+무엇보다, 각 역량별 'calculationFormula' 필드에는 해당 점수가 어떻게 산출되었는지 (예: 내신 성취도 40% + 탐구 깊이 40% + 전공 관련성 20% 등)를 구체적인 산식 형태로 명시하십시오.
+
+[overallEvaluation 서식 지침 - 반드시 준수]
+overallEvaluation 필드는 아래 형식을 반드시 따르십시오:
+1. 소제목: ## 기호로 굵은 소제목을 붙여 섹션을 구분하십시오. (예: ## ✅ 종합 강점, ## ⚠️ 핵심 보완과제, ## 🎯 합격 가능성 진단, ## 📌 전략적 제언)
+2. 강조 표시: 가장 중요하고 결정적인 핵심 문장이나 단어(합격·불합격 요인, 치명적 약점, 압도적 강점)에는 반드시 ==텍스트== 형식으로 강조 마킹을 하십시오. (예: ==국어 성적이 3등급으로 급격히 하락하여 치명적 약점이 됩니다==)
+3. 각 소제목 아래에는 글머리 기호(-)를 사용하여 핵심 내용을 정리하십시오.
+4. 최소 4개 이상의 소제목 섹션으로 구성하여 분량을 충분히 채우십시오.`;
+
+
 
     const requestBody = {
       contents: [{ parts: [{ text: promptText }] }],
