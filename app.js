@@ -384,6 +384,8 @@ document.addEventListener("DOMContentLoaded", () => {
               let finalGCol = gCol !== -1 ? gCol : 17; // 18번째 열 폴백
               let finalGCol5 = gCol5 !== -1 ? gCol5 : 18; // 19번째 열 폴백
               
+              console.log(`[PF] 컬럼 탐지: gCol(일반등급)=${gCol}(값:${h[gCol]}), gCol5(5등급)=${gCol5}(값:${h[gCol5]}), finalGCol=${finalGCol}, finalGCol5=${finalGCol5}`);
+              
               console.log(`\uc2dc\ud2b8(${sheetName}) \ud5e4\ub354 \ubc1c\uacb0:`, h, "RCol:", finalRCol, "TCol:", finalTCol);
 
               for(let i=hIdx+1; i<rows.length; i++){
@@ -2002,6 +2004,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (genGradeInput) genGradeInput.value = s.genGrade || "-";
       const genGrade5Input = document.getElementById("pf-student-general-grade5");
       if (genGrade5Input) genGrade5Input.value = s.genGrade5 || "-";
+      console.log("[PF] 학생 선택:", s.name, "| genGrade:", s.genGrade, "| genGrade5:", s.genGrade5);
       
       const detailsDiv = document.getElementById("pf-student-details");
       if (detailsDiv) detailsDiv.style.display = "block";
