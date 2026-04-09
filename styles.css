@@ -1427,3 +1427,35 @@ textarea::-webkit-scrollbar-thumb {
   100% { box-shadow: 0 0 0 0 rgba(255, 71, 87, 0); transform: scale(1); }
 }
 
+
+/* == 종합 평가 주안점 강조 텍스트 (==텍스트== 마킹 변환) == */
+.eval-highlight {
+  color: #ff6b6b;
+  font-weight: 700;
+  background: rgba(255, 107, 107, 0.12);
+  border-radius: 3px;
+  padding: 1px 4px;
+}
+
+/* 종합 평가 본문 글씨 크기 축소 */
+#overallText {
+  font-size: 0.92rem;
+  line-height: 1.75;
+}
+
+/* 종합 평가 소제목(## 렌더링) 스타일 강화 */
+#overallText h2 {
+  font-size: 1rem;
+  color: #96baff;
+  margin-top: 2rem;
+  margin-bottom: 0.5rem;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(150, 186, 255, 0.25);
+  font-weight: 700;
+}
+
+/* 첫 번째 h2는 위 여백 제거 */
+#overallText h2:first-child {
+  margin-top: 0.5rem;
+}
+
