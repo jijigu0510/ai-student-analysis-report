@@ -47,14 +47,36 @@
     console.log("Firebase DOM Check: stat-today  =", elToday);
     console.log("Firebase DOM Check: stat-total  =", elTotal);
 
-    // ── 접속자 세션 관리 ──────────────────────────────────────
+    // ── 접속자 세션 관리 (Heartbeat 방식) ─────────────────────
+    // 브라우저 강제 종료 등으로 남는 유령 세션 방지:
+    // 세션에 타임스탬프를 기록하고 2분마다 갱신.
+    // 리스너에서 3분 이상 오래된 세션은 비활성으로 간주.
+    const HEARTBEAT_INTERVAL = 2 * 60 * 1000; // 2분
+    const SESSION_TIMEOUT    = 3 * 60 * 1000; // 3분
+
     const sessionRef = db.ref('sessions').push();
     sessionRef.onDisconnect().remove();
-    sessionRef.set({ connectedAt: firebase.database.ServerValue.TIMESTAMP })
-      .catch(err => console.error("Firebase Error (Session Set):", err));
+
+    function writeHeartbeat() {
+      sessionRef.set({ ts: firebase.database.ServerValue.TIMESTAMP })
+        .catch(err => console.error("Firebase Error (Heartbeat):", err));
+    }
+    writeHeartbeat();
+    const heartbeatTimer = setInterval(writeHeartbeat, HEARTBEAT_INTERVAL);
+
+    // 페이지 언로드 시 세션 즉시 삭제 + 타이머 정리
+    window.addEventListener('beforeunload', () => {
+      clearInterval(heartbeatTimer);
+      sessionRef.remove();
+    });
 
     db.ref('sessions').on('value', snap => {
-      const count = snap.numChildren();
+      const now = Date.now();
+      let count = 0;
+      snap.forEach(child => {
+        const ts = child.val()?.ts;
+        if (ts && (now - ts) < SESSION_TIMEOUT) count++;
+      });
       console.log("Firebase: Online count ->", count, "| elOnline null?", !elOnline);
       if (elOnline) {
         elOnline.textContent = fmt(count) + '명';
