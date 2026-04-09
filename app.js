@@ -4460,7 +4460,7 @@ SW\uc6b0\uc218(AI\ucef4\uacf5): \ud559\uc5c5\ud0d0\uad6c\uc5ed\ub7c9 60%(\ud559\
     }
   }
   async function generateAIReportPF(data, apiKey) {
-    const modelsToTry = ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.0-flash"];
+    const modelsToTry = ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-1.5-flash"];
     const attemptLogs = [];
     const uniCriteria = universityEvalCriteria[data.university] || { factors: "" };
     const prompt = `당신은 대한민국 대학 입시 분석 전문가이자 매우 엄격하고 비판적인 시각을 가진 입학사정관입니다.
@@ -4529,7 +4529,7 @@ ${uniCriteria.factors}
   }
 
   async function generateAIReport(data) {
-    const modelsToTry = ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.0-flash"];
+    const modelsToTry = ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-1.5-flash"];
     const attemptLogs = [];
     const uniCriteria = universityEvalCriteria[data.university];
     const weights = uniCriteria?.weights || { academic: 0.33, career: 0.33, community: 0.34 };
@@ -5496,7 +5496,7 @@ ${fd.content}
     const modelsToTry = [
       "gemini-2.5-pro",
       "gemini-2.5-flash",
-      "gemini-2.0-flash"
+      "gemini-1.5-flash"
     ];
 
     let lastErr;
@@ -6204,7 +6204,7 @@ ${univPromptSupplement}
 `;
 
       try {
-        const modelsToTry = ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.0-flash"];
+        const modelsToTry = ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-1.5-flash"];
         let resultText = "";
         
         for (const model of modelsToTry) {
