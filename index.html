@@ -580,6 +580,8 @@
             <select id="iv-univ-select" required style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.75rem 1rem;width:100%;">
               <option value="" disabled selected>대학 선택</option>
             </select>
+            <!-- 데이터 보유 여부 배지 -->
+            <div id="iv-univ-data-badge" style="display:none; margin-top:0.5rem; font-size:0.82rem; font-weight:600; padding:0.4rem 0.8rem; border-radius:6px;"></div>
           </div>
           <div class="form-group">
             <label for="iv-category-select" style="color: var(--text-secondary); font-weight: 500;">계열</label>
@@ -594,6 +596,16 @@
             </select>
           </div>
         </div>
+
+        <!-- 대학 면접 데이터 현황 패널 -->
+        <details id="iv-univ-status-panel" style="margin-top:0.5rem; margin-bottom:0.5rem;">
+          <summary style="cursor:pointer; font-size:0.85rem; font-weight:600; color:#7cb9ff; user-select:none; padding:0.5rem 0; display:flex; align-items:center; gap:0.4rem;">
+            <span>📋</span> 면접 특화 데이터 보유 대학 현황 보기
+          </summary>
+          <div id="iv-univ-status-content" style="margin-top:0.6rem; padding:1rem; background:rgba(0,0,0,0.2); border-radius:8px; font-size:0.8rem; line-height:1.8;">
+            <!-- JS로 동적 생성 -->
+          </div>
+        </details>
 
         <button type="submit" class="btn-primary" id="iv-analyzeBtn" style="margin-top: 1rem;">
           <span class="btn-text">AI 면접 문항 생성</span>
