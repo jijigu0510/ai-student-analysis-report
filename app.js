@@ -5744,11 +5744,33 @@ ${fd.content}
       opt.value = uni; opt.textContent = uni;
       ivUnivSelect.appendChild(opt);
     }
-    
+    // 면접 특화 데이터 보유 대학 목록 (change 핸들러보다 먼저 선언)
+    const ivUnivDataList = [
+      "가천대학교","서울시립대학교","숭실대학교","한국외국어대학교","세종대학교",
+      "건국대학교","중앙대학교","경희대학교","서울과학기술대학교","서강대학교",
+      "성균관대학교","한양대학교","한국교원대학교","광운대학교","동국대학교",
+      "인하대학교","아주대학교"
+    ];
+
     ivUnivSelect.addEventListener("change", () => {
       const ud = universityData[ivUnivSelect.value];
       ivCategorySelect.innerHTML = "<option value='' disabled selected>계열을 선택하세요</option>";
       ivMajorSelect.innerHTML = "<option value='' disabled selected>학과를 선택하세요</option>";
+
+      // 데이터 보유 여부 배지 업데이트
+      const selectedUniv = ivUnivSelect.value;
+      const badge = document.getElementById("iv-univ-data-badge");
+      if (badge && selectedUniv) {
+        const hasData = ivUnivDataList.includes(selectedUniv);
+        badge.style.display = "block";
+        badge.style.background = hasData ? "rgba(80,200,120,0.15)" : "rgba(255,255,255,0.07)";
+        badge.style.border = hasData ? "1px solid rgba(80,200,120,0.4)" : "1px solid rgba(255,255,255,0.15)";
+        badge.style.color = hasData ? "#6ee09a" : "#aaa";
+        badge.textContent = hasData
+          ? "✅ 이 대학은 면접 특화 데이터가 반영됩니다"
+          : "⚪ 이 대학은 공통 지침으로 문항이 생성됩니다";
+      }
+
       if (!ud) return;
       
       const cats = Object.keys(ud);
@@ -5771,6 +5793,30 @@ ${fd.content}
         });
       }
     });
+
+
+    // 현황 패널 초기화
+    const ivStatusContent = document.getElementById("iv-univ-status-content");
+    if (ivStatusContent && universityData) {
+      const allUnivs = Object.keys(universityData).sort();
+      const withData = allUnivs.filter(u => ivUnivDataList.includes(u));
+      const withoutData = allUnivs.filter(u => !ivUnivDataList.includes(u));
+
+      ivStatusContent.innerHTML = `
+        <div style="margin-bottom:0.8rem;">
+          <div style="color:#6ee09a; font-weight:700; margin-bottom:0.4rem;">✅ 면접 특화 데이터 보유 (${withData.length}개)</div>
+          <div style="display:flex; flex-wrap:wrap; gap:0.3rem;">
+            ${withData.map(u => `<span style="background:rgba(80,200,120,0.15);border:1px solid rgba(80,200,120,0.35);color:#6ee09a;padding:2px 8px;border-radius:10px;">${u}</span>`).join("")}
+          </div>
+        </div>
+        <div>
+          <div style="color:#aaa; font-weight:700; margin-bottom:0.4rem;">⚪ 공통 지침 적용 (${withoutData.length}개)</div>
+          <div style="display:flex; flex-wrap:wrap; gap:0.3rem;">
+            ${withoutData.map(u => `<span style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);color:#888;padding:2px 8px;border-radius:10px;">${u}</span>`).join("")}
+          </div>
+        </div>
+      `;
+    }
 
     ivCategorySelect.addEventListener("change", () => {
       const uni = ivUnivSelect.value;
@@ -6146,6 +6192,58 @@ ${fd.content}
 - 인성 및 사회성 문항: 협업 능력, 공감 능력 확인. 특히 **'출결 상황(미인정 지각/결석/조퇴)'**이 있다면 반드시 그 사유와 개선 노력을 묻는 질문을 포함할 것
 - 각 문항 제목(h3) 바로 아래에 반드시 다음 형식으로 면접 평가 기준을 명시하세요:
   - **📌 평가 항목**: [전공적합성/발전가능성/전형취지적합성/인성및사회성] | **질문 의도**: [이 질문으로 확인하고자 하는 바를 한 문장으로 간략히]
+` :
+        targetUniv === "인하대학교" ? `
+
+[인하대학교 면접 특이사항 - 필수 반영]
+인하대학교는 '학업을 중심으로 한 진로 탐구 역량'을 집중 평가하는 면접입니다. 아래 기준을 10개 문항 전체에 반드시 반영하세요.
+- 전임 입학사정관 + 위촉 사정관(전공 교수) 총 2인 × 지원자 1인, 10분 이내 블라인드 면접
+- 면접관에게 학생부 전체 공개 상태이며, 면접관이 직접 학생부 내용을 바탕으로 질문을 작성
+- (일부 전형/학과는 2개 면접실을 돌며 각 7~8분씩 진행: 1실=기초학업+진로탐구, 2실=진로탐구+의사소통)
+- 합격 역전률 유의미: 2배수 내 학생의 34.3%, 3배수 내 학생의 22.1%가 면접으로 역전 합격
+- 최종 선발: 1단계 서류 70% + 2단계 면접 30% 합산
+
+【핵심 평가 3요소 및 배점】
+- 진로(탐구)역량 (50%): 활동 동기 → 탐구 과정 → 해결 방안 도출의 흐름을 깊이 있게 질문. 4~5문항 배분
+  예시 질문 패턴: "○학년 ○○ 활동에서 ○○ 주제에 관심을 갖게 된 동기는?", "이에 대한 해결 방안을 생각해본 적 있다면?"
+- 기초학업역량 (30%): 교과 수업에서 배운 개념·법칙을 정확히 이해하는지 확인. 3문항 배분
+  예시 질문 패턴: "○학년 ○○ 세특을 보니 ○○에 관심 많았던 것 같은데, ○○이 무엇인지 설명해 주세요."
+- 의사소통/공동체역량 (20%): 협력적 태도, 배려·나눔 사례를 구체적 경험 중심으로 질문. 2문항 배분
+  예시 질문 패턴: "○학년 ○○에서 협력 모습이 기록되어 있는데, 어떤 노력을 했는지 설명해 주세요."
+
+【문항 설계 핵심 원칙】
+- 반드시 학생부 세특/자율/진로/행특의 구체적 내용을 직접 인용하며 질문을 시작할 것 (예: "○학년 ○○ 세특을 보니~")
+- 진로탐구 문항: 단순 활동 나열이 아닌 '탐구 동기 → 과정 → 해결·성장'의 흐름을 꼬리 질문으로 검증
+- 기초학업 문항: 교과 개념/법칙의 정의를 직접 설명하도록 요구하는 지식 검증형 질문 필수 포함
+- 각 문항 제목(h3) 바로 아래에 반드시 다음 형식으로 면접 평가 기준을 명시하세요:
+  - **📌 평가 항목**: [진로탐구역량/기초학업역량/의사소통.공동체역량] | **질문 의도**: [이 질문으로 확인하고자 하는 바를 한 문장으로 간략히]
+` :
+        targetUniv === "아주대학교" ? `
+
+[아주대학교 면접 특이사항 - 필수 반영]
+아주대학교는 학생부에 기재된 활동의 진위를 검증하는 '서류 신뢰도'를 압도적으로 중시하는 면접입니다. 아래 기준을 10개 문항 전체에 반드시 반영하세요.
+- 전임 입학사정관 + 위촉 사정관 총 2인 × 지원자 1인, 10분 이내 블라인드 면접
+- 면접관에게 학생부 전체 공개 상태이며, 기본 교과 활동의 과정과 진위 여부를 중점 확인
+- (의과대학 지원자는 MMI 방식: 2개 면접실 × 각 약 10분, 인문사회·상황면접 + 서류확인면접)
+- 면접 역전률: 평균 약 30% (학과별 상이)
+- 최종 선발: 1단계 서류 70% + 2단계 면접 30% 합산
+
+【핵심 평가 2요소 및 배점】
+- 서류 신뢰도 (80%): 학업역량·진로역량·공동체역량을 종합적으로 평가. 8~9문항 배분
+  ① 학업역량: 교과(실험 포함)에서 배운 개념·원리를 정확히 이해하고 있는지 검증
+     예시 패턴: "○○ 실험을 진행했는데, 이 실험의 원리와 과정에 대해 설명해 주세요."
+  ② 진로역량: 활동의 동기, 본인의 구체적 역할, 성취 과정을 깊이 있게 확인
+     예시 패턴: "○○ 활동에서 본인의 구체적인 역할에 대해 설명해 주세요."
+  ③ 공동체역량: 협력·배려·나눔·리더십 등 공동체 기여 사례를 구체적으로 확인
+     예시 패턴: "○○ 봉사 경험을 통해 자신이 성장한 점에 대해 설명해 주세요."
+- 의사소통능력 및 태도 (20%): 질문의 요지를 정확히 파악하고 체계적·논리적으로 답변하는지 현장 평가. 1~2문항 배분
+
+【문항 설계 핵심 원칙】
+- 학생부에 기재된 모든 활동(교과 실험, 동아리, 봉사, 행특 등)의 구체적 과정을 반드시 인용하며 질문
+- 화려한 활동보다 '그 활동이 진짜 본인의 역량인가'를 검증하는 방향으로 질문 설계
+- 교과 실험 언급 시 반드시 실험 원리·방법·결과를 설명하도록 요구하는 질문 포함
+- 각 문항 제목(h3) 바로 아래에 반드시 다음 형식으로 면접 평가 기준을 명시하세요:
+  - **📌 평가 항목**: [서류신뢰도(학업역량/진로역량/공동체역량)/의사소통태도] | **질문 의도**: [이 질문으로 확인하고자 하는 바를 한 문장으로 간략히]
 ` : `
 
 [면접 문항 생성 공통 지침 - 필수 반영]
