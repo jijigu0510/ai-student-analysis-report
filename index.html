@@ -576,12 +576,10 @@
         
         <div class="form-group-row-3">
           <div class="form-group">
-            <label for="iv-univ-select" style="color: var(--text-secondary); font-weight: 500;">목표 대학</label>
+            <label for="iv-univ-select" style="color: var(--text-secondary); font-weight: 500;">목표 대학 <span style="font-size:0.75rem; color:#7cb9ff;">(✅ = 특화 데이터 보유)</span></label>
             <select id="iv-univ-select" required style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.75rem 1rem;width:100%;">
               <option value="" disabled selected>대학 선택</option>
             </select>
-            <!-- 데이터 보유 여부 배지 -->
-            <div id="iv-univ-data-badge" style="display:none; margin-top:0.5rem; font-size:0.82rem; font-weight:600; padding:0.4rem 0.8rem; border-radius:6px;"></div>
           </div>
           <div class="form-group">
             <label for="iv-category-select" style="color: var(--text-secondary); font-weight: 500;">계열</label>
@@ -596,6 +594,9 @@
             </select>
           </div>
         </div>
+
+        <!-- 대학 데이터 보유 여부 배지 -->
+        <div id="iv-univ-data-badge" style="display:none; font-size:0.82rem; font-weight:600; padding:0.4rem 0.8rem; border-radius:6px; margin-top:-0.3rem; margin-bottom:0.5rem;"></div>
 
         <!-- 대학 면접 데이터 현황 패널 -->
         <details id="iv-univ-status-panel" style="margin-top:0.5rem; margin-bottom:0.5rem;">
@@ -654,7 +655,7 @@
       </div>
     </div>
   </footer>
-  <script src="app.js?v=5"></script>
+  <script src="app.js?v=7"></script>
 
   <!-- 인쇄용 히든 컨테이너 -->
   <div id="print-area" class="print-only"></div>

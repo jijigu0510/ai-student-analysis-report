@@ -48,7 +48,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     async init() {
       return new Promise((resolve, reject) => {
-        const request = indexedDB.open(this.DB_NAME, 1);
+        const request = indexedDB.open(this.DB_NAME);
         request.onupgradeneeded = (e) => {
           const db = e.target.result;
           if (!db.objectStoreNames.contains(this.STORE_NAME)) {
@@ -56,8 +56,26 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         };
         request.onsuccess = (e) => {
-          this.db = e.target.result;
-          resolve();
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains(this.STORE_NAME)) {
+            const nextVersion = db.version + 1;
+            db.close();
+            const upgradeReq = indexedDB.open(this.DB_NAME, nextVersion);
+            upgradeReq.onupgradeneeded = (e2) => {
+              const db2 = e2.target.result;
+              if (!db2.objectStoreNames.contains(this.STORE_NAME)) {
+                db2.createObjectStore(this.STORE_NAME);
+              }
+            };
+            upgradeReq.onsuccess = (e2) => {
+              this.db = e2.target.result;
+              resolve();
+            };
+            upgradeReq.onerror = (e2) => reject(e2);
+          } else {
+            this.db = db;
+            resolve();
+          }
         };
         request.onerror = (e) => reject(e);
       });
@@ -344,15 +362,16 @@ document.addEventListener("DOMContentLoaded", () => {
           // Iterate all sheets to find valid student data
           workbook.SheetNames.forEach(sheetName => {
             const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1 });
+            console.log("[courseExcelUpload] Sheet:", sheetName, "Rows:", rows.slice(0, 5));
             let hIdx = -1;
             for(let i=0; i<Math.min(rows.length, 30); i++) {
               const rs = (rows[i] || []).join("");
-              if(rs.includes("\uc131\uba85") || rs.includes("\uc774\ub984") || rs.includes("\uc218\ud5d8\ubc88\ud638")) { hIdx = i; break; }
+              if(rs.includes("성명") || rs.includes("이름") || rs.includes("수험번호")) { hIdx = i; break; }
             }
             
             if(hIdx !== -1) {
               const h = rows[hIdx];
-              const nCol = h.findIndex(c => c && (String(c).includes("\uc131\uba85") || String(c).includes("\uc774\ub984") || String(c).includes("\ud559\uc0dd\uba85") || String(c).includes("\uc218\ud5d8\uc0dd\uba85")));
+              const nCol = h.findIndex(c => c && (String(c).includes("성명") || String(c).includes("이름") || String(c).includes("\ud559\uc0dd\uba85") || String(c).includes("\uc218\ud5d8\uc0dd\uba85")));
               const uCol = h.findIndex(c => c && (String(c).includes("\ub300\ud559\uad50") || String(c).includes("\ub300\ud559")));
               const dCol = h.findIndex(c => c && (String(c).includes("\ubaa8\uc9d1\ub2e8\uc704") || String(c).includes("\ud559\uacfc") || String(c).includes("\ud559\ubd80") || String(c).includes("\uc804\uacf5") || String(c).includes("\uc9c0\uc6d0\ud559\uacfc")));
               const rCol = h.findIndex(c => {
@@ -392,7 +411,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const row = rows[i];
                 if (!row || row.length === 0) continue;
                 const name = nCol !== -1 ? String(row[nCol]||"").trim() : "";
-                if(!name || name === "\uc131\uba85" || name === "\uc774\ub984") continue;
+                if(!name || name === "성명" || name === "이름") continue;
                 
                 const univ = uCol !== -1 ? String(row[uCol]||"").trim() : "";
                 const dept = dCol !== -1 ? String(row[dCol]||"").trim() : "";
@@ -1312,6 +1331,7 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
           const workbook = XLSX.read(new Uint8Array(evt.target.result), { type: "array" });
           const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1 });
+          console.log("[excelUpload] Parsed jsonData from excel:", jsonData.slice(0, 10));
           if (!studentSelect) return;
           studentSelect.innerHTML = "<option value='' disabled selected>\ud559\uc0dd\uc744 \uc120\ud0dd\ud558\uc138\uc694</option>";
           students = [];
@@ -1320,11 +1340,11 @@ document.addEventListener("DOMContentLoaded", () => {
           for (let i = 0; i < Math.min(jsonData.length, 20); i++) {
             if (!jsonData[i]) continue;
             const rowStr = jsonData[i].join("").replace(/\s+/g, "");
-            if (rowStr.includes("\uc131\uba85") || rowStr.includes("\uc774\ub984")) { headerRowIndex = i; break; }
+            if (rowStr.includes("성명") || rowStr.includes("이름")) { headerRowIndex = i; break; }
           }
           if (headerRowIndex !== -1) {
             const headerRow = jsonData[headerRowIndex];
-            const nameCol = headerRow.findIndex(c => c && (String(c).replace(/\s+/g, "").includes("\uc131\uba85") || String(c).replace(/\s+/g, "").includes("\uc774\ub984")));
+            const nameCol = headerRow.findIndex(c => c && (String(c).replace(/\s+/g, "").includes("성명") || String(c).replace(/\s+/g, "").includes("이름")));
             const gradeCol = headerRow.findIndex(c => c && String(c).replace(/\s+/g, "") === "\ud559\ub144");
             const classCol = headerRow.findIndex(c => c && String(c).replace(/\s+/g, "") === "\ubc18");
             const numCol = headerRow.findIndex(c => c && String(c).replace(/\s+/g, "").includes("\ubc88\ud638"));
@@ -1426,6 +1446,7 @@ document.addEventListener("DOMContentLoaded", () => {
           const allRows = [];
           for (const sheetName of workbook.SheetNames) {
             const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1 });
+            console.log("[courseExcelUpload] Sheet:", sheetName, "Rows:", rows.slice(0, 5));
             if (rows.length > 0) allRows.push(...rows);
           }
           globalCourseJson = allRows;
@@ -1657,6 +1678,7 @@ document.addEventListener("DOMContentLoaded", () => {
           const allSheetData = [];
           for (const sheetName of workbook.SheetNames) {
             const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1 });
+            console.log("[courseExcelUpload] Sheet:", sheetName, "Rows:", rows.slice(0, 5));
             if (rows.length > 0) allSheetData.push(...rows);
           }
           globalBatchJsons.push({ fileName: file.name, jsonData: allSheetData });
@@ -1694,13 +1716,13 @@ document.addEventListener("DOMContentLoaded", () => {
       else
         fileTypeHint = "creative"; // \uae30\ubcf8: \ucc3d\uccb4
 
-      // \u2500\u2500 \ud5e4\ub354 \ud589 \ud0d0\uc0c9: '\uc131\uba85' / '\uc774\ub984' \uc140\uc774 \uc788\ub294 \ud589 \u2500\u2500
+      // \u2500\u2500 \ud5e4\ub354 \ud589 \ud0d0\uc0c9: '성명' / '이름' \uc140\uc774 \uc788\ub294 \ud589 \u2500\u2500
       let headerRowIdx = -1, nameCol = -1;
       for (let i = 0; i < Math.min(jsonData.length, 10); i++) {
         if (!jsonData[i]) continue;
         for (let j = 0; j < jsonData[i].length; j++) {
           const ct = String(jsonData[i][j] || "").replace(/\s+/g, "");
-          if (ct === "\uc131\uba85" || ct === "\uc774\ub984") { nameCol = j; headerRowIdx = i; break; }
+          if (ct === "성명" || ct === "이름") { nameCol = j; headerRowIdx = i; break; }
         }
         if (headerRowIdx !== -1) break;
       }
@@ -1772,7 +1794,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       if (detailCol === -1) continue;
 
-      // \u2500\u2500 \ub370\uc774\ud130 \ucd94\ucd9c: \uc131\uba85 \uc788\uc73c\uba74 \uac31\uc2e0, \ube48 \uc131\uba85\uc774\uba74 \uc9c1\uc804 \ud559\uc0dd \uacc4\uc18d \uc0ac\uc6a9 \u2500\u2500
+      // \u2500\u2500 \ub370\uc774\ud130 \ucd94\ucd9c: 성명 \uc788\uc73c\uba74 \uac31\uc2e0, \ube48 성명\uc774\uba74 \uc9c1\uc804 \ud559\uc0dd \uacc4\uc18d \uc0ac\uc6a9 \u2500\u2500
       let currentStudent = "";
       let extractedText = [];
 
@@ -3321,7 +3343,7 @@ document.addEventListener("DOMContentLoaded", () => {
       - \ud611\uc5c5\uacfc \uc18c\ud1b5\ub2a5\ub825: \ud0c0 \uad6c\uc131\uc6d0\uacfc\uc758 \uc6d0\ub9cc\ud55c \uc758\uc0ac\uc18c\ud1b5 \ubc0f \uc801\uadf9\uc801 \ud611\ub825 \ud0dc\ub3c4
 
 \u25a0 \uc11c\ub958\ud3c9\uac00 \uc2dc \ud575\uc2ec \uc720\uc758\uc0ac\ud56d (\uac10\uc810 \ubc0f \ubd88\uc774\uc775 \uc694\uac74 \ucca0\uc800 \uac80\uc99d)
-1. \ucca0\uc800\ud55c \ube14\ub77c\uc778\ub4dc \ud3c9\uac00 \uc900\uc218: \uac1c\uc778 \ud2b9\uc815 \uc815\ubcf4(\uc131\uba85, \ucd9c\uc2e0 \uace0\uad50 \ub4f1) \ubc30\uc81c
+1. \ucca0\uc800\ud55c \ube14\ub77c\uc778\ub4dc \ud3c9\uac00 \uc900\uc218: \uac1c\uc778 \ud2b9\uc815 \uc815\ubcf4(성명, \ucd9c\uc2e0 \uace0\uad50 \ub4f1) \ubc30\uc81c
 2. \uae30\uc7ac \uae08\uc9c0 \ud56d\ubaa9 \uc704\ubc18 \uc2dc \uac10\uc810/\ubd88\ud569\uaca9: \uacf5\uc778\uc5b4\ud559\uc131\uc801, \ud559\uad50\ud3ed\ub825 \uc870\uce58\uc0ac\ud56d \ubc18\uc601(\uc0ac\uc548\ubcc4 \uce58\uba85\uc801 \uc815\uc131 \ucc28\uac10)
 
 \u25a0 \ub2e8\uacfc\ub300\ud559 \ubc0f \ud559\uacfc\ubcc4 \ud575\uc2ec \ud3c9\uac00 \uc8fc\uc548\uc810 (\uc804\uacf5 \uad00\ub828 \ucc38\uace0 \uad50\uacfc \uac00\uc774\ub4dc)
@@ -3486,7 +3508,7 @@ document.addEventListener("DOMContentLoaded", () => {
 [\ubd80\uc0b0\ub300\ud559\uad50 2026\ud559\ub144\ub3c4 \ud559\uc0dd\ubd80\uc885\ud569\uc804\ud615 \uc11c\ub958\ud3c9\uac00 \uae30\uc900 \ubc0f \uc138\ubd80 \uc8fc\uc548\uc810]
 
 \u25a0 \uc11c\ub958\ud3c9\uac00 \uc885\ud569 \uc548\ub0b4 \ubc0f \ud3c9\uac00 \uc808\ucc28
-1. \ube14\ub77c\uc778\ub4dc \ud3c9\uac00: \uc9c0\uc6d0\uc790\uc758 \uc131\uba85, \ucd9c\uc2e0\uace0\uad50, \ubd80\ubaa8 \uc9c1\uc5c5 \ub4f1\uc740 \ubaa8\ub450 \ucca0\uc800\ud788 \ube14\ub77c\uc778\ub4dc \ucc98\ub9ac (\uae30\uc7ac \uc2dc \ubd88\uc774\uc775)
+1. \ube14\ub77c\uc778\ub4dc \ud3c9\uac00: \uc9c0\uc6d0\uc790\uc758 성명, \ucd9c\uc2e0\uace0\uad50, \ubd80\ubaa8 \uc9c1\uc5c5 \ub4f1\uc740 \ubaa8\ub450 \ucca0\uc800\ud788 \ube14\ub77c\uc778\ub4dc \ucc98\ub9ac (\uae30\uc7ac \uc2dc \ubd88\uc774\uc775)
 2. \ub2e4\uc218 \ub2e4\ub2e8\uacc4 \ub3c5\ub9bd\ud3c9\uac00 \ubc0f \uc870\uc815\ud3c9\uac00: \ud3c9\uac00\uc704\uc6d0 2~3\uc778\uc774 \uac1c\ubcc4 \ub3c5\ub9bd \ud3c9\uac00\ub97c \uc9c4\ud589\ud558\uba70, \uc810\uc218 \ucc28\uc774(15\uc810 \uc774\uc0c1) \ubc1c\uc0dd \uc2dc \uc804\uc784\uc0ac\uc815\uad00 3\uc778\uc774 \ucd94\uac00 \ud3c9\uac00\ud558\ub294 \uc870\uc815\ud3c9\uac00 \uc2dc\ud589
 3. \uae30\uc7ac \uae08\uc9c0 \uc0ac\ud56d \uc5c4\uaca9 \uc801\uc6a9: \uacf5\uc778\uc5b4\ud559\uc131\uc801, \uc218\ud559\u00b7\uacfc\ud559\u00b7\uc678\uad6d\uc5b4 \uad50\uacfc \uc678 \uc218\uc0c1\uc2e4\uc801, \ubd80\ubaa8/\uce5c\uc778\ucc99 \uc9c1\uc5c5 \ub4f1 \uae30\uc7ac \uc2dc 0\uc810(\ub610\ub294 \ubd88\ud569\uaca9) \ucc98\ub9ac. \ud559\uad50\ud3ed\ub825 \uc870\uce58\uc0ac\ud56d \ubc1c\uc0dd \uc2dc \uc11c\ub958 \uc815\uc131\ud3c9\uac00 \uc2dc \uac10\uc810\uc73c\ub85c \uac15\ub825 \ubc18\uc601
 4. \ud559\uacfc\ubcc4 \ud3c9\uac00 \ud575\uc2ec: \ud559\uacfc\ubcc4 \uc778\uc7ac\uc0c1\uc5d0 \ub530\ub978 **'\ud575\uc2ec \uad8c\uc7a5\uacfc\ubaa9'**\uacfc **'\uad8c\uc7a5\uacfc\ubaa9'**\uc758 \uc8fc\ub3c4\uc801 \uc774\uc218 \uc5ec\ubd80\uac00 \uac00\uc7a5 \ud575\uc2ec\uc801 \uc7a3\ub300
@@ -3570,7 +3592,7 @@ document.addEventListener("DOMContentLoaded", () => {
 [\uc778\ud558\ub300\ud559\uad50 2026\ud559\ub144\ub3c4 \ud559\uc0dd\ubd80\uc885\ud569\uc804\ud615 \uc11c\ub958\ud3c9\uac00 \uae30\uc900 \ubc0f \ud559\uad50/\uc804\ud615\ubcc4 \ud3c9\uac00 \uc8fc\uc548\uc810]
 
 \u25a0 \uc11c\ub958\ud3c9\uac00 \uc885\ud569 \uc548\ub0b4 \ubc0f \ud3c9\uac00 \uc808\ucc28
-1. \ube14\ub77c\uc778\ub4dc \ud3c9\uac00: \uc9c0\uc6d0\uc790\uc758 \uc131\uba85, \uc218\ud5d8\ubc88\ud638, \uc18c\uc18d \uace0\uad50 \ub4f1 \ucca0\uc800\ud788 \ube14\ub77c\uc778\ub4dc \ucc98\ub9ac (\uae30\uc7ac \uc2dc \ubd88\uc774\uc775)
+1. \ube14\ub77c\uc778\ub4dc \ud3c9\uac00: \uc9c0\uc6d0\uc790\uc758 성명, 수험번호, \uc18c\uc18d \uace0\uad50 \ub4f1 \ucca0\uc800\ud788 \ube14\ub77c\uc778\ub4dc \ucc98\ub9ac (\uae30\uc7ac \uc2dc \ubd88\uc774\uc775)
 2. \ub2e4\uc218 \ub2e4\ub2e8\uacc4 \ub3c5\ub9bd\ud3c9\uac00: \uc9c0\uc6d0\uc790 1\uba85\ub2f9 2\uba85\uc758 \ud3c9\uac00\uc704\uc6d0\uc774 \ubc30\uc815\ub418\uc5b4 \ub3c5\ub9bd\uc801\uc73c\ub85c \uc11c\ub958\ub97c \ud3c9\uac00\ud558\uba70 \uc2ec\uc758\uc704\uc6d0\ud68c\ub97c \uad6c\uc131\ud574 \ub2e4\ub2e8\uacc4\ub85c \uc6b4\uc601
 3. \ubcf5\ud569\u00b7\uc720\uae30\uc801 \ud3c9\uac00 \ubc29\uc2dd: \ud2b9\uc815 \ud56d\ubaa9\ub9cc \ub5bc\uc5b4 \ubcf4\uc9c0 \uc54a\uace0 \ud559\uad50\uc0dd\ud65c\uae30\ub85d\ubd80 \uc804\uccb4 \ud56d\ubaa9\uc744 \uc720\uae30\uc801\uc73c\ub85c \uc5f0\uacb0\ud558\uc5ec \ud559\uc0dd\uc758 \ub178\ub825\uacfc \uc9c0\uc801 \uc131\uc7a5\uc744 \uc885\ud569\uc801\uc73c\ub85c \uad00\ucc30
 4. \uae30\uc7ac \uae08\uc9c0 \uc0ac\ud56d \ubc0f \uac10\uc810: \ud559\uad50\ud3ed\ub825 \uc870\uce58\uc0ac\ud56d\uc774 \uae30\uc7ac\ub41c \uacbd\uc6b0 \uc11c\ub958 \uc815\uc131\ud3c9\uac00 \uacfc\uc815\uc5d0\uc11c \ucd5c\ub300 50\uc810 \uac10\uc810 \ud639 \ubd80\uc801\uaca9(\ud0c8\ub77d) \ucc98\ub9ac\ub420 \uc218 \uc788\uc73c\ubbc0\ub85c \ub9e4\uc6b0 \uc5c4\uaca9\ud788 \ud3c9\uac00\ud568
@@ -3619,7 +3641,7 @@ document.addEventListener("DOMContentLoaded", () => {
 [\uc544\uc8fc\ub300\ud559\uad50 2026\ud559\ub144\ub3c4 \ud559\uc0dd\ubd80\uc885\ud569\uc804\ud615 \uc11c\ub958\ud3c9\uac00 \uae30\uc900 \ubc0f \uc804\ud615/\ud559\uacfc\ubcc4 \ud3c9\uac00 \uc8fc\uc548\uc810]
 
 \u25a0 \uc11c\ub958\ud3c9\uac00 \uc885\ud569 \uc548\ub0b4 \ubc0f \ubc29\ubc95
-1. \ub2e4\uc218 \ud3c9\uac00\uc790 \ubc0f \ube14\ub77c\uc778\ub4dc \ud3c9\uac00: \uc9c0\uc6d0\uc790 1\uba85\ub2f9 \ubcf5\uc218\uc758 \uc785\ud559\uc0ac\uc815\uad00\uc774 \uac00\ubc88\ud638\ub97c \ubd80\uc5ec\ubc1b\uc544 \ucd9c\uc2e0 \uace0\uad50/\uc131\uba85 \ub4f1\uc744 \ucca0\uc800\ud788 \ube14\ub77c\uc778\ub4dc \ucc98\ub9ac\ud55c \ucc44 \ub3c5\ub9bd\uc801\uc774\uace0 \uc885\ud569\uc801\uc778 \uc815\uc131\ud3c9\uac00 \uc9c4\ud589
+1. \ub2e4\uc218 \ud3c9\uac00\uc790 \ubc0f \ube14\ub77c\uc778\ub4dc \ud3c9\uac00: \uc9c0\uc6d0\uc790 1\uba85\ub2f9 \ubcf5\uc218\uc758 \uc785\ud559\uc0ac\uc815\uad00\uc774 \uac00\ubc88\ud638\ub97c \ubd80\uc5ec\ubc1b\uc544 \ucd9c\uc2e0 \uace0\uad50/성명 \ub4f1\uc744 \ucca0\uc800\ud788 \ube14\ub77c\uc778\ub4dc \ucc98\ub9ac\ud55c \ucc44 \ub3c5\ub9bd\uc801\uc774\uace0 \uc885\ud569\uc801\uc778 \uc815\uc131\ud3c9\uac00 \uc9c4\ud589
 2. \uc720\uae30\uc801 \ud3c9\uac00: \ud2b9\uc815 \ud56d\ubaa9\ub9cc \ubd84\ub9ac\ud574\uc11c \ubcf4\uc9c0 \uc54a\uace0 \ud559\uc0dd\ubd80 \uc804 \ud56d\ubaa9(\uc778\uc801/\ud559\uc801, \ucd9c\uacb0, \ucc3d\uccb4, \uad50\uacfc \uc138\ud2b9, \ud589\ud2b9)\uc744 \uc720\uae30\uc801\uc73c\ub85c \uc5f0\uacb0\ud558\uc5ec \ub178\ub825\uacfc \uc131\uc7a5\uc744 \uc0b4\ud54c
 3. \uae30\uc7ac \uae08\uc9c0 \ubc0f \uac10\uc810 \uc0ac\ud56d: \ud559\uad50\uc0dd\ud65c\uae30\ub85d\ubd80 \uc0c1\uc5d0 '\ud559\uad50\ud3ed\ub825 \uc870\uce58\uc0ac\ud56d(9\ud638 \ub4f1)'\uc774 \uae30\uc7ac\ub41c \uacbd\uc6b0 \ud559\uc0dd\ubd80\uc885\ud569\uc804\ud615\uc18c\uc704\uc6d0\ud68c \ub4f1 \uc2ec\uc758\ub97c \uac70\uccd0 \uc11c\ub958\ud3c9\uac00 \uc2dc \ucd5c\ub300 \ubd80\uc801\uaca9(\ud0c8\ub77d) \ub610\ub294 \uce58\uba85\uc801 \uac10\uc810 \ucc98\ub9ac
 
@@ -3674,7 +3696,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 \u25a0 \uc11c\ub958\ud3c9\uac00 \uc885\ud569 \uc548\ub0b4 \ubc0f \uacf5\ud1b5 \ud3c9\uac00 \ubc29\uc2dd
 1. \ub2e4\uc218 \ub2e4\ub2e8\uacc4 \uc815\uc131\ud3c9\uac00: \uc9c0\uc6d0\uc790 1\uba85\ub2f9 2\uc778\uc758 \uc785\ud559\uc0ac\uc815\uad00\uc774 \ub3c5\ub9bd\uc801/\uc885\ud569\uc801 \uc815\uc131\ud3c9\uac00 \uc2e4\uc2dc (350\uc810 \ub9cc\uc810 \ubc18\uc601).
-2. \uc7ac\ud3c9\uac00 \uc2dc\uc2a4\ud15c \ubc0f \ube14\ub77c\uc778\ub4dc \ud3c9\uac00: \ub450 \uc704\uc6d0 \uac04 \uc810\uc218 \ud3b8\ucc28 \ubc1c\uc0dd \uc2dc \uc81c3\uc758 \ud3c9\uac00\uc704\uc6d0\uc774 \uc7ac\ud3c9\uac00 \uc9c4\ud589. \uc131\uba85, \uc0ac\uc9c4, \uace0\uad50\uba85 \ub4f1\uc740 \ucca0\uc800\ud788 \ube14\ub77c\uc778\ub4dc \ucc98\ub9ac.
+2. \uc7ac\ud3c9\uac00 \uc2dc\uc2a4\ud15c \ubc0f \ube14\ub77c\uc778\ub4dc \ud3c9\uac00: \ub450 \uc704\uc6d0 \uac04 \uc810\uc218 \ud3b8\ucc28 \ubc1c\uc0dd \uc2dc \uc81c3\uc758 \ud3c9\uac00\uc704\uc6d0\uc774 \uc7ac\ud3c9\uac00 \uc9c4\ud589. 성명, \uc0ac\uc9c4, \uace0\uad50\uba85 \ub4f1\uc740 \ucca0\uc800\ud788 \ube14\ub77c\uc778\ub4dc \ucc98\ub9ac.
 3. \uac10\uc810 \ubc0f \ubd80\uc801\uaca9 \uaddc\uc815 (\ub9e4\uc6b0 \uc911\uc694): \ud559\uad50\ud3ed\ub825 \uc870\uce58 \uac74\uc5d0 \ub300\ud574 \uc138\ubc00\ud654\ub41c \uac10\uc810(1\ud638 \uc815\uc131\uac10\uc810, 2~3\ud638 5% \uac10\uc810, 4~5\ud638 10% \uac10\uc810, 6~9\ud638 \ubd88\ud569\uaca9) \uc2dc\ud589.
 4. \uae30\uc7ac \uae08\uc9c0 \ubbf8\ubc18\uc601 \uc8fc\uc758: 2019 \ub300\uc785 \uacf5\uc815\uc131 \uac15\ud654 \ubc29\uc548\uc5d0 \ub530\ub77c \uc11c\ub958\ud3c9\uac00\uc5d0\uc11c \uc790\uc728\ub3d9\uc544\ub9ac, \uac1c\uc778 \ubd09\uc0ac\uc2dc\uac04, \uad50\uc678 \uc218\uc0c1, \ub3c5\uc11c\ub85d, \uc678\ubd80 \uc5b4\ud559, \uc9c4\ub85c\ud76c\ub9dd\ubd84\uc57c \ub4f1\uc744 \uc5b8\uae09 \uc2dc \ubbf8\ubc18\uc601 \ubc0f \ubd88\uc774\uc775 \uac00\ub2a5\ud558\ubbc0\ub85c \uad50\uacfc \uc138\ud2b9 \ub0b4 \uac04\uc811\uc801 \uc5ed\ub7c9 \ub3c4\ucd9c\ub85c \uc120\ud68c.
 
@@ -3761,7 +3783,7 @@ document.addEventListener("DOMContentLoaded", () => {
 \u25a0 \uc11c\ub958\ud3c9\uac00 \uc885\ud569 \uc548\ub0b4 \ubc0f \ubc29\ubc95
 \uad11\uc6b4\ub300\ud559\uad50\ub294 '\ud559\uacfc\ubcc4 \ud544\uc218 \uad8c\uc7a5 \uc774\uc218 \uacfc\ubaa9'\uc744 \uae30\uacc4\uc801\uc73c\ub85c \uc9c0\uc815/\uac15\uc694\ud558\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4. \uadf8 \ub300\uc2e0 \uc9c0\uc6d0\uc790\uac00 \uc18c\uc18d\ub41c \uace0\ub4f1\uad50\uc721 \ud658\uacbd \uc18d\uc5d0\uc11c '\uc9c4\ub85c\ub97c \uc704\ud574 \uc2a4\uc2a4\ub85c \uad50\uacfc\ubaa9 \uccb4\uacc4\ub97c \uae30\ud68d\u00b7\uc120\ud0dd\ud558\uace0, \uadf8 \uc548\uc5d0\uc11c \uc9c0\uc801 \uc131\uc7a5\uc744 \uc774\ub8e8\uc5c8\ub294\uc9c0' \uc815\uc131\uc801\uc73c\ub85c \ud3c9\uac00\ud558\uac8c \ub429\ub2c8\ub2e4.
 - \ub2e4\uc218 \ud3c9\uac00\uc790 \ub3c5\ub9bd\ud3c9\uac00: 1\uc778\ub2f9 2~3\uc778\uc758 \uc785\ud559\uc0ac\uc815\uad00\uc774 \uac1c\ubcc4\uc801/\ub3c5\ub9bd\uc801 \uc815\uc131\ud3c9\uac00 \uc9c4\ud589.
-- \ube14\ub77c\uc778\ub4dc \uc6d0\uce59: \uc131\uba85, \uace0\uad50\uba85 \ub4f1 \uc9c0\uc6d0\uc790\uc758 \ubaa8\ub4e0 \ubc30\uacbd(\ud6c4\uad11\ud6a8\uacfc)\uc744 \ucca0\uc800\ud788 \ucc28\ub2e8.
+- \ube14\ub77c\uc778\ub4dc \uc6d0\uce59: 성명, \uace0\uad50\uba85 \ub4f1 \uc9c0\uc6d0\uc790\uc758 \ubaa8\ub4e0 \ubc30\uacbd(\ud6c4\uad11\ud6a8\uacfc)\uc744 \ucca0\uc800\ud788 \ucc28\ub2e8.
 - \ud559\uad50\ud3ed\ub825 \uc870\uce58\uc0ac\ud56d \ubc18\uc601 (\uce58\uba85\uc801 \ud0c0\uaca9): 1~2\ud638\ub294 \uc815\uc131\ud3c9\uac00 \ubc18\uc601(\uac10\uc810), 3~7\ud638\ub294 \uc804\ud615 \ucd1d\uc810\uc5d0\uc11c 30~100\uc810 \ub300\ud3ed \uac10\uc810, 8~9\ud638\ub294 \ubd80\uc801\uaca9(\ubd88\ud569\uaca9) \ucc98\ub9ac\ub418\ubbc0\ub85c \uc774\ub97c \uc808\ub300\uc801\uc778 \ud398\ub110\ud2f0 \uc9c0\ud45c\ub85c \uc0bc\uc2b5\ub2c8\ub2e4.
 
 \u25a0 \ud575\uc2ec 3\ub300 \ud3c9\uac00 \uc694\uc18c \ubc0f \uc11c\ub958\ud3c9\uac00 \ubd84\uc11d \uae30\uc900
@@ -5738,13 +5760,7 @@ ${fd.content}
   const ivMajorSelect = document.getElementById("iv-major-select");
 
   if (ivUnivSelect && typeof universityData !== "undefined") {
-    // Populate University Dropdown
-    for (const uni of Object.keys(universityData)) {
-      const opt = document.createElement("option");
-      opt.value = uni; opt.textContent = uni;
-      ivUnivSelect.appendChild(opt);
-    }
-    // 면접 특화 데이터 보유 대학 목록 (change 핸들러보다 먼저 선언)
+    // 면접 특화 데이터 보유 대학 목록 (옵션 생성 전 선언)
     const ivUnivDataList = [
       "가천대학교","서울시립대학교","숭실대학교","한국외국어대학교","세종대학교",
       "건국대학교","중앙대학교","경희대학교","서울과학기술대학교","서강대학교",
@@ -5752,23 +5768,30 @@ ${fd.content}
       "인하대학교","아주대학교"
     ];
 
+    // Populate University Dropdown (✅/⚪ 마커 포함)
+    for (const uni of Object.keys(universityData)) {
+      const opt = document.createElement("option");
+      opt.value = uni;
+      opt.textContent = (ivUnivDataList.includes(uni) ? "✅ " : "⚪ ") + uni;
+      ivUnivSelect.appendChild(opt);
+    }
+
     ivUnivSelect.addEventListener("change", () => {
       const ud = universityData[ivUnivSelect.value];
       ivCategorySelect.innerHTML = "<option value='' disabled selected>계열을 선택하세요</option>";
       ivMajorSelect.innerHTML = "<option value='' disabled selected>학과를 선택하세요</option>";
 
-      // 데이터 보유 여부 배지 업데이트
-      const selectedUniv = ivUnivSelect.value;
+      // 배지 업데이트
       const badge = document.getElementById("iv-univ-data-badge");
-      if (badge && selectedUniv) {
-        const hasData = ivUnivDataList.includes(selectedUniv);
+      if (badge && ivUnivSelect.value) {
+        const hasData = ivUnivDataList.includes(ivUnivSelect.value);
         badge.style.display = "block";
         badge.style.background = hasData ? "rgba(80,200,120,0.15)" : "rgba(255,255,255,0.07)";
         badge.style.border = hasData ? "1px solid rgba(80,200,120,0.4)" : "1px solid rgba(255,255,255,0.15)";
-        badge.style.color = hasData ? "#6ee09a" : "#aaa";
+        badge.style.color = hasData ? "#6ee09a" : "#999";
         badge.textContent = hasData
-          ? "✅ 이 대학은 면접 특화 데이터가 반영됩니다"
-          : "⚪ 이 대학은 공통 지침으로 문항이 생성됩니다";
+          ? "✅ 면접 특화 데이터가 반영되어 정밀한 문항이 생성됩니다"
+          : "⚪ 공통 지침 기반으로 문항이 생성됩니다";
       }
 
       if (!ud) return;
@@ -6249,7 +6272,9 @@ ${fd.content}
 [면접 문항 생성 공통 지침 - 필수 반영]
 아래 기준을 10개 문항 전체에 반드시 반영하여 표준화된 양식으로 출력하세요.
 - 각 문항마다 평가 항목과 질문 의도를 명확히 제시하십시오.
-- 각 문항 제목(h3) 바로 아래에 반드시 다음 형식으로 면접 평가 기준을 명시하세요:
+- 각 문항 질문 내용(실제 질문)은 반드시 다음과 같은 HTML 태그를 사용하여 노란색 박스로 강조하세요:
+  <div style="background-color: #fffac9; padding: 15px; border-radius: 8px; color: #333; font-weight: bold; font-size: 1.1em; margin: 15px 0; border-left: 5px solid #fbc02d;"> [면접관이 던지는 진짜 질문 내용] </div>
+- 각 문항 번호(h3)와 노란색 질문 박스 아래에 반드시 다음 형식으로 면접 평가 기준을 명시하세요:
   - **📌 평가 항목**: [예: 전공 적합성, 발전 가능성 등] | **질문 의도**: [이 질문으로 확인하고자 하는 바를 한 문장으로 간략히]
 - 질문의 말투는 실제 면접관이 직접 묻는 듯한 친절하면서도 예리한 구어체(~인가요?, ~했나요?)를 사용하십시오.
 `;
@@ -6286,17 +6311,32 @@ ${univPromptSupplement}
 4. **[초강력 지침] 면접 질문의 말투**: 절대 '~에 대해 설명해 주세요'나 '~에 대한 질문입니다'와 같은 정형화된 문어체/설명조를 쓰지 마세요. 실제 면접장에 서 있는 면접관이 학생에게 직접 "말을 거는" 생생한 구어체(예: "학생, 여기 세특을 보니까 ~ 활동을 했네요? 이 과정에서 가장 고민했던 지점은 뭐였나요?")로 작성하세요. 특히 **[질문 내용]** 부분은 면접관이 입으로 내뱉는 "진짜 질문" 그 자체여야 합니다.
 5. 각 질문에 대해 '생기부 출처'를 적을 때는 **반드시 생기부에 적혀 있는 세특 원문(내용 그대로)을 큰따옴표로 인용하여 명시**하고, 그 아래에 출처 의도와 '면접 모범답안 가이드(어떻게 대답하는 것이 좋은지)'를 함께 제시하세요.
 6. **[필수] 면접관 종합 분석 의견 작성**: 본격적인 문항 생성에 앞서, 학생의 전체 생활기록부와 지원 전공 간의 정합성, 핵심 강점, 그리고 면접에서 중점적으로 검증해야 할 전략적 포인트를 짚어주는 '면접관 종합 분석 의견'을 반드시 작성하세요.
-7. 마크다운 형식으로 가독성 좋게 출력하십시오.
+7. 마크다운 형식으로 가독성 좋게 출력하십시오. 질문 문항과 지원 대학 정보는 아래의 포맷을 반드시 준수하세요.
 
 **형식:**
+🏛️ **지원 정보**
+- **지원 대학**: ${targetUniv}
+- **지원 계열**: ${targetCat}
+- **지원 학과**: ${targetMajor}
+<hr/>
+
 ## 🎤 면접관 종합 분석 의견
 [학생의 학생부 경쟁력, 전공 적합성, 면접 전략 등에 대한 심층적인 분석 내용을 3~4문장으로 서술]
 
-### 면접 질문 1: [이곳에 면접관이 실제 학생에게 건네는 "진짜 질문"을 구어체로 작성]
+### 면접 질문 1 
+<div style="background-color: #fffac9; padding: 15px; border-radius: 8px; color: #333; font-weight: bold; font-size: 1.1em; margin: 15px 0; border-left: 5px solid #fbc02d;"> [이곳에 면접관이 실제 학생에게 건네는 "진짜 질문"을 구어체로 작성] </div>
+
 - **📌 평가 항목**: [예: 진학 의지 및 계열 적합성] | **질문 의도**: [이 질문으로 무엇을 확인하려는지 한 문장으로 간략히]
-- **문항 출처(생기부 원문) 및 의도**: "[(인용) 생기부에 적힌 원문 내용 그대로]" ... [출처 의도]
-- **모범답안 브레인스토밍**: ...
-(10번까지 반복)
+
+- **📄 문항 출처(생기부 원문) & 의도**: 
+  "[(인용) 생기부에 적힌 원문 내용을 큰따옴표로]" 
+  
+  [이 원문이 왜 주목되었는지, 질문의 출처 의도를 2~3문장으로 설명]
+
+- **✅ 모범답안 가이드**: 
+  [학생이 이 질문에 어떻게 대답하면 좋을지, 핵심 포인트와 가능한 답변 방향을 3~4문장으로 제시]
+
+(이 구조를 10번까지 반복)
 `;
 
       try {
@@ -6790,7 +6830,7 @@ ${univPromptSupplement}
           }
         });
 
-        // Post-process: highlight actual question text inside each h3
+        // Post-process: highlight actual question text inside each h3 and organize detailed info
         ivMarkdownResult.querySelectorAll('h3').forEach(h3 => {
           const text = h3.textContent || '';
           const colonIdx = text.indexOf(':');
@@ -6799,45 +6839,13 @@ ${univPromptSupplement}
           const questionText = text.substring(colonIdx + 1).trim(); // actual question
           if (!questionText) return;
 
-          // Check if the next sibling ul has a 📌 평가 항목 li
-          let evalHtml = '';
-          const nextUl = h3.nextElementSibling;
-          if (nextUl && nextUl.tagName === 'UL') {
-            const firstLi = nextUl.querySelector('li:first-child');
-            if (firstLi && firstLi.textContent.includes('📌')) {
-              evalHtml = firstLi.innerHTML;
-              firstLi.remove();
-              if (nextUl.children.length === 0) nextUl.remove();
-            }
-          }
-
-          // Split evalHtml by '|' to create separate pills
-          let evalPills = '';
-          if (evalHtml) {
-            // Remove 📌 icon for badge style
-            const cleanEval = evalHtml.replace('📌', '').trim();
-            const parts = cleanEval.split('|');
-            evalPills = parts.map(p => `
-              <span style="
-                background: rgba(150, 186, 255, 0.1); 
-                border: 1px solid rgba(150, 186, 255, 0.2); 
-                color: rgba(255,255,255,0.85); 
-                padding: 0.25rem 0.75rem; 
-                border-radius: 6px; 
-                font-size: 0.82rem; 
-                font-weight: 500;
-                white-space: nowrap;
-              ">${p.trim()}</span>
-            `).join('');
-          }
-
           // Style h3 as a badge container
           h3.style.cssText = `
             background: none;
             border: none;
             padding: 0;
             margin-top: 2.5rem;
-            margin-bottom: 0.75rem;
+            margin-bottom: 1rem;
             display: flex;
             align-items: center;
             gap: 0.75rem;
@@ -6856,29 +6864,165 @@ ${univPromptSupplement}
               white-space: nowrap; 
               box-shadow: 0 4px 12px rgba(124, 131, 253, 0.3);
             ">${prefix.replace(':', '')}</span>
-            ${evalPills}
           `;
 
-          // Insert a prominent yellow box after h3 for the actual question
-          const box = document.createElement('div');
-          box.style.cssText = `
-            background: #fffde7;
-            border: 2px solid #f59f00;
-            border-radius: 12px;
-            padding: 1.5rem 2rem;
-            margin-bottom: 2.5rem;
-            font-size: 1.25rem;
-            font-weight: 800;
-            color: #4e342e;
-            line-height: 1.7;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.12);
-            letter-spacing: -0.01em;
-            position: relative;
-          `;
+          // Find and extract the yellow question box (created by marked.js)
+          let nextDiv = h3.nextElementSibling;
+          let questionBoxFound = false;
           
-          // Add a "Q." label to make it look like a real question
-          box.innerHTML = `<span style="color:#f59f00; font-size: 1.5rem; font-weight: 900; margin-right: 0.6rem;">Q.</span> ${questionText}`;
-          h3.after(box);
+          if (nextDiv && nextDiv.style && nextDiv.style.background && (nextDiv.style.background.includes('#fffac9') || nextDiv.style.background.includes('fffac9'))) {
+            questionBoxFound = true;
+            nextDiv.style.cssText = `
+              background: #fffde7;
+              border: 2px solid #f59f00;
+              border-radius: 12px;
+              padding: 1.5rem 2rem;
+              margin: 1.5rem 0 2rem 0;
+              font-size: 1.25rem;
+              font-weight: 800;
+              color: #4e342e;
+              line-height: 1.7;
+              box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+              letter-spacing: -0.01em;
+              position: relative;
+            `;
+            if (!nextDiv.innerHTML.includes('Q.')) {
+              nextDiv.innerHTML = `<span style="color:#f59f00; font-size: 1.5rem; font-weight: 900; margin-right: 0.6rem;">Q.</span> ${nextDiv.innerHTML}`;
+            }
+          }
+
+          // Process following ul/li elements for details
+          nextDiv = questionBoxFound ? nextDiv.nextElementSibling : h3.nextElementSibling;
+          if (nextDiv && nextDiv.tagName === 'UL') {
+            const items = Array.from(nextDiv.querySelectorAll('li'));
+            const detailsContainer = document.createElement('div');
+            detailsContainer.style.cssText = `
+              margin-top: 1.5rem;
+              display: flex;
+              flex-direction: column;
+              gap: 1.2rem;
+            `;
+
+            items.forEach(li => {
+              const liHtml = li.innerHTML || '';
+              const liText = li.textContent || '';
+              
+              // Evaluation item with 📌
+              if (liText.includes('📌')) {
+                const evalSection = document.createElement('div');
+                evalSection.style.cssText = `
+                  display: flex;
+                  flex-direction: column;
+                  gap: 0.5rem;
+                `;
+                
+                // Extract content between 📌 and parse by |
+                const content = liHtml.replace('📌', '').trim();
+                const parts = content.split('|');
+                let evalHtml = '<div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">';
+                
+                parts.forEach((part, idx) => {
+                  const cleanPart = part.replace(/<[^>]*>/g, '').trim();
+                  if (cleanPart) {
+                    const iFirstPart = idx === 0;
+                    const label = iFirstPart ? '평가 항목' : '질문 의도';
+                    evalHtml += `
+                      <div style="
+                        background: ${iFirstPart ? 'rgba(150, 186, 255, 0.15)' : 'rgba(200, 150, 255, 0.15)'};
+                        border: 1px solid ${iFirstPart ? 'rgba(150, 186, 255, 0.35)' : 'rgba(200, 150, 255, 0.35)'};
+                        color: ${iFirstPart ? '#96baff' : '#d8a5ff'};
+                        padding: 0.4rem 0.85rem;
+                        border-radius: 6px;
+                        font-size: 0.85rem;
+                        font-weight: 600;
+                      "><strong>${label}:</strong> ${cleanPart}</div>
+                    `;
+                  }
+                });
+                evalHtml += '</div>';
+                
+                evalSection.innerHTML = `
+                  <div style="
+                    font-size: 0.95rem;
+                    font-weight: 700;
+                    color: #96baff;
+                    background: rgba(150, 186, 255, 0.1);
+                    padding: 0.6rem 0.9rem;
+                    border-left: 3px solid #96baff;
+                    border-radius: 4px;
+                  ">📌 평가항목 & 질문의도</div>
+                  ${evalHtml}
+                `;
+                detailsContainer.appendChild(evalSection);
+              }
+
+              // Source/Context section with 📄
+              if (liText.includes('📄') || liText.includes('문항 출처') || liText.includes('생기부')) {
+                const sourceSection = document.createElement('div');
+                sourceSection.style.cssText = `
+                  background: rgba(100, 150, 200, 0.08);
+                  border-left: 3px solid #5a8fb0;
+                  padding: 1rem 1.25rem;
+                  border-radius: 6px;
+                `;
+                
+                // Extract quoted text and context
+                const quotedMatch = liHtml.match(/"([^"]*)"/);
+                let sourceContent = liHtml.replace('📄', '').replace(/^.*?문항 출처/, '').trim();
+                
+                sourceSection.innerHTML = `
+                  <div style="
+                    font-size: 0.95rem;
+                    font-weight: 700;
+                    color: #7eb3d6;
+                    margin-bottom: 0.8rem;
+                  ">📄 문항 출처(생기부 원문) & 의도</div>
+                  <div style="
+                    font-size: 0.9rem;
+                    line-height: 1.7;
+                    color: #d0e8f2;
+                  ">
+                    ${quotedMatch ? `<div style="background: rgba(255,255,255,0.05); padding: 0.8rem; border-radius: 4px; margin-bottom: 0.8rem; border-left: 3px solid #5a8fb0; font-style: italic;">"${quotedMatch[1]}"</div>` : ''}
+                    <div>${sourceContent}</div>
+                  </div>
+                `;
+                detailsContainer.appendChild(sourceSection);
+              }
+
+              // Answer guide section with ✅
+              if (liText.includes('✅') || liText.includes('모범답안')) {
+                const answerSection = document.createElement('div');
+                answerSection.style.cssText = `
+                  background: rgba(100, 200, 100, 0.08);
+                  border-left: 3px solid #5a9d6f;
+                  padding: 1rem 1.25rem;
+                  border-radius: 6px;
+                `;
+                
+                let answerContent = liHtml.replace('✅', '').replace(/^.*?모범답안/, '').trim();
+                
+                answerSection.innerHTML = `
+                  <div style="
+                    font-size: 0.95rem;
+                    font-weight: 700;
+                    color: #7ecb8f;
+                    margin-bottom: 0.8rem;
+                  ">✅ 모범답안 가이드</div>
+                  <div style="
+                    font-size: 0.9rem;
+                    line-height: 1.7;
+                    color: #d0f0d8;
+                  ">${answerContent}</div>
+                `;
+                detailsContainer.appendChild(answerSection);
+              }
+            });
+
+            if (detailsContainer.children.length > 0) {
+              nextDiv.after(detailsContainer);
+            }
+            nextDiv.remove();
+          }
         });
       } catch (err) {
         ivMarkdownResult.innerHTML = `<p style="color:var(--danger)">생성 중 오류 발생: ${err.message}</p>`;
