@@ -768,9 +768,9 @@ textarea::-webkit-scrollbar-thumb {
 }
 
 .modal-container {
-  width: 90%;
-  max-width: 800px;
-  max-height: 85vh;
+  width: 95%;
+  max-width: 1200px;
+  max-height: 90vh;
   overflow-y: auto;
   transform: scale(0.95);
   transition: all 0.3s ease;
@@ -1459,3 +1459,389 @@ textarea::-webkit-scrollbar-thumb {
   margin-top: 0.5rem;
 }
 
+
+/* =============== Mock Exam Analysis =============== */
+.drop-zone {
+  background: rgba(255, 255, 255, 0.03);
+  border: 2px dashed var(--panel-border);
+  border-radius: 16px;
+  padding: 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-bottom: 2rem;
+}
+
+.drop-zone.dragover {
+  background: rgba(124, 131, 253, 0.1);
+  border-color: var(--accent-primary);
+}
+
+.drop-zone svg {
+  width: 40px;
+  height: 40px;
+  color: var(--text-secondary);
+  margin-bottom: 0.75rem;
+}
+
+.upload-text {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+}
+
+.drop-zone .upload-label {
+  color: var(--accent-primary);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.drop-zone .upload-label:hover {
+  text-decoration: underline;
+}
+
+.mock-result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background: rgba(124, 131, 253, 0.1);
+  border-radius: 12px 12px 0 0;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.mock-table-wrapper {
+  overflow-x: auto;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 0 0 12px 12px;
+  max-height: 500px;
+}
+
+.mock-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.mock-table th {
+  position: sticky;
+  top: 0;
+  background: #1a1c2e;
+  color: var(--text-secondary);
+  font-weight: 600;
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--panel-border);
+  white-space: nowrap;
+}
+
+.mock-table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.mock-table tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.mock-table td.subj-name {
+  color: #96baff;
+  font-weight: 600;
+}
+
+.mock-table td.score {
+  font-weight: 700;
+}
+
+.mock-table td.wrong-items {
+  color: #ff6b6b;
+  font-size: 0.75rem;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mock-selectors select {
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.mock-selectors select:focus {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 2px rgba(124, 131, 253, 0.2);
+}
+
+#mockSummaryCard {
+  transition: all 0.3s ease;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.badge-grade {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 700;
+  text-align: center;
+  min-width: 24px;
+}
+
+.grade-1 { background: #ffd700; color: #000; }
+.grade-2 { background: #c0c0c0; color: #000; }
+.grade-3 { background: #cd7f32; color: #fff; }
+.grade-4 { background: #4a4a4a; color: #fff; }
+.grade-5, .grade-6, .grade-7, .grade-8, .grade-9 { background: #2a2a2a; color: #ccc; }
+
+/* 개별 리포트 카드 스타일 */
+.mock-individual-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--panel-border);
+  border-radius: 16px;
+  padding: 1.5rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.mock-individual-card:hover {
+  transform: translateY(-5px);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(124, 131, 253, 0.3);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.mock-individual-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--accent-primary);
+  opacity: 0.5;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.card-subj {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.card-grade-circle {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  font-weight: 800;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+.card-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.8rem;
+  background: rgba(0,0,0,0.2);
+  padding: 1rem;
+  border-radius: 12px;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stat-label {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.card-wrong-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.card-wrong-list {
+  font-size: 0.85rem;
+  color: #ff6b6b;
+  line-height: 1.4;
+  background: rgba(255, 107, 107, 0.1);
+  padding: 0.8rem;
+  border-radius: 8px;
+  border: 1px dashed rgba(255, 107, 107, 0.3);
+}
+
+.card-wrong-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+}
+
+.diff-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255,255,255,0.03);
+  padding: 0.5rem 0.8rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.diff-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #fff;
+  padding: 3px 10px;
+  border-radius: 12px;
+  white-space: nowrap;
+  min-width: 100px;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.diff-items {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  word-break: break-all;
+}
+
+/* =============== Mock Exam Refined Summary UI =============== */
+#summaryGradeBadges {
+  display: flex !important;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  /* 모바일 대응 */
+  @media (max-width: 768px) {
+    justify-content: center;
+  }
+}
+
+.mock-summary-badge {
+  min-width: 85px;
+  height: 65px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  cursor: default;
+  position: relative;
+  overflow: hidden;
+}
+
+.mock-summary-badge::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+  pointer-events: none;
+}
+
+.mock-summary-badge:hover {
+  transform: translateY(-5px) scale(1.03);
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.mock-summary-badge .subj-label {
+  font-size: 0.65rem;
+  font-weight: 500;
+  opacity: 0.8;
+  color: #fff;
+  text-align: center;
+  max-width: 85px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  letter-spacing: -0.02em;
+}
+
+.mock-summary-badge .grade-value {
+  font-size: 1.6rem;
+  font-weight: 850;
+  line-height: 1;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Grade Colors (Sophisticated Palette) */
+.mock-summary-badge.grade-1 {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.25) 0%, rgba(212, 175, 55, 0.05) 100%);
+  border-color: rgba(255, 215, 0, 0.4);
+}
+.mock-summary-badge.grade-1 .grade-value {
+  background: linear-gradient(to bottom, #fff, #ffd700);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.mock-summary-badge.grade-2 {
+  background: linear-gradient(135deg, rgba(192, 192, 192, 0.2) 0%, rgba(130, 130, 130, 0.05) 100%);
+  border-color: rgba(192, 192, 192, 0.3);
+}
+.mock-summary-badge.grade-2 .grade-value {
+  background: linear-gradient(to bottom, #fff, #bdc3c7);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.mock-summary-badge.grade-3 {
+  background: linear-gradient(135deg, rgba(205, 127, 50, 0.2) 0%, rgba(139, 69, 19, 0.05) 100%);
+  border-color: rgba(205, 127, 50, 0.3);
+}
+.mock-summary-badge.grade-3 .grade-value {
+  background: linear-gradient(to bottom, #fff, #cd7f32);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.mock-summary-badge.grade-4, 
+.mock-summary-badge.grade-5,
+.mock-summary-badge.grade-6,
+.mock-summary-badge.grade-7,
+.mock-summary-badge.grade-8,
+.mock-summary-badge.grade-9 {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}

@@ -1,5 +1,6 @@
 
 document.addEventListener("DOMContentLoaded", () => {
+  console.log("=== APP.JS STARTING (v8) ===");
   // Global error handler for debugging
   window.onerror = function(message, source, lineno, colno, error) {
     console.error("Global Error:", message, "at", source, ":", lineno);
@@ -133,6 +134,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const allViews = [viewIndividual, viewPassFail, viewSetech, viewCsat, viewInterview, viewMockExam].filter(Boolean);
 
   function switchTabTo(activeTab, activeView) {
+    console.log("[TabSwitch] Switching to:", activeTab ? activeTab.id : "none", activeView ? activeView.id : "none");
     allTabs.forEach(t => t.classList.remove("active"));
     allViews.forEach(v => {
       v.classList.add("hidden");
@@ -151,29 +153,22 @@ document.addEventListener("DOMContentLoaded", () => {
     if (sidebarIvSettings) {
       if (activeTab && activeTab.id === "tab-interview") {
         sidebarIvSettings.classList.remove("hidden");
-        // Sync student select options from main individual tab
-        const ivStudentSelect = document.getElementById("iv-student-select");
-        const mainStudentSelect = document.getElementById("student-select");
-        if (ivStudentSelect && mainStudentSelect && mainStudentSelect.options.length > 1) {
-          if (ivStudentSelect.options.length !== mainStudentSelect.options.length) {
-            ivStudentSelect.innerHTML = mainStudentSelect.innerHTML;
-          }
-        }
       } else {
         sidebarIvSettings.classList.add("hidden");
       }
     }
   }
 
-  if (tabIndividual) tabIndividual.addEventListener("click", () => switchTabTo(tabIndividual, viewIndividual));
-  if (tabPassFail) tabPassFail.addEventListener("click", () => switchTabTo(tabPassFail, viewPassFail));
-  if (tabSetech) tabSetech.addEventListener("click", () => switchTabTo(tabSetech, viewSetech));
+  if (tabIndividual) tabIndividual.addEventListener("click", () => { console.log("Click: tabIndividual"); switchTabTo(tabIndividual, viewIndividual); });
+  if (tabPassFail) tabPassFail.addEventListener("click", () => { console.log("Click: tabPassFail"); switchTabTo(tabPassFail, viewPassFail); });
+  if (tabSetech) tabSetech.addEventListener("click", () => { console.log("Click: tabSetech"); switchTabTo(tabSetech, viewSetech); });
   if (tabCsat) tabCsat.addEventListener("click", () => {
+    console.log("Click: tabCsat");
     switchTabTo(tabCsat, viewCsat);
     if (typeof window.initCsatChart === "function") window.initCsatChart();
   });
-  if (tabInterview) tabInterview.addEventListener("click", () => switchTabTo(tabInterview, viewInterview));
-  if (tabMockExam) tabMockExam.addEventListener("click", () => switchTabTo(tabMockExam, viewMockExam));
+  if (tabInterview) tabInterview.addEventListener("click", () => { console.log("Click: tabInterview"); switchTabTo(tabInterview, viewInterview); });
+  if (tabMockExam) tabMockExam.addEventListener("click", () => { console.log("Click: tabMockExam"); switchTabTo(tabMockExam, viewMockExam); });
 
   // --- Tab Container Toggle Logic ---
   const toggleTabsBtn = document.getElementById("toggle-tabs-btn");
@@ -246,11 +241,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   if (mockDownloadBtn) mockDownloadBtn.addEventListener('click', exportMockToCSV);
   
-  const mockPrintReportBtn = document.getElementById('mockPrintReportBtn');
-  if (mockPrintReportBtn) {
-      mockPrintReportBtn.addEventListener('click', printMockIndividualReport);
-  }
-  
   // GAS 설정 및 저장 로직
   if (mockGasSettingsBtn && mockGasSettingsArea) {
       mockGasSettingsBtn.addEventListener('click', () => {
@@ -312,25 +302,25 @@ document.addEventListener("DOMContentLoaded", () => {
     mockStudentSelect.addEventListener('change', renderFilteredMockData);
   }
 
-  // ★ 자동 인코딩 판별 읽기 기능 (UTF-8 / EUC-KR 대응)
+  // ★ 강력한 자동 인코딩 판별 읽기 기능 (EUC-KR 대응)
   function readFileAsText(file) {
       return new Promise((resolve, reject) => {
           const reader = new FileReader();
           reader.onload = (e) => {
               const buffer = e.target.result;
               const view = new Uint8Array(buffer);
-
-              // UTF-8 fatal 모드: 잘못된 바이트 시퀀스가 있으면 예외 발생 → EUC-KR로 재시도
-              let text;
-              try {
-                  text = new TextDecoder('utf-8', { fatal: true }).decode(view);
-              } catch (_) {
+              
+              // 먼저 UTF-8로 해석 시도
+              let text = new TextDecoder('utf-8').decode(view);
+              
+              // 한글이 깨지는 유니코드 대체문자()가 다수 발견되거나, 일반적인 모의고사 키워드가 안 보이면 EUC-KR로 다시 해석
+              if (text.includes('') || (!text.includes('성적') && !text.includes('학년') && !text.includes('학교'))) {
                   text = new TextDecoder('euc-kr').decode(view);
               }
               resolve(text);
           };
           reader.onerror = (e) => reject(e);
-          reader.readAsArrayBuffer(file);
+          reader.readAsArrayBuffer(file); 
       });
   }
 
@@ -357,8 +347,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (mockDataByMonth[currentMockMonth].length > 0) {
           showMockResults();
-          // 데이터 영구 저장 추가
-          await StorageManager.save("mockDataByMonth", mockDataByMonth);
       } else {
           alert(`${currentMockMonth}월 추출 자료가 없습니다. 성적표 파일이 맞는지 확인해 주세요.`);
       }
@@ -601,13 +589,11 @@ document.addEventListener("DOMContentLoaded", () => {
       const domainCol    = findCol('영역', '출제', '단원', '범위');
       const stdCol       = findCol('성취기준', '기준', '핵심개념', '학습목표');
       const majorCatCol  = findCol('대분류');
-      const minorCatCol  = findCol('소분류');
-      const materialCol  = findCol('제재');
-      const evalFactorCol = findCol('평가\\s*요소');
-      const remarkCol    = findCol('특이사항');
+      const minorCatCol  = findCol('소분류', '제재');
+      const evalNotesCol = findCol('평가\\s*요소', '특이사항');
       const analysisCol  = findCol('분석\\s*내용');
 
-      const knownCols = new Set([qNumCol, answerCol, pointsCol, rateCol, domainCol, stdCol, majorCatCol, minorCatCol, materialCol, evalFactorCol, remarkCol].filter(i => i !== -1));
+      const knownCols = new Set([qNumCol, answerCol, pointsCol, rateCol, domainCol, stdCol, majorCatCol, evalNotesCol].filter(i => i !== -1));
       const extraCols = headers.map((h, i) => ({ h, i })).filter(({ i }) => !knownCols.has(i) && i !== 0);
 
       const questions = {};
@@ -632,14 +618,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
           // 배점: 평가요소 및 특이사항 컬럼의 () 안 숫자 추출 우선 -> 없으면 배점 컬럼 값 -> 없으면 2
           let 배점val = '';
-          if (evalFactorCol !== -1) {
-              const evalText = get(evalFactorCol);
+          if (evalNotesCol !== -1) {
+              const evalText = get(evalNotesCol);
               const m = evalText.match(/\((\d+)\s*점?\)/);
-              if (m) 배점val = m[1];
-          }
-          if (!배점val && remarkCol !== -1) {
-              const remarkText = get(remarkCol);
-              const m = remarkText.match(/\((\d+)\s*점?\)/);
               if (m) 배점val = m[1];
           }
           if (!배점val) 배점val = get(pointsCol);
@@ -654,9 +635,7 @@ document.addEventListener("DOMContentLoaded", () => {
               성취기준: get(stdCol),
               대분류: get(majorCatCol),
               소분류: get(minorCatCol),
-              제재: get(materialCol),
-              평가요소: get(evalFactorCol),
-              특이사항: get(remarkCol),
+              평가요소: get(evalNotesCol),
               분석내용: get(analysisCol),
           };
 
@@ -717,10 +696,7 @@ document.addEventListener("DOMContentLoaded", () => {
           // 오답 문항 분석
           const analysisItems = wrongItems.map(qNum => {
               const qData = parsed.questions[qNum];
-              return qData ? { 번호: qNum, ...qData } : { 
-                  번호: qNum, 정답: '-', 배점: '-', 전국정답률: '', 영역: '-', 성취기준: '-', 
-                  대분류: '-', 소분류: '-', 제재: '-', 평가요소: '-', 특이사항: '-' 
-              };
+              return qData ? { 번호: qNum, ...qData } : { 번호: qNum, 정답: '-', 배점: '-', 전국정답률: '', 영역: '-', 성취기준: '-' };
           });
 
           showWrongAnswerAnalysisModal(studentRecord, matchedSheet, analysisItems, parsed.extraColNames);
@@ -765,8 +741,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const baseColDefs = [
           { key: '번호',    label: '문항번호', style: 'font-weight:700; color:var(--accent-primary); text-align:center; min-width:80px;' },
           { key: '대분류',  label: '대분류',   style: 'min-width:120px;' },
-          { key: '소분류_제재', label: '소분류 및 제재', style: 'min-width:150px;' },
-          { key: '평가요소_특이사항', label: '평가 요소 및 특이사항', style: 'min-width:200px; white-space:normal;' },
+          { key: '소분류',  label: '소분류 및 제재', style: 'min-width:150px;' },
+          { key: '평가요소', label: '평가 요소 및 특이사항', style: 'min-width:200px; white-space:normal;' },
           { key: '분석내용', label: '분석 내용', style: 'min-width:250px; white-space:normal;' },
           { key: '배점',    label: '배점',     style: 'text-align:center; min-width:60px;' },
       ];
@@ -779,10 +755,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
       let tbodyHtml = analysisItems.map((item, idx) => {
           const rowBg = idx % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent';
-          
-          // 복합 필드 구성 (중복 제거 포함)
-          item.소분류_제재 = [...new Set([item.소분류, item.제재].filter(Boolean))].join(' / ') || '-';
-          item.평가요소_특이사항 = [...new Set([item.평가요소, item.특이사항].filter(Boolean))].join(' / ') || '-';
 
           return '<tr style="background:' + rowBg + ';">' + allCols.map(c => {
               const val = item[c.key] !== undefined ? String(item[c.key]) : '-';
@@ -1018,7 +990,7 @@ document.addEventListener("DOMContentLoaded", () => {
           if (mockTableView) mockTableView.classList.remove('hidden');
           if (mockIndividualView) mockIndividualView.classList.add('hidden');
           
-          const displayData = filtered.slice(0, 100); 
+          const displayData = filtered.slice(0, 500); // 100개 제한에서 500개로 상향 (많은 학생 데이터 대응)
           displayData.forEach(row => {
               const tr = document.createElement('tr');
               tr.innerHTML = `
@@ -1057,12 +1029,11 @@ document.addEventListener("DOMContentLoaded", () => {
                       const isMajor = majorSubjects.some(m => d.과목.includes(m));
                       const isTamgu = !isMajor && !d.과목.includes('한국사');
                       if (isMajor || isTamgu) {
-                        const grade = parseInt(d.등급) || 0;
                         const badge = document.createElement('div');
-                        badge.className = `mock-summary-badge ${grade > 0 ? 'grade-' + grade : ''}`;
+                        badge.style.cssText = "background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; display: flex; flex-direction: column; align-items: center; gap: 2px;";
                         badge.innerHTML = `
-                            <span class="subj-label">${d.과목}</span>
-                            <span class="grade-value">${d.등급 || '-'}</span>
+                            <span style="font-size: 0.7rem; opacity: 0.8;">${d.과목}</span>
+                            <span style="font-size: 1.1rem;">${d.등급 || '-'}</span>
                         `;
                         summaryGradeBadges.appendChild(badge);
                       }
@@ -1125,8 +1096,14 @@ document.addEventListener("DOMContentLoaded", () => {
       for (let row of data) {
           if (!Array.isArray(row)) continue;
           let rowStr = row.join("").replace(/\s/g, "");
-          if (rowStr.includes("성적통지표") || rowStr.includes("학교명") || (rowStr.includes("학년") && rowStr.includes("반") && rowStr.includes("성명"))) {
-              if (currentChunk.length > 5) studentChunks.push(currentChunk);
+          
+          // 더 구체적인 분할 조건: 성적통지표와 (학생용)이 동시에 있거나, 학교명/성명 복합 조건
+          let isHeader = (rowStr.includes("성적통지표") && rowStr.includes("학생용")) || 
+                         (rowStr.includes("학교명") && rowStr.includes("실시일")) ||
+                         (rowStr.includes("학년") && rowStr.includes("반") && rowStr.includes("성명"));
+
+          if (isHeader && currentChunk.length > 5) { // 최소 길이 보장 (푸터 텍스트 오탐 방지)
+              studentChunks.push(currentChunk);
               currentChunk = [row];
           } else {
               currentChunk.push(row);
@@ -1135,40 +1112,61 @@ document.addEventListener("DOMContentLoaded", () => {
       if (currentChunk.length > 5) studentChunks.push(currentChunk);
       if (studentChunks.length === 0 && data.length > 0) studentChunks = [data];
 
+      console.log(`[extractMockStudentData] Total chunks to process: ${studentChunks.length}`);
+
       let allResults = [];
 
       // 2. 블록별 데이터 추출
       for (let chunk of studentChunks) {
-          let studentInfo = {학년: '', 반: '', 번호: '', 성명: ''};
-
-          // 학생 기본 정보
-          for (let i = 0; i < Math.min(15, chunk.length); i++) {
-              if (!chunk[i] || !Array.isArray(chunk[i])) continue;
-              let rClean = chunk[i].map(x => String(x).trim()).filter(x => x);
-              if (rClean.length >= 5) {
-                  for (let j = 0; j <= rClean.length - 4; j++) {
-                      if (/^\d+$/.test(rClean[j]) && /^\d+$/.test(rClean[j+1]) && /^\d+$/.test(rClean[j+2])) {
-                          if (!studentInfo.학년) {
-                              studentInfo.학년 = rClean[j];
-                              studentInfo.반 = rClean[j+1];
-                              studentInfo.번호 = rClean[j+2];
-                              studentInfo.성명 = rClean[j+3];
-                          }
-                          break;
+          let studentInfo = {학년: '3', 반: '', 번호: '', 성명: ''}; // 학년은 고3 기본값
+          
+          // 학생 기본 정보 추출 (1~30행 사이 집중 탐색)
+          for (let i = 0; i < Math.min(30, chunk.length); i++) {
+              let r = chunk[i];
+              let rowString = r.join("").replace(/\s/g, "");
+              
+              if (rowString.includes("학년") || rowString.includes("성명") || rowString.includes("학교명")) {
+                  let rNext = chunk[i+1] || [];
+                  
+                  // 방식 1: 헤더 인덱스 매칭
+                  let gIdx = r.findIndex(c => String(c).includes("학년"));
+                  let cIdx = r.findIndex(c => String(c).includes("반"));
+                  let nIdx = r.findIndex(c => String(c).includes("번호"));
+                  let sIdx = r.findIndex(c => String(c).includes("성명"));
+                  
+                  if (rNext.length > 0) {
+                      if (gIdx !== -1 && String(rNext[gIdx]).trim()) studentInfo.학년 = String(rNext[gIdx]).trim();
+                      if (cIdx !== -1 && String(rNext[cIdx]).trim()) studentInfo.반 = String(rNext[cIdx]).trim();
+                      if (nIdx !== -1 && String(rNext[nIdx]).trim()) studentInfo.번호 = String(rNext[nIdx]).trim();
+                      if (sIdx !== -1 && String(rNext[sIdx]).trim()) studentInfo.성명 = String(rNext[sIdx]).trim();
+                  }
+                  
+                  // 방식 2: 패턴 매칭 (숫자, 숫자, 숫자, 문자열)
+                  if (!studentInfo.성명 || studentInfo.성명.length < 2) {
+                      let clean = r.map(x => String(x).trim()).filter(x => x);
+                      if (clean.length >= 4) {
+                        for(let j=0; j<=clean.length-4; j++) {
+                            if(/^\d+$/.test(clean[j]) && /^\d+$/.test(clean[j+1]) && /^\d+$/.test(clean[j+2])) {
+                                studentInfo.학년 = clean[j];
+                                studentInfo.반 = clean[j+1];
+                                studentInfo.번호 = clean[j+2];
+                                studentInfo.성명 = clean[j+3];
+                                break;
+                            }
+                        }
                       }
                   }
+                  if (studentInfo.성명 && studentInfo.성명.length >= 2) break;
               }
           }
 
           let currentSubjectScores = {};
           let itemAnalysis = {};
           let rateAnalysis = {};
-
+          
           // 가상 그리드 매핑용 변수
-          let colToQNumMap = {}; // columnIndex -> questionNumber (영역\문항 행에서만 구축)
-          let subjectColToQMap = {}; // subjName -> { colIdx: qNum } (답안 행 등에서 동적으로 보충)
-          let colToSubjMap = []; // 점수 행용 과목 맵
-          let answerSubjMap = []; // 답안 섹션용 과목 맵 (채점결과/정답률 귀속에 사용)
+          let colToQNumMap = {}; // columnIndex -> questionNumber
+          let colToSubjMap = []; // [{ colIdx, name }] - sorted by colIdx
 
           for (let i = 0; i < chunk.length; i++) {
               let row = chunk[i];
@@ -1179,66 +1177,25 @@ document.addEventListener("DOMContentLoaded", () => {
               let rowStrRaw = row.join("");
               let rowStrNoSpace = rowStrRaw.replace(/\s/g, "");
 
-              // [0] 문항 번호 행 감지: 숫자가 10개 이상, 최댓값 > 5(답안 선택지 1~5 제외), 대부분 순차 증가
+              // [0] 가상 그리드 헤더 업데이트 (문항 번호 또는 과목명 감지)
+              // 문항 번호 행 감지 (숫자가 연속해서 많이 나오는 행)
               let numCells = row.map(c => String(c).trim()).filter(c => /^\d+$/.test(c));
               if (numCells.length >= 10) {
-                  let nums = numCells.map(Number);
-                  const maxNum = Math.max(...nums);
-                  let sequentialCount = 0;
-                  for (let k = 1; k < nums.length; k++) {
-                      if (nums[k] === nums[k-1] + 1) sequentialCount++;
-                  }
-                  // 최댓값이 5 초과(답안 선택지 행 필터)이고, 거의 대부분 순차 증가해야 문항 헤더로 인정
-                  if (maxNum > 5 && sequentialCount >= numCells.length - 3) {
-                      row.forEach((cell, idx) => {
-                          let val = String(cell).trim();
-                          if (/^\d+$/.test(val)) colToQNumMap[idx] = parseInt(val);
-                      });
-                  }
-              }
-
-              // [1] 답안 행에서 과목명 추출 → answerSubjMap 갱신 및 과목별 매핑 처리
-              if (rowStrNoSpace.includes('답안') && !rowStrNoSpace.includes('정답') && !rowStrNoSpace.includes('채점')) {
-                  let firstCellVal = String(row[0] || '').replace(/\s/g, '');
-                  let newAnswerSubj = null;
-                  if (firstCellVal.includes('국어')) {
-                      let m = firstCellVal.match(/\((.*?)\)/);
-                      newAnswerSubj = m ? `국어(${m[1]})` : "국어";
-                  } else if (firstCellVal.includes('수학')) {
-                      let m = firstCellVal.match(/\((.*?)\)/);
-                      newAnswerSubj = m ? `수학(${m[1]})` : "수학";
-                  } else if (firstCellVal.includes('영어')) {
-                      newAnswerSubj = "영어";
-                  } else if (firstCellVal.includes('한국사')) {
-                      newAnswerSubj = "한국사";
-                  }
-                  if (newAnswerSubj) {
-                      answerSubjMap = [{ colIdx: 0, name: newAnswerSubj }];
-
-                      // 수학 과목의 16~30번 주관식/특수 영역 대응: 답안 행에 포함된 문항 번호(16~30)를 동적 매핑
-                      if (newAnswerSubj.includes('수학')) {
-                          if (!subjectColToQMap[newAnswerSubj]) subjectColToQMap[newAnswerSubj] = {};
-                          row.forEach((cell, idx) => {
-                              let val = String(cell).trim();
-                              if (/^\d+$/.test(val)) {
-                                  let num = parseInt(val);
-                                  // 16~30번 번호만 라벨로 인정 (1~5번 등은 선택지 답변일 가능성이 높으므로 제외)
-                                  if (num >= 16 && num <= 30) subjectColToQMap[newAnswerSubj][idx] = num;
-                              }
-                          });
+                  row.forEach((cell, idx) => {
+                      let val = String(cell).trim();
+                      if (/^\d+$/.test(val)) {
+                          colToQNumMap[idx] = parseInt(val);
                       }
-                  }
+                  });
               }
 
-              // [2] 과목명 감지 (점수 행 및 탐구 과목 행)
+              // 과목 헤더 행 감지 (국어, 수학, 영어, 탐구 과목명 감지)
+              // 주의: '답안', '정답' 등이 포함된 행은 제외 (걔네도 과목명이 앞에 붙는 경우가 있음)
               if (!/답안|정답|채점결과|정답률/.test(rowStrNoSpace)) {
-                  let badWords = /배점|득점|학급|학교|전국|등급|원점수|표준점수|백분위|영역|문항|성명|번호|학년|반|실시일|학교명|기타참고|오류코드|보충학습|과목|응시자|인원|비율|범위|석차|세부|계산|이해|추론|읽기|듣기|말하기|쓰기|창의|비판|사실|적용|어휘|개념|문제해결/;
                   let foundSubjsInRow = [];
                   row.forEach((cell, idx) => {
                       let val = String(cell).replace(/\s/g, "");
                       if (!val || val.length < 2) return;
-                      // 숫자 패턴(범위·분수·소수·숫자+괄호) 필터
-                      if (/[~\/]/.test(val) || /^\d/.test(val) || /\d+\.\d+/.test(val) || /\d+\(/.test(val)) return;
 
                       let subj = null;
                       if (val.includes('국어')) {
@@ -1250,75 +1207,73 @@ document.addEventListener("DOMContentLoaded", () => {
                       } else if (val.includes('영어')) subj = "영어";
                       else if (val.includes('한국사')) subj = "한국사";
                       else {
+                          // 탐구 과목 및 기타 과목명 감지
+                          let badWords = /배점|득점|학급|학교|전국|등급|원점수|표준점수|백분위|영역|문항|성명|번호|학년|반|실시일|학교명|기타참고|오류코드|보충학습/;
                           if (!badWords.test(val) && !/^\d+$/.test(val) && val.length >= 2) {
                               subj = val.replace(/^(사회|과학|공통|직업)?탐구/g, "");
-                              if (subj.length < 2) subj = null;
+                              if (subj.length < 2) subj = val; // "탐구" 가 안 붙은 경우 그냥 사용
                           }
                       }
 
-                      if (subj) foundSubjsInRow.push({ colIdx: idx, name: subj });
+                      if (subj) {
+                          foundSubjsInRow.push({ colIdx: idx, name: subj });
+                      }
                   });
 
                   if (foundSubjsInRow.length > 0) {
+                      // 기존 맵 유지하면서 새로운 발견된 과목들로 업데이트 (완전 초기화 대신 겹치지 않으면 누적 고려 가능하나 일단 초기화)
                       colToSubjMap = foundSubjsInRow.sort((a, b) => a.colIdx - b.colIdx);
-                      // 탐구 과목 행(답안 섹션) 감지: rowStrNoSpace에 '과목' 포함
-                      if (rowStrNoSpace.includes('과목')) {
-                          answerSubjMap = foundSubjsInRow
-                              .filter(s => s.name.length >= 2)
-                              .sort((a, b) => a.colIdx - b.colIdx);
-                      }
                   }
               }
 
-              // [A] 성적 수치 추출 (원점수, 표준점수, 백분위, 등급)
+              // [A] 성적 수치 추출 (원점수, 표준점수 등)
               let maxScoreIdx = row.findIndex(val => String(val).trim() === '100' || String(val).trim() === '50');
               if (maxScoreIdx !== -1 && !/답안|정답|채점|결과|비율/.test(rowStrNoSpace)) {
                   let subjName = "";
-                  for (let k = colToSubjMap.length - 1; k >= 0; k--) {
-                      if (colToSubjMap[k].colIdx <= maxScoreIdx) {
-                          subjName = colToSubjMap[k].name;
-                          break;
+                  
+                  // 1. 현재 행 자체에서 과목명이 있는지 먼저 확인 (탐구 과목 대비)
+                  for (let idx = 0; idx < maxScoreIdx; idx++) {
+                      let val = String(row[idx]).replace(/\s/g, "");
+                      if (val && !/영역|선택|탐구|과목/.test(val) && val.length >= 2) {
+                          // 혹시 과목명 리스트에 있는 이름인지 확인하면 좋지만, 일단 텍스트 길이와 패턴으로 판단
+                          if (!/^\d+$/.test(val)) { subjName = val; break; }
                       }
                   }
 
+                  // 2. 행에 없으면 기존 맵에서 왼쪽 방향으로 가장 가까운 것 찾기
+                  if (!subjName) {
+                    for (let k = colToSubjMap.length - 1; k >= 0; k--) {
+                        if (colToSubjMap[k].colIdx <= maxScoreIdx) {
+                            subjName = colToSubjMap[k].name;
+                            break;
+                        }
+                    }
+                  }
+                  
                   if (subjName && !currentSubjectScores[subjName]) {
                       try {
-                          // rawScore 위치 파악: +5 → +4 → +1 순서로 숫자 확인
-                          let rawScoreOffset = 1;
-                          let rawScore = '';
-                          if (/^\d+$/.test(String(row[maxScoreIdx + 5] || '').trim())) {
-                              rawScoreOffset = 5; rawScore = String(row[maxScoreIdx + 5]).trim();
-                          } else if (/^\d+$/.test(String(row[maxScoreIdx + 4] || '').trim())) {
-                              rawScoreOffset = 4; rawScore = String(row[maxScoreIdx + 4]).trim();
-                          } else {
-                              rawScoreOffset = 1; rawScore = String(row[maxScoreIdx + 1] || '').trim();
-                          }
-                          if (!/^\d+$/.test(rawScore)) rawScore = "";
-
-                          let stdScore = "";
-                          let percentile = "";
-                          let grade = "";
-
-                          // rawScore 위치 이후부터 표준점수·백분위·등급 탐색
-                          for (let idx = maxScoreIdx + rawScoreOffset + 1; idx < Math.min(maxScoreIdx + 35, row.length); idx++) {
-                              let val = String(row[idx]).trim();
-                              if (!val) continue;
-
-                              if (!stdScore && /^\d{2,3}$/.test(val) && parseInt(val) <= 200) {
-                                  stdScore = val;
-                              } else if (!percentile && /^\d+\.\d+$/.test(val) && parseFloat(val) <= 100) {
-                                  percentile = val;
-                              } else if (!grade && /^[1-9]$/.test(val)) {
-                                  grade = val;
-                              } else if (!grade) {
-                                  // 영어·한국사: "원점수에 의한 등급 (X)" 패턴에서 등급 추출
-                                  let noSpace = val.replace(/\s/g, '');
-                                  let gm = noSpace.match(/원점수에의한등급\(([1-9])\)/);
-                                  if (gm) grade = gm[1];
+                          // 원점수 위치 찾기 (배정된 열이 일정하지 않을 수 있으므로 '득점' 헤더나 숫자 패턴 활용)
+                          let rawScore = String(row[maxScoreIdx + 5] || row[maxScoreIdx + 4] || row[maxScoreIdx + 1]).trim();
+                          if (!/^\d+$/.test(rawScore)) {
+                              // 주변 탐색
+                              for(let i=maxScoreIdx+1; i<maxScoreIdx+10; i++) {
+                                if(/^\d{1,3}$/.test(String(row[i]).trim())) { rawScore = String(row[i]).trim(); break; }
                               }
                           }
 
-                          if (rawScore) {
+                          if (/^\d+$/.test(rawScore)) {
+                              let stdScore = "";
+                              let percentile = "";
+                              let grade = "";
+
+                              for (let idx = maxScoreIdx + 1; idx < Math.min(maxScoreIdx + 30, row.length); idx++) {
+                                  let val = String(row[idx]).trim();
+                                  if (!val) continue;
+                                  
+                                  if (!stdScore && /^\d{2,3}$/.test(val) && parseInt(val) <= 200) stdScore = val;
+                                  else if (!percentile && val.includes('.') && parseFloat(val) <= 100) percentile = val;
+                                  else if (!grade && /^[1-9]$/.test(val)) grade = val;
+                              }
                               currentSubjectScores[subjName] = { 원점수: rawScore, 표준점수: stdScore, 전국백분위: percentile, 등급: grade };
                           }
                       } catch(e){}
@@ -1330,85 +1285,66 @@ document.addEventListener("DOMContentLoaded", () => {
               let isRate = rowStrNoSpace.includes("정답률");
 
               if (isOx || isRate) {
-                  // 답안 섹션 과목 맵 우선 사용, 없으면 점수 섹션 맵 폴백
-                  let activeSubjMap = answerSubjMap.length > 0 ? answerSubjMap : colToSubjMap;
-
                   row.forEach((cell, idx) => {
                       let val = String(cell).trim().toUpperCase();
                       if (!val) return;
 
+                      // 현재 열 인덱스로 과목과 문항 번호 알아내기
                       let subj = null;
                       let baseColIdx = -1;
-                      for (let k = activeSubjMap.length - 1; k >= 0; k--) {
-                          if (activeSubjMap[k].colIdx <= idx) {
-                              subj = activeSubjMap[k].name;
-                              baseColIdx = activeSubjMap[k].colIdx;
+                      for (let k = colToSubjMap.length - 1; k >= 0; k--) {
+                          if (colToSubjMap[k].colIdx <= idx) {
+                              subj = colToSubjMap[k].name;
+                              baseColIdx = colToSubjMap[k].colIdx;
                               break;
                           }
                       }
 
-                        if (subj) {
-                            let rawQNum = null;
-                            
-                            // [수정] 수학 과목은 헤더 행(colToQNumMap)보다 데이터 행(subjectColToQMap)의 번호 레이블을 우선적으로 신뢰
-                            if (subj.includes('수학')) {
-                                // 현재 위치부터 왼쪽으로 5칸까지 탐색하여 16~30번 레이블을 찾음
-                                for (let offset = 0; offset <= 5; offset++) {
-                                    if (idx - offset < 0) break;
-                                    let dynQ = subjectColToQMap[subj] && subjectColToQMap[subj][idx - offset];
-                                    if (dynQ && dynQ >= 16 && dynQ <= 30) {
-                                        rawQNum = dynQ;
-                                        break;
-                                    }
-                                }
-                                // 16~30번을 못 찾았다면 1~15번은 헤더 매핑 사용
-                                if (!rawQNum) rawQNum = colToQNumMap[idx];
-                            } else {
-                                // 일반 과목은 전역 헤더 매핑 우선
-                                rawQNum = (subjectColToQMap[subj] && subjectColToQMap[subj][idx]) || colToQNumMap[idx];
-                            }
+                      if (subj) {
+                          let rawQNum = colToQNumMap[idx];
+                          
+                          // 중요: 탐구 과목(사회/과학)일 경우, 문항 번호가 중간에 1번부터 다시 시작할 가능성이 큼
+                          // 만약 colToQNumMap[idx]가 없거나 이상하다면?
+                          // 탐구 과목의 경우 해당 과목의 baseColIdx 이후부터 순차적으로 1, 2, 3... 번호를 매기는 것이 안전한 경우가 있음
+                          
+                          let finalQNum = 0;
+                          if (colToQNumMap[idx]) {
+                              let startQNum = 1;
+                              // 해당 과목 구간에서 발견되는 첫 번째 문항 번호를 기준점으로 삼음
+                              for (let k = baseColIdx; k <= idx; k++) {
+                                  if (colToQNumMap[k]) {
+                                      startQNum = colToQNumMap[k];
+                                      break;
+                                  }
+                              }
+                              // 탐구 과목의 경우 rawQNum이 1-20 범위를 벗어나면 (예: 21, 22...) 보정
+                              finalQNum = rawQNum - (startQNum - 1);
+                              
+                              // 만약 보정 후에도 과목별 문항 범위를 넘어서면 (탐구는 20문항), baseColIdx부터의 상대적 위치로 재계산 시도
+                              if (subj.includes("정치") || subj.includes("문화") || subj.includes("윤리") || subj.includes("지리") || subj.includes("역사") || subj.includes("물리") || subj.includes("화학") || subj.includes("생명") || subj.includes("지구")) {
+                                  // 탐구 과목 전용 보정: 1-20 범위를 유지하도록 강제
+                                  if (finalQNum > 20 || finalQNum <= 0) {
+                                      // 문항 번호가 있는 열들만 모아서 순번 계산
+                                      let qCols = [];
+                                      for (let k = baseColIdx; k < row.length; k++) {
+                                          if (colToQNumMap[k]) qCols.push(k);
+                                      }
+                                      let qIdx = qCols.indexOf(idx);
+                                      if (qIdx !== -1) finalQNum = qIdx + 1;
+                                  }
+                              }
+                          }
 
-                            if (rawQNum) {
-                                // 탐구 및 선택 과목 대비: 국어/수학/영어/한국사가 아니면 탐구로 간주하여 오프셋 적용
-                                let isCore = /국어를?|수학|영어를?|한국사/.test(subj);
-                                let startQNum = 1;
-                                if (!isCore) {
-                                    for (let k = baseColIdx; k < row.length; k++) {
-                                        if (colToQNumMap[k] && colToQNumMap[k] > 0) { 
-                                            startQNum = colToQNumMap[k]; 
-                                            break; 
-                                        }
-                                    }
-                                }
-                                let finalQNum = rawQNum - (startQNum - 1);
-                                
-                                // 계산된 번호가 유효 범위를 벗어난 경우(음수/0 등) 무시
-                                if (finalQNum <= 0) return;
-
-                                // 탐구 과목 강제 보정: 21~40번 등으로 추출되는 경우 1~20번으로 회귀
-                                if (!isCore && finalQNum > 20) {
-                                    finalQNum = (finalQNum - 1) % 20 + 1;
-                                }
-
-                                // 과목별 문항 수 제한 적용
-                                let maxQ = 50; 
-                                if (subj.includes('수학')) maxQ = 30;
-                                else if (!isCore || subj.includes('한국사')) maxQ = 20;
-                                else if (subj.includes('국어') || subj.includes('영어')) maxQ = 45;
-
-                                if (finalQNum <= maxQ) {
-                                    if (isOx && val === 'X') {
-                                        if (!itemAnalysis[subj]) itemAnalysis[subj] = [];
-                                        if (!itemAnalysis[subj].includes(finalQNum)) {
-                                            itemAnalysis[subj].push(finalQNum);
-                                        }
-                                    } else if (isRate && /^[A-E]$/.test(val)) {
-                                        if (!rateAnalysis[subj]) rateAnalysis[subj] = {};
-                                        rateAnalysis[subj][finalQNum] = val;
-                                    }
-                                }
-                            }
-                        }
+                          if (finalQNum > 0) {
+                              if (isOx && val === 'X') {
+                                  if (!itemAnalysis[subj]) itemAnalysis[subj] = [];
+                                  itemAnalysis[subj].push(finalQNum);
+                              } else if (isRate && /^[A-E]$/.test(val)) {
+                                  if (!rateAnalysis[subj]) rateAnalysis[subj] = {};
+                                  rateAnalysis[subj][finalQNum] = val;
+                              }
+                          }
+                      }
                   });
               }
           }
@@ -1418,7 +1354,7 @@ document.addEventListener("DOMContentLoaded", () => {
               let scoreData = currentSubjectScores[subj];
               let wrongs = itemAnalysis[subj] || [];
               let rates = rateAnalysis[subj] || {};
-
+              
               let wrongWithRates = wrongs.sort((a,b)=>a-b).map(q => {
                   let r = rates[q] || "알수없음";
                   return `${q}(${r})`;
@@ -1489,262 +1425,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.setAttribute("href", url);
-      link.setAttribute("download", `모의고사_분석결과_${currentMockMonth}월_${currentMockMonth}월.csv`);
+      link.setAttribute("download", "모의고사_분석결과_통합.csv");
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-  }
-
-  async function printMockIndividualReport() {
-      const selectedStudent = mockStudentSelect ? mockStudentSelect.value : 'all';
-      if (selectedStudent === 'all') {
-          alert("학생을 먼저 선택해주세요.");
-          return;
-      }
-      
-      const [num, name] = selectedStudent.split('_');
-      const allData = mockDataByMonth[currentMockMonth] || [];
-      const studentData = allData.filter(d => d.번호 === num && d.성명 === name);
-      
-      if (studentData.length === 0) {
-          alert("해당 학생의 데이터가 없습니다.");
-          return;
-      }
-
-      const btn = document.getElementById('mockPrintReportBtn');
-      const originalHtml = btn ? btn.innerHTML : '';
-      if (btn) {
-          btn.disabled = true;
-          btn.innerHTML = '<span>⏳</span> 데이터를 불러오는 중...';
-      }
-      
-      try {
-          const first = studentData[0];
-          const gasUrl = localStorage.getItem(`mockGasUrl_${currentMockMonth}`);
-          
-          let subjectsHtml = '';
-          
-          for (const d of studentData) {
-              let wrongHtml = '';
-              let detailedTableHtml = '';
-              
-              const rawWrongStr = d.오답문항_정답률;
-              // 리포트 생성 단계에서도 중복을 철저히 제거 (Set 활용)
-              const wrongItems = Array.from(new Set(
-                  (d.오답문항 || '').split(',')
-                  .map(n => parseInt(n.trim()))
-                  .filter(n => !isNaN(n) && n > 0)
-              )).sort((a, b) => a - b);
-
-              // 1. 기본 정답률별 요약
-              if (!rawWrongStr || rawWrongStr === '알수없음' || rawWrongStr.trim() === '') {
-                  wrongHtml = '<p style="color:#888; font-size:0.9rem;">오답 정보가 없습니다.</p>';
-              } else {
-                  const groups = {
-                      'E': { label: '매우 어려움 (0-20%)', items: [], color: '#ff4d4d' },
-                      'D': { label: '어려움 (20-40%)', items: [], color: '#ff8533' },
-                      'C': { label: '보통 (40-60%)', items: [], color: '#ffc34d' },
-                      'B': { label: '쉬움 (60-80%)', items: [], color: '#a3cf62' },
-                      'A': { label: '매우 쉬움 (80-100%)', items: [], color: '#5cb85c' },
-                      'ETC': { label: '기타', items: [], color: '#888' }
-                  };
-                  
-                  const parts = rawWrongStr.split(',').map(p => p.trim());
-                  parts.forEach(p => {
-                      const match = p.match(/(\d+)\((.)\)/);
-                      if (match) {
-                          const qNum = match[1];
-                          const diff = match[2].toUpperCase();
-                          if (groups[diff]) groups[diff].items.push(qNum);
-                          else groups['ETC'].items.push(qNum);
-                      } else {
-                          groups['ETC'].items.push(p);
-                      }
-                  });
-                  
-                  ['E', 'D', 'C', 'B', 'A', 'ETC'].forEach(key => {
-                      const g = groups[key];
-                      if (g.items.length > 0) {
-                          wrongHtml += `
-                              <div style="margin-bottom:0.4rem; display:flex; align-items:center; gap:0.5rem;">
-                                  <span style="display:inline-block; padding:2px 8px; border-radius:4px; background:${g.color}; color:#fff; font-size:0.75rem; font-weight:bold; min-width:110px; text-align:center;">${g.label}</span>
-                                  <span style="font-size:0.85rem; color:#333;">${g.items.join(', ')}</span>
-                              </div>
-                          `;
-                      }
-                  });
-              }
-
-              // 2. 스프레드시트 상세 분석 (GAS 연동 시)
-              if (gasUrl && wrongItems.length > 0) {
-                  try {
-                      // 시트 목록 확인 및 매칭
-                      if (mockSheetNames.length === 0) await connectToGoogleSheet();
-                      const matchedSheet = matchSubjectToSheet(d.과목);
-                      
-                      if (matchedSheet) {
-                          const sheetRows = await fetchSubjectSheetData(matchedSheet);
-                          const parsed = parseSheetData(sheetRows);
-                          
-                          if (parsed) {
-                              // 대분류별 그룹화
-                              const catMap = {};
-                              wrongItems.forEach(qNum => {
-                                  const q = parsed.questions[qNum];
-                                  const cat = (q && q.대분류) ? q.대분류 : '미분류';
-                                  if (!catMap[cat]) catMap[cat] = [];
-                                  catMap[cat].push(qNum);
-                              });
-                              const catEntries = Object.entries(catMap).sort((a,b) => b[1].length - a[1].length);
-
-                              const categorySummaryHtml = `
-                                  <div style="margin-top:1.2rem; margin-bottom:1.5rem; break-inside: avoid;">
-                                      <div style="font-size:0.9rem; font-weight:bold; color:#725e9c; margin-bottom:0.6rem; display:flex; align-items:center; gap:0.4rem;">
-                                          <span>📊</span> 대분류별 오답 문항 요약
-                                      </div>
-                                      <div style="background:#fcfaff; border:1px solid #e0d9f0; padding:1.2rem; border-radius:10px; border-left:4px solid #725e9c;">
-                                          ${catEntries.map(([cat, qNums]) => `
-                                              <div style="margin-bottom:0.5rem; display:flex; align-items:start; gap:0.8rem;">
-                                                  <span style="font-weight:bold; color:#5a4a8c; font-size:0.9rem; min-width:100px; display:inline-block;">[${cat}]</span>
-                                                  <span style="font-size:0.9rem; color:#333;">${qNums.join(', ')}</span>
-                                              </div>
-                                          `).join('')}
-                                      </div>
-                                  </div>
-                              `;
-
-                              detailedTableHtml = categorySummaryHtml + `
-                                  <div style="margin-top:1.5rem;">
-                                      <div style="font-size:0.9rem; font-weight:bold; color:#3c3fa0; margin-bottom:0.6rem; display:flex; align-items:center; gap:0.4rem;">
-                                          <span>📋</span> 문항별 상세 오답 분석
-                                      </div>
-                                      <table style="width:100%; border-collapse:collapse; font-size:0.8rem; text-align:left; border:1px solid #ddd;">
-                                          <thead>
-                                              <tr style="background:#f0f2f5;">
-                                                  <th style="padding:8px; border:1px solid #ddd; width:40px;">번호</th>
-                                                  <th style="padding:8px; border:1px solid #ddd; width:80px;">대분류</th>
-                                                  <th style="padding:8px; border:1px solid #ddd; width:120px;">소분류</th>
-                                                  <th style="padding:8px; border:1px solid #ddd;">평가요소</th>
-                                              </tr>
-                                          </thead>
-                                          <tbody>
-                                              ${wrongItems.map(qNum => {
-                                                  const q = parsed.questions[qNum] || { 번호: qNum, 정답:'-', 영역:'-', 성취기준:'-', 대분류:'-', 소분류:'-', 제재:'-', 평가요소:'-', 특이사항:'-' };
-                                                  
-                                                  // 컬럼 통합 (중복 제거 포함)
-                                                  const minorInfo = [...new Set([q.소분류, q.제재].filter(v => v && v !== '-'))].join(' / ') || '-';
-                                                  const evalInfo = [...new Set([q.성취기준, q.평가요소, q.특이사항].filter(v => v && v !== '-'))].join(' / ') || '-';
-
-                                                  return `
-                                                      <tr>
-                                                          <td style="padding:8px; border:1px solid #ddd; text-align:center; font-weight:bold;">${qNum}</td>
-                                                          <td style="padding:8px; border:1px solid #ddd; text-align:center;">${q.대분류 || '-'}</td>
-                                                          <td style="padding:8px; border:1px solid #ddd;">${minorInfo}</td>
-                                                          <td style="padding:8px; border:1px solid #ddd; font-size:0.75rem;">
-                                                              <div>${evalInfo}</div>
-                                                          </td>
-                                                      </tr>
-                                                  `;
-                                              }).join('')}
-                                          </tbody>
-                                      </table>
-                                  </div>
-                              `;
-                          }
-                      }
-                  } catch (e) {
-                      console.warn(`${d.과목} 상세 분석 로드 실패:`, e);
-                      detailedTableHtml = `<p style="font-size:0.8rem; color:#888; margin-top:10px;">(상세 분석 데이터를 불러올 수 없습니다: ${matchedSheet || '매칭 실패'})</p>`;
-                  }
-              }
-
-              subjectsHtml += `
-                <div style="border: 1px solid #ddd; border-radius:10px; padding:1.2rem; margin-bottom:2rem; break-inside: avoid; background:#fff;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #3c3fa0; padding-bottom:0.5rem; margin-bottom:1rem;">
-                        <span style="font-size:1.2rem; font-weight:bold; color:#3c3fa0;">${d.과목}</span>
-                        <div style="display:flex; align-items:center; gap:1rem;">
-                            <span style="font-size:0.9rem; color:#666;">등급</span>
-                            <span style="font-size:1.1rem; font-weight:bold; background:#3c3fa0; color:#fff; width:36px; height:36px; display:flex; align-items:center; justify-content:center; border-radius:50%;">${d.등급 || '-'}</span>
-                        </div>
-                    </div>
-                    <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:1rem; margin-bottom:1.5rem; background:#f9f9fb; padding:1rem; border-radius:8px;">
-                        <div style="text-align:center;"><div style="font-size:0.75rem; color:#666;">원점수</div><div style="font-weight:bold; font-size:1.1rem;">${d.원점수 || '-'}</div></div>
-                        <div style="text-align:center;"><div style="font-size:0.75rem; color:#666;">표준점수</div><div style="font-weight:bold; font-size:1.1rem;">${d.표준점수 || '-'}</div></div>
-                        <div style="text-align:center;"><div style="font-size:0.75rem; color:#666;">백분위</div><div style="font-weight:bold; font-size:1.1rem;">${d.전국백분위 || '-'}%</div></div>
-                        <div style="text-align:center;"><div style="font-size:0.75rem; color:#666;">상위(%)</div><div style="font-weight:bold; font-size:1.1rem;">${d.전국백분위 ? (100 - parseFloat(d.전국백분위)).toFixed(2) + '%' : '-'}</div></div>
-                    </div>
-                    
-                    <div style="font-size:0.9rem; font-weight:bold; color:#555; margin-bottom:0.6rem; display:flex; align-items:center; gap:0.4rem;">
-                        <span>📌</span> 정답률별 오답 문항 요약
-                    </div>
-                    <div style="background:#fff; border:1px solid #eee; padding:0.8rem; border-radius:6px;">
-                        ${wrongHtml}
-                    </div>
-
-                    ${detailedTableHtml}
-                </div>
-              `;
-          }
-
-          const printWin = window.open("", "_blank", "width=900,height=900");
-          printWin.document.write(`<!DOCTYPE html><html lang="ko"><head>
-          <meta charset="UTF-8">
-          <title>${currentMockMonth}월 모의고사 개별 리포트 - ${first.성명}</title>
-          <style>
-            @page { size: A4; margin: 15mm 20mm; }
-            body { font-family: 'Malgun Gothic', sans-serif; color: #333; line-height: 1.5; margin: 0; padding: 0; background: #fff; -webkit-print-color-adjust: exact; }
-            .container { max-width: 800px; margin: 0 auto; }
-            .header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 4px solid #3c3fa0; padding-bottom: 1rem; margin-bottom: 1.5rem; }
-            .header h1 { margin: 0; color: #3c3fa0; font-size: 1.8rem; }
-            .student-info { background: #f0f2f5; padding: 1.2rem; border-radius: 12px; margin-bottom: 1.5rem; display: flex; gap: 2rem; }
-            .info-item { display: flex; flex-direction: column; }
-            .info-label { font-size: 0.8rem; color: #666; font-weight: 500; }
-            .info-value { font-size: 1.1rem; font-weight: 700; color: #111; }
-            .footer { margin-top: 2rem; text-align: center; border-top: 1px solid #ddd; padding-top: 1rem; color: #888; font-size: 0.8rem; }
-            table { page-break-inside: auto; }
-            tr { page-break-inside: avoid; page-break-after: auto; }
-            @media print {
-              body { padding: 0; }
-              .no-print { display: none; }
-            }
-          </style>
-        </head><body>
-          <div class="container">
-            <div class="header">
-              <h1>📊 ${currentMockMonth}월 모의고사 성적 분석 리포트</h1>
-              <div style="color:#666; font-size:0.85rem;">발행일: ${new Date().toLocaleDateString('ko-KR', {year:'numeric', month:'long', day:'numeric'})}</div>
-            </div>
-            
-            <div class="student-info">
-              <div class="info-item"><span class="info-label">소속</span><span class="info-value">부안고등학교 ${first.학년}학년 ${first.반}반</span></div>
-              <div class="info-item"><span class="info-label">번호</span><span class="info-value">${first.번호}번</span></div>
-              <div class="info-item"><span class="info-label">성명</span><span class="info-value">${first.성명}</span></div>
-            </div>
-
-            <div class="subjects-container">
-              ${subjectsHtml}
-            </div>
-
-            <div class="footer">
-              부안고등학교 학생부 AI 분석 프로그램 | 생성일: ${new Date().toLocaleString()}
-            </div>
-          </div>
-          <script>
-            window.onload = function() {
-              setTimeout(() => { window.print(); }, 800);
-            };
-          </script>
-        </body></html>`);
-          printWin.document.close();
-      } catch (err) {
-          console.error('리포트 생성 오류:', err);
-          alert('리포트 생성 중 오류가 발생했습니다: ' + err.message);
-      } finally {
-          if (btn) {
-              btn.disabled = false;
-              btn.innerHTML = originalHtml;
-          }
-      }
   }
 
 
@@ -6697,25 +6381,19 @@ overallEvaluation 필드는 아래 형식을 반드시 따르십시오:
       const savedConfig = JSON.parse(localStorage.getItem("appConfigState") || "{}");
       const lastStudent = savedConfig.selectedStudent;
       if (lastStudent && studentSelect) {
+        // Find the option matching the last selected student name
         const matchingOpt = Array.from(studentSelect.options).find(o => o.value === lastStudent);
         if (matchingOpt) {
           studentSelect.value = lastStudent;
+          // Auto-fill grade/class/number fields
           if (gradeInput) gradeInput.value = matchingOpt.dataset.grade || "";
           if (classInput) classInput.value = matchingOpt.dataset.class || "";
           if (numberInput) numberInput.value = matchingOpt.dataset.number || "";
           if (nameInput) nameInput.value = lastStudent;
+          // Re-extract course and batch data for this student (silent: no alerts)
           if (globalCourseJson) extractCourseData(globalCourseJson, lastStudent, true);
           if (globalBatchJsons.length > 0) extractBatchData(globalBatchJsons, lastStudent);
           console.log("[loadAllData] Restored last selected student:", lastStudent);
-        }
-      }
-
-      // 5. Mock Exam Data
-      const savedMockData = await StorageManager.load("mockDataByMonth");
-      if (savedMockData) {
-        mockDataByMonth = savedMockData;
-        if (mockDataByMonth[currentMockMonth] && mockDataByMonth[currentMockMonth].length > 0) {
-          showMockResults();
         }
       }
     } catch (e) {
