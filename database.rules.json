@@ -1,0 +1,16 @@
+{
+  "rules": {
+    "onlineUsers": {
+      ".read": true,
+      ".write": false,
+      "$userId": {
+        ".write": true,
+        ".validate": "newData.hasChildren(['connectedAt'])"
+      }
+    },
+    "$other": {
+      ".read": false,
+      ".write": false
+    }
+  }
+}

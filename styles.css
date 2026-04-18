@@ -14,6 +14,16 @@
   --input-focus: rgba(124, 131, 253, 0.6);
   --error-color: #ff6b6b;
   --success-color: #20c997;
+  /* Semantic colors for dynamic content */
+  --clr-raw: #96baff;
+  --clr-std: #6bcb77;
+  --clr-h4-blue: #96baff;
+  --clr-h4-pink: #ff6b81;
+  --clr-mock-head: #ff8e9e;
+  --clr-inset-bg: rgba(255, 255, 255, 0.04);
+  --clr-border-subtle: rgba(255, 255, 255, 0.07);
+  --clr-checkbox-bg: rgba(0, 0, 0, 0.3);
+  --clr-chart-bg: rgba(0, 0, 0, 0.2);
 }
 
 * {
@@ -102,6 +112,82 @@ body {
   margin-top: 1rem;
   display: flex;
   justify-content: center;
+}
+
+/* ── 방문자 카운터 ─────────────────────────────────── */
+.visitor-counter {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  margin-top: 1rem;
+  padding: 0.55rem 1.25rem;
+  background: rgba(94, 106, 210, 0.12);
+  border: 1px solid rgba(124, 131, 253, 0.25);
+  border-radius: 999px;
+  backdrop-filter: blur(8px);
+}
+
+.visitor-item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  padding: 0 0.9rem;
+}
+
+.visitor-label {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.visitor-value {
+  font-size: 1.05rem;
+  font-weight: 700;
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  min-width: 1.4ch;
+  text-align: right;
+}
+
+.visitor-unit {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+
+.visitor-divider {
+  width: 1px;
+  height: 1.4rem;
+  background: rgba(255, 255, 255, 0.15);
+  flex-shrink: 0;
+}
+
+/* 라이트 모드 조정 */
+body.light-mode .visitor-counter {
+  background: rgba(94, 106, 210, 0.08);
+  border-color: rgba(94, 106, 210, 0.3);
+}
+
+body.light-mode .visitor-divider {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+/* 모바일 */
+@media (max-width: 480px) {
+  .visitor-counter {
+    gap: 0;
+    padding: 0.5rem 0.75rem;
+  }
+  .visitor-item {
+    padding: 0 0.5rem;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+  .visitor-label { font-size: 0.65rem; }
+  .visitor-unit  { display: none; }
 }
 
 .btn-secondary {
@@ -1823,6 +1909,7 @@ textarea::-webkit-scrollbar-thumb {
 .mock-summary-badge.grade-2 .grade-value {
   background: linear-gradient(to bottom, #fff, #bdc3c7);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -1833,6 +1920,7 @@ textarea::-webkit-scrollbar-thumb {
 .mock-summary-badge.grade-3 .grade-value {
   background: linear-gradient(to bottom, #fff, #cd7f32);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -1845,3 +1933,308 @@ textarea::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 255, 255, 0.15);
 }
+
+/* =============== Comparison Analysis Utilities =============== */
+.opacity-50 {
+  opacity: 0.5;
+}
+
+.cursor-not-allowed {
+  cursor: not-allowed !important;
+}
+
+.checkbox-group label {
+  transition: all 0.2s ease;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.checkbox-group label:hover:not([disabled]) {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.checkbox-group input[type="checkbox"] {
+  accent-color: var(--accent-primary);
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+#compareScatterChart {
+  filter: drop-shadow(0 0 10px rgba(124, 131, 253, 0.1));
+}
+
+.form-select {
+  padding-right: 2.5rem;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 1.2em;
+}
+
+/* =============== Theme Toggle Button =============== */
+#theme-toggle-btn {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 9999;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.2);
+  background: rgba(30, 33, 55, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #ccc;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.35);
+  transition: all 0.25s ease;
+  line-height: 1;
+}
+#theme-toggle-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 24px rgba(0,0,0,0.45);
+}
+
+/* =============== Light Mode =============== */
+body.light-mode {
+  --bg-color: #f3f4ff;
+  --bg-gradient: radial-gradient(circle at top right, #e4e7ff 0%, #f3f4ff 55%, #f8f8ff 100%);
+  --panel-bg: rgba(255, 255, 255, 0.98);
+  --panel-border: rgba(94, 106, 210, 0.15);
+  --text-primary: #1a1c35;
+  --text-secondary: #5c6080;
+  --accent-primary: #5e6ad2;
+  --accent-gradient: linear-gradient(135deg, #7c83fd, #96baff);
+  --accent-hover: linear-gradient(135deg, #6b73eb, #85a9ee);
+  --input-bg: #ffffff;
+  --input-border: rgba(94, 106, 210, 0.20);
+  --input-focus: rgba(124, 131, 253, 0.18);
+  --error-color: #e53935;
+  --success-color: #1b9e6e;
+  /* Semantic color overrides for light mode - BRIGHTER THEME */
+  --clr-raw: #1d50a8;
+  --clr-std: #166c34;
+  --clr-h4-blue: #3555b8;
+  --clr-h4-pink: #b83058;
+  --clr-mock-head: #b83058;
+  --clr-inset-bg: rgba(248, 250, 255, 0.95);
+  --clr-border-subtle: rgba(94, 106, 210, 0.12);
+  --clr-checkbox-bg: rgba(255, 255, 255, 0.98);
+  --clr-chart-bg: rgba(252, 253, 255, 0.9);
+}
+
+body.light-mode #theme-toggle-btn {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(94, 106, 210, 0.3);
+  color: #5e6ad2;
+  box-shadow: 0 4px 16px rgba(94,106,210,0.15);
+}
+
+body.light-mode .app-background .orb-1 {
+  background: rgba(124, 131, 253, 0.15);
+  opacity: 0.6;
+}
+body.light-mode .app-background .orb-2 {
+  background: rgba(150, 186, 255, 0.12);
+  opacity: 0.6;
+}
+
+body.light-mode .glass-panel {
+  box-shadow: 0 4px 24px rgba(94,106,210,0.10), 0 1px 4px rgba(0,0,0,0.04);
+}
+
+body.light-mode .tab-btn {
+  border-bottom-color: rgba(94,106,210,0.08);
+}
+body.light-mode .tab-btn:hover {
+  background: rgba(94, 106, 210, 0.06);
+  color: var(--text-primary);
+}
+body.light-mode .tab-btn.active {
+  background: rgba(94, 106, 210, 0.10);
+  border-left-color: var(--accent-primary);
+}
+body.light-mode .tab-btn.active::after {
+  background: linear-gradient(90deg, rgba(124,131,253,0.10) 0%, transparent 100%);
+}
+
+body.light-mode .app-tabs {
+  box-shadow: 0 4px 24px rgba(94,106,210,0.12);
+}
+
+body.light-mode label {
+  color: #3a3f58;
+}
+
+body.light-mode input::placeholder,
+body.light-mode textarea::placeholder {
+  color: rgba(0,0,0,0.28);
+}
+
+/* select 화살표: background 단축속성으로 통합하여 중복 방지 */
+body.light-mode select {
+  background-color: #ffffff;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235e6ad2' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 1rem center !important;
+  background-size: 1.2em !important;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+body.light-mode input[type="text"],
+body.light-mode textarea {
+  background-color: #ffffff;
+  background-image: none;
+}
+
+body.light-mode input:focus,
+body.light-mode select:focus,
+body.light-mode textarea:focus {
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3px var(--input-focus);
+}
+
+body.light-mode select option,
+body.light-mode select optgroup {
+  background-color: #ffffff;
+  color: #1a1c35;
+}
+
+body.light-mode .btn-secondary {
+  background: rgba(94, 106, 210, 0.07);
+  border-color: rgba(94,106,210,0.2);
+  color: var(--text-secondary);
+}
+body.light-mode .btn-secondary:hover {
+  background: rgba(229,57,53,0.08);
+  border-color: var(--error-color);
+  color: var(--error-color);
+}
+
+body.light-mode .section-title {
+  border-bottom-color: rgba(94,106,210,0.15);
+}
+
+/* CSAT 탭 박스들 */
+body.light-mode .csat-filters {
+  background: var(--clr-inset-bg);
+  border-color: rgba(94,106,210,0.15);
+}
+body.light-mode .matrix-header,
+body.light-mode .matrix-label-y {
+  background: rgba(248, 250, 255, 0.98);
+  border-color: rgba(94,106,210,0.15);
+}
+body.light-mode .matrix-cell {
+  background: #ffffff;
+  border-color: rgba(94,106,210,0.1);
+}
+body.light-mode .matrix-cell:hover {
+  background: rgba(245, 247, 255, 1);
+}
+body.light-mode .matrix-dot:hover {
+  background-color: #5e6ad2;
+}
+
+/* comp-card (내신 비교 카드) */
+body.light-mode .comp-card {
+  background: #ffffff;
+  border-color: rgba(94,106,210,0.15);
+  box-shadow: 0 4px 16px rgba(94,106,210,0.08);
+}
+body.light-mode .comp-card:hover {
+  background: rgba(250, 252, 255, 1);
+}
+
+/* details-card */
+body.light-mode .details-card {
+  background: #ffffff;
+  border-color: rgba(94,106,210,0.18);
+}
+body.light-mode .details-card label {
+  color: var(--clr-h4-blue);
+}
+
+/* btn-detail */
+body.light-mode .btn-detail {
+  background: rgba(94,106,210,0.08);
+  border-color: rgba(94,106,210,0.25);
+  color: #5e6ad2;
+}
+body.light-mode .btn-detail:hover {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+  color: #fff;
+}
+
+/* modal close button */
+body.light-mode .modal-close:hover {
+  color: #1a1c35;
+}
+
+/* custom-tooltip */
+body.light-mode .custom-tooltip {
+  background: rgba(255, 255, 255, 0.98);
+  color: #1a1c35;
+  box-shadow: 0 4px 20px rgba(94,106,210,0.18);
+}
+
+/* 추가 밝은 테마 최적화: 모의고사 분석 표 */
+body.light-mode .mock-table-wrapper {
+  background: #ffffff;
+  border: 1px solid rgba(94, 106, 210, 0.12);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+
+body.light-mode .mock-table th {
+  background: rgba(94, 106, 210, 0.05);
+  color: #1a1c35;
+  border-bottom: 1px solid rgba(94, 106, 210, 0.15);
+}
+
+body.light-mode .mock-table td {
+  color: #333;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+body.light-mode .mock-table tr:hover {
+  background: rgba(94, 106, 210, 0.03);
+}
+
+/* 선택 도구 박스 및 GAS 설정 박스 */
+body.light-mode .mock-selectors,
+body.light-mode #compareGasSettings {
+  background: var(--clr-inset-bg);
+  border-color: rgba(124, 185, 253, 0.2);
+  box-shadow: 0 4px 16px rgba(94, 106, 210, 0.08);
+}
+
+/* 개별 리포트 카드 */
+body.light-mode .mock-individual-card {
+  background: #ffffff;
+  border-color: rgba(94, 106, 210, 0.15);
+  box-shadow: 0 8px 24px rgba(94, 106, 210, 0.1);
+}
+
+/* 등급 배지 소프트 튜닝 (라이트 모드) */
+body.light-mode .badge-grade {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+body.light-mode .grade-1 { background: #ffea00; color: #7a5800; }
+body.light-mode .grade-2 { background: #e0e0e0; color: #555; }
+body.light-mode .grade-3 { background: #e6b38c; color: #633b1f; }
+body.light-mode .grade-4 { background: #bdbdbd; color: #444; }
+body.light-mode .grade-5, 
+body.light-mode .grade-6, 
+body.light-mode .grade-7, 
+body.light-mode .grade-8, 
+body.light-mode .grade-9 { 
+  background: #eceff1; 
+  color: #78909c; 
+}
+

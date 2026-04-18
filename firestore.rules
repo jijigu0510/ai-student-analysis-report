@@ -1,0 +1,43 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── 방문자 기록 ──────────────────────────────────────
+    match /visitors/{docId} {
+      // 누구나 읽기 가능 (카운트 집계용)
+      allow read: if true;
+
+      // 새 문서 생성: 필수 필드 + 형식 검증
+      allow create: if request.resource.data.keys().hasAll(['date', 'timestamp', 'sessionId'])
+        && request.resource.data.date    is string
+        && request.resource.data.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && request.resource.data.sessionId is string
+        && request.resource.data.sessionId.size() > 0
+        && request.resource.data.sessionId.size() <= 64
+        // 불필요한 추가 필드 차단
+        && request.resource.data.keys().size() == 3;
+
+      // 수정·삭제 불가
+      allow update, delete: if false;
+    }
+
+    // ── 공유 데이터 (옵션) ────────────────────────────────
+    match /sharedData/{docId} {
+      allow read: if true;
+
+      allow create: if request.resource.data.keys().hasAll(['content', 'timestamp'])
+        && request.resource.data.content   is string
+        && request.resource.data.content.size() > 0
+        && request.resource.data.content.size() <= 1000
+        && request.resource.data.keys().size() <= 5;
+
+      allow update, delete: if false;
+    }
+
+    // 그 외 모든 경로 차단
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
