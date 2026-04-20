@@ -14,7 +14,6 @@ import {
 import {
   getDatabase,
   ref,
-  push,
   set,
   remove,
   onValue,
@@ -72,15 +71,22 @@ async function updateVisitorCounts() {
 
 // ── 실시간 접속자 추적 ────────────────────────────────────
 function trackOnlineUsers() {
-  const connectedRef  = ref(rtdb, '.info/connected');
-  const onlineRef     = ref(rtdb, 'onlineUsers');
+  const connectedRef = ref(rtdb, '.info/connected');
+  const onlineRef    = ref(rtdb, 'onlineUsers');
+
+  // 이 탭 전용 고정 키 — 재접속해도 같은 노드를 재사용해 중복 카운트 방지
+  let myKey = sessionStorage.getItem('rtdb_key');
+  if (!myKey) {
+    myKey = crypto.randomUUID();
+    sessionStorage.setItem('rtdb_key', myKey);
+  }
+  const userRef = ref(rtdb, `onlineUsers/${myKey}`);
 
   // 연결 상태 감지 → 접속 시 내 노드 등록, 끊기면 자동 삭제
   onValue(connectedRef, async (snap) => {
     if (snap.val() !== true) return;
-    const userRef = push(onlineRef);
+    onDisconnect(userRef).remove(); // set보다 먼저 등록해야 안전
     await set(userRef, { connectedAt: dbTimestamp() });
-    onDisconnect(userRef).remove();
   });
 
   // 현재 접속자 수 실시간 구독
