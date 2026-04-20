@@ -1,4 +1,25 @@
 
+
+// Firebase에서 GAS URL을 받아오는 콜백 — urls = { '1': {'3': url, ...}, '2': {...}, '3': {...} }
+window.onFirebaseGasUrls = function(urls) {
+  if (!urls) return;
+  ['1','2','3'].forEach(grade => {
+    const gradeUrls = urls[grade];
+    if (!gradeUrls) return;
+    Object.keys(gradeUrls).forEach(month => {
+      const serverUrl = gradeUrls[month] || '';
+      if (!serverUrl) return;
+      // 서버 데이터를 우선하여 localStorage 갱신
+      localStorage.setItem(`mockGasUrl_${grade}_${month}`, serverUrl);
+    });
+  });
+  // 현재 설정 패널에 열려 있다면 입력창 갱신
+  const mockGasGradeSelect = document.getElementById('mockGasGradeSelect');
+  if (mockGasGradeSelect && typeof window.loadGasUrlsForGrade === 'function') {
+    window.loadGasUrlsForGrade(mockGasGradeSelect.value);
+  }
+};
+
 document.addEventListener("DOMContentLoaded", () => {
   // Global error handler for debugging
   window.onerror = function(message, source, lineno, colno, error) {
@@ -356,24 +377,8 @@ document.addEventListener("DOMContentLoaded", () => {
       });
   }
 
-  // Firebase에서 GAS URL을 받아오는 콜백 — urls = { '1': {'3': url, ...}, '2': {...}, '3': {...} }
-  window.onFirebaseGasUrls = function(urls) {
-    if (!urls) return;
-    ['1','2','3'].forEach(grade => {
-      const gradeUrls = urls[grade];
-      if (!gradeUrls) return;
-      Object.keys(gradeUrls).forEach(month => {
-        const serverUrl = gradeUrls[month] || '';
-        if (!serverUrl) return;
-        if (!localStorage.getItem(`mockGasUrl_${grade}_${month}`)) {
-          localStorage.setItem(`mockGasUrl_${grade}_${month}`, serverUrl);
-        }
-      });
-    });
-    // 현재 설정 패널에 열려 있다면 입력창 갱신
-    const mockGasGradeSelect = document.getElementById('mockGasGradeSelect');
-    if (mockGasGradeSelect) loadGasUrlsForGrade(mockGasGradeSelect.value);
-  };
+  // 학년/월별 GAS URL 로드 헬퍼 전역 노출
+  window.loadGasUrlsForGrade = loadGasUrlsForGrade;
 
   function loadGasUrlsForGrade(grade) {
     const months = MONTHS_BY_GRADE[grade] || [];
@@ -513,7 +518,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function saveToGoogleSheets() {
-      const gasUrl = localStorage.getItem('mockGasUrl');
+      const gasUrl = localStorage.getItem(`mockGasUrl_${currentMockGrade}_${currentMockMonth}`);
       if (!gasUrl) {
           alert("먼저 [설정(⚙️)] 아이콘을 눌러 구글 앱 스크립트 URL을 저장해 주세요.");
           if (mockGasSettingsArea) mockGasSettingsArea.classList.remove('hidden');
@@ -830,7 +835,7 @@ document.addEventListener("DOMContentLoaded", () => {
           return;
       }
 
-      const gasUrl = localStorage.getItem('mockGasUrl');
+      const gasUrl = localStorage.getItem(`mockGasUrl_${currentMockGrade}_${currentMockMonth}`);
       if (!gasUrl) {
           alert('연동 설정에서 GAS 웹 앱 URL을 먼저 저장해 주세요.\n(⚙️ 연동 설정 버튼 클릭)');
           if (document.getElementById('mockGasSettingsArea')) {
@@ -1637,7 +1642,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function exportMockToCSV() {
-      const data = mockDataByMonth[currentMockMonth] || [];
+      const data = getDataForCurrentMonth();
       if (data.length === 0) return;
       const headers = ["학년", "반", "번호", "성명", "과목", "등급", "원점수", "표준점수", "전국백분위", "오답문항", "오답문항_정답률"];
       let csvContent = "\uFEFF" + headers.join(",") + "\n";
@@ -1669,7 +1674,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       
       const [num, name] = selectedStudent.split('_');
-      const allData = mockDataByMonth[currentMockMonth] || [];
+      const allData = getDataForCurrentMonth();
       const studentData = allData.filter(d => d.번호 === num && d.성명 === name);
       
       if (studentData.length === 0) {
@@ -1686,7 +1691,7 @@ document.addEventListener("DOMContentLoaded", () => {
       
       try {
           const first = studentData[0];
-          const gasUrl = localStorage.getItem(`mockGasUrl_${currentMockMonth}`);
+          const gasUrl = localStorage.getItem(`mockGasUrl_${first.학년}_${currentMockMonth}`);
           
           let subjectsHtml = '';
           
@@ -1870,6 +1875,7 @@ document.addEventListener("DOMContentLoaded", () => {
             table { page-break-inside: auto; }
             tr { page-break-inside: avoid; page-break-after: auto; }
             @media print {
+              html { font-size: 9px; }
               body { padding: 0; }
               .no-print { display: none; }
             }
