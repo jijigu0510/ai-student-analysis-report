@@ -76,7 +76,7 @@
         <button id="tab-setech" class="tab-btn">✏️ 세특 분석</button>
         <button id="tab-csat" class="tab-btn">수능 최저 확인하기</button>
         <button id="tab-interview" class="tab-btn">🎤 면접 문항 생성</button>
-        <button id="tab-mock-exam" class="tab-btn">📊 모의고사 분석</button>
+        <button id="tab-mock-exam" class="tab-btn">📊 모의고사 문항 분석</button>
         <button id="tab-gpa-mock-compare" class="tab-btn">📈 내신 & 모의고사 분석</button>
         <button id="tab-grade-rank" class="tab-btn">📊 내신 분석하기(대학별 교과 점수 확인)</button>
       </nav>
@@ -748,6 +748,9 @@
             <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem;">선택한 월에 해당하는 성적표 파일들을 통합하여 분석합니다.</p>
             <input id="mockFileInput" name="mockFileInput" type="file" multiple accept=".csv" style="display: none;">
         </div>
+
+        <!-- 서버 데이터 상태 표시 -->
+        <div id="mockServerStatus" style="margin-top: 0.8rem; min-height: 1.4rem; font-size: 0.8rem; color: var(--text-secondary);"></div>
 
         <!-- 결과 표시 영역 -->
         <div id="mockResultArea" class="hidden">

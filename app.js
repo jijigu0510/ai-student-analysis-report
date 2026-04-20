@@ -211,7 +211,35 @@ document.addEventListener("DOMContentLoaded", () => {
   // 모의고사 데이터 월별 관리 (3, 5, 6, 7, 9, 11)
   let mockDataByMonth = { '3': [], '5': [], '6': [], '7': [], '9': [], '11': [] };
   let currentMockMonth = '3';
-  
+  const mockServerData = {}; // { month: { count, uploadedAt } } — Firebase 서버 캐시
+
+  // Firebase 모듈에서 데이터를 받아오는 콜백 (firebase-visitors.js가 호출)
+  window.onFirebaseMockData = function(month, serverData) {
+    if (!serverData || !Array.isArray(serverData.data)) return;
+    mockServerData[month] = {
+      count:      serverData.count || serverData.data.length,
+      uploadedAt: serverData.uploadedAt
+    };
+    // 로컬에 해당 월 데이터가 없으면 서버 데이터로 자동 채움
+    if (!mockDataByMonth[month] || mockDataByMonth[month].length === 0) {
+      mockDataByMonth[month] = serverData.data;
+      if (month === currentMockMonth) showMockResults();
+    }
+    if (month === currentMockMonth) refreshMockServerStatus();
+  };
+
+  function refreshMockServerStatus() {
+    const el = document.getElementById('mockServerStatus');
+    if (!el) return;
+    const info = mockServerData[currentMockMonth];
+    if (info) {
+      const ts = info.uploadedAt ? new Date(info.uploadedAt.seconds * 1000).toLocaleString('ko-KR') : '';
+      el.innerHTML = `<span style="color:#4caf50;">✅ 서버에 저장된 데이터: ${currentMockMonth}월 ${info.count}건${ts ? ` (저장: ${ts})` : ''}</span>`;
+    } else {
+      el.innerHTML = '';
+    }
+  }
+
   let mockSheetNames = [];          // 스프레드시트 시트 목록 캐시
   let mockCachedSheetData = {};     // 시트별 데이터 캐시 { sheetName: rows[][] }
   const mockDropZone = document.getElementById('mockDropZone');
@@ -286,6 +314,7 @@ document.addEventListener("DOMContentLoaded", () => {
           updateSheetStatus('info', '배포된 GAS URL을 설정해 주세요.');
           mockSheetNames = [];
           mockCachedSheetData = {};
+          refreshMockServerStatus();
       });
   }
 
@@ -370,8 +399,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (mockDataByMonth[currentMockMonth].length > 0) {
           showMockResults();
-          // 데이터 영구 저장 추가
+          // 로컬 IndexedDB 저장
           await StorageManager.save("mockDataByMonth", mockDataByMonth);
+          // Firebase 서버 저장 (공유용)
+          if (typeof window.firebaseMockSave === 'function') {
+              try {
+                  const el = document.getElementById('mockServerStatus');
+                  if (el) el.innerHTML = '<span style="color:var(--text-secondary);">서버에 저장 중...</span>';
+                  await window.firebaseMockSave(currentMockMonth, mockDataByMonth[currentMockMonth]);
+                  const count = mockDataByMonth[currentMockMonth].length;
+                  mockServerData[currentMockMonth] = { count, uploadedAt: { seconds: Date.now() / 1000 } };
+                  refreshMockServerStatus();
+              } catch (e) {
+                  console.warn('[Firebase] 모의고사 저장 실패:', e.message);
+              }
+          }
       } else {
           alert(`${currentMockMonth}월 추출 자료가 없습니다. 성적표 파일이 맞는지 확인해 주세요.`);
       }

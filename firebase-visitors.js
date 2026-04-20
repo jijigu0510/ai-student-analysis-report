@@ -9,6 +9,9 @@ import {
   getCountFromServer,
   query,
   where,
+  doc,
+  setDoc,
+  getDoc,
   serverTimestamp as fsTimestamp
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 import {
@@ -96,12 +99,41 @@ function trackOnlineUsers() {
   });
 }
 
+// ── 모의고사 데이터 서버 저장 ─────────────────────────────
+async function saveMockExamData(month, data) {
+  await setDoc(doc(db, 'mockExamData', String(month)), {
+    data:       data,
+    uploadedAt: fsTimestamp(),
+    month:      String(month),
+    count:      data.length
+  });
+}
+
+// ── 모의고사 데이터 서버 불러오기 (전체 월) ──────────────
+async function loadAllMockData() {
+  const months = ['3', '5', '6', '7', '9', '11'];
+  for (const month of months) {
+    try {
+      const snap = await getDoc(doc(db, 'mockExamData', month));
+      if (snap.exists() && typeof window.onFirebaseMockData === 'function') {
+        window.onFirebaseMockData(month, snap.data());
+      }
+    } catch (e) {
+      console.warn(`[Firebase] ${month}월 모의고사 로드 오류:`, e.message);
+    }
+  }
+}
+
+// app.js에서 호출할 수 있도록 전역 노출
+window.firebaseMockSave = saveMockExamData;
+
 // ── 실행 ─────────────────────────────────────────────────
 (async () => {
   try {
     await recordVisit();
     await updateVisitorCounts();
     trackOnlineUsers();
+    await loadAllMockData();
   } catch (e) {
     // Firebase 설정이 완료되지 않은 경우 조용히 무시
     console.warn('[Firebase] 초기화 오류 — firebase-config.js 설정을 확인하세요:', e.message);

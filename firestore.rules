@@ -35,6 +35,20 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // ── 모의고사 공유 데이터 ─────────────────────────────────
+    match /mockExamData/{month} {
+      // 누구나 읽기 가능
+      allow read: if true;
+
+      // 필수 필드 검증 후 생성·수정 허용
+      allow create, update: if request.resource.data.keys().hasAll(['data', 'uploadedAt', 'month', 'count'])
+        && request.resource.data.data     is list
+        && request.resource.data.month    is string
+        && request.resource.data.count    is int;
+
+      allow delete: if false;
+    }
+
     // 그 외 모든 경로 차단
     match /{document=**} {
       allow read, write: if false;
