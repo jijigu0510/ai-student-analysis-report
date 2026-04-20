@@ -209,34 +209,56 @@ document.addEventListener("DOMContentLoaded", () => {
   // Mock Exam Analysis Logic
   // -------------------------------------------------------------------------
   // 모의고사 데이터 월별 관리 (3, 5, 6, 7, 9, 11)
-  let mockDataByMonth = { '3': [], '5': [], '6': [], '7': [], '9': [], '11': [] };
+  let mockDataByMonth = {}; // 키: '${grade}_${month}', 예: '1_3', '3_5'
   let currentMockMonth = '3';
-  const mockServerData = {}; // { month: { count, uploadedAt } } — Firebase 서버 캐시
+  let currentMockGrade = '1';
+  const MONTHS_BY_GRADE = { '1': ['3','6','9','11'], '2': ['3','6','9','11'], '3': ['3','5','6','7','9','11'] };
+  const mockServerData = {}; // { '${grade}_${month}': { count, uploadedAt } }
 
-  // Firebase 모듈에서 데이터를 받아오는 콜백 (firebase-visitors.js가 호출)
-  window.onFirebaseMockData = function(month, serverData) {
+  function dataKey() { return `${currentMockGrade}_${currentMockMonth}`; }
+
+  function getDataForCurrentMonth() {
+    // 현재 월의 전체 학년 데이터를 합침
+    return ['1','2','3'].flatMap(g => mockDataByMonth[`${g}_${currentMockMonth}`] || []);
+  }
+
+  // Firebase 모듈에서 데이터를 받아오는 콜백 — 키: '${grade}_${month}'
+  window.onFirebaseMockData = function(gradeMonthKey, serverData) {
     if (!serverData || !Array.isArray(serverData.data)) return;
-    mockServerData[month] = {
+    mockServerData[gradeMonthKey] = {
       count:      serverData.count || serverData.data.length,
       uploadedAt: serverData.uploadedAt
     };
-    // 로컬에 해당 월 데이터가 없으면 서버 데이터로 자동 채움
-    if (!mockDataByMonth[month] || mockDataByMonth[month].length === 0) {
-      mockDataByMonth[month] = serverData.data;
-      if (month === currentMockMonth) showMockResults();
+    if (!mockDataByMonth[gradeMonthKey] || mockDataByMonth[gradeMonthKey].length === 0) {
+      mockDataByMonth[gradeMonthKey] = serverData.data;
+      if (gradeMonthKey === dataKey() || gradeMonthKey.endsWith(`_${currentMockMonth}`)) showMockResults();
     }
-    if (month === currentMockMonth) refreshMockServerStatus();
+    if (gradeMonthKey === dataKey()) refreshMockServerStatus();
   };
 
   function refreshMockServerStatus() {
     const el = document.getElementById('mockServerStatus');
     if (!el) return;
-    const info = mockServerData[currentMockMonth];
+    const info = mockServerData[dataKey()];
     if (info) {
       const ts = info.uploadedAt ? new Date(info.uploadedAt.seconds * 1000).toLocaleString('ko-KR') : '';
-      el.innerHTML = `<span style="color:#4caf50;">✅ 서버에 저장된 데이터: ${currentMockMonth}월 ${info.count}건${ts ? ` (저장: ${ts})` : ''}</span>`;
+      el.innerHTML = `<span style="color:#4caf50;">✅ 서버에 저장된 데이터: ${currentMockGrade}학년 ${currentMockMonth}월 ${info.count}건${ts ? ` (저장: ${ts})` : ''}</span>`;
     } else {
       el.innerHTML = '';
+    }
+  }
+
+  function updateMonthSelectForGrade(grade) {
+    if (!mockMonthSelect) return;
+    const months = MONTHS_BY_GRADE[grade];
+    const prevMonth = mockMonthSelect.value;
+    const labels = { '3':'3월 모의고사','5':'5월 모의고사','6':'6월 모의고사','7':'7월 모의고사','9':'9월 모의고사','11':'11월 모의고사' };
+    mockMonthSelect.innerHTML = months.map(m => `<option value="${m}">${labels[m]}</option>`).join('');
+    if (months.includes(prevMonth)) {
+      mockMonthSelect.value = prevMonth;
+    } else {
+      currentMockMonth = months[0];
+      mockMonthSelect.value = currentMockMonth;
     }
   }
 
@@ -299,17 +321,33 @@ document.addEventListener("DOMContentLoaded", () => {
       });
   }
 
+  // 학년 선택 변경 시
+  const mockGradeSelect = document.getElementById('mockGradeSelect');
+  if (mockGradeSelect) {
+      mockGradeSelect.addEventListener('change', (e) => {
+          currentMockGrade = e.target.value;
+          updateMonthSelectForGrade(currentMockGrade);
+          if (uploadMonthText) uploadMonthText.innerText = currentMockMonth;
+          // 설정 패널 학년도 동기화
+          const mockGasGradeSelect = document.getElementById('mockGasGradeSelect');
+          if (mockGasGradeSelect) { mockGasGradeSelect.value = currentMockGrade; loadGasUrlsForGrade(currentMockGrade); }
+          mockSheetNames = [];
+          mockCachedSheetData = {};
+          const hasData = getDataForCurrentMonth().length > 0;
+          if (hasData) { showMockResults(); } else { if (mockResultArea) mockResultArea.classList.add('hidden'); }
+          refreshMockServerStatus();
+      });
+      // 초기 월 옵션 설정 (1학년 기본값)
+      updateMonthSelectForGrade(currentMockGrade);
+  }
+
   // 월 선택 변경 시
   if (mockMonthSelect) {
       mockMonthSelect.addEventListener('change', (e) => {
           currentMockMonth = e.target.value;
           if (uploadMonthText) uploadMonthText.innerText = currentMockMonth;
-          // 해당 월의 데이터가 있으면 결과창 표시, 없으면 숨김
-          if (mockDataByMonth[currentMockMonth] && mockDataByMonth[currentMockMonth].length > 0) {
-              showMockResults();
-          } else {
-              if (mockResultArea) mockResultArea.classList.add('hidden');
-          }
+          const hasData = getDataForCurrentMonth().length > 0;
+          if (hasData) { showMockResults(); } else { if (mockResultArea) mockResultArea.classList.add('hidden'); }
           // 시트 상태 초기화
           updateSheetStatus('info', '배포된 GAS URL을 설정해 주세요.');
           mockSheetNames = [];
@@ -318,48 +356,59 @@ document.addEventListener("DOMContentLoaded", () => {
       });
   }
 
-  const gasInputIds = ['3', '5', '6', '7', '9', '11'];
-
-  // Firebase에서 GAS URL을 받아오는 콜백 (firebase-visitors.js가 호출)
+  // Firebase에서 GAS URL을 받아오는 콜백 — urls = { '1': {'3': url, ...}, '2': {...}, '3': {...} }
   window.onFirebaseGasUrls = function(urls) {
     if (!urls) return;
-    gasInputIds.forEach(m => {
-      const serverUrl = urls[m] || '';
-      if (!serverUrl) return;
-      // 로컬에 없거나 비어 있을 때만 서버 값으로 채움
-      if (!localStorage.getItem(`mockGasUrl_${m}`)) {
-        localStorage.setItem(`mockGasUrl_${m}`, serverUrl);
-      }
-      // 입력창이 비어 있으면 채워줌
-      const el = document.getElementById(`mockGasUrl_${m}`);
-      if (el && !el.value) el.value = localStorage.getItem(`mockGasUrl_${m}`) || '';
+    ['1','2','3'].forEach(grade => {
+      const gradeUrls = urls[grade];
+      if (!gradeUrls) return;
+      Object.keys(gradeUrls).forEach(month => {
+        const serverUrl = gradeUrls[month] || '';
+        if (!serverUrl) return;
+        if (!localStorage.getItem(`mockGasUrl_${grade}_${month}`)) {
+          localStorage.setItem(`mockGasUrl_${grade}_${month}`, serverUrl);
+        }
+      });
     });
+    // 현재 설정 패널에 열려 있다면 입력창 갱신
+    const mockGasGradeSelect = document.getElementById('mockGasGradeSelect');
+    if (mockGasGradeSelect) loadGasUrlsForGrade(mockGasGradeSelect.value);
   };
 
-  if (mockGasUrlSaveBtn) {
-      // 저장된 URL들 불러오기 (로컬)
-      gasInputIds.forEach(m => {
-          const el = document.getElementById(`mockGasUrl_${m}`);
-          if (el) el.value = localStorage.getItem(`mockGasUrl_${m}`) || '';
-      });
+  function loadGasUrlsForGrade(grade) {
+    const months = MONTHS_BY_GRADE[grade] || [];
+    ['3','5','6','7','9','11'].forEach(m => {
+      const el = document.getElementById(`mockGasUrl_${m}`);
+      if (el) el.value = months.includes(m) ? (localStorage.getItem(`mockGasUrl_${grade}_${m}`) || '') : '';
+    });
+    // 5월/7월 행은 3학년만 표시
+    const row57 = document.getElementById('gasRow57');
+    if (row57) row57.style.display = grade === '3' ? 'grid' : 'none';
+  }
 
+  const mockGasGradeSelectEl = document.getElementById('mockGasGradeSelect');
+  if (mockGasGradeSelectEl) {
+      mockGasGradeSelectEl.addEventListener('change', (e) => loadGasUrlsForGrade(e.target.value));
+      loadGasUrlsForGrade(mockGasGradeSelectEl.value);
+  }
+
+  if (mockGasUrlSaveBtn) {
       mockGasUrlSaveBtn.addEventListener('click', async () => {
+          const mockGasGradeSelect = document.getElementById('mockGasGradeSelect');
+          const grade = mockGasGradeSelect ? mockGasGradeSelect.value : '1';
+          const months = MONTHS_BY_GRADE[grade] || [];
           const urls = {};
-          gasInputIds.forEach(m => {
+          months.forEach(m => {
               const el = document.getElementById(`mockGasUrl_${m}`);
               const val = el ? el.value.trim() : '';
-              localStorage.setItem(`mockGasUrl_${m}`, val);
+              localStorage.setItem(`mockGasUrl_${grade}_${m}`, val);
               urls[m] = val;
           });
-          // Firebase 서버에도 저장
           if (typeof window.firebaseGasSave === 'function') {
-              try {
-                  await window.firebaseGasSave(urls);
-              } catch (e) {
-                  console.warn('[Firebase] GAS URL 저장 실패:', e.message);
-              }
+              try { await window.firebaseGasSave(grade, urls); }
+              catch (e) { console.warn('[Firebase] GAS URL 저장 실패:', e.message); }
           }
-          alert("월별 연동 설정이 저장되었습니다.");
+          alert(`${grade}학년 연동 설정이 저장되었습니다.`);
           mockGasSettingsArea.classList.add('hidden');
       });
   }
@@ -370,13 +419,35 @@ document.addEventListener("DOMContentLoaded", () => {
       mockLoadSheetsBtn.addEventListener('click', connectToGoogleSheet);
   }
   
+  const mockGradeFilterSelect = document.getElementById('mockGradeFilterSelect');
+  if (mockGradeFilterSelect) {
+    mockGradeFilterSelect.addEventListener('change', () => {
+      const gradeVal = mockGradeFilterSelect.value;
+      // 반 드롭다운 재구성
+      if (mockClassSelect) {
+        let data = getDataForCurrentMonth();
+        if (gradeVal !== 'all') data = data.filter(d => String(d.학년) === gradeVal);
+        const prev = mockClassSelect.value;
+        const classes = [...new Set(data.map(d => d.반))].sort((a,b) => Number(a)-Number(b));
+        mockClassSelect.innerHTML = '<option value="all">전체 반</option>';
+        classes.forEach(cls => {
+          const o = document.createElement('option'); o.value = cls; o.textContent = `${cls}반`;
+          mockClassSelect.appendChild(o);
+        });
+        if ([...mockClassSelect.options].some(o => o.value === prev)) mockClassSelect.value = prev;
+      }
+      updateStudentDropdown(mockClassSelect ? mockClassSelect.value : 'all');
+      renderFilteredMockData();
+    });
+  }
+
   if (mockClassSelect) {
     mockClassSelect.addEventListener('change', (e) => {
         updateStudentDropdown(e.target.value);
         renderFilteredMockData();
     });
   }
-  
+
   if (mockStudentSelect) {
     mockStudentSelect.addEventListener('change', renderFilteredMockData);
   }
@@ -404,45 +475,40 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function processMockFiles(files) {
-      // 현재 선택된 월의 데이터 초기화 (덮어쓰기)
-      mockDataByMonth[currentMockMonth] = [];
-      
+      const key = dataKey();
+      mockDataByMonth[key] = [];
+
       for (let i = 0; i < files.length; i++) {
           const file = files[i];
           if (!file.name.toLowerCase().endsWith('.csv')) continue;
 
           try {
               let text = await readFileAsText(file);
-              
               text = text.replace(/❹/g, '우').replace(/④/g, '우');
-
               const data = parseCSVString(text);
               const extracted = extractMockStudentData(data);
-              mockDataByMonth[currentMockMonth] = mockDataByMonth[currentMockMonth].concat(extracted);
+              mockDataByMonth[key] = mockDataByMonth[key].concat(extracted);
           } catch (err) {
               console.error(`Error processing file ${file.name}:`, err);
           }
       }
 
-      if (mockDataByMonth[currentMockMonth].length > 0) {
+      if (mockDataByMonth[key].length > 0) {
           showMockResults();
-          // 로컬 IndexedDB 저장
           await StorageManager.save("mockDataByMonth", mockDataByMonth);
-          // Firebase 서버 저장 (공유용)
           if (typeof window.firebaseMockSave === 'function') {
               try {
                   const el = document.getElementById('mockServerStatus');
                   if (el) el.innerHTML = '<span style="color:var(--text-secondary);">서버에 저장 중...</span>';
-                  await window.firebaseMockSave(currentMockMonth, mockDataByMonth[currentMockMonth]);
-                  const count = mockDataByMonth[currentMockMonth].length;
-                  mockServerData[currentMockMonth] = { count, uploadedAt: { seconds: Date.now() / 1000 } };
+                  await window.firebaseMockSave(key, mockDataByMonth[key]);
+                  mockServerData[key] = { count: mockDataByMonth[key].length, uploadedAt: { seconds: Date.now() / 1000 } };
                   refreshMockServerStatus();
               } catch (e) {
                   console.warn('[Firebase] 모의고사 저장 실패:', e.message);
               }
           }
       } else {
-          alert(`${currentMockMonth}월 추출 자료가 없습니다. 성적표 파일이 맞는지 확인해 주세요.`);
+          alert(`${currentMockGrade}학년 ${currentMockMonth}월 추출 자료가 없습니다. 성적표 파일이 맞는지 확인해 주세요.`);
       }
   }
 
@@ -584,10 +650,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /** GAS 웹 앱으로 스프레드시트 시트 목록 로드 */
   async function connectToGoogleSheet() {
-      const gasUrl = localStorage.getItem(`mockGasUrl_${currentMockMonth}`);
+      const gasUrl = localStorage.getItem(`mockGasUrl_${currentMockGrade}_${currentMockMonth}`);
 
       if (!gasUrl) {
-          alert(`${currentMockMonth}월 연동 설정에 GAS 웹 앱 URL이 없습니다.\n⚙️ 연동 설정을 먼저 진행해 주세요.`);
+          alert(`${currentMockGrade}학년 ${currentMockMonth}월 연동 설정에 GAS 웹 앱 URL이 없습니다.\n⚙️ 연동 설정을 먼저 진행해 주세요.`);
           if (mockGasSettingsArea) mockGasSettingsArea.classList.remove('hidden');
           return null;
       }
@@ -654,8 +720,8 @@ document.addEventListener("DOMContentLoaded", () => {
   async function fetchSubjectSheetData(sheetName) {
       if (mockCachedSheetData[sheetName]) return mockCachedSheetData[sheetName];
 
-      const gasUrl = localStorage.getItem(`mockGasUrl_${currentMockMonth}`);
-      if (!gasUrl) throw new Error(`${currentMockMonth}월 GAS 연동 설정이 되어 있지 않습니다.`);
+      const gasUrl = localStorage.getItem(`mockGasUrl_${currentMockGrade}_${currentMockMonth}`);
+      if (!gasUrl) throw new Error(`${currentMockGrade}학년 ${currentMockMonth}월 GAS 연동 설정이 되어 있지 않습니다.`);
 
       const data = await gasGetJson(`${gasUrl}?action=sheetData&sheet=${encodeURIComponent(sheetName)}`);
       if (!data.success) throw new Error(data.error || `시트 '${sheetName}' 데이터 로드 실패`);
@@ -942,8 +1008,11 @@ document.addEventListener("DOMContentLoaded", () => {
   function updateStudentDropdown(selectedClass) {
       if (!mockStudentSelect) return;
       mockStudentSelect.innerHTML = '<option value="all">전체 학생</option>';
-      
-      let filteredData = mockDataByMonth[currentMockMonth] || [];
+
+      const mockGradeFilterSel = document.getElementById('mockGradeFilterSelect');
+      const selectedGrade = mockGradeFilterSel ? mockGradeFilterSel.value : 'all';
+      let filteredData = getDataForCurrentMonth();
+      if (selectedGrade !== 'all') filteredData = filteredData.filter(d => String(d.학년) === selectedGrade);
       if (selectedClass !== 'all') {
           filteredData = filteredData.filter(d => d.반 === selectedClass);
       }
@@ -1080,10 +1149,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function renderFilteredMockData() {
       if (!mockPreviewBody) return;
+      const mockGradeFilterSel = document.getElementById('mockGradeFilterSelect');
+      const selectedGrade = mockGradeFilterSel ? mockGradeFilterSel.value : 'all';
       const selectedClass = mockClassSelect ? mockClassSelect.value : 'all';
       const selectedStudent = mockStudentSelect ? mockStudentSelect.value : 'all';
 
-      let filtered = mockDataByMonth[currentMockMonth] || [];
+      let filtered = getDataForCurrentMonth();
+      if (selectedGrade !== 'all') {
+          filtered = filtered.filter(d => String(d.학년) === selectedGrade);
+      }
       if (selectedClass !== 'all') {
           filtered = filtered.filter(d => d.반 === selectedClass);
       }
@@ -1527,12 +1601,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function showMockResults() {
       if (!mockResultText || !mockPreviewBody || !mockResultArea) return;
-      const data = mockDataByMonth[currentMockMonth] || [];
-      mockResultText.innerText = `${currentMockMonth}월 총 ${data.length}개의 과목 데이터가 추출되었습니다.`;
-      
+      const allData = getDataForCurrentMonth();
+      const curData = mockDataByMonth[dataKey()] || [];
+      mockResultText.innerText = `${currentMockMonth}월 총 ${allData.length}개의 과목 데이터 (${currentMockGrade}학년 업로드: ${curData.length}건)`;
+
+      // 학년 드롭다운 초기화
+      const mockGradeFilterSel = document.getElementById('mockGradeFilterSelect');
+      if (mockGradeFilterSel) {
+          const grades = [...new Set(allData.map(d => String(d.학년)).filter(Boolean))].sort();
+          mockGradeFilterSel.innerHTML = '<option value="all">전체 학년</option>';
+          grades.forEach(g => {
+              const option = document.createElement('option');
+              option.value = g; option.textContent = `${g}학년`;
+              mockGradeFilterSel.appendChild(option);
+          });
+          mockGradeFilterSel.value = 'all';
+      }
+
       // 반 드롭다운 초기화
       if (mockClassSelect) {
-          const classes = [...new Set(data.map(d => d.반))].sort((a,b) => Number(a) - Number(b));
+          const classes = [...new Set(allData.map(d => d.반))].sort((a,b) => Number(a) - Number(b));
           mockClassSelect.innerHTML = '<option value="all">전체 반</option>';
           classes.forEach(cls => {
               const option = document.createElement('option');
@@ -1542,13 +1630,9 @@ document.addEventListener("DOMContentLoaded", () => {
           });
           mockClassSelect.value = 'all';
       }
-      
-      // 학생 드롭다운 초기화
+
       updateStudentDropdown('all');
-      
-      // 테이블 렌더링
       renderFilteredMockData();
-      
       mockResultArea.classList.remove('hidden');
   }
 
@@ -6795,10 +6879,8 @@ overallEvaluation 필드는 아래 형식을 반드시 따르십시오:
       // 5. Mock Exam Data
       const savedMockData = await StorageManager.load("mockDataByMonth");
       if (savedMockData) {
-        mockDataByMonth = savedMockData;
-        if (mockDataByMonth[currentMockMonth] && mockDataByMonth[currentMockMonth].length > 0) {
-          showMockResults();
-        }
+        Object.assign(mockDataByMonth, savedMockData);
+        if (getDataForCurrentMonth().length > 0) showMockResults();
       }
     } catch (e) {
       console.error("Error loading persisted data:", e);

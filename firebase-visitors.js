@@ -100,34 +100,45 @@ function trackOnlineUsers() {
 }
 
 // ── 모의고사 데이터 서버 저장 ─────────────────────────────
-async function saveMockExamData(month, data) {
-  await setDoc(doc(db, 'mockExamData', String(month)), {
+async function saveMockExamData(gradeMonthKey, data) {
+  await setDoc(doc(db, 'mockExamData', String(gradeMonthKey)), {
     data:       data,
     uploadedAt: fsTimestamp(),
-    month:      String(month),
+    key:        String(gradeMonthKey),
     count:      data.length
   });
 }
 
-// ── 모의고사 데이터 서버 불러오기 (전체 월) ──────────────
+// ── 모의고사 데이터 서버 불러오기 (전체 학년+월) ─────────
 async function loadAllMockData() {
-  const months = ['3', '5', '6', '7', '9', '11'];
-  for (const month of months) {
+  const keys = [
+    '1_3','1_6','1_9','1_11',
+    '2_3','2_6','2_9','2_11',
+    '3_3','3_5','3_6','3_7','3_9','3_11'
+  ];
+  for (const key of keys) {
     try {
-      const snap = await getDoc(doc(db, 'mockExamData', month));
+      const snap = await getDoc(doc(db, 'mockExamData', key));
       if (snap.exists() && typeof window.onFirebaseMockData === 'function') {
-        window.onFirebaseMockData(month, snap.data());
+        window.onFirebaseMockData(key, snap.data());
       }
     } catch (e) {
-      console.warn(`[Firebase] ${month}월 모의고사 로드 오류:`, e.message);
+      console.warn(`[Firebase] ${key} 모의고사 로드 오류:`, e.message);
     }
   }
 }
 
-// ── GAS URL 서버 저장 ────────────────────────────────────
-async function saveGasUrls(urls) {
+// ── GAS URL 서버 저장 (학년별) ───────────────────────────
+async function saveGasUrls(grade, urls) {
+  // 기존 데이터 유지하면서 해당 학년만 업데이트
+  let existing = {};
+  try {
+    const snap = await getDoc(doc(db, 'gasConfig', 'mockExamUrls'));
+    if (snap.exists()) existing = snap.data().urls || {};
+  } catch (_) {}
+  existing[String(grade)] = urls;
   await setDoc(doc(db, 'gasConfig', 'mockExamUrls'), {
-    urls:      urls,
+    urls:      existing,
     updatedAt: fsTimestamp()
   });
 }
@@ -145,8 +156,9 @@ async function loadGasUrls() {
 }
 
 // app.js에서 호출할 수 있도록 전역 노출
+// firebaseMockSave(gradeMonthKey, data) — 예: firebaseMockSave('1_3', [...])
 window.firebaseMockSave  = saveMockExamData;
-window.firebaseGasSave   = saveGasUrls;
+window.firebaseGasSave   = saveGasUrls; // saveGasUrls(grade, urls)
 
 // ── 실행 ─────────────────────────────────────────────────
 (async () => {

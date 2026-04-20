@@ -665,11 +665,14 @@
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
             <h2 class="section-title" style="margin-bottom: 0;">📊 모의고사 성적표 자동 분석</h2>
             <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <select id="mockGradeSelect" class="form-select" style="padding: 0.4rem 1.2rem 0.4rem 1rem; font-size: 0.85rem; background-color: rgba(99,102,241,0.7); border: 1px solid var(--accent-primary); color: white; font-weight: 600; border-radius: 8px;">
+                    <option value="1">1학년</option>
+                    <option value="2">2학년</option>
+                    <option value="3">3학년</option>
+                </select>
                 <select id="mockMonthSelect" class="form-select" style="padding: 0.4rem 2rem 0.4rem 1rem; font-size: 0.85rem; background-color: var(--accent-primary); border: none; color: white; font-weight: 600; border-radius: 8px;">
                     <option value="3">3월 모의고사</option>
-                    <option value="5">5월 모의고사</option>
                     <option value="6">6월 모의고사</option>
-                    <option value="7">7월 모의고사</option>
                     <option value="9">9월 모의고사</option>
                     <option value="11">11월 모의고사</option>
                 </select>
@@ -683,35 +686,35 @@
         <div id="mockGasSettingsArea" class="hidden" style="margin-bottom: 1.5rem; background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 16px; border: 1px solid var(--panel-border); box-shadow: 0 8px 32px rgba(0,0,0,0.2); backdrop-filter: blur(8px);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.8rem;">
                 <p style="font-size: 0.9rem; font-weight: 700; color: var(--accent-primary); display:flex; align-items:center; gap:0.5rem; margin:0;">
-                    <span style="font-size: 1.2rem;">🌐</span> 월별 Google Apps Script 연동 및 분석 설정
+                    <span style="font-size: 1.2rem;">🌐</span> 학년별 Google Apps Script 연동 및 분석 설정
                 </p>
                 <span style="font-size:0.75rem; color:var(--text-secondary);">각 월의 오답 분석 데이터가 담긴 시트 URL을 입력하세요.</span>
             </div>
-            
+
+            <!-- 학년 선택 -->
+            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.2rem; padding: 0.6rem 1rem; background: rgba(99,102,241,0.08); border-radius: 10px; border: 1px solid rgba(99,102,241,0.2);">
+                <label style="font-size: 0.85rem; font-weight: 600; color: var(--accent-primary); white-space: nowrap;">설정 학년</label>
+                <select id="mockGasGradeSelect" class="form-select" style="padding: 0.3rem 1rem; font-size: 0.85rem; background: var(--input-bg); border: 1px solid var(--panel-border); color: var(--text-primary); border-radius: 8px; width: auto;">
+                    <option value="1">1학년</option>
+                    <option value="2">2학년</option>
+                    <option value="3">3학년</option>
+                </select>
+                <span style="font-size: 0.75rem; color: var(--text-secondary);">선택한 학년의 GAS 웹 앱 URL을 입력하세요</span>
+            </div>
+
             <div style="display: flex; flex-direction: column; gap: 0.8rem; margin-bottom: 1.5rem;">
-                <!-- 3월 & 5월 -->
+                <!-- 3월 & 6월 (공통) -->
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                     <div style="display: flex; align-items: center; gap: 0.8rem; background: rgba(255,255,255,0.02); padding: 0.4rem 0.8rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
                         <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); min-width: 40px;">3월</label>
                         <input id="mockGasUrl_3" type="text" class="gas-month-input" placeholder="https://script.google.com/..." style="flex:1; border:none; background:transparent; font-size:0.8rem;">
                     </div>
                     <div style="display: flex; align-items: center; gap: 0.8rem; background: rgba(255,255,255,0.02); padding: 0.4rem 0.8rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
-                        <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); min-width: 40px;">5월</label>
-                        <input id="mockGasUrl_5" type="text" class="gas-month-input" placeholder="https://script.google.com/..." style="flex:1; border:none; background:transparent; font-size:0.8rem;">
-                    </div>
-                </div>
-                <!-- 6월 & 7월 -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                    <div style="display: flex; align-items: center; gap: 0.8rem; background: rgba(255,255,255,0.02); padding: 0.4rem 0.8rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
                         <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); min-width: 40px;">6월</label>
                         <input id="mockGasUrl_6" type="text" class="gas-month-input" placeholder="https://script.google.com/..." style="flex:1; border:none; background:transparent; font-size:0.8rem;">
                     </div>
-                    <div style="display: flex; align-items: center; gap: 0.8rem; background: rgba(255,255,255,0.02); padding: 0.4rem 0.8rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
-                        <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); min-width: 40px;">7월</label>
-                        <input id="mockGasUrl_7" type="text" class="gas-month-input" placeholder="https://script.google.com/..." style="flex:1; border:none; background:transparent; font-size:0.8rem;">
-                    </div>
                 </div>
-                <!-- 9월 & 11월 -->
+                <!-- 9월 & 11월 (공통) -->
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                     <div style="display: flex; align-items: center; gap: 0.8rem; background: rgba(255,255,255,0.02); padding: 0.4rem 0.8rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
                         <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); min-width: 40px;">9월</label>
@@ -720,6 +723,17 @@
                     <div style="display: flex; align-items: center; gap: 0.8rem; background: rgba(255,255,255,0.02); padding: 0.4rem 0.8rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
                         <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); min-width: 40px;">11월</label>
                         <input id="mockGasUrl_11" type="text" class="gas-month-input" placeholder="https://script.google.com/..." style="flex:1; border:none; background:transparent; font-size:0.8rem;">
+                    </div>
+                </div>
+                <!-- 5월 & 7월 (3학년 전용) -->
+                <div id="gasRow57" style="display: none; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div style="display: flex; align-items: center; gap: 0.8rem; background: rgba(255,255,255,0.02); padding: 0.4rem 0.8rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                        <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); min-width: 40px;">5월</label>
+                        <input id="mockGasUrl_5" type="text" class="gas-month-input" placeholder="https://script.google.com/..." style="flex:1; border:none; background:transparent; font-size:0.8rem;">
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.8rem; background: rgba(255,255,255,0.02); padding: 0.4rem 0.8rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                        <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); min-width: 40px;">7월</label>
+                        <input id="mockGasUrl_7" type="text" class="gas-month-input" placeholder="https://script.google.com/..." style="flex:1; border:none; background:transparent; font-size:0.8rem;">
                     </div>
                 </div>
             </div>
@@ -733,7 +747,7 @@
         </div>
 
         <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.9rem;">
-            CSV 성적표 파일들을 선택해서 올려주세요. 파이썬이나 터미널 없이 브라우저에서 바로 통합 분석합니다.
+            모의고사 성적표 CSV 파일 업로드
         </p>
 
         <!-- 파일 드롭 영역 -->
@@ -768,6 +782,12 @@
 
             <!-- 계층형 선택 영역 -->
             <div class="mock-selectors" style="display: flex; gap: 1rem; margin-bottom: 1.5rem; padding: 1rem; border-radius: 12px; border: 1px solid var(--panel-border);">
+                <div style="flex: 1;">
+                    <label for="mockGradeFilterSelect" style="display: block; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.5rem;">학년 선택</label>
+                    <select id="mockGradeFilterSelect" class="form-select" style="width: 100%; background: var(--input-bg); color: var(--text-primary); border: 1px solid var(--panel-border); border-radius: 8px; padding: 0.5rem;">
+                        <option value="all">전체 학년</option>
+                    </select>
+                </div>
                 <div style="flex: 1;">
                     <label for="mockClassSelect" style="display: block; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.5rem;">반 선택</label>
                     <select id="mockClassSelect" class="form-select" style="width: 100%; background: var(--input-bg); color: var(--text-primary); border: 1px solid var(--panel-border); border-radius: 8px; padding: 0.5rem;">
