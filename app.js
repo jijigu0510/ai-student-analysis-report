@@ -123,6 +123,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const tabInterview = document.getElementById("tab-interview");
   const tabMockExam = document.getElementById("tab-mock-exam");
   const tabGpaMockCompare = document.getElementById("tab-gpa-mock-compare");
+  const tabGradeRank      = document.getElementById("tab-grade-rank");
   const viewIndividual = document.getElementById("view-individual");
   const viewPassFail = document.getElementById("view-passfail");
   const viewSetech = document.getElementById("view-setech");
@@ -130,9 +131,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const viewInterview = document.getElementById("view-interview");
   const viewMockExam = document.getElementById("view-mock-exam");
   const viewGpaMockCompare = document.getElementById("view-gpa-mock-compare");
+  const viewGradeRank      = document.getElementById("view-grade-rank");
 
-  const allTabs = [tabIndividual, tabPassFail, tabSetech, tabCsat, tabInterview, tabMockExam, tabGpaMockCompare].filter(Boolean);
-  const allViews = [viewIndividual, viewPassFail, viewSetech, viewCsat, viewInterview, viewMockExam, viewGpaMockCompare].filter(Boolean);
+  const allTabs = [tabIndividual, tabPassFail, tabSetech, tabCsat, tabInterview, tabMockExam, tabGpaMockCompare, tabGradeRank].filter(Boolean);
+  const allViews = [viewIndividual, viewPassFail, viewSetech, viewCsat, viewInterview, viewMockExam, viewGpaMockCompare, viewGradeRank].filter(Boolean);
 
   function switchTabTo(activeTab, activeView) {
     allTabs.forEach(t => t.classList.remove("active"));
@@ -145,7 +147,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (activeView) {
       activeView.classList.remove("hidden");
       activeView.classList.add("active");
-      activeView.style.display = (activeView.id === "view-csat") ? "block" : "grid";
+      activeView.style.display = (activeView.id === "view-csat" || activeView.id === "view-grade-rank") ? "block" : "grid";
     }
 
     // Sidebar Interview Settings Visibility
@@ -179,6 +181,11 @@ document.addEventListener("DOMContentLoaded", () => {
   if (tabGpaMockCompare) tabGpaMockCompare.addEventListener("click", () => {
     switchTabTo(tabGpaMockCompare, viewGpaMockCompare);
     initGpaMockCompare();
+  });
+  if (tabGradeRank) tabGradeRank.addEventListener("click", () => {
+    switchTabTo(tabGradeRank, viewGradeRank);
+    // 탭 전환 시 캔버스 리사이즈 트리거 (차트가 올바른 크기로 렌더링되도록)
+    setTimeout(() => window.dispatchEvent(new Event('resize')), 100);
   });
 
   // --- Tab Container Toggle Logic ---
@@ -10150,13 +10157,16 @@ ${univPromptSupplement}
   let compareChartInstance = null;
   let isCompareInitialized = false;
 
+  // 기본 내장 GAS URL (변경 시 여기를 수정)
+  const DEFAULT_GPA_GAS_URL = 'https://script.google.com/macros/s/AKfycbwTChnTCZv4igguYvfUTPGQkXeodQOSErbePre1JKcCIExDF1ALsqyErWQ1MciZMFjb/exec';
+
   // 로컬 실행을 위한 GAS URL 설정 로직
   const compareGasUrlInput = document.getElementById('compareGasUrl');
   const compareGasUrlSaveBtn = document.getElementById('compareGasUrlSaveBtn');
   const compareLoadDataBtn = document.getElementById('compareLoadDataBtn');
 
   if (compareGasUrlInput) {
-    compareGasUrlInput.value = localStorage.getItem('gpaMockGasUrl') || '';
+    compareGasUrlInput.value = localStorage.getItem('gpaMockGasUrl') || DEFAULT_GPA_GAS_URL;
   }
 
   if (compareGasUrlSaveBtn) {
@@ -10192,16 +10202,12 @@ ${univPromptSupplement}
         if (loader) loader.classList.add('hidden');
       }).getStudentData();
     } else {
-      const gasUrl = localStorage.getItem('gpaMockGasUrl');
-      if (!gasUrl) {
-        if (loader) loader.classList.add('hidden');
-        return;
-      }
+      const gasUrl = localStorage.getItem('gpaMockGasUrl') || DEFAULT_GPA_GAS_URL;
       const fetchUrl = gasUrl + (gasUrl.includes('?') ? '&' : '?') + 'action=getStudentData';
-      
+
       fetch(fetchUrl)
         .then(response => {
-          if (!response.ok) throw new Error("네트워크 응답이 정상이 아닙니다.");
+          if (!response.ok) throw new Error(`서버 응답 오류 (HTTP ${response.status})`);
           return response.json();
         })
         .then(data => {
@@ -10215,12 +10221,75 @@ ${univPromptSupplement}
         })
         .catch(error => {
           console.error("Fetch error:", error);
-          alert("데이터 로딩 실패: " + error.message);
+          if (loader) loader.classList.add('hidden');
+          showGasUrlWarning(gasUrl, error.message);
         })
         .finally(() => {
           if (loader) loader.classList.add('hidden');
         });
     }
+  }
+
+  function showGasUrlWarning(failedUrl, reason) {
+    // 기존 경고 모달 제거 후 재생성
+    const existing = document.getElementById('gasUrlWarningModal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'gasUrlWarningModal';
+    modal.style.cssText = `
+      position:fixed; inset:0; z-index:9999;
+      background:rgba(0,0,0,0.6); backdrop-filter:blur(4px);
+      display:flex; align-items:center; justify-content:center;
+    `;
+    modal.innerHTML = `
+      <div style="
+        background:var(--panel-bg,#1a1b2e); border:1px solid rgba(255,100,100,0.4);
+        border-radius:16px; padding:2rem; max-width:480px; width:90%; color:var(--text-primary,#f8f9fa);
+        box-shadow:0 8px 32px rgba(0,0,0,0.5);
+      ">
+        <div style="font-size:2rem; margin-bottom:0.75rem;">⚠️</div>
+        <h3 style="margin-bottom:0.5rem; color:#ff6b6b;">앱스크립트 연결 실패</h3>
+        <p style="font-size:0.9rem; color:var(--text-secondary,#adb5bd); margin-bottom:1rem;">
+          내장된 GAS URL로 데이터를 불러오는 데 실패했습니다.<br>
+          URL이 변경되었거나 배포가 해제된 경우 아래에서 새 URL을 입력해 주세요.
+        </p>
+        <p style="font-size:0.75rem; word-break:break-all; color:rgba(255,107,107,0.7); margin-bottom:1.25rem;">
+          실패 URL: ${failedUrl}<br>오류: ${reason}
+        </p>
+        <input id="gasUrlWarningInput" type="text" placeholder="새 앱스크립트 URL 붙여넣기..."
+          style="width:100%; padding:0.65rem 0.9rem; border-radius:8px; border:1px solid rgba(255,255,255,0.2);
+                 background:rgba(0,0,0,0.3); color:inherit; font-size:0.9rem; margin-bottom:0.75rem;">
+        <div style="display:flex; gap:0.75rem; justify-content:flex-end;">
+          <button id="gasUrlWarningClose" style="
+            padding:0.5rem 1.1rem; border-radius:8px; border:1px solid rgba(255,255,255,0.2);
+            background:transparent; color:var(--text-secondary,#adb5bd); cursor:pointer; font-size:0.9rem;">
+            닫기
+          </button>
+          <button id="gasUrlWarningSave" style="
+            padding:0.5rem 1.25rem; border-radius:8px; border:none;
+            background:linear-gradient(135deg,#7c83fd,#96baff); color:#fff; cursor:pointer; font-weight:600; font-size:0.9rem;">
+            저장 후 재시도
+          </button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    document.getElementById('gasUrlWarningClose').onclick = () => modal.remove();
+    document.getElementById('gasUrlWarningSave').onclick = () => {
+      const newUrl = document.getElementById('gasUrlWarningInput').value.trim();
+      if (!newUrl.startsWith('https://script.google.com/')) {
+        alert('올바른 Google Apps Script URL을 입력해 주세요.');
+        return;
+      }
+      localStorage.setItem('gpaMockGasUrl', newUrl);
+      if (compareGasUrlInput) compareGasUrlInput.value = newUrl;
+      modal.remove();
+      isCompareInitialized = false;
+      initGpaMockCompare();
+    };
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
   }
 
   function handleCompareData(data) {

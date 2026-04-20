@@ -78,6 +78,7 @@
         <button id="tab-interview" class="tab-btn">🎤 면접 문항 생성</button>
         <button id="tab-mock-exam" class="tab-btn">📊 모의고사 분석</button>
         <button id="tab-gpa-mock-compare" class="tab-btn">📈 내신 & 모의고사 분석</button>
+        <button id="tab-grade-rank" class="tab-btn">📊 내신 분석하기(대학별 교과 점수 확인)</button>
       </nav>
 
 
@@ -957,6 +958,161 @@
       </div>
     </section>
   </main>
+  <main id="view-grade-rank" class="main-container view-section hidden">
+<div class="gr-container">
+    <div class="gr-header">
+        <div class="header-title">
+            <h1>내신 석차 산출기 <span class="badge">독립실행버전 v48 (반 필터 추가)</span></h1>
+            <p style="color: var(--text-sub);">인터넷 연결 없이 작동합니다. CSV 파일을 업로드하여 기본 내신과 대학별 점수를 산출하세요.</p>
+        </div>
+        <div class="header-right">
+            <div id="saveStatus" class="save-status"><span>💾 브라우저에 저장됨</span></div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <div class="file-box btn-upload">
+            <button class="btn" type="button" onclick="document.getElementById('fileInput').click()"><span>📂 파일 업로드 (CSV / JSON)</span></button>
+            <input type="file" id="fileInput" multiple accept=".csv, .json" style="display:none;">
+        </div>
+        <div id="exportButtons" class="export-group" style="display: none;">
+            <button class="btn btn-green" onclick="exportJSON()">📤 분석 데이터 공유(저장)</button>
+            <button class="btn btn-green" onclick="exportExcel()">📊 순위표 엑셀 다운</button>
+        </div>
+        <button class="btn btn-reset" id="btnReset" onclick="clearData()" style="display: none;"><span>↻ 초기화</span></button>
+        <div class="radio-group">
+            <span>인코딩:</span>
+            <label><input type="radio" name="gr-encoding" value="EUC-KR" checked> EUC-KR</label>
+            <label><input type="radio" name="gr-encoding" value="UTF-8"> UTF-8</label>
+        </div>
+        <div class="gr-class-filter-wrap" id="classFilterContainer" style="display: none;">
+            <span class="gr-filter-label">반 필터:</span>
+            <div id="classFilterBtnGroup" class="gr-filter-btn-group">
+                <button class="gr-filter-btn active" data-val="all" onclick="handleClassFilter('all')">전체</button>
+            </div>
+            
+            <!-- 계층형 필터 추가 -->
+            <div class="gr-hierarchy-filters" style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                <select id="grClassSelect" class="gr-select" onchange="onHierarchicalChange('class')" style="font-size: 0.8rem; padding: 0.3rem 0.5rem; max-width: 70px;">
+                    <option value="all">전체 반</option>
+                </select>
+                <select id="grStudentSelect" class="gr-select gr-student-select" onchange="onHierarchicalChange('student')" style="font-size: 0.8rem; padding: 0.3rem 0.5rem; max-width: 90px;">
+                    <option value="none">학생 선택</option>
+                </select>
+                <select id="univSelector" class="gr-select" onchange="" style="font-size: 0.8rem; padding: 0.3rem 0.5rem; max-width: 120px;">
+                    <option value="yonsei">연세대 [추천형]</option>
+                    <option value="korea">고려대 [학교추천]</option>
+                    <option value="sogang">서강대 [지역균형]</option>
+                    <option value="sungkyunkwan">성균관대 [학교장]</option>
+                    <option value="chungang">중앙대 [지역균형]</option>
+                    <option value="kyunghee">경희대 [지역균형]</option>
+                    <option value="hufs">한국외대 [학교장]</option>
+                    <option value="uos">서울시립대 [지역]</option>
+                    <option value="konkuk">건국대 [KU지역]</option>
+                    <option value="dongguk">동국대 [학교장]</option>
+                    <option value="hongik">홍익대 [학교장]</option>
+                    <option value="kookmin">국민대 [교과]</option>
+                    <option value="soongsil">숭실대 [학생부]</option>
+                    <option value="sejong">세종대 [지역균형]</option>
+                    <option value="dankook">단국대 [지역균형]</option>
+                    <option value="kwangwoon">광운대 [지역균형]</option>
+                </select>
+                <button id="openUnivCalcBtn" class="btn btn-blue" onclick="openUnivCalcModal()" style="font-size: 0.8rem; padding: 0.35rem 0.8rem; white-space: nowrap; visibility: hidden;">교과전형 점수 확인</button>
+            </div>
+        </div>
+        <div id="statusMsg" style="margin-left: 10px; font-size: 0.9rem; color: var(--primary);"></div>
+    </div>
+
+    <div class="formula-box" id="formulaBox" style="display: none;">
+        <strong>💡 일반 산출 기준:</strong>
+        <span class="formula-math">내신 = Σ(과목별 학점수 × 석차등급) ÷ Σ(반영 과목 총 학점수)</span>
+        <span style="font-size: 0.8rem; color: #64748b; margin-left: 5px;">(단, 주요 교과 합산 시에는 정보/기술·가정/제2외국어/한문/교양 제외)</span>
+    </div>
+
+    <div id="mainContent" class="grid" style="display: none;">
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">일반 내신 등급 분포도</div>
+                <div style="font-size: 0.8rem; color: var(--text-sub);">* 점을 클릭하면 상세내역 확인</div>
+            </div>
+            <div class="chart-container" id="chartWrapper">
+                <canvas id="scatterChart"></canvas>
+                <div id="tooltip"></div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">전체 석차</div>
+                <div id="studentCount" style="font-size: 0.85rem; background: #eff6ff; color: var(--primary); padding: 2px 8px; border-radius: 10px;"></div>
+            </div>
+            <div class="table-wrapper">
+                <table id="rankTable">
+                    <thead>
+                        <tr>
+                            <th width="50">순위</th>
+                            <th width="50">반</th>
+                            <th>이름</th>
+                            <th width="80" style="text-align: right;">내신</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rankTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="grEmptyState" class="empty-state">
+        <h3>데이터가 없습니다.</h3>
+        <p>상단의 <strong>[파일 업로드]</strong> 버튼을 눌러주세요.</p>
+    </div>
+</div>
+
+<!-- 상세 정보 모달 -->
+
+<!-- 대학별 교과점수 시뮬레이터 모달 -->
+<div id="univCalcModalOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999; overflow-y:auto; padding:2rem 1rem; box-sizing:border-box;">
+    <div style="background:#fff; border-radius:16px; max-width:1140px; width:100%; margin:0 auto; box-shadow:0 8px 40px rgba(0,0,0,0.35); overflow:hidden;">
+        <div style="background:#1e293b; padding:1.2rem 1.5rem; display:flex; align-items:center; justify-content:space-between; gap:1rem;">
+            <div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
+                <h3 style="margin:0; font-size:1.1rem; color:#fff;">🎓 대학별 교과점수 시뮬레이터</h3>
+                <span id="univCalcModalStudentName" style="font-size:0.9rem; color:#94a3b8; font-weight:500;"></span>
+            </div>
+            <button onclick="closeUnivCalcModal()" style="background:none; border:none; color:#94a3b8; font-size:1.8rem; cursor:pointer; line-height:1; padding:0; margin:0;">×</button>
+        </div>
+        <div style="padding:1rem 1.5rem; border-bottom:1px solid #e2e8f0; display:flex; align-items:center; gap:0.8rem; flex-wrap:wrap; background:#f8fafc;">
+            <label style="font-weight:600; color:#334155; font-size:0.9rem; white-space:nowrap;">대학 선택:</label>
+            <select id="univSelectorModal" onchange="switchUnivCalcModal()" style="font-size:0.9rem; padding:0.4rem 0.8rem; border:1px solid #cbd5e1; border-radius:8px; background:#fff; color:#1e293b; cursor:pointer; outline:none; font-weight:500;">
+                <option value="yonsei">연세대학교 [학생부교과 추천형]</option>
+                <option value="korea">고려대학교 [학생부교과 학교추천]</option>
+                <option value="sogang">서강대학교 [학생부교과 지역균형]</option>
+                <option value="sungkyunkwan">성균관대학교 [학생부교과 학교장추천]</option>
+                <option value="chungang">중앙대학교 [학생부교과 지역균형]</option>
+                <option value="kyunghee">경희대학교 [학생부교과 지역균형]</option>
+                <option value="hufs">한국외국어대학교 [학생부교과 학교장추천]</option>
+                <option value="uos">서울시립대학교 [학생부교과 지역균형]</option>
+                <option value="konkuk">건국대학교 [학생부교과 KU지역균형]</option>
+                <option value="dongguk">동국대학교 [학생부교과 학교장추천인재]</option>
+                <option value="hongik">홍익대학교 [학생부교과 학교장추천자]</option>
+                <option value="kookmin">국민대학교 [학생부교과 교과성적우수자]</option>
+                <option value="soongsil">숭실대학교 [학생부교과 학생부우수자]</option>
+                <option value="sejong">세종대학교 [학생부교과 지역균형]</option>
+                <option value="dankook">단국대학교 [학생부교과 지역균형선발]</option>
+                <option value="kwangwoon">광운대학교 [학생부교과 지역균형전형]</option>
+            </select>
+        </div>
+        <div id="calcContainerModal" style="padding:1.5rem; max-height:70vh; overflow-y:auto;">
+            <!-- JS 렌더링 영역 -->
+        </div>
+        <div style="padding:1rem 1.5rem; border-top:1px solid #e2e8f0; text-align:right; background:#f8fafc;">
+            <button onclick="closeUnivCalcModal()" style="background:#1e293b; color:#fff; border:none; padding:0.6rem 1.5rem; border-radius:8px; font-size:0.9rem; cursor:pointer; font-weight:600;">닫기</button>
+        </div>
+    </div>
+</div>
+
+
+  </main>
+
 
   </div> <!-- // End of .app-layout -->
 
@@ -969,6 +1125,76 @@
       <div class="modal-body markdown-body" id="modalBody"></div>
     </div>
   </div>
+  <!-- 내신 석차 산출기 모달 -->
+<div class="gr-modal-overlay" id="modalOverlay">
+    <div class="modal">
+        <div class="modal-header">
+            <div style="width: 100%;">
+                <h2 id="modalName"></h2>
+                <div class="score-box">
+                    <div class="score-item" onclick="openDetail('total')"><span class="score-label">전체 내신</span><span class="score-value" id="modalTotal"></span></div>
+                    <div class="score-item" onclick="openDetail('kem')"><span class="score-label">국+영+수</span><span class="score-value" id="modalKem"></span></div>
+                    <div class="score-item" onclick="openDetail('kems')"><span class="score-label">국+영+수+과</span><span class="score-value" id="modalKems"></span></div>
+                    <div class="score-item" onclick="openDetail('kemss')"><span class="score-label">국+영+수+사</span><span class="score-value" id="modalKemss"></span></div>
+                    <div class="score-item" onclick="openDetail('kemsssc')"><span class="score-label">국+영+수+사+과</span><span class="score-value" id="modalKemsssc"></span></div>
+                    <div class="score-item" onclick="openDetail('mes')"><span class="score-label">수+영+과</span><span class="score-value" id="modalMes"></span></div>
+                    <div class="score-item" onclick="openDetail('kes')"><span class="score-label">국+영+사</span><span class="score-value" id="modalKes"></span></div>
+                </div>
+                <div style="margin-top: 10px; font-size: 0.8rem; color: #3b82f6; text-align: center;">👆 점수 박스를 누르면 산출 근거를 확인, 아래 버튼을 누르면 대학별 계산기를 엽니다.</div>
+            </div>
+            <button class="modal-close" onclick="closeModal()">×</button>
+        </div>
+        <div class="modal-body" style="padding-top: 15px;">
+            <button class="btn btn-green" style="width: 100%; margin-bottom: 15px; font-size: 1.1rem; justify-content: center; background: linear-gradient(135deg, #10b981, #059669);" onclick="loadToUnivCalc()">
+                이 학생 데이터를 대학별 계산기로 불러오기 ⬇️
+            </button>
+            <table id="modalTable">
+                <thead>
+                    <tr>
+                        <th style="padding-left: 10px;">교과</th>
+                        <th>과목명</th>
+                        <th style="text-align: center;">학년</th>
+                        <th style="text-align: center;">학점</th>
+                        <th style="text-align: center; padding-right: 10px;">등급/성취도</th>
+                    </tr>
+                </thead>
+                <tbody id="modalTbody"></tbody>
+            </table>
+            <div style="padding: 15px; text-align: center; font-size: 0.85rem; color: var(--text-sub); border-top: 1px solid var(--border); margin-bottom: 20px;">
+                (모든 교과가 전체 내신에 반영됩니다)
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 대학별 점수 요약 모달 -->
+<div class="gr-modal-overlay" id="univSummaryModalOverlay" style="z-index: 120;">
+    <div class="summary-modal">
+        <div class="modal-header">
+            <h3>대학별 성적 산출 요약</h3>
+            <button class="modal-close" onclick="closeUnivSummaryModal()">×</button>
+        </div>
+        <div class="modal-body" id="univSummaryContent">
+            <!-- JS에서 채워짐 -->
+        </div>
+        <div class="modal-footer" style="padding: 15px; text-align: right; border-top: 1px solid var(--border);">
+            <button class="btn btn-blue" onclick="closeUnivSummaryModal()">닫기</button>
+        </div>
+    </div>
+</div>
+<div class="gr-modal-overlay" id="detailModalOverlay">
+    <div class="detail-modal">
+        <div class="modal-header">
+            <h3 id="detailTitle" style="margin:0; font-size: 1.1rem; color: #1e293b;">산출 내역</h3>
+            <button class="modal-close" onclick="closeDetailModal()">×</button>
+        </div>
+        <div class="modal-body" style="padding: 20px;">
+            <div id="detailContent"></div>
+        </div>
+    </div>
+</div>
+
+
 
   <footer class="footer">
     <div class="container">
@@ -979,6 +1205,7 @@
     </div>
   </footer>
   <script src="app.js?v=7"></script>
+  <script src="grade-rank.js"></script>
   <script type="module" src="firebase-visitors.js"></script>
 
   <!-- 인쇄용 히든 컨테이너 -->
@@ -1001,3 +1228,4 @@
   </script>
 </body>
 </html>
+
