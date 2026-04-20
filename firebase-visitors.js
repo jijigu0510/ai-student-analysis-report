@@ -124,8 +124,29 @@ async function loadAllMockData() {
   }
 }
 
+// ── GAS URL 서버 저장 ────────────────────────────────────
+async function saveGasUrls(urls) {
+  await setDoc(doc(db, 'gasConfig', 'mockExamUrls'), {
+    urls:      urls,
+    updatedAt: fsTimestamp()
+  });
+}
+
+// ── GAS URL 서버 불러오기 ────────────────────────────────
+async function loadGasUrls() {
+  try {
+    const snap = await getDoc(doc(db, 'gasConfig', 'mockExamUrls'));
+    if (snap.exists() && typeof window.onFirebaseGasUrls === 'function') {
+      window.onFirebaseGasUrls(snap.data().urls);
+    }
+  } catch (e) {
+    console.warn('[Firebase] GAS URL 로드 오류:', e.message);
+  }
+}
+
 // app.js에서 호출할 수 있도록 전역 노출
-window.firebaseMockSave = saveMockExamData;
+window.firebaseMockSave  = saveMockExamData;
+window.firebaseGasSave   = saveGasUrls;
 
 // ── 실행 ─────────────────────────────────────────────────
 (async () => {
@@ -134,6 +155,7 @@ window.firebaseMockSave = saveMockExamData;
     await updateVisitorCounts();
     trackOnlineUsers();
     await loadAllMockData();
+    await loadGasUrls();
   } catch (e) {
     // Firebase 설정이 완료되지 않은 경우 조용히 무시
     console.warn('[Firebase] 초기화 오류 — firebase-config.js 설정을 확인하세요:', e.message);

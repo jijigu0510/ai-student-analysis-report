@@ -319,19 +319,46 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   const gasInputIds = ['3', '5', '6', '7', '9', '11'];
-  
+
+  // Firebase에서 GAS URL을 받아오는 콜백 (firebase-visitors.js가 호출)
+  window.onFirebaseGasUrls = function(urls) {
+    if (!urls) return;
+    gasInputIds.forEach(m => {
+      const serverUrl = urls[m] || '';
+      if (!serverUrl) return;
+      // 로컬에 없거나 비어 있을 때만 서버 값으로 채움
+      if (!localStorage.getItem(`mockGasUrl_${m}`)) {
+        localStorage.setItem(`mockGasUrl_${m}`, serverUrl);
+      }
+      // 입력창이 비어 있으면 채워줌
+      const el = document.getElementById(`mockGasUrl_${m}`);
+      if (el && !el.value) el.value = localStorage.getItem(`mockGasUrl_${m}`) || '';
+    });
+  };
+
   if (mockGasUrlSaveBtn) {
-      // 저장된 URL들 불러오기
+      // 저장된 URL들 불러오기 (로컬)
       gasInputIds.forEach(m => {
           const el = document.getElementById(`mockGasUrl_${m}`);
           if (el) el.value = localStorage.getItem(`mockGasUrl_${m}`) || '';
       });
-      
-      mockGasUrlSaveBtn.addEventListener('click', () => {
+
+      mockGasUrlSaveBtn.addEventListener('click', async () => {
+          const urls = {};
           gasInputIds.forEach(m => {
               const el = document.getElementById(`mockGasUrl_${m}`);
-              if (el) localStorage.setItem(`mockGasUrl_${m}`, el.value.trim());
+              const val = el ? el.value.trim() : '';
+              localStorage.setItem(`mockGasUrl_${m}`, val);
+              urls[m] = val;
           });
+          // Firebase 서버에도 저장
+          if (typeof window.firebaseGasSave === 'function') {
+              try {
+                  await window.firebaseGasSave(urls);
+              } catch (e) {
+                  console.warn('[Firebase] GAS URL 저장 실패:', e.message);
+              }
+          }
           alert("월별 연동 설정이 저장되었습니다.");
           mockGasSettingsArea.classList.add('hidden');
       });

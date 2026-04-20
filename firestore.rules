@@ -35,6 +35,14 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // ── GAS URL 설정 공유 ────────────────────────────────────
+    match /gasConfig/{docId} {
+      allow read: if true;
+      allow create, update: if request.resource.data.keys().hasAll(['urls', 'updatedAt'])
+        && request.resource.data.urls is map;
+      allow delete: if false;
+    }
+
     // ── 모의고사 공유 데이터 ─────────────────────────────────
     match /mockExamData/{month} {
       // 누구나 읽기 가능
