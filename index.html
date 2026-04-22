@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>부안고등학교 학생부 AI 분석 프로그램</title>
+  <title>부안고등학교 진학지도 프로그램</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -27,8 +27,8 @@
       <img src="부안고등학교%20로고.png" alt="부안고 워터마크" style="height: 140px; width: auto; filter: grayscale(100%);">
     </div>
     <div class="container" style="position: relative; z-index: 1;">
-      <h1><span class="gradient-text">부안고등학교</span> 학생부 AI 분석 프로그램</h1>
-      <p>학생의 생기부 데이터를 분석하여 최적의 지원 전략을 제시합니다.</p>
+      <h1><span class="gradient-text">부안고등학교</span> 진학지도 프로그램</h1>
+      <p>클릭 한 번으로 시각화하는 우리 학교만의 맞춤형 입시 대시보드</p>
 
       <!-- 방문자 카운터 -->
       <div id="visitor-counter" class="visitor-counter">
@@ -64,6 +64,86 @@
 
   <!-- Add a globally floating or fixed toggle button just in case the tab is hidden -->
   <button id="show-tabs-btn" class="btn-secondary" style="position: fixed; left: 0; top: 100px; z-index: 1000; border-radius: 0 8px 8px 0; padding: 0.75rem; background: var(--glass-bg); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-left: none; color: var(--accent-primary); font-weight: bold; font-size: 1.2rem; cursor: pointer; display: none;">▶<div style="font-size:0.75rem; margin-top:0.2rem;">메뉴</div></button>
+  <!-- 통합 파일 업로드 섹션 -->
+  <div class="container" style="margin-bottom: 2rem;">
+    <section class="glass-panel" style="padding: 1.5rem 2rem;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; cursor: pointer;" onclick="document.getElementById('universal-upload-body').classList.toggle('hidden');">
+        <h2 class="section-title" style="margin-bottom: 0; border-bottom: none; display: flex; align-items: center; gap: 0.5rem;">
+          <span>📂 통합 파일 업로드하기</span>
+          <span style="font-size: 0.85rem; color: var(--text-secondary); font-weight: normal;">(여기에 파일을 넣으면 각 탭에 자동 반영됩니다)</span>
+        </h2>
+        <span style="color: var(--accent-primary); font-size: 1.2rem;">▼</span>
+      </div>
+      
+      <div id="universal-upload-body" class="universal-upload-body">
+        <!-- 공통 설정 (API Key) -->
+        <div style="margin-bottom: 1.5rem; background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 12px; border: 1px solid rgba(150, 186, 255, 0.3);">
+          <label for="uni-api-key" style="color: #96baff; font-weight: bold; font-size: 0.95rem; margin-bottom: 0.5rem; display: block;">🔑 Google Gemini API Key <span style="font-size: 0.8rem; font-weight: normal; color: var(--text-secondary);">(모든 분석 탭에 공통 적용됩니다)</span></label>
+          <input type="password" id="uni-api-key" placeholder="AI Studio에서 발급받은 API 키를 입력하세요..." style="background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-primary); border-radius: 8px; padding: 0.75rem 1rem; width: 100%;">
+        </div>
+
+        <div class="universal-upload-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+        
+        <!-- 개인 분석 파일 -->
+        <div class="uni-upload-card" style="background: rgba(0,0,0,0.2); padding: 1.2rem; border-radius: 12px; border: 1px solid var(--panel-border);">
+          <h4 style="color: #96baff; margin-bottom: 1rem; font-size: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">👤 개인 분석용</h4>
+          <div class="form-group" style="margin-bottom: 0.8rem;">
+            <label style="font-size: 0.8rem; color: var(--text-secondary);">인적사항 엑셀파일</label>
+            <input type="file" id="uni-excel-upload" accept=".xlsx, .xls" style="font-size: 0.8rem; padding: 0.5rem; width: 100%;">
+          </div>
+          <div class="form-group" style="margin-bottom: 0.8rem;">
+            <label style="font-size: 0.8rem; color: var(--text-secondary);">이수과목 엑셀파일</label>
+            <input type="file" id="uni-course-upload" accept=".xlsx, .xls" style="font-size: 0.8rem; padding: 0.5rem; width: 100%;">
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label style="font-size: 0.8rem; color: var(--text-secondary);">세특/비교과 일괄 (엑셀)</label>
+            <input type="file" id="uni-batch-upload" accept=".xlsx, .xls" multiple style="font-size: 0.8rem; padding: 0.5rem; width: 100%;">
+          </div>
+        </div>
+
+        <!-- 합불합 분석 파일 -->
+        <div class="uni-upload-card" style="background: rgba(0,0,0,0.2); padding: 1.2rem; border-radius: 12px; border: 1px solid var(--panel-border);">
+          <h4 style="color: #96baff; margin-bottom: 1rem; font-size: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">📊 합불합 분석용</h4>
+          <div class="form-group" style="margin-bottom: 0.8rem;">
+            <label style="font-size: 0.8rem; color: var(--text-secondary);">수시진학관리 (결과)</label>
+            <input type="file" id="uni-pf-results-upload" accept=".xlsx, .xls" style="font-size: 0.8rem; padding: 0.5rem; width: 100%;">
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label style="font-size: 0.8rem; color: var(--text-secondary);">성적 엑셀 (다중)</label>
+              <input type="file" id="uni-pf-course" accept=".xlsx, .xls" multiple style="font-size: 0.8rem; padding: 0.5rem; width: 100%;">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label style="font-size: 0.8rem; color: var(--text-secondary);">세특 엑셀 (다중)</label>
+              <input type="file" id="uni-pf-subject" accept=".xlsx, .xls" multiple style="font-size: 0.8rem; padding: 0.5rem; width: 100%;">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label style="font-size: 0.8rem; color: var(--text-secondary);">창체 엑셀 (다중)</label>
+              <input type="file" id="uni-pf-creative" accept=".xlsx, .xls" multiple style="font-size: 0.8rem; padding: 0.5rem; width: 100%;">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label style="font-size: 0.8rem; color: var(--text-secondary);">행특 엑셀 (다중)</label>
+              <input type="file" id="uni-pf-behavior" accept=".xlsx, .xls" multiple style="font-size: 0.8rem; padding: 0.5rem; width: 100%;">
+            </div>
+          </div>
+        </div>
+
+        <!-- 성적 분석 파일 -->
+        <div class="uni-upload-card" style="background: rgba(0,0,0,0.2); padding: 1.2rem; border-radius: 12px; border: 1px solid var(--panel-border);">
+          <h4 style="color: #96baff; margin-bottom: 1rem; font-size: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">📈 모의고사 / 내신 분석용</h4>
+          <div class="form-group" style="margin-bottom: 0.8rem;">
+            <label style="font-size: 0.8rem; color: var(--text-secondary);">모의고사 성적표 (CSV, 다중)</label>
+            <input type="file" id="uni-mock-upload" accept=".csv" multiple style="font-size: 0.8rem; padding: 0.5rem; width: 100%;">
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label style="font-size: 0.8rem; color: var(--text-secondary);">내신 석차 데이터 (CSV/JSON)</label>
+            <input type="file" id="uni-grade-upload" accept=".csv, .json" multiple style="font-size: 0.8rem; padding: 0.5rem; width: 100%;">
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </div>
 
   <div class="app-layout">
     <div class="tabs-container" id="main-tabs-container" style="display: flex; flex-direction: column; justify-content: space-between; transition: margin-left 0.3s ease;">
@@ -86,9 +166,10 @@
 
   <main id="view-individual" class="main-container view-section active">
     <section class="glass-panel form-section">
-      <h2 class="section-title">학생 정보 입력 및 개인 분석</h2>
+      <h2 class="section-title">👤 학생 정보 입력 및 개인 분석</h2>
+      <p style="color: var(--text-secondary); margin-bottom: 2.2rem; line-height: 1.7; font-size: 0.95rem;">학생의 기본 인적사항과 이수 과목, 세특 기록을 종합적으로 분석하여 진로 적합성과 학업 역량을 시각화된 리포트로 제공합니다.</p>
       <form id="evalForm">
-          <div class="form-group-row">
+          <div class="form-group-row" style="display: none;">
             <div class="form-group">
               <label for="excel-upload" style="color: var(--text-secondary); font-weight: 500;">인적사항 파일 (엑셀)</label>
               <input type="file" id="excel-upload" accept=".xlsx, .xls" style="background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-primary); border-radius: 8px; padding: 0.75rem 1rem; width: 100%;">
@@ -108,11 +189,11 @@
             <input type="hidden" id="student-number">
             <input type="hidden" id="student-name">
           </div>
-          <div class="form-group">
+          <div class="form-group" style="display: none;">
             <label for="api-key" style="color: var(--text-secondary); font-weight: 500;">Google Gemini API Key <span class="label-desc" style="color: #96baff; font-weight: normal;">(필수 - AI 심층 분석에 필요합니다)</span></label>
             <input type="password" id="api-key" placeholder="AI Studio에서 발급받은 Gemini API 키를 입력하세요..." required style="background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-primary); border-radius: 8px; padding: 0.75rem 1rem; width: 100%;">
           </div>
-          <div class="form-group">
+          <div class="form-group" style="display: none;">
             <label for="batch-excel-upload" style="color: var(--text-secondary); font-weight: 500;">세특/비교과 기록 일괄 업로드 (엑셀)</label>
             <input type="file" id="batch-excel-upload" accept=".xlsx, .xls" multiple style="background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-primary); border-radius: 8px; padding: 0.75rem 1rem; width: 100%;">
           </div>
@@ -255,17 +336,18 @@
   </main>
   <main id="view-passfail" class="main-container view-section hidden">
     <section class="glass-panel form-section">
-      <h2 class="section-title">학생부 분석 대상 입력</h2>
+      <h2 class="section-title">🎯 학생부 분석 대상 입력 및 합불합 분석</h2>
+      <p style="color: var(--text-secondary); margin-bottom: 2.2rem; line-height: 1.7; font-size: 0.95rem;">방대한 합불합 통계 데이터를 바탕으로 지원 학과에 대한 합격 가능성을 정밀하게 예측하고, 유사 사례를 통한 진학 로드맵을 제시합니다.</p>
       <form id="passfailForm">
-          <div class="form-group">
+          <div class="form-group" style="display: none;">
             <label for="pf-api-key" style="color: var(--text-secondary); font-weight: 500;">Google Gemini API Key <span class="label-desc" style="color: #96baff; font-weight: normal;">(필수)</span></label>
             <input type="password" id="pf-api-key" placeholder="API 키를 입력하세요..." required style="background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-primary); border-radius: 8px; padding: 0.75rem 1rem; width: 100%;">
           </div>
-          <div class="form-group">
+          <div class="form-group" style="display: none;">
             <label for="pf-results-upload" style="color: var(--text-secondary); font-weight: 500;">수시진학관리 (결과 엑셀)</label>
             <input type="file" id="pf-results-upload" accept=".xlsx, .xls" style="background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-primary); border-radius: 8px; padding: 0.75rem 1rem; width: 100%;">
           </div>
-          <div class="form-group-row">
+          <div class="form-group-row" style="display: none;">
             <div class="form-group">
               <label for="pf-upload-course" style="color: var(--text-secondary); font-weight: 500;">성적 엑셀 (다중 선택)</label>
               <input type="file" id="pf-upload-course" accept=".xlsx, .xls" multiple style="background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-primary); border-radius: 8px; padding: 0.75rem 1rem; width: 100%;">
@@ -275,7 +357,7 @@
               <input type="file" id="pf-upload-subject" accept=".xlsx, .xls" multiple style="background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-primary); border-radius: 8px; padding: 0.75rem 1rem; width: 100%;">
             </div>
           </div>
-          <div class="form-group-row">
+          <div class="form-group-row" style="display: none;">
             <div class="form-group">
               <label for="pf-upload-creative" style="color: var(--text-secondary); font-weight: 500;">창체 엑셀 (다중 선택)</label>
               <input type="file" id="pf-upload-creative" accept=".xlsx, .xls" multiple style="background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-primary); border-radius: 8px; padding: 0.75rem 1rem; width: 100%;">
@@ -405,9 +487,10 @@
   <main id="view-setech" class="main-container view-section hidden">
     <section class="glass-panel form-section">
       <h2 class="section-title">✏️ 세특(세부능력 및 특기사항) 분석</h2>
+      <p style="color: var(--text-secondary); margin-bottom: 2.2rem; line-height: 1.7; font-size: 0.95rem;">교과별 세부능력 및 특기사항을 AI가 분석하여 핵심 키워드를 추출하고, 학생의 학업 태도와 탐구 역량을 객관적으로 평가합니다.</p>
       <form id="setechForm">
           <!-- API 키 -->
-          <div class="form-group">
+          <div class="form-group" style="display: none;">
             <label for="st-api-key" style="color: var(--text-secondary); font-weight: 500;">Google Gemini API Key <span class="label-desc" style="color: #96baff; font-weight: normal;">(필수)</span></label>
             <input type="password" id="st-api-key" placeholder="Gemini API 키를 입력하세요..." required
               style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.75rem 1rem;width:100%;">
@@ -552,7 +635,8 @@
 
   <main id="view-csat" class="single-container view-section hidden" style="flex: 1;">
     <section class="glass-panel result-section" style="width: 100%;">
-      <h2 class="section-title">27대입 수능최저 기준 배치</h2>
+      <h2 class="section-title">✅ 대학별 수능 최저학력기준 확인</h2>
+      <p style="color: var(--text-secondary); margin-bottom: 2.2rem; line-height: 1.7; font-size: 0.95rem;">각 대학별 수능 최저학력기준 충족 여부를 실시간으로 판정하고, 현재 성적 기반의 지원 가능 대학군을 필터링하여 보여줍니다.</p>
       
       <div class="csat-filters">
         <div class="csat-filter-group">
@@ -586,8 +670,9 @@
   <main id="view-interview" class="main-container view-section hidden">
     <section class="glass-panel form-section" id="sidebar-interview-settings">
       <h2 class="section-title">🎤 면접 문항 생성 설정</h2>
+      <p style="color: var(--text-secondary); margin-bottom: 2.2rem; line-height: 1.7; font-size: 0.95rem;">학교생활기록부의 세부 내용을 AI가 정밀 분석하여, 실제 면접에서 나올 법한 압박 질문과 핵심 역량 질문을 자동으로 추출합니다.</p>
       <form id="interviewForm">
-        <div class="form-group">
+        <div class="form-group" style="display: none;">
           <label for="iv-api-key" style="color: var(--text-secondary); font-weight: 500;">Google Gemini API Key <span class="label-desc" style="color: #96baff; font-weight: normal;">(필수)</span></label>
           <input type="password" id="iv-api-key" placeholder="API 키를 입력하세요..." required style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.75rem 1rem;width:100%;">
         </div>
@@ -663,7 +748,8 @@
   <main id="view-mock-exam" class="main-container view-section hidden">
     <section class="glass-panel form-section" style="grid-column: span 2;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-            <h2 class="section-title" style="margin-bottom: 0;">📊 모의고사 성적표 자동 분석</h2>
+            <h2 class="section-title" style="margin-bottom: 0;">📊 모의고사 문항 및 성적 분석</h2>
+            <p style="color: var(--text-secondary); margin-top: 1rem; margin-bottom: 1.2rem; line-height: 1.7; font-size: 0.95rem;">모의고사 성적을 문항 단위로 분석하여 학생의 취약 단원과 행동 영역을 파악하고, 개인별 오답 정복 및 성적 향상 전략을 제공합니다.</p>
             <div style="display: flex; gap: 0.5rem; align-items: center;">
                 <select id="mockGradeSelect" class="form-select" style="padding: 0.4rem 1.2rem 0.4rem 1rem; font-size: 0.85rem; background-color: rgba(99,102,241,0.7); border: 1px solid var(--accent-primary); color: white; font-weight: 600; border-radius: 8px;">
                     <option value="1">1학년</option>
@@ -746,12 +832,12 @@
             <p style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 10px;">※ 각 월별로 분석할 시트가 있는 GAS 웹 앱 URL을 입력하고 저장을 눌러주세요.</p>
         </div>
 
-        <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.9rem;">
+        <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.9rem; display: none;">
             모의고사 성적표 CSV 파일 업로드
         </p>
 
         <!-- 파일 드롭 영역 -->
-        <div id="mockDropZone" class="drop-zone">
+        <div id="mockDropZone" class="drop-zone" style="display: none;">
             <svg stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true" style="margin: 0 auto; display: block;">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" />
             </svg>
@@ -875,7 +961,7 @@
 
       <div class="header-content" style="margin-bottom: 2rem;">
         <h2 class="section-title">📈 내신 성적 및 모의고사 성적 비교 분석</h2>
-        <p style="color: var(--text-secondary); font-size: 0.95rem;">내신 등급과 모의고사 성적 간의 상관관계를 다각도로 분석하여 최적의 진학 전략을 수립합니다.</p>
+        <p style="color: var(--text-secondary); margin-bottom: 2.2rem; line-height: 1.7; font-size: 0.95rem;">내신 등급과 모의고사 성취도를 입체적으로 비교하여, 수시와 정시 중 학생에게 유리한 최적의 입시 전형 비율을 가이드합니다.</p>
       </div>
 
       <div class="control-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--panel-border);">
@@ -884,16 +970,16 @@
           <label style="color: var(--accent-primary); font-weight: 700; margin-bottom: 0.8rem; display: block;">📍 학생 및 시점 선택 (계층형)</label>
           <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.8rem; margin-bottom: 0.8rem;">
             <div>
+              <label style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.4rem; display: block;">학년</label>
+              <select id="compareGrade" class="form-select" style="width: 100%;"><option value="all">전체 학년</option></select>
+            </div>
+            <div>
               <label style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.4rem; display: block;">시행 연도</label>
               <select id="compareYear" class="form-select" style="width: 100%;"><option value="all">전체 연도</option></select>
             </div>
             <div>
               <label style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.4rem; display: block;">시행 회차</label>
               <select id="compareMockRound" class="form-select" style="width: 100%;"><option value="all">전체 회차</option></select>
-            </div>
-            <div>
-              <label style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.4rem; display: block;">학년</label>
-              <select id="compareGrade" class="form-select" style="width: 100%;"><option value="all">전체 학년</option></select>
             </div>
           </div>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;">
@@ -985,8 +1071,8 @@
 <div class="gr-container">
     <div class="gr-header">
         <div class="header-title">
-            <h1>내신 석차 산출기 <span class="badge">독립실행버전 v48 (반 필터 추가)</span></h1>
-            <p style="color: var(--text-sub);">인터넷 연결 없이 작동합니다. CSV 파일을 업로드하여 기본 내신과 대학별 점수를 산출하세요.</p>
+            <h1 class="section-title" style="border-bottom: none; margin-bottom: 0.5rem;">📊 대학별 교과 점수 및 석차 백분율 산출</h1>
+            <p style="color: var(--text-secondary); margin-bottom: 2.2rem; line-height: 1.7; font-size: 0.95rem;">대학마다 다른 복잡한 내신 산출 방식을 자동 적용하여, 지원 희망 대학별 실제 전형 점수와 전교 석차 백분율을 정확히 계산합니다.</p>
         </div>
         <div class="header-right">
             <div id="saveStatus" class="save-status"><span>💾 브라우저에 저장됨</span></div>
@@ -994,7 +1080,7 @@
     </div>
 
     <div class="controls">
-        <div class="file-box btn-upload">
+        <div class="file-box btn-upload" style="display: none;">
             <button class="btn" type="button" onclick="document.getElementById('fileInput').click()"><span>📂 파일 업로드 (CSV / JSON)</span></button>
             <input type="file" id="fileInput" multiple accept=".csv, .json" style="display:none;">
         </div>
@@ -1235,7 +1321,10 @@
   <div id="print-area" class="print-only"></div>
 
   <!-- 다크/라이트 모드 토글 -->
-  <button id="theme-toggle-btn" title="다크/라이트 모드 전환" onclick="toggleTheme()">🌙</button>
+  <div style="position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999; display: flex; gap: 0.5rem; align-items: center;">
+    <button id="download-manual-btn" title="프로그램 설명서 PDF 다운로드" class="btn-secondary" style="background: rgba(25, 25, 35, 0.8); backdrop-filter: blur(4px); border: 1px solid rgba(150, 186, 255, 0.3); color: #96baff; padding: 0.4rem 0.8rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600; cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,0.3); white-space: nowrap;">📄 설명서 보기</button>
+    <button id="theme-toggle-btn" title="다크/라이트 모드 전환" onclick="toggleTheme()" style="position: relative; right: 0; bottom: 0;">🌙</button>
+  </div>
   <script>
     function toggleTheme() {
       const isLight = document.body.classList.toggle('light-mode');

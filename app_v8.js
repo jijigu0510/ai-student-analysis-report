@@ -582,7 +582,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // 컬럼 인덱스 탐색
       const findCol = (...keywords) => headers.findIndex(h => keywords.some(k => new RegExp(k, 'i').test(h)));
-      const qNumCol      = findCol('문항번호', '번호', '문항\\s*no', 'no\\.', 'number');
+      const qNumCol      = findCol('^문항$', '문항번호', '번호', '문항\\s*no', 'no\\.', 'number');
       const answerCol    = findCol('정답', '답');
       const pointsCol    = findCol('배점', '점수');
       const rateCol      = findCol('정답률', '정답율', '정답\\s*비율');
@@ -590,10 +590,11 @@ document.addEventListener("DOMContentLoaded", () => {
       const stdCol       = findCol('성취기준', '기준', '핵심개념', '학습목표');
       const majorCatCol  = findCol('대분류');
       const minorCatCol  = findCol('소분류', '제재');
-      const evalNotesCol = findCol('평가\\s*요소', '특이사항');
+      const evalNotesCol = findCol('평가\\s*요소');
+      const remarkCol    = findCol('특이사항');
       const analysisCol  = findCol('분석\\s*내용');
 
-      const knownCols = new Set([qNumCol, answerCol, pointsCol, rateCol, domainCol, stdCol, majorCatCol, evalNotesCol].filter(i => i !== -1));
+      const knownCols = new Set([qNumCol, answerCol, pointsCol, rateCol, domainCol, stdCol, majorCatCol, minorCatCol, evalNotesCol, remarkCol, analysisCol].filter(i => i !== -1));
       const extraCols = headers.map((h, i) => ({ h, i })).filter(({ i }) => !knownCols.has(i) && i !== 0);
 
       const questions = {};
@@ -625,6 +626,9 @@ document.addEventListener("DOMContentLoaded", () => {
           }
           if (!배점val) 배점val = get(pointsCol);
           if (!배점val) 배점val = '2';
+          
+          // '점' 글자 제거
+          배점val = String(배점val).replace(/\s*점$/, '').trim();
 
           const qObj = {
               번호: qNum,
@@ -636,6 +640,7 @@ document.addEventListener("DOMContentLoaded", () => {
               대분류: get(majorCatCol),
               소분류: get(minorCatCol),
               평가요소: get(evalNotesCol),
+              특이사항: get(remarkCol),
               분석내용: get(analysisCol),
           };
 
@@ -741,9 +746,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const baseColDefs = [
           { key: '번호',    label: '문항번호', style: 'font-weight:700; color:var(--accent-primary); text-align:center; min-width:80px;' },
           { key: '대분류',  label: '대분류',   style: 'min-width:120px;' },
-          { key: '소분류',  label: '소분류 및 제재', style: 'min-width:150px;' },
-          { key: '평가요소', label: '평가 요소 및 특이사항', style: 'min-width:200px; white-space:normal;' },
-          { key: '분석내용', label: '분석 내용', style: 'min-width:250px; white-space:normal;' },
+          { key: '소분류',  label: '소분류', style: 'min-width:120px;' },
+          { key: '평가요소', label: '평가요소', style: 'min-width:150px; white-space:normal;' },
+          { key: '특이사항', label: '특이사항', style: 'min-width:150px; white-space:normal;' },
+          { key: '분석내용', label: '분석내용', style: 'min-width:250px; white-space:normal;' },
           { key: '배점',    label: '배점',     style: 'text-align:center; min-width:60px;' },
       ];
       const allCols = baseColDefs;

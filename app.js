@@ -226,6 +226,146 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // --- Universal Uploader Logic ---
+  // 파일 저장을 위한 IndexedDB 래퍼
+  const dbPromise = new Promise((resolve, reject) => {
+    try {
+      const request = indexedDB.open('UniversalFileStore', 1);
+      request.onupgradeneeded = (e) => {
+        e.target.result.createObjectStore('files');
+      };
+      request.onsuccess = (e) => resolve(e.target.result);
+      request.onerror = (e) => reject(e.target.error || new Error("indexedDB error"));
+    } catch (err) {
+      reject(err);
+    }
+  });
+
+  async function saveFilesToDB(key, filesList) {
+    const db = await dbPromise;
+    const tx = db.transaction('files', 'readwrite');
+    tx.objectStore('files').put(Array.from(filesList), key);
+    return new Promise(r => tx.oncomplete = r);
+  }
+
+  async function getFilesFromDB(key) {
+    const db = await dbPromise;
+    return new Promise((resolve) => {
+      const tx = db.transaction('files', 'readonly');
+      const req = tx.objectStore('files').get(key);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => resolve(null);
+    });
+  }
+
+  function setupUniversalUploader() {
+    const mappings = [
+      { uniId: 'uni-excel-upload', targetId: 'excel-upload' },
+      { uniId: 'uni-course-upload', targetId: 'course-excel-upload' },
+      { uniId: 'uni-batch-upload', targetId: 'batch-excel-upload' },
+      { uniId: 'uni-pf-results-upload', targetId: 'pf-results-upload' },
+      { uniId: 'uni-pf-course', targetId: 'pf-upload-course' },
+      { uniId: 'uni-pf-subject', targetId: 'pf-upload-subject' },
+      { uniId: 'uni-pf-creative', targetId: 'pf-upload-creative' },
+      { uniId: 'uni-pf-behavior', targetId: 'pf-upload-behavior' },
+      { uniId: 'uni-mock-upload', targetId: 'mockFileInput' },
+      { uniId: 'uni-grade-upload', targetId: 'fileInput' }
+    ];
+
+    // 앱 로드 시 IndexedDB에서 기존 업로드된 파일들 복원
+    mappings.forEach(async mapping => {
+      const targetInput = document.getElementById(mapping.targetId);
+      const uniInput = document.getElementById(mapping.uniId);
+      if (!targetInput || !uniInput) return;
+
+      const restoredFiles = await getFilesFromDB(mapping.uniId);
+      if (restoredFiles && restoredFiles.length > 0) {
+        try {
+          const dt = new DataTransfer();
+          restoredFiles.forEach(f => dt.items.add(f));
+          targetInput.files = dt.files;
+          uniInput.files = dt.files;
+          targetInput.dispatchEvent(new Event('change', { bubbles: true }));
+        } catch(e) {
+          console.warn("파일 복원 실패:", e);
+        }
+      }
+    });
+
+    // 파일 입력 시 실제 입력 및 DB 갱신
+    mappings.forEach(mapping => {
+      const uniInput = document.getElementById(mapping.uniId);
+      const targetInput = document.getElementById(mapping.targetId);
+      
+      if (uniInput && targetInput) {
+        uniInput.addEventListener('change', async (e) => {
+          if (e.target.files && e.target.files.length > 0) {
+            targetInput.files = e.target.files;
+            
+            // 향후 유지를 위해 IndexedDB에 파일 보관
+            await saveFilesToDB(mapping.uniId, e.target.files);
+
+            const event = new Event('change', { bubbles: true });
+            targetInput.dispatchEvent(event);
+
+            const container = uniInput.closest('.uni-upload-card');
+            if (container) {
+              const h4 = container.querySelector('h4');
+              const originalText = h4.innerHTML;
+              // Prevent multiple (반영 완료!) texts if user changes repeatedly rapidly
+              if(!originalText.includes('(반영 완료!)')) {
+                h4.innerHTML += ' <span style="color:var(--success-color); font-size: 0.8rem; font-weight: normal;">(반영 완료!)</span>';
+                setTimeout(() => { h4.innerHTML = originalText; }, 3000);
+              }
+            }
+          }
+        });
+      }
+    });
+  }
+
+  function setupUniversalApiKey() {
+    const uniApi = document.getElementById('uni-api-key');
+    const targets = ['api-key', 'pf-api-key', 'st-api-key', 'iv-api-key'];
+
+    if (uniApi) {
+      // 로드 시 localStorage 확인 후 값 채우기 및 전파
+      const savedKey = localStorage.getItem('uni-api-key');
+      if (savedKey) {
+        uniApi.value = savedKey;
+        targets.forEach(tId => {
+          const tEl = document.getElementById(tId);
+          if (tEl) tEl.value = savedKey;
+        });
+      }
+
+      uniApi.addEventListener('input', (e) => {
+        const val = e.target.value;
+        localStorage.setItem('uni-api-key', val);
+        targets.forEach(tId => {
+          const tEl = document.getElementById(tId);
+          if (tEl) {
+            tEl.value = val;
+          }
+        });
+      });
+      uniApi.addEventListener('change', (e) => {
+        const container = uniApi.closest('div');
+        if (container) {
+           const labelSpan = container.querySelector('label span');
+           if (labelSpan && !labelSpan.innerHTML.includes('적용 완료')) {
+             const orig = labelSpan.innerHTML;
+             labelSpan.innerHTML = '<span style="color:var(--success-color); font-weight:bold;">(모든 탭에 적용 완료!)</span>';
+             setTimeout(() => labelSpan.innerHTML = orig, 3000);
+           }
+        }
+      });
+    }
+  }
+
+  setupUniversalUploader();
+  setupUniversalApiKey();
+
   // -------------------------------------------------------------------------
   // Mock Exam Analysis Logic
   // -------------------------------------------------------------------------
@@ -377,14 +517,27 @@ document.addEventListener("DOMContentLoaded", () => {
       });
   }
 
-  // 학년/월별 GAS URL 로드 헬퍼 전역 노출
+  // 학년/월별 GAS URL 관리
+  const DEFAULT_MOCK_GAS_URLS = {
+    "1_3": "https://script.google.com/macros/s/AKfycbzDtgZjPR0VG4EEI6W0Nlxkqdp8X6m-sQGwqQKtmF39B-xujLZdrXMGUTB0hYNFHLzQ/exec",
+    "2_3": "https://script.google.com/macros/s/AKfycbzDaNGMS0UHmB4Elj1FLJmw8LPUi1RxsrKvzYGfHPzNQHHetFxUcTo8qh8uyRHMKDUc/exec",
+    "3_3": "https://script.google.com/macros/s/AKfycbzUAyVobtXg6GgnKUuqajcytNZ1SX9g0zFNHroYX69CBosk8QJZYMVzIiTkjBd7hmpqJw/exec"
+  };
+
+  function getMockGasUrl(grade, month) {
+    const key = `mockGasUrl_${grade}_${month}`;
+    const stored = localStorage.getItem(key);
+    if (stored && stored.trim() !== "") return stored;
+    return DEFAULT_MOCK_GAS_URLS[`${grade}_${month}`] || "";
+  }
+
   window.loadGasUrlsForGrade = loadGasUrlsForGrade;
 
   function loadGasUrlsForGrade(grade) {
     const months = MONTHS_BY_GRADE[grade] || [];
     ['3','5','6','7','9','11'].forEach(m => {
       const el = document.getElementById(`mockGasUrl_${m}`);
-      if (el) el.value = months.includes(m) ? (localStorage.getItem(`mockGasUrl_${grade}_${m}`) || '') : '';
+      if (el) el.value = months.includes(m) ? getMockGasUrl(grade, m) : '';
     });
     // 5월/7월 행은 3학년만 표시
     const row57 = document.getElementById('gasRow57');
@@ -518,7 +671,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function saveToGoogleSheets() {
-      const gasUrl = localStorage.getItem(`mockGasUrl_${currentMockGrade}_${currentMockMonth}`);
+      const gasUrl = getMockGasUrl(currentMockGrade, currentMockMonth);
       if (!gasUrl) {
           alert("먼저 [설정(⚙️)] 아이콘을 눌러 구글 앱 스크립트 URL을 저장해 주세요.");
           if (mockGasSettingsArea) mockGasSettingsArea.classList.remove('hidden');
@@ -655,7 +808,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /** GAS 웹 앱으로 스프레드시트 시트 목록 로드 */
   async function connectToGoogleSheet() {
-      const gasUrl = localStorage.getItem(`mockGasUrl_${currentMockGrade}_${currentMockMonth}`);
+      const gasUrl = getMockGasUrl(currentMockGrade, currentMockMonth);
 
       if (!gasUrl) {
           alert(`${currentMockGrade}학년 ${currentMockMonth}월 연동 설정에 GAS 웹 앱 URL이 없습니다.\n⚙️ 연동 설정을 먼저 진행해 주세요.`);
@@ -725,7 +878,7 @@ document.addEventListener("DOMContentLoaded", () => {
   async function fetchSubjectSheetData(sheetName) {
       if (mockCachedSheetData[sheetName]) return mockCachedSheetData[sheetName];
 
-      const gasUrl = localStorage.getItem(`mockGasUrl_${currentMockGrade}_${currentMockMonth}`);
+      const gasUrl = getMockGasUrl(currentMockGrade, currentMockMonth);
       if (!gasUrl) throw new Error(`${currentMockGrade}학년 ${currentMockMonth}월 GAS 연동 설정이 되어 있지 않습니다.`);
 
       const data = await gasGetJson(`${gasUrl}?action=sheetData&sheet=${encodeURIComponent(sheetName)}`);
@@ -747,7 +900,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // 컬럼 인덱스 탐색
       const findCol = (...keywords) => headers.findIndex(h => keywords.some(k => new RegExp(k, 'i').test(h)));
-      const qNumCol      = findCol('문항번호', '번호', '문항\\s*no', 'no\\.', 'number');
+      const qNumCol      = findCol('^문항$', '문항번호', '번호', '문항\\s*no', 'no\\.', 'number');
       const answerCol    = findCol('정답', '답');
       const pointsCol    = findCol('배점', '점수');
       const rateCol      = findCol('정답률', '정답율', '정답\\s*비율');
@@ -760,7 +913,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const remarkCol    = findCol('특이사항');
       const analysisCol  = findCol('분석\\s*내용');
 
-      const knownCols = new Set([qNumCol, answerCol, pointsCol, rateCol, domainCol, stdCol, majorCatCol, minorCatCol, materialCol, evalFactorCol, remarkCol].filter(i => i !== -1));
+      const knownCols = new Set([qNumCol, answerCol, pointsCol, rateCol, domainCol, stdCol, majorCatCol, minorCatCol, materialCol, evalFactorCol, remarkCol, analysisCol].filter(i => i !== -1));
       const extraCols = headers.map((h, i) => ({ h, i })).filter(({ i }) => !knownCols.has(i) && i !== 0);
 
       const questions = {};
@@ -797,6 +950,9 @@ document.addEventListener("DOMContentLoaded", () => {
           }
           if (!배점val) 배점val = get(pointsCol);
           if (!배점val) 배점val = '2';
+          
+          // '점' 글자 제거
+          배점val = String(배점val).replace(/\s*점$/, '').trim();
 
           const qObj = {
               번호: qNum,
@@ -835,7 +991,7 @@ document.addEventListener("DOMContentLoaded", () => {
           return;
       }
 
-      const gasUrl = localStorage.getItem(`mockGasUrl_${currentMockGrade}_${currentMockMonth}`);
+      const gasUrl = getMockGasUrl(currentMockGrade, currentMockMonth);
       if (!gasUrl) {
           alert('연동 설정에서 GAS 웹 앱 URL을 먼저 저장해 주세요.\n(⚙️ 연동 설정 버튼 클릭)');
           if (document.getElementById('mockGasSettingsArea')) {
@@ -918,9 +1074,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const baseColDefs = [
           { key: '번호',    label: '문항번호', style: 'font-weight:700; color:var(--accent-primary); text-align:center; min-width:80px;' },
           { key: '대분류',  label: '대분류',   style: 'min-width:120px;' },
-          { key: '소분류_제재', label: '소분류 및 제재', style: 'min-width:150px;' },
-          { key: '평가요소_특이사항', label: '평가 요소 및 특이사항', style: 'min-width:200px; white-space:normal;' },
-          { key: '분석내용', label: '분석 내용', style: 'min-width:250px; white-space:normal;' },
+          { key: '소분류',  label: '소분류', style: 'min-width:120px;' },
+          { key: '평가요소', label: '평가요소', style: 'min-width:150px; white-space:normal;' },
+          { key: '특이사항', label: '특이사항', style: 'min-width:150px; white-space:normal;' },
+          { key: '분석내용', label: '분석내용', style: 'min-width:250px; white-space:normal;' },
           { key: '배점',    label: '배점',     style: 'text-align:center; min-width:60px;' },
       ];
       const allCols = baseColDefs;
@@ -932,10 +1089,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
       let tbodyHtml = analysisItems.map((item, idx) => {
           const rowBg = idx % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent';
-          
-          // 복합 필드 구성 (중복 제거 포함)
-          item.소분류_제재 = [...new Set([item.소분류, item.제재].filter(Boolean))].join(' / ') || '-';
-          item.평가요소_특이사항 = [...new Set([item.평가요소, item.특이사항].filter(Boolean))].join(' / ') || '-';
 
           return '<tr style="background:' + rowBg + ';">' + allCols.map(c => {
               const val = item[c.key] !== undefined ? String(item[c.key]) : '-';
@@ -1691,7 +1844,7 @@ document.addEventListener("DOMContentLoaded", () => {
       
       try {
           const first = studentData[0];
-          const gasUrl = localStorage.getItem(`mockGasUrl_${first.학년}_${currentMockMonth}`);
+          const gasUrl = getMockGasUrl(first.학년, currentMockMonth);
           
           let subjectsHtml = '';
           
@@ -10308,6 +10461,97 @@ ${univPromptSupplement}
     setTimeout(() => { printWin.print(); }, 600);
   };
 
+  // =========================================================
+  // 설명서 다운로드 (PDF) 기능
+  // =========================================================
+  const PROJECT_MANUAL_MD = `
+# 부안고등학교 진학지도 프로그램 설명서
+
+## 📁 통합 파일 업로드하기
+
+1. **Google Gemini API Key:** 각자의 API Key가 있다면 자신의 API Key를 입력하고, 없는 경우는 보내드린 API Key를 입력 (대신 유출 금지!)
+
+2. **개인 분석용 파일**
+ - 1) **인적사항 엑셀파일:** 나이스(NEIS) - 학급담임 - 학교생활기록부 - 학생부 항목별 조회 - 인적,학적사항 - 인적사항 → XLS data로 다운받아 업로드
+ - 2) **이수과목 엑셀파일:** 나이스(NEIS) - 학급담임 - 학교생활기록부 - 학생부 항목별 조회 - 교과학습발달상황 - 교과학습발달상황 → XLS data로 다운받아 업로드
+ - 3) **세특/비교과 일괄 엑셀파일**
+    ① 나이스(NEIS) - 학급담임 - 학교생활기록부 - 학생부 항목별 조회 - 창의적체험활동 - 창의적체험활동 → XLS data로 다운받아 업로드
+    ② 나이스(NEIS) - 학급담임 - 학교생활기록부 - 학생부 항목별 조회 - 교과학습발달상황 - 세부능력및특기사항 → XLS data로 다운받아 업로드
+    ③ 나이스(NEIS) - 학급담임 - 학교생활기록부 - 학생부 항목별 조회 - 행동특성및종합의견 - 행동특성및종합의견 → XLS data로 다운받아 업로드
+    > ①+②+③을 모두 드래그하여 한꺼번에 일괄 업로드
+
+3. **합불합 분석용 파일**
+ - 1) **수시진학관리:** 보내드린 '수시진학관리' 엑셀 파일 업로드 (대교협 파일)
+ - 2) **성적 엑셀 & 세특 엑셀 & 창체 엑셀 & 행특 엑셀:** 보내드린 '합불합 분석.zip' 에서 찾아 각각 업로드
+
+4. **모의고사 / 내신 분석용 파일**
+ - 1) **모의고사 성적표:** 각 학급의 모의고사 성적표를 csv 파일로 변환하여 업로드. (안되는 경우 종종 있으니 관리자에게 학급 모의고사 성적표 주시면 양식에 맞게 변환해드립니다.)
+    > * csv 파일 변환법 → ilovepdf와 같이 pdf를 변환할 수 있는 프로그램을 이용하셔서 pdf→excel로 변환하되, 한 시트에 다 들어오게 해주시고, 그 excel 파일을 다른 이름으로 저장해서 파일 형식을 .csv로 바꾸시면 됩니다.
+ - 2) **내신 석차 데이터:** 나이스(NEIS) - 학급담임 - 학교생활기록부 - 학생부 항목별 조회 - 교과학습발달상황 - 교과학습발달상황 → XLS data로 다운 → csv 파일로 변환 후 업로드
+
+> **💡 업로드한 파일은 브라우저 공간에 자동으로 저장되며, 사용하시는 데 탭 이동 같은 불편함이 없도록 자동 로딩 처리됩니다.**
+
+---
+
+## 🛠️ 기능 소개
+
+1. **개인 분석:** 학생의 학생부가 각 대학의 학생부종합전형에서 어떻게 평가되는지에 대한 분석을 각 대학의 학생부종합전형 가이드북을 학습한 AI가 도움을 드립니다. 학생의 학생부가 평가 영역에 따라 점수화가 되며, 산출 및 평가 근거가 제시되고, 피드백을 통해 보완해나가야 할 방향을 제시합니다. **(담임교사용)**
+2. **합불합 분석:** 우리 학교의 학생부종합전형의 합격, 불합격 사례를 통해 합격한 이유와 불합격한 이유를 각 대학의 모집요강과 학생부종합전형 가이드북을 학습한 AI가 분석해드립니다. 이를 통해 각 학급 학생이 가고자 하는 학과 또는 대학을 가는 데에 있어 방향을 제시합니다. **(담임교사용)**
+3. **세특 분석:** 각 교과에서 작성한 세특을 학생 맞춤으로 작성할 수 있도록 학생의 희망 계열과 작성하는 교과를 선택하고, 작성한 세특을 업로드하면, 학생부기재요령과 대학별 우수 세특을 학습한 AI가 분석하여 피드백을 해주고, 그 세특을 바탕으로 AI가 세특을 작성해드립니다. **(교과 교사용)**
+4. **수능 최저 확인하기:** 모든 대학의 수능 최저학력기준을 모은 표입니다. 관심있는 대학의 점을 누르면 상세정보가 출력됩니다.
+5. **면접 문항 생성:** 면접을 준비하는 수험생들에게 각 대학의 면접 가이드북을 학습한 AI가 맞춤 면접 문항을 제시합니다. 10문항이 제시되며 각 문항에 따른 평가 영역 및 모범 답안을 제시합니다.
+6. **모의고사 문항 분석:** 모의고사 성적표를 토대로 학생의 오답 문항을 추출해 문항별 학습 가이드 제공을 위한 기초 자료를 제공합니다. **(담임교사용)**
+7. **내신 & 모의고사 분석:** 내신점수와 모의고사 점수와의 상관관계를 그래프로 보여주며 학생별로 내신점수를 영역별로 조합하여 출력하고, 모의고사 점수를 회차에 따른 성적의 변화를 그래프로 출력합니다. **(담임교사용)**
+8. **내신 분석하기(대학별 교과 점수 확인):** 학급 학생들, 학년 전체의 성적을 분포도로 출력됩니다. 각 학생을 누르면 과목마다 성취도 및 등급이 출력되고, 과목 조합에 따라 내신 등급도 계산합니다. 또한 각 대학별로 교과전형의 점수 계산 방식을 내장하고 있어 학생마다 각 대학에서 교과전형 점수를 확인할 수 있습니다.
+9. **대학별 입결 분포도:** 업데이트 예정입니다.
+`;
+
+  window.exportManualToPdf = function() {
+    let parsedHtml = "";
+    if (typeof marked !== 'undefined') {
+        parsedHtml = marked.parse(PROJECT_MANUAL_MD);
+    } else {
+        parsedHtml = "<p>마크다운 파서를 불러올 수 없습니다. 인터넷이 연결되어 있는지 확인해주세요.</p>";
+    }
+
+    const printWin = window.open("", "_blank", "width=900,height=700");
+    if (!printWin) {
+        alert("팝업이 차단되었습니다. 팝업 차단을 해제하고 다시 시도해주세요.");
+        return;
+    }
+    
+    printWin.document.write(`<!DOCTYPE html><html lang="ko"><head>
+      <meta charset="UTF-8">
+      <title>부안고등학교 진학지도 프로그램 설명서</title>
+      <style>
+        body { font-family: 'Malgun Gothic', sans-serif; color: #222; padding: 2.5rem 3rem; line-height: 1.8; font-size: 11pt; background: #fafafa; }
+        .container { max-width: 800px; margin: 0 auto; background: #fff; padding: 2rem 3rem; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-radius: 8px; border-top: 5px solid #3c3fa0; }
+        h1 { color: #3c3fa0; border-bottom: 2px solid #3c3fa0; padding-bottom: 0.8rem; font-size: 1.8rem; margin-bottom: 1.5rem; text-align: center; }
+        h2 { color: #d32f2f; font-size: 1.3rem; margin-top: 2rem; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        h3 { color: #2c3e7d; font-size: 1.1rem; margin-top: 1.5rem; }
+        p, li { margin-bottom: 0.6rem; color: #444; }
+        ul, ol { padding-left: 1.8rem; }
+        strong { color: #222; font-weight: 700; }
+        blockquote { border-left: 4px solid #ffc107; background: #fffde7; margin: 1rem 0; padding: 0.8rem 1.2rem; border-radius: 0 8px 8px 0; color: #555; font-size: 0.95rem; }
+        hr { border: none; border-top: 1px dashed #ccc; margin: 2rem 0; }
+        @media print { 
+          body { padding: 0; background: #fff; } 
+          .container { box-shadow: none; border: none; padding: 0; max-width: 100%; }
+          h1 { color: #000; } h2 { color: #000; } h3 { color: #000; }
+        }
+      </style>
+    </head><body><div class="container">${parsedHtml}</div></body></html>`);
+    
+    printWin.document.close();
+    printWin.focus();
+    setTimeout(() => { printWin.print(); }, 500);
+  };
+
+  const manualBtn = document.getElementById("download-manual-btn");
+  if(manualBtn) {
+      manualBtn.addEventListener('click', window.exportManualToPdf);
+  }
+
   // Keep legacy alias for any existing references
 
   let compareGlobalData = { gpa: [], mock: [], rounds: [], classes: [], years: [] };
@@ -10315,7 +10559,7 @@ ${univPromptSupplement}
   let isCompareInitialized = false;
 
   // 기본 내장 GAS URL (변경 시 여기를 수정)
-  const DEFAULT_GPA_GAS_URL = 'https://script.google.com/macros/s/AKfycbwTChnTCZv4igguYvfUTPGQkXeodQOSErbePre1JKcCIExDF1ALsqyErWQ1MciZMFjb/exec';
+  const DEFAULT_GPA_GAS_URL = 'https://script.google.com/macros/s/AKfycbxN_pBXDxszD-CoU4rarptfc4jz8wUeswI2J0sSxvZZo71i-R9rsT0Sqa8M7F1CFHmI/exec';
 
   // 로컬 실행을 위한 GAS URL 설정 로직
   const compareGasUrlInput = document.getElementById('compareGasUrl');
@@ -10451,6 +10695,26 @@ ${univPromptSupplement}
 
   function handleCompareData(data) {
     compareGlobalData = data;
+
+    // 로컬 내신 데이터 통합 (grade-rank.js의 state 활용)
+    if (typeof state !== 'undefined' && state.students && state.students.length > 0) {
+      compareGlobalData.gpa = state.students.map(s => ({
+        rank: s.rank,
+        name: s.name,
+        '전체내신': s.totalGPA,
+        '국영수': s.kemGPA,
+        '국영수과': s.kemsGPA,
+        '국영수사': s.kemssGPA,
+        '국영수사과': s.kemssscGPA,
+        '수영과': s.mesGPA,
+        '국영사': s.kesGPA,
+        rawRow: s.subjects
+      }));
+    } else {
+      compareGlobalData.gpa = [];
+      alert("내신 데이터가 없습니다. 원활한 분석을 위해 화면 상단 '통합 파일 업로드하기'에서 내신 석차 파일(.csv/.json)을 업로드해 주세요.");
+    }
+
     const yearSelect = document.getElementById('compareYear');
     if (yearSelect) {
       yearSelect.innerHTML = '<option value="all">전체 연도</option>';
@@ -10500,18 +10764,39 @@ ${univPromptSupplement}
   }
 
   function updateCompareDropdowns() {
+    const gradeVal = document.getElementById('compareGrade').value;
     const yearVal = document.getElementById('compareYear').value;
     const roundVal = document.getElementById('compareMockRound').value;
-    const gradeVal = document.getElementById('compareGrade').value;
     const classVal = document.getElementById('compareClassFilter').value;
     
-    // 회차 필터링 (연도 선택 시)
+    // 연도 필터링 (학년 선택 시)
+    const yearSelect = document.getElementById('compareYear');
+    const prevYear = yearSelect.value;
+    yearSelect.innerHTML = '<option value="all">전체 연도</option>';
+    const filteredYears = new Set();
+    compareGlobalData.mock.forEach(m => {
+      if (gradeVal === 'all' || String(m.grade) === gradeVal) {
+        filteredYears.add(m.year);
+      }
+    });
+    Array.from(filteredYears).sort((a,b) => b-a).forEach(y => {
+      const opt = document.createElement('option');
+      opt.value = opt.text = y;
+      if (String(y) === prevYear) opt.selected = true;
+      yearSelect.appendChild(opt);
+    });
+
+    // 회차 필터링 (학년, 연도 선택 시)
     const roundSelect = document.getElementById('compareMockRound');
     const prevRound = roundSelect.value;
     roundSelect.innerHTML = '<option value="all">전체 회차</option>';
     const filteredRounds = new Set();
     compareGlobalData.mock.forEach(m => {
-      if (yearVal === 'all' || String(m.year) === yearVal) filteredRounds.add(m.round);
+      const matchGrade = gradeVal === 'all' || String(m.grade) === gradeVal;
+      const matchYear = yearVal === 'all' || String(m.year) === yearVal; // uses current yearVal logic
+      if (matchGrade && matchYear) {
+        filteredRounds.add(m.round);
+      }
     });
     Array.from(filteredRounds).sort().forEach(r => {
       const opt = document.createElement('option');
@@ -10520,42 +10805,27 @@ ${univPromptSupplement}
       roundSelect.appendChild(opt);
     });
 
-    // 학년 필터링 (연차/회차 선택 시)
-    const gradeSelect = document.getElementById('compareGrade');
-    const prevGrade = gradeSelect.value;
-    gradeSelect.innerHTML = '<option value="all">전체 학년</option>';
-    const filteredGrades = new Set();
-    compareGlobalData.mock.forEach(m => {
-      const matchYear = yearVal === 'all' || String(m.year) === yearVal;
-      const matchRound = roundVal === 'all' || m.round === roundVal;
-      if (matchYear && matchRound) filteredGrades.add(m.grade);
-    });
-    Array.from(filteredGrades).sort().forEach(g => {
-      const opt = document.createElement('option');
-      opt.value = opt.text = g;
-      if (g === prevGrade) opt.selected = true;
-      gradeSelect.appendChild(opt);
-    });
-
-    // 반 필터링 (연도/회차/학년 선택 시)
+    // 반 필터링 (학년, 연도, 회차 선택 시)
     const classSelect = document.getElementById('compareClassFilter');
     const prevClass = classSelect.value;
     classSelect.innerHTML = '<option value="all">전체 반</option>';
     const filteredClasses = new Set();
     compareGlobalData.mock.forEach(m => {
-      const matchYear = yearVal === 'all' || String(m.year) === yearVal;
-      const matchRound = roundVal === 'all' || m.round === roundVal;
       const matchGrade = gradeVal === 'all' || String(m.grade) === gradeVal;
-      if (matchYear && matchRound && matchGrade) filteredClasses.add(m.classNum);
+      const matchYear = yearVal === 'all' || String(m.year) === yearVal;
+      const matchRound = roundVal === 'all' || String(m.round) === roundVal;
+      if (matchGrade && matchYear && matchRound) {
+        filteredClasses.add(m.classNum);
+      }
     });
-    Array.from(filteredClasses).sort((a,b)=>a-b).forEach(c => {
+    Array.from(filteredClasses).sort((a,b) => a-b).forEach(c => {
       const opt = document.createElement('option');
       opt.value = c; opt.text = `${c}반`;
       if (String(c) === prevClass) opt.selected = true;
       classSelect.appendChild(opt);
     });
 
-    // 학생 필터링 (연도/회차/학년/반 선택 시)
+    // 학생 필터링 (학년, 연도, 회차, 반 선택 시)
     const studentSelect = document.getElementById('compareStudent');
     const prevStudent = studentSelect.value;
     studentSelect.innerHTML = '<option value="all">전체 학생 (차트보기)</option>';
@@ -10563,12 +10833,12 @@ ${univPromptSupplement}
     const studentKeySet = new Set();
     
     compareGlobalData.mock.forEach(m => {
-      const matchYear = yearVal === 'all' || String(m.year) === yearVal;
-      const matchRound = roundVal === 'all' || m.round === roundVal;
       const matchGrade = gradeVal === 'all' || String(m.grade) === gradeVal;
+      const matchYear = yearVal === 'all' || String(m.year) === yearVal;
+      const matchRound = roundVal === 'all' || String(m.round) === roundVal;
       const matchClass = classVal === 'all' || String(m.classNum) === classVal;
       
-      if (matchYear && matchRound && matchGrade && matchClass) {
+      if (matchGrade && matchYear && matchRound && matchClass) {
         const key = `${m.studentNum}_${m.name}`;
         if (!studentKeySet.has(key)) {
           studentKeySet.add(key);
