@@ -386,6 +386,16 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  async function clearAllFilesFromDB() {
+    const db = await dbPromise;
+    return new Promise((resolve) => {
+      const tx = db.transaction('files', 'readwrite');
+      tx.objectStore('files').clear();
+      tx.oncomplete = resolve;
+      tx.onerror = resolve;
+    });
+  }
+
   function setupUniversalUploader() {
     const mappings = [
       { uniId: 'uni-excel-upload', targetId: 'excel-upload' },
@@ -428,8 +438,19 @@ document.addEventListener("DOMContentLoaded", () => {
       if (uniInput && targetInput) {
         uniInput.addEventListener('change', async (e) => {
           if (e.target.files && e.target.files.length > 0) {
+            // 모의고사 업로드 시 학년 동기화
+            if (mapping.uniId === 'uni-mock-upload') {
+              const uniMockGradeEl = document.getElementById('uni-mock-grade');
+              if (uniMockGradeEl && uniMockGradeEl.value) {
+                currentMockGrade = uniMockGradeEl.value;
+                const mockGradeSelectEl = document.getElementById('mockGradeSelect');
+                if (mockGradeSelectEl) mockGradeSelectEl.value = currentMockGrade;
+                updateMonthSelectForGrade(currentMockGrade);
+              }
+            }
+
             targetInput.files = e.target.files;
-            
+
             // 향후 유지를 위해 IndexedDB에 파일 보관
             await saveFilesToDB(mapping.uniId, e.target.files);
 
@@ -597,7 +618,74 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
   if (mockDownloadBtn) mockDownloadBtn.addEventListener('click', exportMockToCSV);
-  
+
+  // 서버에 저장하기 버튼 — Firebase에 현재 학년+월 데이터 업로드
+  const mockFirebaseSaveBtn = document.getElementById('mockFirebaseSaveBtn');
+  if (mockFirebaseSaveBtn) {
+    mockFirebaseSaveBtn.addEventListener('click', async () => {
+      const key = dataKey();
+      const data = mockDataByMonth[key] || [];
+      if (data.length === 0) {
+        alert(`${currentMockGrade}학년 ${currentMockMonth}월에 저장할 데이터가 없습니다.`);
+        return;
+      }
+      if (typeof window.firebaseMockSave !== 'function') {
+        alert('서버 연결이 준비되지 않았습니다. 잠시 후 다시 시도해 주세요.');
+        return;
+      }
+      const originalText = mockFirebaseSaveBtn.innerHTML;
+      mockFirebaseSaveBtn.innerHTML = '<span>⏳</span> 저장 중...';
+      mockFirebaseSaveBtn.disabled = true;
+      try {
+        const el = document.getElementById('mockServerStatus');
+        if (el) el.innerHTML = '<span style="color:var(--text-secondary);">서버에 저장 중...</span>';
+        await window.firebaseMockSave(key, data);
+        mockServerData[key] = { count: data.length, uploadedAt: { seconds: Date.now() / 1000 } };
+        refreshMockServerStatus();
+        alert(`${currentMockGrade}학년 ${currentMockMonth}월 데이터(${data.length}건)를 서버에 저장했습니다.`);
+      } catch (e) {
+        console.warn('[Firebase] 모의고사 저장 실패:', e.message);
+        alert('서버 저장에 실패했습니다: ' + e.message);
+      } finally {
+        mockFirebaseSaveBtn.innerHTML = originalText;
+        mockFirebaseSaveBtn.disabled = false;
+      }
+    });
+  }
+
+  // 서버에서 삭제하기 버튼 — Firebase에서 현재 학년+월 데이터 삭제
+  const mockFirebaseDeleteBtn = document.getElementById('mockFirebaseDeleteBtn');
+  if (mockFirebaseDeleteBtn) {
+    mockFirebaseDeleteBtn.addEventListener('click', async () => {
+      const key = dataKey();
+      if (typeof window.firebaseMockDelete !== 'function') {
+        alert('서버 연결이 준비되지 않았습니다. 잠시 후 다시 시도해 주세요.');
+        return;
+      }
+      if (!confirm(`서버에서 ${currentMockGrade}학년 ${currentMockMonth}월 모의고사 데이터를 삭제하시겠습니까?\n(기기 내 로컬 데이터는 유지됩니다)`)) return;
+      const originalText = mockFirebaseDeleteBtn.innerHTML;
+      mockFirebaseDeleteBtn.innerHTML = '<span>⏳</span> 삭제 중...';
+      mockFirebaseDeleteBtn.disabled = true;
+      try {
+        await window.firebaseMockDelete(key);
+        delete mockServerData[key];
+        refreshMockServerStatus();
+        alert(`${currentMockGrade}학년 ${currentMockMonth}월 데이터를 서버에서 삭제했습니다.`);
+      } catch (e) {
+        console.error('[Firebase] 모의고사 삭제 실패 — key:', key, '/ code:', e.code, '/ message:', e.message, e);
+        const detail = e.code ? `[${e.code}] ${e.message}` : e.message;
+        if (e.code === 'permission-denied') {
+          alert(`서버 삭제 실패: 권한이 없습니다.\nFirebase Console → Firestore → 규칙에서 delete를 허용해 주세요.`);
+        } else {
+          alert('서버 삭제에 실패했습니다:\n' + detail);
+        }
+      } finally {
+        mockFirebaseDeleteBtn.innerHTML = originalText;
+        mockFirebaseDeleteBtn.disabled = false;
+      }
+    });
+  }
+
   const mockPrintReportBtn = document.getElementById('mockPrintReportBtn');
   if (mockPrintReportBtn) {
       mockPrintReportBtn.addEventListener('click', printMockIndividualReport);
@@ -628,6 +716,30 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       // 초기 월 옵션 설정 (1학년 기본값)
       updateMonthSelectForGrade(currentMockGrade);
+  }
+
+  // 학년 데이터 삭제 버튼
+  const mockClearDataBtn = document.getElementById('mockClearDataBtn');
+  if (mockClearDataBtn) {
+    mockClearDataBtn.addEventListener('click', async () => {
+      const months = MONTHS_BY_GRADE[currentMockGrade] || [];
+      const hasAnyData = months.some(m => (mockDataByMonth[`${currentMockGrade}_${m}`] || []).length > 0);
+      if (!hasAnyData) {
+        alert(`${currentMockGrade}학년에 저장된 데이터가 없습니다.`);
+        return;
+      }
+      if (!confirm(`${currentMockGrade}학년의 모의고사 업로드 데이터를 모두 삭제하시겠습니까?`)) return;
+      months.forEach(m => { mockDataByMonth[`${currentMockGrade}_${m}`] = []; });
+      await StorageManager.save("mockDataByMonth", mockDataByMonth);
+      if (typeof window.firebaseMockDelete === 'function') {
+        for (const m of months) {
+          try { await window.firebaseMockDelete(`${currentMockGrade}_${m}`); } catch(e) {}
+        }
+      }
+      if (mockResultArea) mockResultArea.classList.add('hidden');
+      refreshMockServerStatus();
+      alert(`${currentMockGrade}학년 데이터가 삭제되었습니다.`);
+    });
   }
 
   // 월 선택 변경 시
@@ -782,17 +894,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (mockDataByMonth[key].length > 0) {
           showMockResults();
           await StorageManager.save("mockDataByMonth", mockDataByMonth);
-          if (typeof window.firebaseMockSave === 'function') {
-              try {
-                  const el = document.getElementById('mockServerStatus');
-                  if (el) el.innerHTML = '<span style="color:var(--text-secondary);">서버에 저장 중...</span>';
-                  await window.firebaseMockSave(key, mockDataByMonth[key]);
-                  mockServerData[key] = { count: mockDataByMonth[key].length, uploadedAt: { seconds: Date.now() / 1000 } };
-                  refreshMockServerStatus();
-              } catch (e) {
-                  console.warn('[Firebase] 모의고사 저장 실패:', e.message);
-              }
-          }
+          refreshMockServerStatus();
       } else {
           alert(`${currentMockGrade}학년 ${currentMockMonth}월 추출 자료가 없습니다. 성적표 파일이 맞는지 확인해 주세요.`);
       }
@@ -7109,9 +7211,10 @@ overallEvaluation 필드는 아래 형식을 반드시 따르십시오:
 
   if (resetDataBtn) {
     resetDataBtn.addEventListener("click", async () => {
-      if (confirm("모든 데이터를 초기화하시겠습니까? 저장된 학생 정보와 설정이 삭제됩니다.")) {
+      if (confirm("모든 데이터를 초기화하시겠습니까?\n저장된 학생 정보, 설정, 업로드된 파일이 모두 삭제됩니다.")) {
         localStorage.clear();
         await StorageManager.clear();
+        await clearAllFilesFromDB();
         location.reload();
       }
     });
@@ -10919,6 +11022,16 @@ ${univPromptSupplement}
     }).forEach(m => {
       mockMap.set(m.name, m);
     });
+
+    // state.students가 최신 내신 데이터를 가지고 있으면 동기화
+    if (typeof state !== 'undefined' && state.students && state.students.length > 0) {
+      compareGlobalData.gpa = state.students.map(s => ({
+        rank: s.rank, name: s.name,
+        '전체내신': s.totalGPA, '국영수': s.kemGPA, '국영수과': s.kemsGPA,
+        '국영수사': s.kemssGPA, '국영수사과': s.kemssscGPA,
+        '수영과': s.mesGPA, '국영사': s.kesGPA, rawRow: s.subjects
+      }));
+    }
 
     // 내신 데이터 없으면 모의고사만으로 차트 구성
     const hasgpa = compareGlobalData.gpa.length > 0;

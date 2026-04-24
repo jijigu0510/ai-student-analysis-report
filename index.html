@@ -139,6 +139,14 @@
         <div class="uni-upload-card" style="background: rgba(0,0,0,0.2); padding: 1.2rem; border-radius: 12px; border: 1px solid var(--panel-border);">
           <h4 style="color: #96baff; margin-bottom: 1rem; font-size: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">📈 모의고사 / 내신 분석용</h4>
           <div class="form-group" style="margin-bottom: 0.8rem;">
+            <label style="font-size: 0.8rem; color: var(--text-secondary);">모의고사 성적표 학년 선택</label>
+            <select id="uni-mock-grade" style="background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-primary); border-radius: 8px; padding: 0.5rem 1rem; width: 100%; font-size: 0.8rem;">
+              <option value="1">1학년</option>
+              <option value="2">2학년</option>
+              <option value="3">3학년</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom: 0.8rem;">
             <label style="font-size: 0.8rem; color: var(--text-secondary);">모의고사 성적표 (CSV, 다중) <span style="font-size: 0.7rem; color: #7cb9ff; display: block; margin-top: 2px;">(ilovepdf 등을 이용해 PDF → Excel 변환 후 한 시트에 모아 .csv로 저장)</span></label>
             <input type="file" id="uni-mock-upload" accept=".csv" multiple style="font-size: 0.8rem; padding: 0.5rem; width: 100%;">
           </div>
@@ -761,9 +769,9 @@
 
   <main id="view-mock-exam" class="main-container view-section hidden">
     <section class="glass-panel form-section" style="grid-column: span 2;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <div style="margin-bottom: 1.2rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
             <h2 class="section-title" style="margin-bottom: 0;">📊 모의고사 문항 및 성적 분석</h2>
-            <p style="color: var(--text-secondary); margin-top: 1rem; margin-bottom: 1.2rem; line-height: 1.7; font-size: 0.95rem;">모의고사 성적표를 토대로 학생의 오답 문항을 추출하여 문항별 학습 가이드 제공을 위한 기초 자료를 생성합니다. (담임교사용)</p>
             <div style="display: flex; gap: 0.5rem; align-items: center;">
                 <select id="mockGradeSelect" class="form-select" style="padding: 0.4rem 1.2rem 0.4rem 1rem; font-size: 0.85rem; background-color: rgba(99,102,241,0.7); border: 1px solid var(--accent-primary); color: white; font-weight: 600; border-radius: 8px;">
                     <option value="1">1학년</option>
@@ -779,7 +787,15 @@
                 <button id="mockGasSettingsBtn" class="btn-secondary" style="padding: 0.5rem 1rem; border-radius: 8px; display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; white-space: nowrap; min-width: max-content;" title="GAS 연동 설정">
                     <span>⚙️</span> 연동 설정
                 </button>
+                <button id="mockClearDataBtn" class="btn-secondary" style="padding: 0.5rem 1rem; border-radius: 8px; display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; white-space: nowrap; min-width: max-content; background: rgba(220,38,38,0.15); border-color: rgba(220,38,38,0.4); color: #f87171;" title="현재 선택된 학년의 업로드 데이터 삭제">
+                    <span>🗑️</span> 데이터 삭제
+                </button>
             </div>
+          </div>
+          <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6; margin: 0;">
+            학년·월별 모의고사 성적표(CSV)를 업로드하면 학생별 오답 문항을 자동으로 추출합니다.<br>
+            분석 결과는 기기에 저장되며, <b style="color: var(--accent-secondary);">서버에 저장하기</b>를 눌러야 다른 기기에서도 공유됩니다.
+          </p>
         </div>
 
         <!-- GAS 설정 레이어 (월별 URL 입력) -->
@@ -874,6 +890,12 @@
                     <p id="mockResultText" style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 2px;">N명의 학생 데이터가 성공적으로 추출되었습니다.</p>
                 </div>
                 <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <button id="mockFirebaseSaveBtn" class="btn-secondary" style="padding: 0.5rem 1rem; border-radius: 8px; display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; background: rgba(34,197,94,0.15); border-color: rgba(34,197,94,0.4); color: #4ade80;">
+                        <span>☁️</span> 서버에 저장하기
+                    </button>
+                    <button id="mockFirebaseDeleteBtn" class="btn-secondary" style="padding: 0.5rem 1rem; border-radius: 8px; display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; background: rgba(220,38,38,0.15); border-color: rgba(220,38,38,0.4); color: #f87171;">
+                        <span>🗑️</span> 서버에서 삭제하기
+                    </button>
                     <button id="mockDownloadBtn" class="btn-pdf">
                         <span>📥</span> 통합 결과(CSV) 다운로드
                     </button>

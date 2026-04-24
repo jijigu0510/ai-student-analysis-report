@@ -12,6 +12,7 @@ import {
   doc,
   setDoc,
   getDoc,
+  deleteDoc,
   serverTimestamp as fsTimestamp
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 import {
@@ -155,10 +156,16 @@ async function loadGasUrls() {
   }
 }
 
+// ── 모의고사 데이터 서버 삭제 ─────────────────────────────
+async function deleteMockExamData(gradeMonthKey) {
+  await deleteDoc(doc(db, 'mockExamData', String(gradeMonthKey)));
+}
+
 // app.js에서 호출할 수 있도록 전역 노출
 // firebaseMockSave(gradeMonthKey, data) — 예: firebaseMockSave('1_3', [...])
-window.firebaseMockSave  = saveMockExamData;
-window.firebaseGasSave   = saveGasUrls; // saveGasUrls(grade, urls)
+window.firebaseMockSave   = saveMockExamData;
+window.firebaseMockDelete = deleteMockExamData;
+window.firebaseGasSave    = saveGasUrls; // saveGasUrls(grade, urls)
 
 // ── 실행 ─────────────────────────────────────────────────
 (async () => {
