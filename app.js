@@ -31,7 +31,128 @@ document.addEventListener("DOMContentLoaded", () => {
     return false;
   };
 
-  // --- 모달 전역 닫기 로직 ---
+  // [DEBUG] Initializing P/F Listener Early
+  const pfForm = document.getElementById("passfailForm");
+  const pfBtn = document.getElementById("pf-analyzeBtn");
+  if (pfForm && pfBtn) {
+    console.log("[PF-DEBUG] Early listener attachment attempted.");
+    pfForm.addEventListener("submit", async function(e) {
+      e.preventDefault();
+      console.log("[PF-DEBUG] Form Submit Triggered!");
+      
+      const idx = document.getElementById("pf-student-select").value;
+      if (idx === "" || !pfStudents[idx]) { 
+        alert("분석할 학생을 선택하세요."); 
+        return; 
+      }
+      const s = pfStudents[idx];
+      const apiKeyInput = document.getElementById("pf-api-key");
+      const apiKey = apiKeyInput ? apiKeyInput.value.trim() : "";
+      if (!apiKey) {
+        alert("Gemini API 키가 필요합니다. 상단 '통합 설정'에서 입력해주세요.");
+        return;
+      }
+
+      pfBtn.disabled = true;
+      pfBtn.innerHTML = "<span class='spinner' style='width:20px;height:20px;border-width:2px;margin:0;'></span> 원인 분석 중...";
+      
+      const pfLoadEl = document.getElementById("pf-loadingState");
+      const pfEmptyEl = document.getElementById("pf-emptyState");
+      const pfReportEl = document.getElementById("pf-reportViewer");
+
+      if (pfEmptyEl) pfEmptyEl.classList.add("hidden");
+      if (pfReportEl) pfReportEl.classList.add("hidden");
+      if (pfLoadEl) pfLoadEl.classList.remove("hidden");
+
+      const promptData = {
+        name: s.name,
+        university: s.univ,
+        dept: s.dept,
+        type: s.type,
+        result: s.result,
+        grades: document.getElementById("pf-detail-grades").value,
+        generalGrade: document.getElementById("pf-student-general-grade").value,
+        generalGrade5: document.getElementById("pf-student-general-grade5") ? document.getElementById("pf-student-general-grade5").value : "-",
+        subject: document.getElementById("pf-detail-subject").value,
+        career: document.getElementById("pf-detail-career").value,
+        arts: document.getElementById("pf-detail-arts").value
+      };
+
+      try {
+        const report = await generateAIReportPF(promptData, apiKey);
+
+        if (pfReportEl) {
+           // 대학별 서류평가 기준 패널 삽입
+           const pfCriteriaEl = document.createElement("div");
+           pfCriteriaEl.id = "pfUniCriteriaPanel";
+           pfReportEl.innerHTML = "";
+           pfReportEl.appendChild(pfCriteriaEl);
+           renderUniCriteria(s.univ, pfCriteriaEl);
+
+           // 리포트 본문
+           const pfReportContent = document.createElement("div");
+           pfReportContent.className = "markdown-body";
+           pfReportContent.innerHTML = marked.parse(report);
+           pfReportEl.appendChild(pfReportContent);
+           pfReportEl.classList.remove("hidden");
+        }
+        document.getElementById("pf-pdfAction")?.classList.remove("hidden");
+        
+        // Setup PF PDF download
+        const pfPdfBtn = document.getElementById("pf-pdfDownloadBtn");
+        if (pfPdfBtn) {
+          pfPdfBtn.onclick = () => {
+             const pfContent = `
+                <div class="print-only">
+                    <h2 class='print-header' style='color:#000; text-align:center; margin-bottom:2rem; font-size:2.2rem; font-weight:800;'>수시 합불합 원인 심층 분석 리포트</h2>
+                    <p style='text-align:right; color:#666; margin-bottom:1.5rem; font-size:0.9rem;'>분석 일시: ${new Date().toLocaleString('ko-KR')}</p>
+                    
+                    <div style='background:#f8f9fa; padding:1.5rem; border:1px solid #dee2e6; border-radius:10px; margin-bottom:2rem;'>
+                        <table style='width:100%; border-collapse:collapse;'>
+                            <tr>
+                                <td style='padding:8px; border-bottom:1px solid #eee;'><strong>지원대학</strong></td>
+                                <td style='padding:8px; border-bottom:1px solid #eee;'>${s.univ}</td>
+                                <td style='padding:8px; border-bottom:1px solid #eee;'><strong>지원학과</strong></td>
+                                <td style='padding:8px; border-bottom:1px solid #eee;'>${s.dept} (${s.type})</td>
+                            </tr>
+                            <tr>
+                                <td style='padding:8px; border-bottom:1px solid #eee;'><strong>일반등급</strong></td>
+                                <td style='padding:8px; border-bottom:1px solid #eee;'>${document.getElementById("pf-student-general-grade").value} / ${document.getElementById("pf-student-general-grade5") ? document.getElementById("pf-student-general-grade5").value + "(5등급)" : "-"}</td>
+                                <td style='padding:8px; border-bottom:1px solid #eee;'><strong>최종결과</strong></td>
+                                <td style='padding:8px; border-bottom:1px solid #eee;'><span style='color:${s.result.includes("합격") ? "#28a745" : "#dc3545"}; font-weight:bold;'>${s.result}</span></td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <div class='markdown-body' style='color:#111; line-height:1.8; font-size:1.05rem;'>
+                        ${marked.parse(report)}
+                    </div>
+                    <div style='margin-top:4rem; text-align:center; border-top:1px solid #eee; padding-top:2rem; color:#999; font-size:0.8rem;'>
+                        본 리포트는 인공지능 분석 결과이며, 실제 입시 결과와는 차이가 있을 수 있습니다.
+                    </div>
+                </div>
+             `;
+             printWithIframe(pfContent);
+          };
+        }
+      } catch (err) {
+        console.error(err);
+        if (pfReportEl) {
+           pfReportEl.innerHTML = `
+             <div style='color:var(--error-color);padding:20px;background:rgba(255, 71, 87, 0.05);border-radius:12px;border:1px solid rgba(255, 71, 87, 0.2);'>
+               <h3 style="margin-top:0;">⚠️ 분석 실패</h3>
+               <div style="white-space: pre-wrap; background:rgba(0,0,0,0.2); padding:15px; border-radius:8px; font-family:monospace; font-size:0.9rem; margin-bottom:15px; border:1px solid rgba(255,255,255,0.1); line-height:1.5;">${err.message}</div>
+             </div>
+           `;
+           pfReportEl.classList.remove("hidden");
+        }
+      } finally {
+        if (pfLoadEl) pfLoadEl.classList.add("hidden");
+        pfBtn.disabled = false;
+        pfBtn.innerHTML = "<span class='btn-text'>AI 합불합 원인 분석하기</span><span class='btn-icon'>✧</span>";
+      }
+    });
+  }
   const globalModal = document.getElementById("analysisModal");
   const globalModalCloseBtn = document.getElementById("modalCloseBtn");
   if (globalModal && globalModalCloseBtn) {
@@ -145,8 +266,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const tabMockExam = document.getElementById("tab-mock-exam");
   const tabGpaMockCompare = document.getElementById("tab-gpa-mock-compare");
   const tabGradeRank      = document.getElementById("tab-grade-rank");
+  const tabPassFailExamples = document.getElementById("tab-passfail-examples");
   const viewIndividual = document.getElementById("view-individual");
   const viewPassFail = document.getElementById("view-passfail");
+  const viewPassFailExamples = document.getElementById("view-passfail-examples");
   const viewSetech = document.getElementById("view-setech");
   const viewCsat = document.getElementById("view-csat");
   const viewInterview = document.getElementById("view-interview");
@@ -154,8 +277,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const viewGpaMockCompare = document.getElementById("view-gpa-mock-compare");
   const viewGradeRank      = document.getElementById("view-grade-rank");
 
-  const allTabs = [tabIndividual, tabPassFail, tabSetech, tabCsat, tabInterview, tabMockExam, tabGpaMockCompare, tabGradeRank].filter(Boolean);
-  const allViews = [viewIndividual, viewPassFail, viewSetech, viewCsat, viewInterview, viewMockExam, viewGpaMockCompare, viewGradeRank].filter(Boolean);
+  const allTabs = [tabIndividual, tabPassFail, tabPassFailExamples, tabSetech, tabCsat, tabInterview, tabMockExam, tabGpaMockCompare, tabGradeRank].filter(Boolean);
+  const allViews = [viewIndividual, viewPassFail, viewPassFailExamples, viewSetech, viewCsat, viewInterview, viewMockExam, viewGpaMockCompare, viewGradeRank].filter(Boolean);
 
   function switchTabTo(activeTab, activeView) {
     allTabs.forEach(t => t.classList.remove("active"));
@@ -168,7 +291,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (activeView) {
       activeView.classList.remove("hidden");
       activeView.classList.add("active");
-      activeView.style.display = (activeView.id === "view-csat" || activeView.id === "view-grade-rank") ? "block" : "grid";
+      activeView.style.display = (activeView.id === "view-csat" || activeView.id === "view-grade-rank" || activeView.id === "view-passfail-examples") ? "block" : "grid";
     }
 
     // Sidebar Interview Settings Visibility
@@ -192,6 +315,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (tabIndividual) tabIndividual.addEventListener("click", () => switchTabTo(tabIndividual, viewIndividual));
   if (tabPassFail) tabPassFail.addEventListener("click", () => switchTabTo(tabPassFail, viewPassFail));
+  if (tabPassFailExamples) tabPassFailExamples.addEventListener("click", () => {
+    switchTabTo(tabPassFailExamples, viewPassFailExamples);
+    // 탭 전환 시 캔버스 리사이즈 트리거 (Recharts 렌더링 문제 방지)
+    setTimeout(() => window.dispatchEvent(new Event('resize')), 100);
+  });
   if (tabSetech) tabSetech.addEventListener("click", () => switchTabTo(tabSetech, viewSetech));
   if (tabCsat) tabCsat.addEventListener("click", () => {
     switchTabTo(tabCsat, viewCsat);
@@ -3450,7 +3578,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const aoInput = document.getElementById("achievement-only");
 
     if (extractedCourses.length > 0) {
-      if (coursesInput) coursesInput.value = extractedCourses.join(", ");
+      if (coursesInput) {
+        coursesInput.value = courseDetails.map(c => 
+          c.type === 'grade' ? `${c.subject}(${c.credit}단위): ${c.grade}등급` : `${c.subject}(${c.credit}단위): ${c.grade}`
+        ).join(", ");
+      }
       const avgLabel = totalCredits > 0
         ? "가중평균 " + (totalWeightedSum / totalCredits).toFixed(2) + "등급"
         : "등급 산출 불가";
@@ -4052,8 +4184,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const careerEl = document.getElementById("pf-detail-career");
     if (careerEl) {
-      subEl.value = ""; // Clear for reuse of logic or just join
-      const cVal = sRows.length ? sRows.map(r => getVal(r, ["진로선택 세부능력 및 특기사항"])).filter(v => v).map(v => v.trim()).join(" ") : "";
+      const cVal = sRows.length ? sRows.map(r => getVal(r, ["진로선택 세부능력 및 특기사항"])).filter(v => v).map(v => v.trim()).join("\n") : "";
       careerEl.value = cVal || "데이터 없음";
       updateTriggerState("pf-trigger-career", !!cVal);
     }
@@ -4140,117 +4271,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const pfLoadingState = document.getElementById("pf-loadingState");
   const pfEmptyState = document.getElementById("pf-emptyState");
 
-  if (passfailForm) {
-    passfailForm.addEventListener("submit", async function(e) {
-      e.preventDefault();
-      const idx = pfStudentSelect.value;
-      if (idx === "" || !pfStudents[idx]) { alert("\ubd84\uc11d\ud560 \ud559\uc0dd\uc744 \uc120\ud0dd\ud558\uc138\uc694."); return; }
-      const s = pfStudents[idx];
-      const apiKey = document.getElementById("pf-api-key").value.trim();
-      if (!apiKey) { alert("API \ud0a4\ub97c \uc785\ub825\ud558\uc138\uc694."); return; }
-
-      pfAnalyzeBtn.disabled = true;
-      pfAnalyzeBtn.innerHTML = "<span class='spinner' style='width:20px;height:20px;border-width:2px;margin:0;'></span> \uc6d0\uc778 \ubd84\uc11d \uc911...";
-      pfEmptyState.classList.add("hidden");
-      pfReportViewer.classList.add("hidden");
-      pfLoadingState.classList.remove("hidden");
-
-      const promptData = {
-        name: s.name,
-        university: s.univ,
-        dept: s.dept,
-        type: s.type,
-        result: s.result,
-        grades: document.getElementById("pf-detail-grades").value,
-        generalGrade: document.getElementById("pf-student-general-grade").value,
-        generalGrade5: document.getElementById("pf-student-general-grade5") ? document.getElementById("pf-student-general-grade5").value : "-",
-
-        subject: document.getElementById("pf-detail-subject").value,
-        career: document.getElementById("pf-detail-career").value,
-        arts: document.getElementById("pf-detail-arts").value
-      };
-
-      try {
-        const report = await generateAIReportPF(promptData, apiKey);
-
-        // ── 합불합 리포트 앞에 대학별 서류평가 기준 패널 삽입 ──
-        const pfCriteriaEl = document.createElement("div");
-        pfCriteriaEl.id = "pfUniCriteriaPanel";
-        pfReportViewer.innerHTML = "";
-        pfReportViewer.appendChild(pfCriteriaEl);
-        renderUniCriteria(s.univ, pfCriteriaEl);
-
-        // 리포트 본문
-        const pfReportContent = document.createElement("div");
-        pfReportContent.className = "markdown-body";
-        pfReportContent.innerHTML = marked.parse(report);
-        pfReportViewer.appendChild(pfReportContent);
-
-        pfReportViewer.classList.remove("hidden");
-        document.getElementById("pf-pdfAction")?.classList.remove("hidden");
-        
-        // Setup PF PDF download
-        const pfPdfBtn = document.getElementById("pf-pdfDownloadBtn");
-        if (pfPdfBtn) {
-          pfPdfBtn.onclick = () => {
-             const pfContent = `
-                <div class="print-only">
-                    <h2 class='print-header' style='color:#000; text-align:center; margin-bottom:2rem; font-size:2.2rem; font-weight:800;'>수시 합불합 원인 심층 분석 리포트</h2>
-                    <p style='text-align:right; color:#666; margin-bottom:1.5rem; font-size:0.9rem;'>분석 일시: ${new Date().toLocaleString('ko-KR')}</p>
-                    
-                    <div style='background:#f8f9fa; padding:1.5rem; border:1px solid #dee2e6; border-radius:10px; margin-bottom:2rem;'>
-                        <table style='width:100%; border-collapse:collapse;'>
-                            <tr>
-                                <td style='padding:8px; border-bottom:1px solid #eee;'><strong>지원대학</strong></td>
-                                <td style='padding:8px; border-bottom:1px solid #eee;'>${s.univ}</td>
-                                <td style='padding:8px; border-bottom:1px solid #eee;'><strong>지원학과</strong></td>
-                                <td style='padding:8px; border-bottom:1px solid #eee;'>${s.dept} (${s.type})</td>
-                            </tr>
-                            <tr>
-                                <td style='padding:8px; border-bottom:1px solid #eee;'><strong>일반등급</strong></td>
-                                <td style='padding:8px; border-bottom:1px solid #eee;'>${document.getElementById("pf-student-general-grade").value} / ${document.getElementById("pf-student-general-grade5") ? document.getElementById("pf-student-general-grade5").value + "(5등급)" : "-"}</td>
-                                <td style='padding:8px; border-bottom:1px solid #eee;'><strong>최종결과</strong></td>
-                                <td style='padding:8px; border-bottom:1px solid #eee;'><span style='color:${s.result.includes("합격") ? "#28a745" : "#dc3545"}; font-weight:bold;'>${s.result}</span></td>
-                            </tr>
-                        </table>
-                    </div>
-                    
-                    <div class='markdown-body' style='color:#111; line-height:1.8; font-size:1.05rem;'>
-                        ${marked.parse(report)}
-                    </div>
-                    <div style='margin-top:4rem; text-align:center; border-top:1px solid #eee; padding-top:2rem; color:#999; font-size:0.8rem;'>
-                        본 리포트는 인공지능 분석 결과이며, 실제 입시 결과와는 차이가 있을 수 있습니다.
-                    </div>
-                </div>
-             `;
-             const printArea = document.getElementById("print-area"); // Use global print-area
-             if (printArea) {
-                 printWithIframe(pfContent);
-           } else {
-                 console.error("Print area not found!");
-             }
-          };
-        }
-      } catch (err) {
-        console.error(err);
-        pfReportViewer.innerHTML = `
-          <div style='color:var(--error-color);padding:20px;background:rgba(255, 71, 87, 0.05);border-radius:12px;border:1px solid rgba(255, 71, 87, 0.2);'>
-            <h3 style="margin-top:0;">⚠️ 분석 실패</h3>
-            <div style="white-space: pre-wrap; background:rgba(0,0,0,0.2); padding:15px; border-radius:8px; font-family:monospace; font-size:0.9rem; margin-bottom:15px; border:1px solid rgba(255,255,255,0.1); line-height:1.5;">${err.message}</div>
-            <button type="button" onclick="navigator.clipboard.writeText(\`${err.message.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`).then(() => alert('오류 로그가 복사되었습니다.'))" 
-              style="background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.2);padding:8px 15px;border-radius:6px;cursor:pointer;font-size:0.85rem;">
-              📋 오류 로그 복사하기
-            </button>
-          </div>
-        `;
-        pfReportViewer.classList.remove("hidden");
-      } finally {
-        pfLoadingState.classList.add("hidden");
-        pfAnalyzeBtn.disabled = false;
-        pfAnalyzeBtn.innerHTML = "<span class='btn-text'>AI \ud569\ubd88\ud569 \uc6d0\uc778 \ubd84\uc11d\ud558\uae30</span><span class='btn-icon'>\u2726</span>";
-      }
-    });
-  }
+  // PF Listener moved to top for stability
 
   // \ub300\ud559\ubcc4 \ud3c9\uac00 \uae30\uc900 (\uac00\uc774\ub4dc\ubd81 \uae30\ubc18)
   const universityEvalCriteria = {
@@ -6369,7 +6390,7 @@ SW\uc6b0\uc218(AI\ucef4\uacf5): \ud559\uc5c5\ud0d0\uad6c\uc5ed\ub7c9 60%(\ud559\
     }
   }
   async function generateAIReportPF(data, apiKey) {
-    const modelsToTry = ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.5-flash-lite"];
+    const modelsToTry = ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.0-flash"];
     const attemptLogs = [];
     const uniCriteria = universityEvalCriteria[data.university] || { factors: "" };
     const prompt = `당신은 대한민국 대학 입시 분석 전문가이자 매우 엄격하고 비판적인 시각을 가진 입학사정관입니다.
@@ -6439,7 +6460,7 @@ ${uniCriteria.factors}
   }
 
   async function generateAIReport(data) {
-    const modelsToTry = ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.5-flash-lite"];
+    const modelsToTry = ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.0-flash"];
     const attemptLogs = [];
     const uniCriteria = universityEvalCriteria[data.university];
     const weights = uniCriteria?.weights || { academic: 0.33, career: 0.33, community: 0.34 };
@@ -10469,43 +10490,44 @@ ${univPromptSupplement}
   const PROJECT_MANUAL_MD = `
 # 부안고등학교 진학지도 프로그램 설명서
 
-## 📁 통합 파일 업로드하기
+<통합 파일 업로드하기>
 
-1. **Google Gemini API Key:** 각자의 API Key가 있다면 자신의 API Key를 입력하고, 없는 경우는 보내드린 API Key를 입력 (대신 유출 금지!)
+1. Google Gemini API Key: 각자의 API Key가 있다면 자신의 API Key를 입력하고, 없는 경우는 보내드린 API Key를 입력 (대신 유출 금지!)
 
-2. **개인 분석용 파일**
- - 1) **인적사항 엑셀파일:** 나이스(NEIS) - 학급담임 - 학교생활기록부 - 학생부 항목별 조회 - 인적,학적사항 - 인적사항 → XLS data로 다운받아 업로드
- - 2) **이수과목 엑셀파일:** 나이스(NEIS) - 학급담임 - 학교생활기록부 - 학생부 항목별 조회 - 교과학습발달상황 - 교과학습발달상황 → XLS data로 다운받아 업로드
- - 3) **세특/비교과 일괄 엑셀파일**
-    ① 나이스(NEIS) - 학급담임 - 학교생활기록부 - 학생부 항목별 조회 - 창의적체험활동 - 창의적체험활동 → XLS data로 다운받아 업로드
-    ② 나이스(NEIS) - 학급담임 - 학교생활기록부 - 학생부 항목별 조회 - 교과학습발달상황 - 세부능력및특기사항 → XLS data로 다운받아 업로드
-    ③ 나이스(NEIS) - 학급담임 - 학교생활기록부 - 학생부 항목별 조회 - 행동특성및종합의견 - 행동특성및종합의견 → XLS data로 다운받아 업로드
-    > ①+②+③을 모두 드래그하여 한꺼번에 일괄 업로드
+2.개인 분석용 파일
+ 1) 인적사항 엑셀파일: 나이스(NEIS) - 학급담임 - 학교생활기록부 - 학생부 항목별 조회 - 인적,학적사항 - 인적사항 → XLS data로 다운받아 업로드
+ 2) 이수과목 엑셀파일: 나이스(NEIS) - 학급담임 - 학교생활기록부 - 학생부 항목별 조회 - 교과학습발달상황 - 교과학습발달상황 → XLS data로 다운받아 업로드
+ 3) 세특/비교과 일괄 엑셀파일
+  ① 나이스(NEIS) - 학급담임 - 학교생활기록부 - 학생부 항목별 조회 - 창의적체험활동 - 창의적체험활동 → XLS data로 다운받아 업로드
+  ② 나이스(NEIS) - 학급담임 - 학교생활기록부 - 학생부 항목별 조회 - 교과학습발달상황 - 세부능력및특기사항 → XLS data로 다운받아 업로드
+  ③ 나이스(NEIS) - 학급담임 - 학교생활기록부 - 학생부 항목별 조회 - 행동특성및종합의견 - 행동특성및종합의견 → XLS data로 다운받아 업로드
+  > ①②③을 모두 드래그하여 한꺼번에 업로드
 
-3. **합불합 분석용 파일**
- - 1) **수시진학관리:** 보내드린 '수시진학관리' 엑셀 파일 업로드 (대교협 파일)
- - 2) **성적 엑셀 & 세특 엑셀 & 창체 엑셀 & 행특 엑셀:** 보내드린 '합불합 분석.zip' 에서 찾아 각각 업로드
+3. 합불합 분석용 파일
+ 1) 수시진학관리: 보내드린 '수시진학관리' 엑셀 파일 업로드 (대교협 파일)
+ 2) 성적 엑셀 & 세특 엑셀 & 창체 엑셀 & 행특 엑셀: 보내드린 '합불합 분석.zip' 에서 찾아 각각 업로드
 
-4. **모의고사 / 내신 분석용 파일**
- - 1) **모의고사 성적표:** 각 학급의 모의고사 성적표를 csv 파일로 변환하여 업로드. (안되는 경우 종종 있으니 관리자에게 학급 모의고사 성적표 주시면 양식에 맞게 변환해드립니다.)
-    > * csv 파일 변환법 → ilovepdf와 같이 pdf를 변환할 수 있는 프로그램을 이용하셔서 pdf→excel로 변환하되, 한 시트에 다 들어오게 해주시고, 그 excel 파일을 다른 이름으로 저장해서 파일 형식을 .csv로 바꾸시면 됩니다.
- - 2) **내신 석차 데이터:** 나이스(NEIS) - 학급담임 - 학교생활기록부 - 학생부 항목별 조회 - 교과학습발달상황 - 교과학습발달상황 → XLS data로 다운 → csv 파일로 변환 후 업로드
+4. 모의고사 / 내신 분석용
+ 1) 모의고사 성적표: 각 학급의 모의고사 성적표를 csv 파일로 변환하여 업로드. (안되는 경우 종종 있으니 저에게 학급 모의고사 성적표 주시면 양식에 맞게 변환해드립니다.)
+      * csv 파일 변환법 → ilovepdf와 같이 pdf를 변환할 수 있는 프로그램을 이용하셔서 pdf→excel로 변환하되, 한 시트에 다 들어오게 해주시고, 그 excel 파일을 다른 이름으로 저장해서 파일 형식을 .csv로 바꾸시면 됩니다.
+ 2) 내신 석차 데이터: 나이스(NEIS) - 학급담임 - 학교생활기록부 - 학생부 항목별 조회 - 교과학습발달상황 - 교과학습발달상황 → XLS data로 다운 → csv 파일로 변환 후 업로드
 
-> **💡 업로드한 파일은 브라우저 공간에 자동으로 저장되며, 사용하시는 데 탭 이동 같은 불편함이 없도록 자동 로딩 처리됩니다.**
+> **💡 업로드한 파일은 한 번 업로드하면 브라우저에 저장되어 있어 사용하시는 데 불편함이 없도록 하였습니다.**
 
 ---
 
 ## 🛠️ 기능 소개
 
-1. **개인 분석:** 학생의 학생부가 각 대학의 학생부종합전형에서 어떻게 평가되는지에 대한 분석을 각 대학의 학생부종합전형 가이드북을 학습한 AI가 도움을 드립니다. 학생의 학생부가 평가 영역에 따라 점수화가 되며, 산출 및 평가 근거가 제시되고, 피드백을 통해 보완해나가야 할 방향을 제시합니다. **(담임교사용)**
-2. **합불합 분석:** 우리 학교의 학생부종합전형의 합격, 불합격 사례를 통해 합격한 이유와 불합격한 이유를 각 대학의 모집요강과 학생부종합전형 가이드북을 학습한 AI가 분석해드립니다. 이를 통해 각 학급 학생이 가고자 하는 학과 또는 대학을 가는 데에 있어 방향을 제시합니다. **(담임교사용)**
-3. **세특 분석:** 각 교과에서 작성한 세특을 학생 맞춤으로 작성할 수 있도록 학생의 희망 계열과 작성하는 교과를 선택하고, 작성한 세특을 업로드하면, 학생부기재요령과 대학별 우수 세특을 학습한 AI가 분석하여 피드백을 해주고, 그 세특을 바탕으로 AI가 세특을 작성해드립니다. **(교과 교사용)**
-4. **수능 최저 확인하기:** 모든 대학의 수능 최저학력기준을 모은 표입니다. 관심있는 대학의 점을 누르면 상세정보가 출력됩니다.
-5. **면접 문항 생성:** 면접을 준비하는 수험생들에게 각 대학의 면접 가이드북을 학습한 AI가 맞춤 면접 문항을 제시합니다. 10문항이 제시되며 각 문항에 따른 평가 영역 및 모범 답안을 제시합니다.
-6. **모의고사 문항 분석:** 모의고사 성적표를 토대로 학생의 오답 문항을 추출해 문항별 학습 가이드 제공을 위한 기초 자료를 제공합니다. **(담임교사용)**
-7. **내신 & 모의고사 분석:** 내신점수와 모의고사 점수와의 상관관계를 그래프로 보여주며 학생별로 내신점수를 영역별로 조합하여 출력하고, 모의고사 점수를 회차에 따른 성적의 변화를 그래프로 출력합니다. **(담임교사용)**
-8. **내신 분석하기(대학별 교과 점수 확인):** 학급 학생들, 학년 전체의 성적을 분포도로 출력됩니다. 각 학생을 누르면 과목마다 성취도 및 등급이 출력되고, 과목 조합에 따라 내신 등급도 계산합니다. 또한 각 대학별로 교과전형의 점수 계산 방식을 내장하고 있어 학생마다 각 대학에서 교과전형 점수를 확인할 수 있습니다.
-9. **대학별 입결 분포도:** 업데이트 예정입니다.
+1. **개인 분석:** 각 학급의 학교생활기록부 자료를 활용하여 학생의 학생부가 각 대학의 학생부종합전형에서 어떻게 평가되는지에 대한 분석을 각 대학의 학생부종합전형 가이드북을 학습한 AI가 도움을 드립니다. 학생의 학생부가 평가 영역에 따라 점수화가 되며, 산출 및 평가 근거가 제시되고, 피드백을 통해 보완해나가야 할 방향을 제시합니다. **(담임교사용)**
+2. **합불합 분석:** 수시진학관리 파일 및 졸업생의 성적 및 세특을 활용하여 우리 학교의 학생부종합전형의 합격, 불합격 사례를 통해 합격한 이유와 불합격한 이유를 각 대학의 모집요강과 학생부종합전형 가이드북을 학습한 AI가 분석해드립니다. 이를 통해 각 학급 학생이 가고자 하는 학과 또는 대학을 가는 데에 있어 방향을 제시합니다. **(담임교사용)**
+3. **합불합 사례 확인하기:** 수시진학관리 파일을 활용하여 우리 학교의 대학 입시 결과를 한 눈에 볼 수 있는 시각화 자료입니다. 이를 통해 지난 우리 학교 진학 결과를 확인하고 진학 상담에 방향을 제시합니다.
+4. **세특 분석:** 각 교과에서 작성한 세특을 학생 맞춤으로 작성할 수 있도록 학생의 희망 계열과 작성하는 교과를 선택하고, 작성한 세특을 업로드하면, 학생부기재요령과 대학별 우수 세특을 학습한 AI가 분석하여 피드백을 해주고, 그 세특을 바탕으로 AI가 세특을 작성해드립니다. **(교과 교사용)**
+5. **수능 최저 확인하기:** 모든 대학의 수능 최저학력기준을 모은 표입니다. 관심있는 대학의 점을 누르면 상세정보가 출력됩니다.
+6. **면접 문항 생성:** 면접을 준비하는 수험생들에게 각 대학의 면접 가이드북을 학습한 AI가 맞춤 면접 문항을 제시합니다. 10문항이 제시되며 각 문항에 따른 평가 영역 및 모범 답안을 제시합니다. **\*주의: 개인 분석에서 원하는 학생 데이터를 불러온 후 진행합니다.**
+7. **모의고사 문항 분석:** 모의고사 성적표를 토대로 학생의 오답 문항을 추출해 문항별 학습 가이드 제공을 위한 기초 자료를 제공합니다. **(담임교사용)**
+8. **내신 & 모의고사 분석:** 내신점수와 모의고사 점수와의 상관관계를 그래프로 보여주며 학생별로 내신점수를 영역별로 조합하여 출력하고, 모의고사 점수를 회차에 따른 성적의 변화를 그래프로 출력합니다. **(담임교사용)**
+9. **내신 분석하기(대학별 교과 점수 확인):** 학급 학생들, 학년 전체의 성적을 분포도로 출력됩니다. 각 학생을 누르면 과목마다 성취도 및 등급이 출력되고, 과목 조합에 따라 내신 등급도 계산합니다. 또한 각 대학별로 교과전형의 점수 계산 방식을 내장하고 있어 학생마다 각 대학에서 교과전형 점수를 확인할 수 있습니다.
+10. **대학별 입결 분포도:** 업데이트 예정입니다.
 `;
 
   window.exportManualToPdf = function() {
@@ -10898,44 +10920,66 @@ ${univPromptSupplement}
       mockMap.set(m.name, m);
     });
 
+    // 내신 데이터 없으면 모의고사만으로 차트 구성
+    const hasgpa = compareGlobalData.gpa.length > 0;
+
+    function calcMockY(mockScore) {
+      let yValue = 0, validDataCount = 0, addedToChart = false;
+      if (scoreType === 'best_grade') {
+        let validGrades = [];
+        ['국어', '수학', '영어'].forEach(sub => {
+          if (mockScore[sub] && mockScore[sub].grade && !isNaN(mockScore[sub].grade)) {
+            validGrades.push(Number(mockScore[sub].grade));
+          }
+        });
+        let tamguGrades = [];
+        if (mockScore['탐구영역1'] && mockScore['탐구영역1'].grade && !isNaN(mockScore['탐구영역1'].grade)) tamguGrades.push(Number(mockScore['탐구영역1'].grade));
+        if (mockScore['탐구영역2'] && mockScore['탐구영역2'].grade && !isNaN(mockScore['탐구영역2'].grade)) tamguGrades.push(Number(mockScore['탐구영역2'].grade));
+        if (tamguGrades.length > 0) validGrades.push(Math.min(...tamguGrades));
+        validGrades.sort((a, b) => a - b);
+        if (validGrades.length >= bestN) {
+          for (let i = 0; i < bestN; i++) yValue += validGrades[i];
+          addedToChart = true;
+        }
+      } else {
+        selectedSubjects.forEach(sub => {
+          const subjectData = mockScore[sub];
+          if (subjectData) {
+            let val = subjectData[scoreType];
+            if (val !== null && val !== undefined && val !== '' && !isNaN(val)) {
+              yValue += Number(val);
+              validDataCount++;
+            }
+          }
+        });
+        if (validDataCount > 0) addedToChart = true;
+      }
+      return addedToChart ? yValue : null;
+    }
+
+    if (!hasgpa) {
+      // 모의고사 전용 모드: x축 = 번호
+      mockMap.forEach(m => {
+        const yValue = calcMockY(m);
+        if (yValue !== null) {
+          chartData.push({
+            x: parseInt(m.studentNum) || 0, y: yValue,
+            studentName: m.name, classNum: m.classNum,
+            overallGpa: null, rank: null,
+            gpaRow: null, mockRow: m.rawRow
+          });
+        }
+      });
+      chartData.sort((a, b) => a.x - b.x);
+      drawCompareChart(chartData, 'mockOnly', scoreType, bestN);
+      return;
+    }
+
     compareGlobalData.gpa.forEach(student => {
       const mockScore = mockMap.get(student.name);
       if (mockScore) {
-        let yValue = 0;
-        let validDataCount = 0;
-        let addedToChart = false;
-
-        if (scoreType === 'best_grade') {
-          let validGrades = [];
-          ['국어', '수학', '영어'].forEach(sub => {
-            if (mockScore[sub] && mockScore[sub].grade && !isNaN(mockScore[sub].grade)) {
-              validGrades.push(Number(mockScore[sub].grade));
-            }
-          });
-          let tamguGrades = [];
-          if (mockScore['탐구영역1'] && mockScore['탐구영역1'].grade && !isNaN(mockScore['탐구영역1'].grade)) tamguGrades.push(Number(mockScore['탐구영역1'].grade));
-          if (mockScore['탐구영역2'] && mockScore['탐구영역2'].grade && !isNaN(mockScore['탐구영역2'].grade)) tamguGrades.push(Number(mockScore['탐구영역2'].grade));
-          if (tamguGrades.length > 0) validGrades.push(Math.min(...tamguGrades));
-          validGrades.sort((a, b) => a - b);
-          if (validGrades.length >= bestN) {
-            for (let i = 0; i < bestN; i++) yValue += validGrades[i];
-            addedToChart = true;
-          }
-        } else {
-          selectedSubjects.forEach(sub => {
-            const subjectData = mockScore[sub];
-            if (subjectData) {
-              let val = subjectData[scoreType];
-              if (val !== null && val !== undefined && val !== '' && !isNaN(val)) { 
-                yValue += Number(val);
-                validDataCount++;
-              }
-            }
-          });
-          if (validDataCount > 0) addedToChart = true;
-        }
-
-        if (addedToChart) {
+        const yValue = calcMockY(mockScore);
+        if (yValue !== null) {
           chartData.push({
             x: Number(student[xType]), y: yValue,
             studentName: student.name, classNum: mockScore.classNum,
@@ -10951,12 +10995,26 @@ ${univPromptSupplement}
 
   function drawCompareChart(data, xType, scoreType, bestN) {
     const ctx = document.getElementById('compareScatterChart').getContext('2d');
+    const isMockOnly = xType === 'mockOnly';
     let yLabel = "모의고사 ";
     let isReversed = false;
     if(scoreType === 'grade') { yLabel += "등급 합"; isReversed = true; }
     else if(scoreType === 'best_grade') { yLabel += `최고의 ${bestN}합`; isReversed = true; }
     else if(scoreType === 'raw') { yLabel += "원점수 합"; isReversed = false; }
     else if(scoreType === 'std') { yLabel += "표준점수 합"; isReversed = false; }
+
+    const xScaleOptions = isMockOnly
+      ? {
+          title: { display: true, text: '📋 번호', color: '#96baff', font: { weight: 'bold' } },
+          ticks: { color: '#ccc', stepSize: 1 },
+          grid: { color: 'rgba(255,255,255,0.1)' }
+        }
+      : {
+          title: { display: true, text: `🏫 내신 등급 (${xType})`, color: '#96baff', font: { weight: 'bold' } },
+          min: 1, max: 9, reverse: true,
+          grid: { color: 'rgba(255,255,255,0.1)' },
+          ticks: { color: '#ccc' }
+        };
 
     if (compareChartInstance) compareChartInstance.destroy();
     compareChartInstance = new Chart(ctx, {
@@ -10968,6 +11026,7 @@ ${univPromptSupplement}
           backgroundColor: function(ctx) {
             const val = ctx.raw?.x;
             if (!val) return 'rgba(124, 131, 253, 0.7)';
+            if (isMockOnly) return 'rgba(150, 186, 255, 0.75)';
             const ratio = Math.max(0, Math.min(1, (val - 1) / 8));
             return `rgba(${Math.round(255*(1-ratio))}, 100, ${Math.round(255*ratio)}, 0.7)`;
           },
@@ -10977,14 +11036,9 @@ ${univPromptSupplement}
       options: {
         responsive: true, maintainAspectRatio: false,
         scales: {
-          x: { 
-            title: { display: true, text: `🏫 내신 등급 (${xType})`, color: '#96baff', font: { weight: 'bold' } }, 
-            min: 1, max: 9, reverse: true,
-            grid: { color: 'rgba(255,255,255,0.1)' },
-            ticks: { color: '#ccc' }
-          },
-          y: { 
-            title: { display: true, text: yLabel, color: '#ff6b81', font: { weight: 'bold' } }, 
+          x: xScaleOptions,
+          y: {
+            title: { display: true, text: yLabel, color: '#ff6b81', font: { weight: 'bold' } },
             reverse: isReversed,
             grid: { color: 'rgba(255,255,255,0.1)' },
             ticks: { color: '#ccc' }
@@ -10995,7 +11049,9 @@ ${univPromptSupplement}
           tooltip: {
             backgroundColor: 'rgba(15, 23, 42, 0.9)',
             callbacks: {
-              label: (c) => [`👤 이름: ${c.raw.studentName} (${c.raw.classNum}반)`, `🏫 내신: ${c.raw.overallGpa} (전교 ${c.raw.rank}등)`, `📊 ${yLabel}: ${c.raw.y}`]
+              label: (c) => isMockOnly
+                ? [`👤 이름: ${c.raw.studentName} (${c.raw.classNum}반)`, `📋 번호: ${c.raw.x}`, `📊 ${yLabel}: ${c.raw.y}`]
+                : [`👤 이름: ${c.raw.studentName} (${c.raw.classNum}반)`, `🏫 내신: ${c.raw.overallGpa} (전교 ${c.raw.rank}등)`, `📊 ${yLabel}: ${c.raw.y}`]
             }
           }
         },
@@ -11017,7 +11073,7 @@ ${univPromptSupplement}
       return parseInt(a.round) - parseInt(b.round);
     });
 
-    if (!studentGpa) return;
+    if (!studentMocks.length) return;
 
     const firstMock = studentMocks[0] || {};
     const identityDisplay = firstMock.grade ? `${firstMock.grade}학년 ${firstMock.classNum}반 ${firstMock.studentNum}번` : '';
@@ -11073,14 +11129,15 @@ ${univPromptSupplement}
             <h3 style="font-size:1.8rem;font-weight:800;color:var(--text-primary);margin:0;">${name} <span style="font-size:1rem;font-weight:400;color:var(--text-secondary);opacity:0.8;">학생 종합 리포트</span></h3>
             <div style="display:flex;gap:1rem;margin-top:0.5rem;">
               <p style="color:var(--text-secondary);font-weight:500;margin:0;font-size:0.9rem;">📍 ${identityDisplay}</p>
-              <p style="color:var(--accent-primary);font-weight:600;margin:0;display:flex;align-items:center;gap:0.5rem;font-size:0.9rem;">
+              ${studentGpa ? `<p style="color:var(--accent-primary);font-weight:600;margin:0;display:flex;align-items:center;gap:0.5rem;font-size:0.9rem;">
                 <span style="background:var(--accent-primary);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.75rem;">RANK</span> 내신 전교 순위: ${studentGpa.rank}등
-              </p>
+              </p>` : ''}
             </div>
           </div>
           <button onclick="document.getElementById('compareStudent').value='all'; const e=new Event('change'); document.getElementById('compareStudent').dispatchEvent(e);" class="btn-secondary" style="font-size:0.8rem;padding:0.5rem 1.2rem;border-radius:30px;">← 전체 차트로 돌아가기</button>
         </div>
 
+        ${studentGpa ? `
         <div style="margin-bottom:2.5rem;">
           <h4 style="color:var(--clr-h4-blue);font-weight:700;margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem;">🏫 3학년 내신 등급 현황</h4>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:1rem;">
@@ -11090,7 +11147,10 @@ ${univPromptSupplement}
                 <div style="font-size:1.4rem;font-weight:800;color:var(--text-primary);">${studentGpa[k]}</div>
               </div>`).join('')}
           </div>
-        </div>
+        </div>` : `
+        <div style="margin-bottom:2rem;padding:1rem 1.5rem;background:rgba(150,186,255,0.08);border:1px solid rgba(150,186,255,0.2);border-radius:12px;">
+          <p style="margin:0;color:var(--text-secondary);font-size:0.9rem;">ℹ️ 내신 데이터가 없어 모의고사 성적만 표시됩니다.</p>
+        </div>`}
 
         <div>
           <h4 style="color:var(--clr-h4-pink);font-weight:700;margin-bottom:1.2rem;display:flex;align-items:center;gap:0.5rem;">📝 역대 모의고사 성적 추이</h4>

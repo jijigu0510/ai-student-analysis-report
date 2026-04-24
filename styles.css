@@ -275,6 +275,12 @@ body.light-mode .visitor-divider {
   border-left-color: var(--accent-primary);
 }
 
+.tab-btn.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(1);
+}
+
 .tab-btn.active::after {
   content: '';
   position: absolute;
