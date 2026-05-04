@@ -25,45 +25,45 @@
   function getKuSampleData() {
     return [
       // 2025 KU자기추천
-      { 학년도:2025, 모집단위:'의예과',         모집전형:'KU자기추천', 모집인원:8,  경쟁률:42.1, 충원인원:1, '50%cut(등급)':1.1, '70%cut(등급)':1.3 },
-      { 학년도:2025, 모집단위:'수의예과',        모집전형:'KU자기추천', 모집인원:10, 경쟁률:28.7, 충원인원:2, '50%cut(등급)':1.4, '70%cut(등급)':1.7 },
-      { 학년도:2025, 모집단위:'컴퓨터공학부',    모집전형:'KU자기추천', 모집인원:32, 경쟁률:18.3, 충원인원:4, '50%cut(등급)':1.6, '70%cut(등급)':2.0 },
-      { 학년도:2025, 모집단위:'전기전자공학부',  모집전형:'KU자기추천', 모집인원:40, 경쟁률:12.8, 충원인원:8, '50%cut(등급)':1.8, '70%cut(등급)':2.2 },
-      { 학년도:2025, 모집단위:'생명공학과',      모집전형:'KU자기추천', 모집인원:22, 경쟁률:16.5, 충원인원:6, '50%cut(등급)':1.9, '70%cut(등급)':2.3 },
-      { 학년도:2025, 모집단위:'화학공학부',      모집전형:'KU자기추천', 모집인원:24, 경쟁률:11.5, 충원인원:5, '50%cut(등급)':2.0, '70%cut(등급)':2.4 },
-      { 학년도:2025, 모집단위:'수학교육과',      모집전형:'KU자기추천', 모집인원:8,  경쟁률:12.5, 충원인원:2, '50%cut(등급)':2.0, '70%cut(등급)':2.5 },
-      { 학년도:2025, 모집단위:'경영학과',        모집전형:'KU자기추천', 모집인원:35, 경쟁률:14.2, 충원인원:9, '50%cut(등급)':2.1, '70%cut(등급)':2.5 },
-      { 학년도:2025, 모집단위:'기계공학부',      모집전형:'KU자기추천', 모집인원:30, 경쟁률:10.2, 충원인원:6, '50%cut(등급)':2.2, '70%cut(등급)':2.7 },
-      { 학년도:2025, 모집단위:'경제학과',        모집전형:'KU자기추천', 모집인원:18, 경쟁률:11.0, 충원인원:4, '50%cut(등급)':2.3, '70%cut(등급)':2.8 },
-      { 학년도:2025, 모집단위:'심리학과',        모집전형:'KU자기추천', 모집인원:14, 경쟁률:13.7, 충원인원:3, '50%cut(등급)':2.4, '70%cut(등급)':2.9 },
-      { 학년도:2025, 모집단위:'산업공학부',      모집전형:'KU자기추천', 모집인원:20, 경쟁률:9.6,  충원인원:3, '50%cut(등급)':2.5, '70%cut(등급)':3.0 },
-      { 학년도:2025, 모집단위:'행정학과',        모집전형:'KU자기추천', 모집인원:15, 경쟁률:9.3,  충원인원:3, '50%cut(등급)':2.6, '70%cut(등급)':3.1 },
-      { 학년도:2025, 모집단위:'건축학부',        모집전형:'KU자기추천', 모집인원:18, 경쟁률:10.8, 충원인원:4, '50%cut(등급)':2.8, '70%cut(등급)':3.3 },
-      { 학년도:2025, 모집단위:'국어국문학과',    모집전형:'KU자기추천', 모집인원:12, 경쟁률:8.1,  충원인원:2, '50%cut(등급)':2.9, '70%cut(등급)':3.4 },
+      { 학년도: 2025, 모집단위: '의예과', 모집전형: 'KU자기추천', 모집인원: 8, 경쟁률: 42.1, 충원인원: 1, '50%cut(등급)': 1.1, '70%cut(등급)': 1.3 },
+      { 학년도: 2025, 모집단위: '수의예과', 모집전형: 'KU자기추천', 모집인원: 10, 경쟁률: 28.7, 충원인원: 2, '50%cut(등급)': 1.4, '70%cut(등급)': 1.7 },
+      { 학년도: 2025, 모집단위: '컴퓨터공학부', 모집전형: 'KU자기추천', 모집인원: 32, 경쟁률: 18.3, 충원인원: 4, '50%cut(등급)': 1.6, '70%cut(등급)': 2.0 },
+      { 학년도: 2025, 모집단위: '전기전자공학부', 모집전형: 'KU자기추천', 모집인원: 40, 경쟁률: 12.8, 충원인원: 8, '50%cut(등급)': 1.8, '70%cut(등급)': 2.2 },
+      { 학년도: 2025, 모집단위: '생명공학과', 모집전형: 'KU자기추천', 모집인원: 22, 경쟁률: 16.5, 충원인원: 6, '50%cut(등급)': 1.9, '70%cut(등급)': 2.3 },
+      { 학년도: 2025, 모집단위: '화학공학부', 모집전형: 'KU자기추천', 모집인원: 24, 경쟁률: 11.5, 충원인원: 5, '50%cut(등급)': 2.0, '70%cut(등급)': 2.4 },
+      { 학년도: 2025, 모집단위: '수학교육과', 모집전형: 'KU자기추천', 모집인원: 8, 경쟁률: 12.5, 충원인원: 2, '50%cut(등급)': 2.0, '70%cut(등급)': 2.5 },
+      { 학년도: 2025, 모집단위: '경영학과', 모집전형: 'KU자기추천', 모집인원: 35, 경쟁률: 14.2, 충원인원: 9, '50%cut(등급)': 2.1, '70%cut(등급)': 2.5 },
+      { 학년도: 2025, 모집단위: '기계공학부', 모집전형: 'KU자기추천', 모집인원: 30, 경쟁률: 10.2, 충원인원: 6, '50%cut(등급)': 2.2, '70%cut(등급)': 2.7 },
+      { 학년도: 2025, 모집단위: '경제학과', 모집전형: 'KU자기추천', 모집인원: 18, 경쟁률: 11.0, 충원인원: 4, '50%cut(등급)': 2.3, '70%cut(등급)': 2.8 },
+      { 학년도: 2025, 모집단위: '심리학과', 모집전형: 'KU자기추천', 모집인원: 14, 경쟁률: 13.7, 충원인원: 3, '50%cut(등급)': 2.4, '70%cut(등급)': 2.9 },
+      { 학년도: 2025, 모집단위: '산업공학부', 모집전형: 'KU자기추천', 모집인원: 20, 경쟁률: 9.6, 충원인원: 3, '50%cut(등급)': 2.5, '70%cut(등급)': 3.0 },
+      { 학년도: 2025, 모집단위: '행정학과', 모집전형: 'KU자기추천', 모집인원: 15, 경쟁률: 9.3, 충원인원: 3, '50%cut(등급)': 2.6, '70%cut(등급)': 3.1 },
+      { 학년도: 2025, 모집단위: '건축학부', 모집전형: 'KU자기추천', 모집인원: 18, 경쟁률: 10.8, 충원인원: 4, '50%cut(등급)': 2.8, '70%cut(등급)': 3.3 },
+      { 학년도: 2025, 모집단위: '국어국문학과', 모집전형: 'KU자기추천', 모집인원: 12, 경쟁률: 8.1, 충원인원: 2, '50%cut(등급)': 2.9, '70%cut(등급)': 3.4 },
       // 2024 KU자기추천
-      { 학년도:2024, 모집단위:'의예과',         모집전형:'KU자기추천', 모집인원:8,  경쟁률:39.4, 충원인원:1, '50%cut(등급)':1.2, '70%cut(등급)':1.4 },
-      { 학년도:2024, 모집단위:'수의예과',        모집전형:'KU자기추천', 모집인원:10, 경쟁률:26.3, 충원인원:2, '50%cut(등급)':1.5, '70%cut(등급)':1.8 },
-      { 학년도:2024, 모집단위:'컴퓨터공학부',    모집전형:'KU자기추천', 모집인원:30, 경쟁률:16.7, 충원인원:3, '50%cut(등급)':1.7, '70%cut(등급)':2.1 },
-      { 학년도:2024, 모집단위:'전기전자공학부',  모집전형:'KU자기추천', 모집인원:38, 경쟁률:11.9, 충원인원:7, '50%cut(등급)':1.9, '70%cut(등급)':2.4 },
-      { 학년도:2024, 모집단위:'생명공학과',      모집전형:'KU자기추천', 모집인원:20, 경쟁률:15.2, 충원인원:5, '50%cut(등급)':2.0, '70%cut(등급)':2.5 },
-      { 학년도:2024, 모집단위:'화학공학부',      모집전형:'KU자기추천', 모집인원:22, 경쟁률:10.3, 충원인원:4, '50%cut(등급)':2.1, '70%cut(등급)':2.6 },
-      { 학년도:2024, 모집단위:'경영학과',        모집전형:'KU자기추천', 모집인원:33, 경쟁률:13.5, 충원인원:8, '50%cut(등급)':2.2, '70%cut(등급)':2.6 },
-      { 학년도:2024, 모집단위:'기계공학부',      모집전형:'KU자기추천', 모집인원:28, 경쟁률:9.8,  충원인원:5, '50%cut(등급)':2.3, '70%cut(등급)':2.8 },
+      { 학년도: 2024, 모집단위: '의예과', 모집전형: 'KU자기추천', 모집인원: 8, 경쟁률: 39.4, 충원인원: 1, '50%cut(등급)': 1.2, '70%cut(등급)': 1.4 },
+      { 학년도: 2024, 모집단위: '수의예과', 모집전형: 'KU자기추천', 모집인원: 10, 경쟁률: 26.3, 충원인원: 2, '50%cut(등급)': 1.5, '70%cut(등급)': 1.8 },
+      { 학년도: 2024, 모집단위: '컴퓨터공학부', 모집전형: 'KU자기추천', 모집인원: 30, 경쟁률: 16.7, 충원인원: 3, '50%cut(등급)': 1.7, '70%cut(등급)': 2.1 },
+      { 학년도: 2024, 모집단위: '전기전자공학부', 모집전형: 'KU자기추천', 모집인원: 38, 경쟁률: 11.9, 충원인원: 7, '50%cut(등급)': 1.9, '70%cut(등급)': 2.4 },
+      { 학년도: 2024, 모집단위: '생명공학과', 모집전형: 'KU자기추천', 모집인원: 20, 경쟁률: 15.2, 충원인원: 5, '50%cut(등급)': 2.0, '70%cut(등급)': 2.5 },
+      { 학년도: 2024, 모집단위: '화학공학부', 모집전형: 'KU자기추천', 모집인원: 22, 경쟁률: 10.3, 충원인원: 4, '50%cut(등급)': 2.1, '70%cut(등급)': 2.6 },
+      { 학년도: 2024, 모집단위: '경영학과', 모집전형: 'KU자기추천', 모집인원: 33, 경쟁률: 13.5, 충원인원: 8, '50%cut(등급)': 2.2, '70%cut(등급)': 2.6 },
+      { 학년도: 2024, 모집단위: '기계공학부', 모집전형: 'KU자기추천', 모집인원: 28, 경쟁률: 9.8, 충원인원: 5, '50%cut(등급)': 2.3, '70%cut(등급)': 2.8 },
       // 2025 학교추천
-      { 학년도:2025, 모집단위:'의예과',         모집전형:'학교추천', 모집인원:5,  경쟁률:32.0, 충원인원:1, '50%cut(등급)':1.3, '70%cut(등급)':1.6 },
-      { 학년도:2025, 모집단위:'수의예과',        모집전형:'학교추천', 모집인원:6,  경쟁률:22.5, 충원인원:1, '50%cut(등급)':1.7, '70%cut(등급)':2.0 },
-      { 학년도:2025, 모집단위:'컴퓨터공학부',    모집전형:'학교추천', 모집인원:18, 경쟁률:10.5, 충원인원:3, '50%cut(등급)':2.1, '70%cut(등급)':2.6 },
-      { 학년도:2025, 모집단위:'전기전자공학부',  모집전형:'학교추천', 모집인원:20, 경쟁률:8.1,  충원인원:4, '50%cut(등급)':2.3, '70%cut(등급)':2.8 },
-      { 학년도:2025, 모집단위:'생명공학과',      모집전형:'학교추천', 모집인원:12, 경쟁률:11.3, 충원인원:2, '50%cut(등급)':2.4, '70%cut(등급)':2.9 },
-      { 학년도:2025, 모집단위:'화학공학부',      모집전형:'학교추천', 모집인원:15, 경쟁률:7.2,  충원인원:3, '50%cut(등급)':2.5, '70%cut(등급)':3.0 },
-      { 학년도:2025, 모집단위:'경영학과',        모집전형:'학교추천', 모집인원:22, 경쟁률:9.4,  충원인원:5, '50%cut(등급)':2.6, '70%cut(등급)':3.1 },
-      { 학년도:2025, 모집단위:'기계공학부',      모집전형:'학교추천', 모집인원:16, 경쟁률:6.8,  충원인원:2, '50%cut(등급)':2.7, '70%cut(등급)':3.2 },
-      { 학년도:2025, 모집단위:'행정학과',        모집전형:'학교추천', 모집인원:10, 경쟁률:7.5,  충원인원:2, '50%cut(등급)':3.0, '70%cut(등급)':3.5 },
+      { 학년도: 2025, 모집단위: '의예과', 모집전형: '학교추천', 모집인원: 5, 경쟁률: 32.0, 충원인원: 1, '50%cut(등급)': 1.3, '70%cut(등급)': 1.6 },
+      { 학년도: 2025, 모집단위: '수의예과', 모집전형: '학교추천', 모집인원: 6, 경쟁률: 22.5, 충원인원: 1, '50%cut(등급)': 1.7, '70%cut(등급)': 2.0 },
+      { 학년도: 2025, 모집단위: '컴퓨터공학부', 모집전형: '학교추천', 모집인원: 18, 경쟁률: 10.5, 충원인원: 3, '50%cut(등급)': 2.1, '70%cut(등급)': 2.6 },
+      { 학년도: 2025, 모집단위: '전기전자공학부', 모집전형: '학교추천', 모집인원: 20, 경쟁률: 8.1, 충원인원: 4, '50%cut(등급)': 2.3, '70%cut(등급)': 2.8 },
+      { 학년도: 2025, 모집단위: '생명공학과', 모집전형: '학교추천', 모집인원: 12, 경쟁률: 11.3, 충원인원: 2, '50%cut(등급)': 2.4, '70%cut(등급)': 2.9 },
+      { 학년도: 2025, 모집단위: '화학공학부', 모집전형: '학교추천', 모집인원: 15, 경쟁률: 7.2, 충원인원: 3, '50%cut(등급)': 2.5, '70%cut(등급)': 3.0 },
+      { 학년도: 2025, 모집단위: '경영학과', 모집전형: '학교추천', 모집인원: 22, 경쟁률: 9.4, 충원인원: 5, '50%cut(등급)': 2.6, '70%cut(등급)': 3.1 },
+      { 학년도: 2025, 모집단위: '기계공학부', 모집전형: '학교추천', 모집인원: 16, 경쟁률: 6.8, 충원인원: 2, '50%cut(등급)': 2.7, '70%cut(등급)': 3.2 },
+      { 학년도: 2025, 모집단위: '행정학과', 모집전형: '학교추천', 모집인원: 10, 경쟁률: 7.5, 충원인원: 2, '50%cut(등급)': 3.0, '70%cut(등급)': 3.5 },
       // 2024 학교추천
-      { 학년도:2024, 모집단위:'화학공학부',      모집전형:'학교추천', 모집인원:14, 경쟁률:6.8,  충원인원:2, '50%cut(등급)':2.6, '70%cut(등급)':3.1 },
-      { 학년도:2024, 모집단위:'전기전자공학부',  모집전형:'학교추천', 모집인원:18, 경쟁률:7.5,  충원인원:3, '50%cut(등급)':2.4, '70%cut(등급)':2.9 },
-      { 학년도:2024, 모집단위:'컴퓨터공학부',    모집전형:'학교추천', 모집인원:16, 경쟁률:9.8,  충원인원:2, '50%cut(등급)':2.2, '70%cut(등급)':2.7 },
-      { 학년도:2024, 모집단위:'경영학과',        모집전형:'학교추천', 모집인원:20, 경쟁률:8.9,  충원인원:4, '50%cut(등급)':2.7, '70%cut(등급)':3.2 },
+      { 학년도: 2024, 모집단위: '화학공학부', 모집전형: '학교추천', 모집인원: 14, 경쟁률: 6.8, 충원인원: 2, '50%cut(등급)': 2.6, '70%cut(등급)': 3.1 },
+      { 학년도: 2024, 모집단위: '전기전자공학부', 모집전형: '학교추천', 모집인원: 18, 경쟁률: 7.5, 충원인원: 3, '50%cut(등급)': 2.4, '70%cut(등급)': 2.9 },
+      { 학년도: 2024, 모집단위: '컴퓨터공학부', 모집전형: '학교추천', 모집인원: 16, 경쟁률: 9.8, 충원인원: 2, '50%cut(등급)': 2.2, '70%cut(등급)': 2.7 },
+      { 학년도: 2024, 모집단위: '경영학과', 모집전형: '학교추천', 모집인원: 20, 경쟁률: 8.9, 충원인원: 4, '50%cut(등급)': 2.7, '70%cut(등급)': 3.2 },
     ];
   }
 
@@ -73,21 +73,21 @@
 
   function getKhuGwagyoSampleData() {
     return [
-      { major:'의학과',          recruit:37,  rate25:11.9, rate24:10.4, fillRate25:'35%', fillRate24:'30%', minSatRate:'67%', realRate:4.0, score50:97.47, score70:97.02, grade50:'1.1', grade70:1.2, gradeAvg:1.14 },
-      { major:'한의학과(인문)',   recruit:15,  rate25:9.8,  rate24:8.7,  fillRate25:'40%', fillRate24:'38%', minSatRate:'60%', realRate:3.9, score50:96.90, score70:96.40, grade50:'1.2', grade70:1.3, gradeAvg:1.23 },
-      { major:'한의학과(자연)',   recruit:25,  rate25:10.5, rate24:9.2,  fillRate25:'38%', fillRate24:'35%', minSatRate:'63%', realRate:4.0, score50:97.10, score70:96.65, grade50:'1.2', grade70:1.3, gradeAvg:1.22 },
-      { major:'약학과',           recruit:31,  rate25:14.3, rate24:12.1, fillRate25:'30%', fillRate24:'28%', minSatRate:'70%', realRate:4.3, score50:97.02, score70:96.50, grade50:'1.3', grade70:1.4, gradeAvg:1.32 },
-      { major:'간호학과(자연)',   recruit:47,  rate25:8.4,  rate24:7.9,  fillRate25:'45%', fillRate24:'42%', minSatRate:'55%', realRate:3.8, score50:96.30, score70:95.70, grade50:'1.4', grade70:1.6, gradeAvg:1.48 },
-      { major:'치의예과',         recruit:21,  rate25:16.2, rate24:14.8, fillRate25:'28%', fillRate24:'25%', minSatRate:'72%', realRate:4.6, score50:97.50, score70:97.10, grade50:'1.1', grade70:1.2, gradeAvg:1.13 },
-      { major:'소프트웨어융합학과', recruit:23, rate25:9.7, rate24:8.5,  fillRate25:'32%', fillRate24:'30%', minSatRate:'58%', realRate:4.1, score50:95.50, score70:94.80, grade50:'1.6', grade70:1.8, gradeAvg:1.68 },
-      { major:'컴퓨터공학과',     recruit:62,  rate25:11.2, rate24:10.1, fillRate25:'33%', fillRate24:'31%', minSatRate:'60%', realRate:4.2, score50:95.20, score70:94.50, grade50:'1.7', grade70:1.9, gradeAvg:1.79 },
-      { major:'전자공학과',       recruit:57,  rate25:7.8,  rate24:7.2,  fillRate25:'37%', fillRate24:'35%', minSatRate:'53%', realRate:3.6, score50:94.80, score70:94.00, grade50:'1.8', grade70:2.0, gradeAvg:1.87 },
-      { major:'경영학과',         recruit:85,  rate25:6.5,  rate24:6.1,  fillRate25:'48%', fillRate24:'45%', minSatRate:'50%', realRate:3.3, score50:94.50, score70:93.60, grade50:'1.9', grade70:2.2, gradeAvg:2.01 },
-      { major:'경제학과',         recruit:55,  rate25:5.9,  rate24:5.5,  fillRate25:'50%', fillRate24:'48%', minSatRate:'45%', realRate:3.1, score50:93.80, score70:92.90, grade50:'2.0', grade70:2.3, gradeAvg:2.12 },
-      { major:'행정학과',         recruit:38,  rate25:5.3,  rate24:5.0,  fillRate25:'52%', fillRate24:'50%', minSatRate:'42%', realRate:2.9, score50:93.20, score70:92.30, grade50:'2.2', grade70:2.5, gradeAvg:2.31 },
-      { major:'사학과',           recruit:24,  rate25:4.8,  rate24:4.5,  fillRate25:'55%', fillRate24:'53%', minSatRate:'38%', realRate:2.7, score50:92.50, score70:91.60, grade50:'2.4', grade70:2.7, gradeAvg:2.51 },
-      { major:'국어국문학과',     recruit:30,  rate25:4.5,  rate24:4.2,  fillRate25:'58%', fillRate24:'55%', minSatRate:'35%', realRate:2.6, score50:92.00, score70:91.00, grade50:'2.5', grade70:2.8, gradeAvg:2.62 },
-      { major:'체육학과',         recruit:27,  rate25:8.9,  rate24:8.1,  fillRate25:'42%', fillRate24:'40%', minSatRate:'55%', realRate:3.8, score50:90.00, score70:88.50, grade50:'2.8', grade70:3.2, gradeAvg:2.95 },
+      { major: '의학과', recruit: 37, rate25: 11.9, rate24: 10.4, fillRate25: '35%', fillRate24: '30%', minSatRate: '67%', realRate: 4.0, score50: 97.47, score70: 97.02, grade50: '1.1', grade70: 1.2, gradeAvg: 1.14 },
+      { major: '한의학과(인문)', recruit: 15, rate25: 9.8, rate24: 8.7, fillRate25: '40%', fillRate24: '38%', minSatRate: '60%', realRate: 3.9, score50: 96.90, score70: 96.40, grade50: '1.2', grade70: 1.3, gradeAvg: 1.23 },
+      { major: '한의학과(자연)', recruit: 25, rate25: 10.5, rate24: 9.2, fillRate25: '38%', fillRate24: '35%', minSatRate: '63%', realRate: 4.0, score50: 97.10, score70: 96.65, grade50: '1.2', grade70: 1.3, gradeAvg: 1.22 },
+      { major: '약학과', recruit: 31, rate25: 14.3, rate24: 12.1, fillRate25: '30%', fillRate24: '28%', minSatRate: '70%', realRate: 4.3, score50: 97.02, score70: 96.50, grade50: '1.3', grade70: 1.4, gradeAvg: 1.32 },
+      { major: '간호학과(자연)', recruit: 47, rate25: 8.4, rate24: 7.9, fillRate25: '45%', fillRate24: '42%', minSatRate: '55%', realRate: 3.8, score50: 96.30, score70: 95.70, grade50: '1.4', grade70: 1.6, gradeAvg: 1.48 },
+      { major: '치의예과', recruit: 21, rate25: 16.2, rate24: 14.8, fillRate25: '28%', fillRate24: '25%', minSatRate: '72%', realRate: 4.6, score50: 97.50, score70: 97.10, grade50: '1.1', grade70: 1.2, gradeAvg: 1.13 },
+      { major: '소프트웨어융합학과', recruit: 23, rate25: 9.7, rate24: 8.5, fillRate25: '32%', fillRate24: '30%', minSatRate: '58%', realRate: 4.1, score50: 95.50, score70: 94.80, grade50: '1.6', grade70: 1.8, gradeAvg: 1.68 },
+      { major: '컴퓨터공학과', recruit: 62, rate25: 11.2, rate24: 10.1, fillRate25: '33%', fillRate24: '31%', minSatRate: '60%', realRate: 4.2, score50: 95.20, score70: 94.50, grade50: '1.7', grade70: 1.9, gradeAvg: 1.79 },
+      { major: '전자공학과', recruit: 57, rate25: 7.8, rate24: 7.2, fillRate25: '37%', fillRate24: '35%', minSatRate: '53%', realRate: 3.6, score50: 94.80, score70: 94.00, grade50: '1.8', grade70: 2.0, gradeAvg: 1.87 },
+      { major: '경영학과', recruit: 85, rate25: 6.5, rate24: 6.1, fillRate25: '48%', fillRate24: '45%', minSatRate: '50%', realRate: 3.3, score50: 94.50, score70: 93.60, grade50: '1.9', grade70: 2.2, gradeAvg: 2.01 },
+      { major: '경제학과', recruit: 55, rate25: 5.9, rate24: 5.5, fillRate25: '50%', fillRate24: '48%', minSatRate: '45%', realRate: 3.1, score50: 93.80, score70: 92.90, grade50: '2.0', grade70: 2.3, gradeAvg: 2.12 },
+      { major: '행정학과', recruit: 38, rate25: 5.3, rate24: 5.0, fillRate25: '52%', fillRate24: '50%', minSatRate: '42%', realRate: 2.9, score50: 93.20, score70: 92.30, grade50: '2.2', grade70: 2.5, gradeAvg: 2.31 },
+      { major: '사학과', recruit: 24, rate25: 4.8, rate24: 4.5, fillRate25: '55%', fillRate24: '53%', minSatRate: '38%', realRate: 2.7, score50: 92.50, score70: 91.60, grade50: '2.4', grade70: 2.7, gradeAvg: 2.51 },
+      { major: '국어국문학과', recruit: 30, rate25: 4.5, rate24: 4.2, fillRate25: '58%', fillRate24: '55%', minSatRate: '35%', realRate: 2.6, score50: 92.00, score70: 91.00, grade50: '2.5', grade70: 2.8, gradeAvg: 2.62 },
+      { major: '체육학과', recruit: 27, rate25: 8.9, rate24: 8.1, fillRate25: '42%', fillRate24: '40%', minSatRate: '55%', realRate: 3.8, score50: 90.00, score70: 88.50, grade50: '2.8', grade70: 3.2, gradeAvg: 2.95 },
     ];
   }
 
@@ -97,21 +97,21 @@
 
   function getKhuJonghapSampleData() {
     return [
-      { name:'의학과',          recruit:12,  rate2025:32.1, rate2024:29.4, ratio2025:18.5, ratio2024:16.2, doc:87.5, interview:88.3, cut50:1.0, cut70:1.1, avg:1.05 },
-      { name:'치의예과',         recruit:8,   rate2025:28.7, rate2024:26.1, ratio2025:20.1, ratio2024:18.5, doc:88.1, interview:87.6, cut50:1.1, cut70:1.2, avg:1.13 },
-      { name:'한의학과(자연)',   recruit:10,  rate2025:18.5, rate2024:16.9, ratio2025:22.3, ratio2024:20.1, doc:85.3, interview:86.2, cut50:1.2, cut70:1.4, avg:1.28 },
-      { name:'한의학과(인문)',   recruit:8,   rate2025:15.2, rate2024:13.8, ratio2025:25.0, ratio2024:22.5, doc:84.9, interview:85.7, cut50:1.2, cut70:1.4, avg:1.30 },
-      { name:'약학과',           recruit:9,   rate2025:22.4, rate2024:20.1, ratio2025:19.8, ratio2024:17.6, doc:86.7, interview:86.9, cut50:1.3, cut70:1.5, avg:1.38 },
-      { name:'간호학과(자연)',   recruit:16,  rate2025:12.3, rate2024:11.2, ratio2025:28.5, ratio2024:26.3, doc:82.4, interview:83.1, cut50:1.5, cut70:1.8, avg:1.63 },
-      { name:'소프트웨어융합학과', recruit:18, rate2025:14.8, rate2024:13.5, ratio2025:24.2, ratio2024:22.1, doc:83.1, interview:82.7, cut50:1.7, cut70:2.0, avg:1.83 },
-      { name:'컴퓨터공학과',     recruit:30,  rate2025:16.7, rate2024:15.2, ratio2025:22.8, ratio2024:20.9, doc:82.8, interview:82.5, cut50:1.9, cut70:2.2, avg:2.02 },
-      { name:'전자공학과',       recruit:28,  rate2025:11.5, rate2024:10.8, ratio2025:26.4, ratio2024:24.7, doc:81.5, interview:81.9, cut50:2.0, cut70:2.4, avg:2.15 },
-      { name:'경영학과',         recruit:40,  rate2025:10.2, rate2024:9.7,  ratio2025:28.1, ratio2024:26.2, doc:80.3, interview:80.8, cut50:2.2, cut70:2.6, avg:2.38 },
-      { name:'경제학과',         recruit:30,  rate2025:9.5,  rate2024:8.9,  ratio2025:29.5, ratio2024:27.8, doc:79.8, interview:80.2, cut50:2.3, cut70:2.7, avg:2.48 },
-      { name:'행정학과',         recruit:22,  rate2025:8.8,  rate2024:8.2,  ratio2025:31.2, ratio2024:29.5, doc:79.2, interview:79.7, cut50:2.5, cut70:2.9, avg:2.67 },
-      { name:'사학과',           recruit:15,  rate2025:7.6,  rate2024:7.1,  ratio2025:33.5, ratio2024:31.8, doc:78.5, interview:79.0, cut50:2.7, cut70:3.1, avg:2.88 },
-      { name:'국어국문학과',     recruit:18,  rate2025:7.1,  rate2024:6.8,  ratio2025:34.8, ratio2024:33.1, doc:78.0, interview:78.5, cut50:2.8, cut70:3.2, avg:2.98 },
-      { name:'체육학과',         recruit:15,  rate2025:12.6, rate2024:11.3, ratio2025:26.7, ratio2024:24.8, doc:76.2, interview:77.1, cut50:2.9, cut70:3.4, avg:3.12 },
+      { name: '의학과', recruit: 12, rate2025: 32.1, rate2024: 29.4, ratio2025: 18.5, ratio2024: 16.2, doc: 87.5, interview: 88.3, cut50: 1.0, cut70: 1.1, avg: 1.05 },
+      { name: '치의예과', recruit: 8, rate2025: 28.7, rate2024: 26.1, ratio2025: 20.1, ratio2024: 18.5, doc: 88.1, interview: 87.6, cut50: 1.1, cut70: 1.2, avg: 1.13 },
+      { name: '한의학과(자연)', recruit: 10, rate2025: 18.5, rate2024: 16.9, ratio2025: 22.3, ratio2024: 20.1, doc: 85.3, interview: 86.2, cut50: 1.2, cut70: 1.4, avg: 1.28 },
+      { name: '한의학과(인문)', recruit: 8, rate2025: 15.2, rate2024: 13.8, ratio2025: 25.0, ratio2024: 22.5, doc: 84.9, interview: 85.7, cut50: 1.2, cut70: 1.4, avg: 1.30 },
+      { name: '약학과', recruit: 9, rate2025: 22.4, rate2024: 20.1, ratio2025: 19.8, ratio2024: 17.6, doc: 86.7, interview: 86.9, cut50: 1.3, cut70: 1.5, avg: 1.38 },
+      { name: '간호학과(자연)', recruit: 16, rate2025: 12.3, rate2024: 11.2, ratio2025: 28.5, ratio2024: 26.3, doc: 82.4, interview: 83.1, cut50: 1.5, cut70: 1.8, avg: 1.63 },
+      { name: '소프트웨어융합학과', recruit: 18, rate2025: 14.8, rate2024: 13.5, ratio2025: 24.2, ratio2024: 22.1, doc: 83.1, interview: 82.7, cut50: 1.7, cut70: 2.0, avg: 1.83 },
+      { name: '컴퓨터공학과', recruit: 30, rate2025: 16.7, rate2024: 15.2, ratio2025: 22.8, ratio2024: 20.9, doc: 82.8, interview: 82.5, cut50: 1.9, cut70: 2.2, avg: 2.02 },
+      { name: '전자공학과', recruit: 28, rate2025: 11.5, rate2024: 10.8, ratio2025: 26.4, ratio2024: 24.7, doc: 81.5, interview: 81.9, cut50: 2.0, cut70: 2.4, avg: 2.15 },
+      { name: '경영학과', recruit: 40, rate2025: 10.2, rate2024: 9.7, ratio2025: 28.1, ratio2024: 26.2, doc: 80.3, interview: 80.8, cut50: 2.2, cut70: 2.6, avg: 2.38 },
+      { name: '경제학과', recruit: 30, rate2025: 9.5, rate2024: 8.9, ratio2025: 29.5, ratio2024: 27.8, doc: 79.8, interview: 80.2, cut50: 2.3, cut70: 2.7, avg: 2.48 },
+      { name: '행정학과', recruit: 22, rate2025: 8.8, rate2024: 8.2, ratio2025: 31.2, ratio2024: 29.5, doc: 79.2, interview: 79.7, cut50: 2.5, cut70: 2.9, avg: 2.67 },
+      { name: '사학과', recruit: 15, rate2025: 7.6, rate2024: 7.1, ratio2025: 33.5, ratio2024: 31.8, doc: 78.5, interview: 79.0, cut50: 2.7, cut70: 3.1, avg: 2.88 },
+      { name: '국어국문학과', recruit: 18, rate2025: 7.1, rate2024: 6.8, ratio2025: 34.8, ratio2024: 33.1, doc: 78.0, interview: 78.5, cut50: 2.8, cut70: 3.2, avg: 2.98 },
+      { name: '체육학과', recruit: 15, rate2025: 12.6, rate2024: 11.3, ratio2025: 26.7, ratio2024: 24.8, doc: 76.2, interview: 77.1, cut50: 2.9, cut70: 3.4, avg: 3.12 },
     ];
   }
 
@@ -121,7 +121,7 @@
   const UNI_META = {
     '건국대': {
       label: '건국대학교',
-      colors: { bar:'#c4d600', barLight:'#eaf55d', barDark:'#6f7a00', accent:'#034C2F', line:'#c4d600' },
+      colors: { bar: '#c4d600', barLight: '#eaf55d', barDark: '#6f7a00', accent: '#034C2F', line: '#c4d600' },
       schema: 'ku',        // 50%~70% cut floating bar
       hasYear: true,       // 학년도 드롭다운 표시
       types: () => [...new Set(KU_DATA.map(d => d['모집전형']))].sort(),
@@ -129,7 +129,7 @@
     },
     '경희대': {
       label: '경희대학교',
-      colors: { bar:'#6366f1', barLight:'#c7d2fe', barDark:'#4f46e5', accent:'#4f46e5', line:'#ef4444' },
+      colors: { bar: '#6366f1', barLight: '#c7d2fe', barDark: '#4f46e5', accent: '#4f46e5', line: '#ef4444' },
       schema: 'khu',       // 전형마다 다름 (khu_gwagyo / khu_jonghap)
       hasYear: false,      // 학년도 드롭다운 숨김 (단일 연도)
       types: () => ['학생부교과', '학생부종합(네오르네상스)'],
@@ -137,7 +137,7 @@
     },
     '광운대': {
       label: '광운대학교',
-      colors: { bar:'#8C1515', barLight:'#d43d3d', barDark:'#5c0b0b', accent:'#8C1515', line:'#8C1515' },
+      colors: { bar: '#8C1515', barLight: '#d43d3d', barDark: '#5c0b0b', accent: '#8C1515', line: '#8C1515' },
       schema: 'kwu',
       hasYear: false,
       types: () => ['학생부종합(면접형)', '학생부종합(서류형)', '학생부교과(지역균형)', '학생부종합(농어촌)'],
@@ -145,7 +145,7 @@
     },
     '군산대': {
       label: '군산대학교',
-      colors: { bar:'#3b82f6', barLight:'#bfdbfe', barDark:'#1d4ed8', accent:'#2563eb', line:'#2563eb' },
+      colors: { bar: '#3b82f6', barLight: '#bfdbfe', barDark: '#1d4ed8', accent: '#2563eb', line: '#2563eb' },
       schema: 'kunsan',
       hasYear: true,
       types: () => [...new Set(KUNSAN_DATA.map(d => d.type))].filter(Boolean).sort(),
@@ -153,7 +153,7 @@
     },
     '동국대': {
       label: '동국대학교',
-      colors: { bar:'#E55D28', barLight:'#f4a37e', barDark:'#a33d1a', accent:'#E55D28', line:'#E55D28' },
+      colors: { bar: '#E55D28', barLight: '#f4a37e', barDark: '#a33d1a', accent: '#E55D28', line: '#E55D28' },
       schema: 'dgu',
       hasYear: true,
       types: () => [...new Set(DGU_DATA.map(d => d['모집전형']))].filter(Boolean).sort(),
@@ -161,7 +161,7 @@
     },
     '서강대': {
       label: '서강대학교',
-      colors: { bar:'#004ea2', barLight:'#dfa800', barDark:'#002f61', accent:'#dfa800', line:'#004ea2' },
+      colors: { bar: '#004ea2', barLight: '#dfa800', barDark: '#002f61', accent: '#dfa800', line: '#004ea2' },
       schema: 'sgu',
       hasYear: false,
       types: () => [...new Set(SGU_DATA.map(d => d['모집전형']))].filter(Boolean).sort(),
@@ -169,7 +169,7 @@
     },
     '서울시립대': {
       label: '서울시립대학교',
-      colors: { bar:'#1a2b50', barLight:'#4a69bd', barDark:'#0d1a32', accent:'#4a69bd', line:'#1a2b50' },
+      colors: { bar: '#1a2b50', barLight: '#4a69bd', barDark: '#0d1a32', accent: '#4a69bd', line: '#1a2b50' },
       schema: 'uos',
       hasYear: false,
       types: () => [...new Set(UOS_DATA.map(d => d.admissionType))].filter(Boolean).sort(),
@@ -177,7 +177,7 @@
     },
     '성균관대': {
       label: '성균관대학교',
-      colors: { bar:'#003e29', barLight:'#1a6b4a', barDark:'#001f15', accent:'#003e29', line:'#003e29' },
+      colors: { bar: '#003e29', barLight: '#1a6b4a', barDark: '#001f15', accent: '#003e29', line: '#003e29' },
       schema: 'sku',
       hasYear: false,
       types: () => ['학교장추천'],
@@ -185,7 +185,7 @@
     },
     '우석대': {
       label: '우석대학교',
-      colors: { bar:'#1a3c6e', barLight:'#5b8dd9', barDark:'#0d2347', accent:'#1a3c6e', line:'#1a3c6e' },
+      colors: { bar: '#1a3c6e', barLight: '#5b8dd9', barDark: '#0d2347', accent: '#1a3c6e', line: '#1a3c6e' },
       schema: 'wsu',
       hasYear: false,
       types: () => [...new Set(WSU_DATA.map(d => d['모집전형']))].filter(Boolean).sort(),
@@ -193,7 +193,7 @@
     },
     '원광대': {
       label: '원광대학교',
-      colors: { bar:'#0d9488', barLight:'#99f6e4', barDark:'#0f766e', accent:'#0d9488', line:'#0d9488' },
+      colors: { bar: '#0d9488', barLight: '#99f6e4', barDark: '#0f766e', accent: '#0d9488', line: '#0d9488' },
       schema: 'wonkwang',
       hasYear: false,
       types: () => [...new Set(WKU_DATA.map(d => d['모집전형']))].filter(Boolean).sort(),
@@ -201,7 +201,7 @@
     },
     '전남대': {
       label: '전남대학교',
-      colors: { bar:'#16a34a', barLight:'#86efac', barDark:'#15803d', accent:'#16a34a', line:'#16a34a' },
+      colors: { bar: '#16a34a', barLight: '#86efac', barDark: '#15803d', accent: '#16a34a', line: '#16a34a' },
       schema: 'jnu',
       hasYear: false,
       types: () => [...new Set(JNU_DATA.map(d => d['모집전형']))].filter(Boolean).sort(),
@@ -209,7 +209,7 @@
     },
     '전주대': {
       label: '전주대학교',
-      colors: { bar:'#2563eb', barLight:'#93c5fd', barDark:'#1d4ed8', accent:'#2563eb', line:'#2563eb' },
+      colors: { bar: '#2563eb', barLight: '#93c5fd', barDark: '#1d4ed8', accent: '#2563eb', line: '#2563eb' },
       schema: 'jju',
       hasYear: false,
       types: () => [...new Set(JJU_DATA.map(d => d['모집전형']))].filter(Boolean).sort(),
@@ -217,7 +217,7 @@
     },
     '중앙대': {
       label: '중앙대학교',
-      colors: { bar:'#2a5599', barLight:'#6fa8dc', barDark:'#1e3d70', accent:'#2a5599', line:'#2a5599' },
+      colors: { bar: '#2a5599', barLight: '#6fa8dc', barDark: '#1e3d70', accent: '#2a5599', line: '#2a5599' },
       schema: 'cau',
       hasYear: false,
       types: () => [...new Set(CAU_DATA.map(d => d['모집전형']))].filter(Boolean).sort(),
@@ -225,7 +225,7 @@
     },
     '충남대': {
       label: '충남대학교',
-      colors: { bar:'#003087', barLight:'#4a7fd4', barDark:'#001a52', accent:'#003087', line:'#003087' },
+      colors: { bar: '#003087', barLight: '#4a7fd4', barDark: '#001a52', accent: '#003087', line: '#003087' },
       schema: 'cnu',
       hasYear: false,
       types: () => [...new Set(CNU_DATA.map(d => d['모집전형']))].filter(Boolean).sort(),
@@ -233,7 +233,7 @@
     },
     '충북대': {
       label: '충북대학교',
-      colors: { bar:'#76232F', barLight:'#a1404d', barDark:'#4d121b', accent:'#76232F', line:'#76232F' },
+      colors: { bar: '#76232F', barLight: '#a1404d', barDark: '#4d121b', accent: '#76232F', line: '#76232F' },
       schema: 'cbnu',
       hasYear: false,
       types: () => [...new Set(CBNU_DATA.map(d => d['모집전형']))].filter(Boolean).sort(),
@@ -241,7 +241,7 @@
     },
     '한국외대': {
       label: '한국외국어대학교',
-      colors: { bar:'#002c5f', barLight:'#1a5fa8', barDark:'#001233', accent:'#002c5f', line:'#002c5f' },
+      colors: { bar: '#002c5f', barLight: '#1a5fa8', barDark: '#001233', accent: '#002c5f', line: '#002c5f' },
       schema: 'hufs',
       hasYear: true,
       types: () => ['교과전형', '종합전형'],
@@ -249,28 +249,36 @@
     },
     '한양대': {
       label: '한양대학교',
-      colors: { bar:'#0E4A84', barLight:'#4a80be', barDark:'#082a4e', accent:'#0E4A84', line:'#0E4A84' },
+      colors: { bar: '#0E4A84', barLight: '#4a80be', barDark: '#082a4e', accent: '#0E4A84', line: '#0E4A84' },
       schema: 'hyu',
       hasYear: true,
       types: () => [...new Set(HYU_DATA.map(d => d['모집전형']))].filter(Boolean).sort(),
       data: (type) => type ? HYU_DATA.filter(d => d['모집전형'] === type) : HYU_DATA,
+    },
+    '홍익대': {
+      label: '홍익대학교',
+      colors: { bar: '#1d4ed8', barLight: '#60a5fa', barDark: '#1e3a8a', accent: '#1d4ed8', line: '#1d4ed8' },
+      schema: 'hiu',
+      hasYear: true,
+      types: () => [...new Set(HIU_DATA.map(d => d['모집전형']))].filter(Boolean).sort(),
+      data: () => HIU_DATA,
     },
   };
 
   // ════════════════════════════════════════════════════════════════════════════
   // ██  상태
   // ════════════════════════════════════════════════════════════════════════════
-  let adCurrentUni  = '건국대';
+  let adCurrentUni = '건국대';
   let adCurrentType = '';
   let adCurrentYear = '';
   let adCurrentYMin = 1;
-  let adRawData     = [];      // 현재 대학+전형의 원시 배열
-  let adDispData    = [];      // 필터링 후 차트용 배열 (건국대는 학년도 필터 적용)
-  let adMainChart   = null;
+  let adRawData = [];      // 현재 대학+전형의 원시 배열
+  let adDispData = [];      // 필터링 후 차트용 배열 (건국대는 학년도 필터 적용)
+  let adMainChart = null;
   let adInitialized = false;
-  let adIsSampleData = { 
-    '건국대': true, 
-    '경희대_학생부교과': true, 
+  let adIsSampleData = {
+    '건국대': true,
+    '경희대_학생부교과': true,
     '경희대_학생부종합(네오르네상스)': true,
     '광운대_학생부종합(면접형)': true,
     '광운대_학생부종합(서류형)': true,
@@ -290,7 +298,8 @@
     '충북대': true,
     '한국외대_교과전형': true,
     '한국외대_종합전형': true,
-    '한양대': true
+    '한양대': true,
+    '홍익대': true
   };
 
   const KUNSAN_GAS_URL = 'https://script.google.com/macros/s/AKfycby-QuO_J2HgM6Zjv8YGebU3yt0o3aqzdpziHM4DDEQoRd7TfnOCx2_-w9UULTDxhEViAQ/exec';
@@ -335,6 +344,9 @@
 
   const HYU_SHEET_ID = '1MvB5IOnKSAWVUGmlznajg_1nb47A2nGOIp2jTem-K54';
   let HYU_DATA = [];
+
+  const HIU_SHEET_ID = '1gBcfiTZBssaNHkok-FwFRwXxcMpgQnjlB-mdB3_8e0g';
+  let HIU_DATA = [];
 
   // ── 광운대 입결 데이터 배열 ───────────────────────────────────────
   let KWU_MYUNJEOP_DATA = [];
@@ -412,6 +424,9 @@
     } else if (uniName === '한양대') {
       HYU_DATA.length = 0;
       (typeOrArray || []).forEach(r => HYU_DATA.push(r));
+    } else if (uniName === '홍익대') {
+      HIU_DATA.length = 0;
+      (typeOrArray || []).forEach(r => HIU_DATA.push(r));
     }
     if (adCurrentUni === uniName) loadData(uniName);
   };
@@ -423,20 +438,20 @@
     return new Promise((resolve, reject) => {
       const cbName = '__gasJsonp_' + Date.now() + '_' + Math.random().toString(36).slice(2);
       const script = document.createElement('script');
-      
+
       const timer = setTimeout(() => {
         cleanup(); reject(new Error('GAS Timeout'));
       }, 10000);
-      
+
       function cleanup() {
         clearTimeout(timer);
         delete window[cbName];
         if (script.parentNode) script.parentNode.removeChild(script);
       }
-      
-      window[cbName] = function(data) { cleanup(); resolve(data); };
-      script.onerror = function() { cleanup(); reject(new Error('GAS Network Error')); };
-      
+
+      window[cbName] = function (data) { cleanup(); resolve(data); };
+      script.onerror = function () { cleanup(); reject(new Error('GAS Network Error')); };
+
       const qs = new URLSearchParams(params);
       qs.set('callback', cbName);
       script.src = url + '?' + qs.toString();
@@ -490,7 +505,7 @@
     if (badge) badge.textContent = '경희대학교 종합전형 데이터를 불러오는 중...';
     try {
       const data = await fetchGasJsonp(KHU_JONGHAP_GAS_URL, { action: 'getData' });
-      
+
       const headerMap = {
         '모집단위': 'name', '학과명': 'name', '학과': 'name',
         '모집인원': 'recruit', '인원': 'recruit',
@@ -510,9 +525,9 @@
           const headers = data[0];
           KHU_JONGHAP_DATA = data.slice(1).map(row => {
             let obj = {};
-            headers.forEach((h, i) => { 
+            headers.forEach((h, i) => {
               const key = headerMap[h] || h;
-              obj[key] = row[i]; 
+              obj[key] = row[i];
             });
             return obj;
           });
@@ -524,9 +539,9 @@
           const headers = data.data[0];
           KHU_JONGHAP_DATA = data.data.slice(1).map(row => {
             let obj = {};
-            headers.forEach((h, i) => { 
+            headers.forEach((h, i) => {
               const key = headerMap[h] || h;
-              obj[key] = row[i]; 
+              obj[key] = row[i];
             });
             return obj;
           });
@@ -555,7 +570,7 @@
     if (badge) badge.textContent = '경희대학교 교과전형 데이터를 불러오는 중...';
     try {
       const data = await fetchGasJsonp(KHU_GWAGYO_GAS_URL, { action: 'getData' });
-      
+
       const headerMap = {
         '모집단위': 'major', '학과명': 'major', '학과': 'major',
         '모집인원': 'recruit', '인원': 'recruit',
@@ -577,9 +592,9 @@
           const headers = data[0];
           KHU_GWAGYO_DATA = data.slice(1).map(row => {
             let obj = {};
-            headers.forEach((h, i) => { 
+            headers.forEach((h, i) => {
               const key = headerMap[h] || h;
-              obj[key] = row[i]; 
+              obj[key] = row[i];
             });
             return obj;
           });
@@ -591,9 +606,9 @@
           const headers = data.data[0];
           KHU_GWAGYO_DATA = data.data.slice(1).map(row => {
             let obj = {};
-            headers.forEach((h, i) => { 
+            headers.forEach((h, i) => {
               const key = headerMap[h] || h;
-              obj[key] = row[i]; 
+              obj[key] = row[i];
             });
             return obj;
           });
@@ -648,7 +663,7 @@
       adIsSampleData['광운대_학생부종합(서류형)'] = false;
       adIsSampleData['광운대_학생부교과(지역균형)'] = false;
       adIsSampleData['광운대_학생부종합(농어촌)'] = false;
-    } catch(e) {
+    } catch (e) {
       console.error('KWU Data Fetch Error:', e);
       KWU_MYUNJEOP_DATA = getKwuSampleData();
       KWU_SEORYU_DATA = getKwuSampleData();
@@ -664,131 +679,131 @@
   function getKunsanSampleData() {
     return [
       // 2025 학생부교과(일반)
-      { year:2025, type:'학생부교과(일반)', major:'간호학과',       recruitNum:25, rate:12.4, avgGrade:2.3, cut70Grade:2.7 },
-      { year:2025, type:'학생부교과(일반)', major:'컴퓨터정보공학부', recruitNum:40, rate:8.1,  avgGrade:2.9, cut70Grade:3.4 },
-      { year:2025, type:'학생부교과(일반)', major:'전기공학과',       recruitNum:30, rate:6.5,  avgGrade:3.1, cut70Grade:3.6 },
-      { year:2025, type:'학생부교과(일반)', major:'기계공학부',       recruitNum:35, rate:5.8,  avgGrade:3.3, cut70Grade:3.8 },
-      { year:2025, type:'학생부교과(일반)', major:'경영학부',         recruitNum:50, rate:7.2,  avgGrade:3.2, cut70Grade:3.7 },
-      { year:2025, type:'학생부교과(일반)', major:'행정학과',         recruitNum:25, rate:6.0,  avgGrade:3.4, cut70Grade:3.9 },
-      { year:2025, type:'학생부교과(일반)', major:'사회복지학과',     recruitNum:20, rate:5.3,  avgGrade:3.6, cut70Grade:4.1 },
-      { year:2025, type:'학생부교과(일반)', major:'화학공학과',       recruitNum:28, rate:5.1,  avgGrade:3.5, cut70Grade:4.0 },
-      { year:2025, type:'학생부교과(일반)', major:'건축공학과',       recruitNum:22, rate:6.8,  avgGrade:3.2, cut70Grade:3.7 },
-      { year:2025, type:'학생부교과(일반)', major:'환경공학과',       recruitNum:18, rate:4.9,  avgGrade:3.8, cut70Grade:4.3 },
+      { year: 2025, type: '학생부교과(일반)', major: '간호학과', recruitNum: 25, rate: 12.4, avgGrade: 2.3, cut70Grade: 2.7 },
+      { year: 2025, type: '학생부교과(일반)', major: '컴퓨터정보공학부', recruitNum: 40, rate: 8.1, avgGrade: 2.9, cut70Grade: 3.4 },
+      { year: 2025, type: '학생부교과(일반)', major: '전기공학과', recruitNum: 30, rate: 6.5, avgGrade: 3.1, cut70Grade: 3.6 },
+      { year: 2025, type: '학생부교과(일반)', major: '기계공학부', recruitNum: 35, rate: 5.8, avgGrade: 3.3, cut70Grade: 3.8 },
+      { year: 2025, type: '학생부교과(일반)', major: '경영학부', recruitNum: 50, rate: 7.2, avgGrade: 3.2, cut70Grade: 3.7 },
+      { year: 2025, type: '학생부교과(일반)', major: '행정학과', recruitNum: 25, rate: 6.0, avgGrade: 3.4, cut70Grade: 3.9 },
+      { year: 2025, type: '학생부교과(일반)', major: '사회복지학과', recruitNum: 20, rate: 5.3, avgGrade: 3.6, cut70Grade: 4.1 },
+      { year: 2025, type: '학생부교과(일반)', major: '화학공학과', recruitNum: 28, rate: 5.1, avgGrade: 3.5, cut70Grade: 4.0 },
+      { year: 2025, type: '학생부교과(일반)', major: '건축공학과', recruitNum: 22, rate: 6.8, avgGrade: 3.2, cut70Grade: 3.7 },
+      { year: 2025, type: '학생부교과(일반)', major: '환경공학과', recruitNum: 18, rate: 4.9, avgGrade: 3.8, cut70Grade: 4.3 },
       // 2025 학생부종합(창의인재)
-      { year:2025, type:'학생부종합(창의인재)', major:'간호학과',       recruitNum:15, rate:10.2, avgGrade:2.6, cut70Grade:3.1 },
-      { year:2025, type:'학생부종합(창의인재)', major:'컴퓨터정보공학부', recruitNum:20, rate:7.3,  avgGrade:3.2, cut70Grade:3.7 },
-      { year:2025, type:'학생부종합(창의인재)', major:'전기공학과',       recruitNum:18, rate:5.9,  avgGrade:3.4, cut70Grade:3.9 },
-      { year:2025, type:'학생부종합(창의인재)', major:'기계공학부',       recruitNum:20, rate:5.4,  avgGrade:3.5, cut70Grade:4.1 },
-      { year:2025, type:'학생부종합(창의인재)', major:'경영학부',         recruitNum:25, rate:6.5,  avgGrade:3.5, cut70Grade:4.0 },
+      { year: 2025, type: '학생부종합(창의인재)', major: '간호학과', recruitNum: 15, rate: 10.2, avgGrade: 2.6, cut70Grade: 3.1 },
+      { year: 2025, type: '학생부종합(창의인재)', major: '컴퓨터정보공학부', recruitNum: 20, rate: 7.3, avgGrade: 3.2, cut70Grade: 3.7 },
+      { year: 2025, type: '학생부종합(창의인재)', major: '전기공학과', recruitNum: 18, rate: 5.9, avgGrade: 3.4, cut70Grade: 3.9 },
+      { year: 2025, type: '학생부종합(창의인재)', major: '기계공학부', recruitNum: 20, rate: 5.4, avgGrade: 3.5, cut70Grade: 4.1 },
+      { year: 2025, type: '학생부종합(창의인재)', major: '경영학부', recruitNum: 25, rate: 6.5, avgGrade: 3.5, cut70Grade: 4.0 },
       // 2024 학생부교과(일반)
-      { year:2024, type:'학생부교과(일반)', major:'간호학과',       recruitNum:24, rate:11.8, avgGrade:2.4, cut70Grade:2.9 },
-      { year:2024, type:'학생부교과(일반)', major:'컴퓨터정보공학부', recruitNum:38, rate:7.6,  avgGrade:3.0, cut70Grade:3.5 },
-      { year:2024, type:'학생부교과(일반)', major:'전기공학과',       recruitNum:28, rate:6.1,  avgGrade:3.2, cut70Grade:3.7 },
-      { year:2024, type:'학생부교과(일반)', major:'기계공학부',       recruitNum:33, rate:5.4,  avgGrade:3.4, cut70Grade:3.9 },
-      { year:2024, type:'학생부교과(일반)', major:'경영학부',         recruitNum:48, rate:6.9,  avgGrade:3.3, cut70Grade:3.8 },
-      { year:2024, type:'학생부교과(일반)', major:'행정학과',         recruitNum:24, rate:5.7,  avgGrade:3.5, cut70Grade:4.0 },
+      { year: 2024, type: '학생부교과(일반)', major: '간호학과', recruitNum: 24, rate: 11.8, avgGrade: 2.4, cut70Grade: 2.9 },
+      { year: 2024, type: '학생부교과(일반)', major: '컴퓨터정보공학부', recruitNum: 38, rate: 7.6, avgGrade: 3.0, cut70Grade: 3.5 },
+      { year: 2024, type: '학생부교과(일반)', major: '전기공학과', recruitNum: 28, rate: 6.1, avgGrade: 3.2, cut70Grade: 3.7 },
+      { year: 2024, type: '학생부교과(일반)', major: '기계공학부', recruitNum: 33, rate: 5.4, avgGrade: 3.4, cut70Grade: 3.9 },
+      { year: 2024, type: '학생부교과(일반)', major: '경영학부', recruitNum: 48, rate: 6.9, avgGrade: 3.3, cut70Grade: 3.8 },
+      { year: 2024, type: '학생부교과(일반)', major: '행정학과', recruitNum: 24, rate: 5.7, avgGrade: 3.5, cut70Grade: 4.0 },
       // 2024 학생부종합(창의인재)
-      { year:2024, type:'학생부종합(창의인재)', major:'간호학과',       recruitNum:14, rate:9.8,  avgGrade:2.7, cut70Grade:3.2 },
-      { year:2024, type:'학생부종합(창의인재)', major:'컴퓨터정보공학부', recruitNum:18, rate:7.0,  avgGrade:3.3, cut70Grade:3.8 },
-      { year:2024, type:'학생부종합(창의인재)', major:'전기공학과',       recruitNum:16, rate:5.5,  avgGrade:3.5, cut70Grade:4.0 },
+      { year: 2024, type: '학생부종합(창의인재)', major: '간호학과', recruitNum: 14, rate: 9.8, avgGrade: 2.7, cut70Grade: 3.2 },
+      { year: 2024, type: '학생부종합(창의인재)', major: '컴퓨터정보공학부', recruitNum: 18, rate: 7.0, avgGrade: 3.3, cut70Grade: 3.8 },
+      { year: 2024, type: '학생부종합(창의인재)', major: '전기공학과', recruitNum: 16, rate: 5.5, avgGrade: 3.5, cut70Grade: 4.0 },
     ];
   }
 
   function getDguSampleData() {
     return [
-      { '학년도':2025, '모집전형':'학생부종합(Do Dream)', '모집단위':'문화유산학과',         '모집인원':3,  '지원인원':47,  '경쟁률':15.67, '평균(등급)':2.46, '최저(등급)':2.63, '10과목평균(등급)':null, '10과목최저(등급)':null, '충원율':'100%' },
-      { '학년도':2025, '모집전형':'학생부종합(Do Dream)', '모집단위':'국어국문·문예창작학부', '모집인원':7,  '지원인원':181, '경쟁률':25.86, '평균(등급)':2.58, '최저(등급)':2.88, '10과목평균(등급)':null, '10과목최저(등급)':null, '충원율':'129%' },
-      { '학년도':2025, '모집전형':'학생부종합(Do Dream)', '모집단위':'영어영문학부',         '모집인원':15, '지원인원':270, '경쟁률':18.00, '평균(등급)':3.58, '최저(등급)':4.50, '10과목평균(등급)':null, '10과목최저(등급)':null, '충원율':'153%' },
-      { '학년도':2025, '모집전형':'학생부교과(학교장추천인재)', '모집단위':'문화유산학과',         '모집인원':5,  '지원인원':55,  '경쟁률':11.00, '평균(등급)':1.70, '최저(등급)':1.95, '10과목평균(등급)':1.45, '10과목최저(등급)':1.75, '충원율':'200%' },
-      { '학년도':2025, '모집전형':'학생부교과(학교장추천인재)', '모집단위':'국어국문·문예창작학부', '모집인원':6,  '지원인원':72,  '경쟁률':12.00, '평균(등급)':1.65, '최저(등급)':1.88, '10과목평균(등급)':1.30, '10과목최저(등급)':1.60, '충원율':'150%' },
-      { '학년도':2024, '모집전형':'학생부종합(Do Dream)', '모집단위':'문화유산학과',         '모집인원':4,  '지원인원':40,  '경쟁률':10.00, '평균(등급)':2.30, '최저(등급)':2.70, '10과목평균(등급)':null, '10과목최저(등급)':null, '충원율':'75%' },
-      { '학년도':2024, '모집전형':'학생부종합(Do Dream)', '모집단위':'국어국문·문예창작학부', '모집인원':6,  '지원인원':150, '경쟁률':25.00, '평균(등급)':2.65, '최저(등급)':3.10, '10과목평균(등급)':null, '10과목최저(등급)':null, '충원율':'100%' },
-      { '학년도':2023, '모집전형':'학생부종합(Do Dream)', '모집단위':'문화유산학과',         '모집인원':3,  '지원인원':35,  '경쟁률':11.60, '평균(등급)':2.50, '최저(등급)':2.80, '10과목평균(등급)':null, '10과목최저(등급)':null, '충원율':'50%' },
-      { '학년도':2023, '모집전형':'학생부종합(Do Dream)', '모집단위':'국어국문·문예창작학부', '모집인원':7,  '지원인원':140, '경쟁률':20.00, '평균(등급)':2.45, '최저(등급)':2.95, '10과목평균(등급)':null, '10과목최저(등급)':null, '충원율':'110%' },
+      { '학년도': 2025, '모집전형': '학생부종합(Do Dream)', '모집단위': '문화유산학과', '모집인원': 3, '지원인원': 47, '경쟁률': 15.67, '평균(등급)': 2.46, '최저(등급)': 2.63, '10과목평균(등급)': null, '10과목최저(등급)': null, '충원율': '100%' },
+      { '학년도': 2025, '모집전형': '학생부종합(Do Dream)', '모집단위': '국어국문·문예창작학부', '모집인원': 7, '지원인원': 181, '경쟁률': 25.86, '평균(등급)': 2.58, '최저(등급)': 2.88, '10과목평균(등급)': null, '10과목최저(등급)': null, '충원율': '129%' },
+      { '학년도': 2025, '모집전형': '학생부종합(Do Dream)', '모집단위': '영어영문학부', '모집인원': 15, '지원인원': 270, '경쟁률': 18.00, '평균(등급)': 3.58, '최저(등급)': 4.50, '10과목평균(등급)': null, '10과목최저(등급)': null, '충원율': '153%' },
+      { '학년도': 2025, '모집전형': '학생부교과(학교장추천인재)', '모집단위': '문화유산학과', '모집인원': 5, '지원인원': 55, '경쟁률': 11.00, '평균(등급)': 1.70, '최저(등급)': 1.95, '10과목평균(등급)': 1.45, '10과목최저(등급)': 1.75, '충원율': '200%' },
+      { '학년도': 2025, '모집전형': '학생부교과(학교장추천인재)', '모집단위': '국어국문·문예창작학부', '모집인원': 6, '지원인원': 72, '경쟁률': 12.00, '평균(등급)': 1.65, '최저(등급)': 1.88, '10과목평균(등급)': 1.30, '10과목최저(등급)': 1.60, '충원율': '150%' },
+      { '학년도': 2024, '모집전형': '학생부종합(Do Dream)', '모집단위': '문화유산학과', '모집인원': 4, '지원인원': 40, '경쟁률': 10.00, '평균(등급)': 2.30, '최저(등급)': 2.70, '10과목평균(등급)': null, '10과목최저(등급)': null, '충원율': '75%' },
+      { '학년도': 2024, '모집전형': '학생부종합(Do Dream)', '모집단위': '국어국문·문예창작학부', '모집인원': 6, '지원인원': 150, '경쟁률': 25.00, '평균(등급)': 2.65, '최저(등급)': 3.10, '10과목평균(등급)': null, '10과목최저(등급)': null, '충원율': '100%' },
+      { '학년도': 2023, '모집전형': '학생부종합(Do Dream)', '모집단위': '문화유산학과', '모집인원': 3, '지원인원': 35, '경쟁률': 11.60, '평균(등급)': 2.50, '최저(등급)': 2.80, '10과목평균(등급)': null, '10과목최저(등급)': null, '충원율': '50%' },
+      { '학년도': 2023, '모집전형': '학생부종합(Do Dream)', '모집단위': '국어국문·문예창작학부', '모집인원': 7, '지원인원': 140, '경쟁률': 20.00, '평균(등급)': 2.45, '최저(등급)': 2.95, '10과목평균(등급)': null, '10과목최저(등급)': null, '충원율': '110%' },
     ];
   }
 
   function getSguSampleData() {
     return [
       // 학생부교과(지역균형)
-      { '모집전형':'학생부교과(지역균형)', '모집단위':'컴퓨터공학과', '모집인원':6,  '지원인원':89,  '최초경쟁률':14.8, '최종 실질 경쟁률':3.1, '충원율 (%)':183, '50%cut':1.32, '70%cut':1.45, '합격인원':6 },
-      { '모집전형':'학생부교과(지역균형)', '모집단위':'경제학부',     '모집인원':8,  '지원인원':105, '최초경쟁률':13.1, '최종 실질 경쟁률':2.9, '충원율 (%)':150, '50%cut':1.41, '70%cut':1.58, '합격인원':8 },
-      { '모집전형':'학생부교과(지역균형)', '모집단위':'경영학부',     '모집인원':10, '지원인원':128, '최초경쟁률':12.8, '최종 실질 경쟁률':2.7, '충원율 (%)':140, '50%cut':1.45, '70%cut':1.62, '합격인원':10 },
-      { '모집전형':'학생부교과(지역균형)', '모집단위':'전자공학과',   '모집인원':7,  '지원인원':92,  '최초경쟁률':13.1, '최종 실질 경쟁률':2.8, '충원율 (%)':157, '50%cut':1.52, '70%cut':1.70, '합격인원':7 },
-      { '모집전형':'학생부교과(지역균형)', '모집단위':'화학과',       '모집인원':5,  '지원인원':61,  '최초경쟁률':12.2, '최종 실질 경쟁률':2.6, '충원율 (%)':120, '50%cut':1.58, '70%cut':1.76, '합격인원':5 },
-      { '모집전형':'학생부교과(지역균형)', '모집단위':'사회과학부',   '모집인원':8,  '지원인원':96,  '최초경쟁률':12.0, '최종 실질 경쟁률':2.5, '충원율 (%)':138, '50%cut':1.62, '70%cut':1.81, '합격인원':8 },
-      { '모집전형':'학생부교과(지역균형)', '모집단위':'인문학부',     '모집인원':7,  '지원인원':82,  '최초경쟁률':11.7, '최종 실질 경쟁률':2.4, '충원율 (%)':129, '50%cut':1.71, '70%cut':1.92, '합격인원':7 },
-      { '모집전형':'학생부교과(지역균형)', '모집단위':'수학과',       '모집인원':5,  '지원인원':58,  '최초경쟁률':11.6, '최종 실질 경쟁률':2.4, '충원율 (%)':120, '50%cut':1.78, '70%cut':1.98, '합격인원':5 },
-      { '모집전형':'학생부교과(지역균형)', '모집단위':'물리학과',     '모집인원':4,  '지원인원':46,  '최초경쟁률':11.5, '최종 실질 경쟁률':2.3, '충원율 (%)':100, '50%cut':1.83, '70%cut':2.04, '합격인원':4 },
-      { '모집전형':'학생부교과(지역균형)', '모집단위':'신문방송학과', '모집인원':4,  '지원인원':50,  '최초경쟁률':12.5, '최종 실질 경쟁률':2.6, '충원율 (%)':125, '50%cut':1.87, '70%cut':2.08, '합격인원':4 },
+      { '모집전형': '학생부교과(지역균형)', '모집단위': '컴퓨터공학과', '모집인원': 6, '지원인원': 89, '최초경쟁률': 14.8, '최종 실질 경쟁률': 3.1, '충원율 (%)': 183, '50%cut': 1.32, '70%cut': 1.45, '합격인원': 6 },
+      { '모집전형': '학생부교과(지역균형)', '모집단위': '경제학부', '모집인원': 8, '지원인원': 105, '최초경쟁률': 13.1, '최종 실질 경쟁률': 2.9, '충원율 (%)': 150, '50%cut': 1.41, '70%cut': 1.58, '합격인원': 8 },
+      { '모집전형': '학생부교과(지역균형)', '모집단위': '경영학부', '모집인원': 10, '지원인원': 128, '최초경쟁률': 12.8, '최종 실질 경쟁률': 2.7, '충원율 (%)': 140, '50%cut': 1.45, '70%cut': 1.62, '합격인원': 10 },
+      { '모집전형': '학생부교과(지역균형)', '모집단위': '전자공학과', '모집인원': 7, '지원인원': 92, '최초경쟁률': 13.1, '최종 실질 경쟁률': 2.8, '충원율 (%)': 157, '50%cut': 1.52, '70%cut': 1.70, '합격인원': 7 },
+      { '모집전형': '학생부교과(지역균형)', '모집단위': '화학과', '모집인원': 5, '지원인원': 61, '최초경쟁률': 12.2, '최종 실질 경쟁률': 2.6, '충원율 (%)': 120, '50%cut': 1.58, '70%cut': 1.76, '합격인원': 5 },
+      { '모집전형': '학생부교과(지역균형)', '모집단위': '사회과학부', '모집인원': 8, '지원인원': 96, '최초경쟁률': 12.0, '최종 실질 경쟁률': 2.5, '충원율 (%)': 138, '50%cut': 1.62, '70%cut': 1.81, '합격인원': 8 },
+      { '모집전형': '학생부교과(지역균형)', '모집단위': '인문학부', '모집인원': 7, '지원인원': 82, '최초경쟁률': 11.7, '최종 실질 경쟁률': 2.4, '충원율 (%)': 129, '50%cut': 1.71, '70%cut': 1.92, '합격인원': 7 },
+      { '모집전형': '학생부교과(지역균형)', '모집단위': '수학과', '모집인원': 5, '지원인원': 58, '최초경쟁률': 11.6, '최종 실질 경쟁률': 2.4, '충원율 (%)': 120, '50%cut': 1.78, '70%cut': 1.98, '합격인원': 5 },
+      { '모집전형': '학생부교과(지역균형)', '모집단위': '물리학과', '모집인원': 4, '지원인원': 46, '최초경쟁률': 11.5, '최종 실질 경쟁률': 2.3, '충원율 (%)': 100, '50%cut': 1.83, '70%cut': 2.04, '합격인원': 4 },
+      { '모집전형': '학생부교과(지역균형)', '모집단위': '신문방송학과', '모집인원': 4, '지원인원': 50, '최초경쟁률': 12.5, '최종 실질 경쟁률': 2.6, '충원율 (%)': 125, '50%cut': 1.87, '70%cut': 2.08, '합격인원': 4 },
       // 학생부종합(알바트로스)
-      { '모집전형':'학생부종합(알바트로스)', '모집단위':'컴퓨터공학과', '모집인원':15, '지원인원':310, '최초경쟁률':20.7, '최종 실질 경쟁률':5.2, '충원율 (%)':213, '50%cut':1.85, '70%cut':2.10, '합격인원':15 },
-      { '모집전형':'학생부종합(알바트로스)', '모집단위':'경제학부',     '모집인원':18, '지원인원':340, '최초경쟁률':18.9, '최종 실질 경쟁률':4.9, '충원율 (%)':189, '50%cut':1.92, '70%cut':2.18, '합격인원':18 },
-      { '모집전형':'학생부종합(알바트로스)', '모집단위':'경영학부',     '모집인원':22, '지원인원':398, '최초경쟁률':18.1, '최종 실질 경쟁률':4.7, '충원율 (%)':177, '50%cut':1.98, '70%cut':2.24, '합격인원':22 },
-      { '모집전형':'학생부종합(알바트로스)', '모집단위':'전자공학과',   '모집인원':17, '지원인원':298, '최초경쟁률':17.5, '최종 실질 경쟁률':4.5, '충원율 (%)':165, '50%cut':2.05, '70%cut':2.31, '합격인원':17 },
-      { '모집전형':'학생부종합(알바트로스)', '모집단위':'화학과',       '모집인원':12, '지원인원':203, '최초경쟁률':16.9, '최종 실질 경쟁률':4.3, '충원율 (%)':158, '50%cut':2.14, '70%cut':2.42, '합격인원':12 },
-      { '모집전형':'학생부종합(알바트로스)', '모집단위':'사회과학부',   '모집인원':16, '지원인원':267, '최초경쟁률':16.7, '최종 실질 경쟁률':4.2, '충원율 (%)':150, '50%cut':2.22, '70%cut':2.50, '합격인원':16 },
-      { '모집전형':'학생부종합(알바트로스)', '모집단위':'인문학부',     '모집인원':14, '지원인원':228, '최초경쟁률':16.3, '최종 실질 경쟁률':4.0, '충원율 (%)':143, '50%cut':2.31, '70%cut':2.60, '합격인원':14 },
-      { '모집전형':'학생부종합(알바트로스)', '모집단위':'수학과',       '모집인원':10, '지원인원':158, '최초경쟁률':15.8, '최종 실질 경쟁률':3.8, '충원율 (%)':130, '50%cut':2.38, '70%cut':2.68, '합격인원':10 },
+      { '모집전형': '학생부종합(알바트로스)', '모집단위': '컴퓨터공학과', '모집인원': 15, '지원인원': 310, '최초경쟁률': 20.7, '최종 실질 경쟁률': 5.2, '충원율 (%)': 213, '50%cut': 1.85, '70%cut': 2.10, '합격인원': 15 },
+      { '모집전형': '학생부종합(알바트로스)', '모집단위': '경제학부', '모집인원': 18, '지원인원': 340, '최초경쟁률': 18.9, '최종 실질 경쟁률': 4.9, '충원율 (%)': 189, '50%cut': 1.92, '70%cut': 2.18, '합격인원': 18 },
+      { '모집전형': '학생부종합(알바트로스)', '모집단위': '경영학부', '모집인원': 22, '지원인원': 398, '최초경쟁률': 18.1, '최종 실질 경쟁률': 4.7, '충원율 (%)': 177, '50%cut': 1.98, '70%cut': 2.24, '합격인원': 22 },
+      { '모집전형': '학생부종합(알바트로스)', '모집단위': '전자공학과', '모집인원': 17, '지원인원': 298, '최초경쟁률': 17.5, '최종 실질 경쟁률': 4.5, '충원율 (%)': 165, '50%cut': 2.05, '70%cut': 2.31, '합격인원': 17 },
+      { '모집전형': '학생부종합(알바트로스)', '모집단위': '화학과', '모집인원': 12, '지원인원': 203, '최초경쟁률': 16.9, '최종 실질 경쟁률': 4.3, '충원율 (%)': 158, '50%cut': 2.14, '70%cut': 2.42, '합격인원': 12 },
+      { '모집전형': '학생부종합(알바트로스)', '모집단위': '사회과학부', '모집인원': 16, '지원인원': 267, '최초경쟁률': 16.7, '최종 실질 경쟁률': 4.2, '충원율 (%)': 150, '50%cut': 2.22, '70%cut': 2.50, '합격인원': 16 },
+      { '모집전형': '학생부종합(알바트로스)', '모집단위': '인문학부', '모집인원': 14, '지원인원': 228, '최초경쟁률': 16.3, '최종 실질 경쟁률': 4.0, '충원율 (%)': 143, '50%cut': 2.31, '70%cut': 2.60, '합격인원': 14 },
+      { '모집전형': '학생부종합(알바트로스)', '모집단위': '수학과', '모집인원': 10, '지원인원': 158, '최초경쟁률': 15.8, '최종 실질 경쟁률': 3.8, '충원율 (%)': 130, '50%cut': 2.38, '70%cut': 2.68, '합격인원': 10 },
     ];
   }
 
   function getUosSampleData() {
     return [
-      { admissionType:'서울시립대_지역균형', dept:'수학과',         grade:1.82, stdDev:0.12, regCount:20, score:null },
-      { admissionType:'서울시립대_지역균형', dept:'물리학과',       grade:2.05, stdDev:0.10, regCount:15, score:null },
-      { admissionType:'서울시립대_지역균형', dept:'컴퓨터과학부',   grade:1.55, stdDev:0.09, regCount:30, score:null },
-      { admissionType:'서울시립대_지역균형', dept:'전자전기컴퓨터공학부', grade:1.68, stdDev:0.11, regCount:35, score:null },
-      { admissionType:'서울시립대_지역균형', dept:'경영학부',       grade:1.72, stdDev:0.13, regCount:40, score:null },
-      { admissionType:'서울시립대_지역균형', dept:'경제학부',       grade:1.80, stdDev:0.14, regCount:25, score:null },
-      { admissionType:'서울시립대_지역균형', dept:'건축학부',       grade:1.95, stdDev:0.15, regCount:20, score:null },
-      { admissionType:'서울시립대_지역균형', dept:'도시공학과',     grade:2.10, stdDev:0.18, regCount:18, score:null },
-      { admissionType:'서울시립대_지역균형', dept:'환경공학부',     grade:2.25, stdDev:0.20, regCount:22, score:null },
-      { admissionType:'서울시립대_지역균형', dept:'화학공학과',     grade:2.38, stdDev:0.22, regCount:18, score:null },
-      { admissionType:'학생부종합전형Ⅰ', dept:'수학과',             grade:2.20, stdDev:0.35, regCount:15, score:null },
-      { admissionType:'학생부종합전형Ⅰ', dept:'물리학과',           grade:2.45, stdDev:0.40, regCount:12, score:null },
-      { admissionType:'학생부종합전형Ⅰ', dept:'컴퓨터과학부',       grade:1.90, stdDev:0.38, regCount:25, score:null },
-      { admissionType:'학생부종합전형Ⅰ', dept:'전자전기컴퓨터공학부', grade:2.05, stdDev:0.42, regCount:30, score:null },
-      { admissionType:'학생부종합전형Ⅱ', dept:'경영학부',           grade:2.15, stdDev:0.45, regCount:35, score:null },
-      { admissionType:'학생부종합전형Ⅱ', dept:'경제학부',           grade:2.28, stdDev:0.48, regCount:20, score:null },
-      { admissionType:'학생부종합전형Ⅱ', dept:'건축학부',           grade:2.40, stdDev:0.50, regCount:18, score:null },
-      { admissionType:'학생부종합전형Ⅱ', dept:'도시공학과',         grade:2.55, stdDev:0.52, regCount:16, score:null },
-      { admissionType:'기회균형전형I 및 사회공헌·통합전형', dept:'환경공학부', grade:2.68, stdDev:0.55, regCount:20, score:null },
-      { admissionType:'기회균형전형I 및 사회공헌·통합전형', dept:'화학공학과', grade:2.75, stdDev:0.58, regCount:15, score:null },
+      { admissionType: '서울시립대_지역균형', dept: '수학과', grade: 1.82, stdDev: 0.12, regCount: 20, score: null },
+      { admissionType: '서울시립대_지역균형', dept: '물리학과', grade: 2.05, stdDev: 0.10, regCount: 15, score: null },
+      { admissionType: '서울시립대_지역균형', dept: '컴퓨터과학부', grade: 1.55, stdDev: 0.09, regCount: 30, score: null },
+      { admissionType: '서울시립대_지역균형', dept: '전자전기컴퓨터공학부', grade: 1.68, stdDev: 0.11, regCount: 35, score: null },
+      { admissionType: '서울시립대_지역균형', dept: '경영학부', grade: 1.72, stdDev: 0.13, regCount: 40, score: null },
+      { admissionType: '서울시립대_지역균형', dept: '경제학부', grade: 1.80, stdDev: 0.14, regCount: 25, score: null },
+      { admissionType: '서울시립대_지역균형', dept: '건축학부', grade: 1.95, stdDev: 0.15, regCount: 20, score: null },
+      { admissionType: '서울시립대_지역균형', dept: '도시공학과', grade: 2.10, stdDev: 0.18, regCount: 18, score: null },
+      { admissionType: '서울시립대_지역균형', dept: '환경공학부', grade: 2.25, stdDev: 0.20, regCount: 22, score: null },
+      { admissionType: '서울시립대_지역균형', dept: '화학공학과', grade: 2.38, stdDev: 0.22, regCount: 18, score: null },
+      { admissionType: '학생부종합전형Ⅰ', dept: '수학과', grade: 2.20, stdDev: 0.35, regCount: 15, score: null },
+      { admissionType: '학생부종합전형Ⅰ', dept: '물리학과', grade: 2.45, stdDev: 0.40, regCount: 12, score: null },
+      { admissionType: '학생부종합전형Ⅰ', dept: '컴퓨터과학부', grade: 1.90, stdDev: 0.38, regCount: 25, score: null },
+      { admissionType: '학생부종합전형Ⅰ', dept: '전자전기컴퓨터공학부', grade: 2.05, stdDev: 0.42, regCount: 30, score: null },
+      { admissionType: '학생부종합전형Ⅱ', dept: '경영학부', grade: 2.15, stdDev: 0.45, regCount: 35, score: null },
+      { admissionType: '학생부종합전형Ⅱ', dept: '경제학부', grade: 2.28, stdDev: 0.48, regCount: 20, score: null },
+      { admissionType: '학생부종합전형Ⅱ', dept: '건축학부', grade: 2.40, stdDev: 0.50, regCount: 18, score: null },
+      { admissionType: '학생부종합전형Ⅱ', dept: '도시공학과', grade: 2.55, stdDev: 0.52, regCount: 16, score: null },
+      { admissionType: '기회균형전형I 및 사회공헌·통합전형', dept: '환경공학부', grade: 2.68, stdDev: 0.55, regCount: 20, score: null },
+      { admissionType: '기회균형전형I 및 사회공헌·통합전형', dept: '화학공학과', grade: 2.75, stdDev: 0.58, regCount: 15, score: null },
     ];
   }
 
   function getSkuSampleData() {
     return [
-      { '모집단위':'글로벌경영학과',   '모집 인원':29, '지원 인원':361, '경쟁률':12.4, '충원합격 인원':9,  '충원율':'31%', '50%cut':1.40, '70%cut':1.56 },
-      { '모집단위':'경제학과',         '모집 인원':23, '지원 인원':272, '경쟁률':11.8, '충원합격 인원':7,  '충원율':'30%', '50%cut':1.43, '70%cut':1.59 },
-      { '모집단위':'통계학과',         '모집 인원':14, '지원 인원':155, '경쟁률':11.1, '충원합격 인원':5,  '충원율':'36%', '50%cut':1.48, '70%cut':1.65 },
-      { '모집단위':'전자전기공학부',   '모집 인원':46, '지원 인원':495, '경쟁률':10.8, '충원합격 인원':13, '충원율':'28%', '50%cut':1.51, '70%cut':1.68 },
-      { '모집단위':'소프트웨어학과',   '모집 인원':28, '지원 인원':290, '경쟁률':10.4, '충원합격 인원':8,  '충원율':'29%', '50%cut':1.53, '70%cut':1.70 },
-      { '모집단위':'컴퓨터교육과',     '모집 인원':12, '지원 인원':118, '경쟁률':9.8,  '충원합격 인원':4,  '충원율':'33%', '50%cut':1.57, '70%cut':1.74 },
-      { '모집단위':'화학공학고분자공학부', '모집 인원':33, '지원 인원':309, '경쟁률':9.4, '충원합격 인원':9, '충원율':'27%', '50%cut':1.61, '70%cut':1.79 },
-      { '모집단위':'기계공학부',       '모집 인원':37, '지원 인원':337, '경쟁률':9.1,  '충원합격 인원':10, '충원율':'27%', '50%cut':1.64, '70%cut':1.82 },
-      { '모집단위':'신소재공학부',     '모집 인원':20, '지원 인원':173, '경쟁률':8.7,  '충원합격 인원':6,  '충원율':'30%', '50%cut':1.68, '70%cut':1.87 },
-      { '모집단위':'수학교육과',       '모집 인원':11, '지원 인원':92,  '경쟁률':8.4,  '충원합격 인원':3,  '충원율':'27%', '50%cut':1.71, '70%cut':1.90 },
-      { '모집단위':'건축학과',         '모집 인원':18, '지원 인원':145, '경쟁률':8.1,  '충원합격 인원':5,  '충원율':'28%', '50%cut':1.74, '70%cut':1.94 },
-      { '모집단위':'사학과',           '모집 인원':10, '지원 인원':79,  '경쟁률':7.9,  '충원합격 인원':3,  '충원율':'30%', '50%cut':1.78, '70%cut':1.98 },
+      { '모집단위': '글로벌경영학과', '모집 인원': 29, '지원 인원': 361, '경쟁률': 12.4, '충원합격 인원': 9, '충원율': '31%', '50%cut': 1.40, '70%cut': 1.56 },
+      { '모집단위': '경제학과', '모집 인원': 23, '지원 인원': 272, '경쟁률': 11.8, '충원합격 인원': 7, '충원율': '30%', '50%cut': 1.43, '70%cut': 1.59 },
+      { '모집단위': '통계학과', '모집 인원': 14, '지원 인원': 155, '경쟁률': 11.1, '충원합격 인원': 5, '충원율': '36%', '50%cut': 1.48, '70%cut': 1.65 },
+      { '모집단위': '전자전기공학부', '모집 인원': 46, '지원 인원': 495, '경쟁률': 10.8, '충원합격 인원': 13, '충원율': '28%', '50%cut': 1.51, '70%cut': 1.68 },
+      { '모집단위': '소프트웨어학과', '모집 인원': 28, '지원 인원': 290, '경쟁률': 10.4, '충원합격 인원': 8, '충원율': '29%', '50%cut': 1.53, '70%cut': 1.70 },
+      { '모집단위': '컴퓨터교육과', '모집 인원': 12, '지원 인원': 118, '경쟁률': 9.8, '충원합격 인원': 4, '충원율': '33%', '50%cut': 1.57, '70%cut': 1.74 },
+      { '모집단위': '화학공학고분자공학부', '모집 인원': 33, '지원 인원': 309, '경쟁률': 9.4, '충원합격 인원': 9, '충원율': '27%', '50%cut': 1.61, '70%cut': 1.79 },
+      { '모집단위': '기계공학부', '모집 인원': 37, '지원 인원': 337, '경쟁률': 9.1, '충원합격 인원': 10, '충원율': '27%', '50%cut': 1.64, '70%cut': 1.82 },
+      { '모집단위': '신소재공학부', '모집 인원': 20, '지원 인원': 173, '경쟁률': 8.7, '충원합격 인원': 6, '충원율': '30%', '50%cut': 1.68, '70%cut': 1.87 },
+      { '모집단위': '수학교육과', '모집 인원': 11, '지원 인원': 92, '경쟁률': 8.4, '충원합격 인원': 3, '충원율': '27%', '50%cut': 1.71, '70%cut': 1.90 },
+      { '모집단위': '건축학과', '모집 인원': 18, '지원 인원': 145, '경쟁률': 8.1, '충원합격 인원': 5, '충원율': '28%', '50%cut': 1.74, '70%cut': 1.94 },
+      { '모집단위': '사학과', '모집 인원': 10, '지원 인원': 79, '경쟁률': 7.9, '충원합격 인원': 3, '충원율': '30%', '50%cut': 1.78, '70%cut': 1.98 },
     ];
   }
 
   function getWsuSampleData() {
     return [
-      { '모집전형':'지역인재', '모집단위':'의예과',      '모집인원':15, '경쟁률':28.3, '충원합격순위':3,  '평균':3.2, '70% cut':3.8, '환산점수70% cut':425.6 },
-      { '모집전형':'지역인재', '모집단위':'한의예과',     '모집인원':10, '경쟁률':22.1, '충원합격순위':2,  '평균':3.5, '70% cut':4.1, '환산점수70% cut':418.3 },
-      { '모집전형':'지역인재', '모집단위':'약학과',       '모집인원':12, '경쟁률':19.7, '충원합격순위':5,  '평균':3.8, '70% cut':4.4, '환산점수70% cut':411.2 },
-      { '모집전형':'지역인재', '모집단위':'간호학과',     '모집인원':18, '경쟁률':12.4, '충원합격순위':8,  '평균':4.1, '70% cut':4.7, '환산점수70% cut':402.5 },
-      { '모집전형':'지역인재', '모집단위':'물리치료학과', '모집인원':16, '경쟁률':10.2, '충원합격순위':6,  '평균':4.5, '70% cut':5.1, '환산점수70% cut':391.8 },
-      { '모집전형':'지역인재', '모집단위':'임상병리학과', '모집인원':14, '경쟁률': 8.9, '충원합격순위':4,  '평균':4.8, '70% cut':5.4, '환산점수70% cut':383.4 },
-      { '모집전형':'지역인재', '모집단위':'경영학과',     '모집인원':20, '경쟁률': 6.5, '충원합격순위':9,  '평균':5.2, '70% cut':5.9, '환산점수70% cut':371.2 },
-      { '모집전형':'지역인재', '모집단위':'사회복지학과', '모집인원':22, '경쟁률': 5.3, '충원합격순위':7,  '평균':5.5, '70% cut':6.2, '환산점수70% cut':362.8 },
-      { '모집전형':'교과전형', '모집단위':'의예과',      '모집인원':20, '경쟁률':31.5, '충원합격순위':2,  '평균':2.9, '70% cut':3.4, '환산점수70% cut':432.1 },
-      { '모집전형':'교과전형', '모집단위':'한의예과',     '모집인원':15, '경쟁률':25.8, '충원합격순위':3,  '평균':3.2, '70% cut':3.7, '환산점수70% cut':424.6 },
-      { '모집전형':'교과전형', '모집단위':'약학과',       '모집인원':15, '경쟁률':21.3, '충원합격순위':4,  '평균':3.5, '70% cut':4.1, '환산점수70% cut':416.8 },
-      { '모집전형':'교과전형', '모집단위':'간호학과',     '모집인원':25, '경쟁률':13.7, '충원합격순위':11, '평균':3.9, '70% cut':4.5, '환산점수70% cut':405.3 },
+      { '모집전형': '지역인재', '모집단위': '의예과', '모집인원': 15, '경쟁률': 28.3, '충원합격순위': 3, '평균': 3.2, '70% cut': 3.8, '환산점수70% cut': 425.6 },
+      { '모집전형': '지역인재', '모집단위': '한의예과', '모집인원': 10, '경쟁률': 22.1, '충원합격순위': 2, '평균': 3.5, '70% cut': 4.1, '환산점수70% cut': 418.3 },
+      { '모집전형': '지역인재', '모집단위': '약학과', '모집인원': 12, '경쟁률': 19.7, '충원합격순위': 5, '평균': 3.8, '70% cut': 4.4, '환산점수70% cut': 411.2 },
+      { '모집전형': '지역인재', '모집단위': '간호학과', '모집인원': 18, '경쟁률': 12.4, '충원합격순위': 8, '평균': 4.1, '70% cut': 4.7, '환산점수70% cut': 402.5 },
+      { '모집전형': '지역인재', '모집단위': '물리치료학과', '모집인원': 16, '경쟁률': 10.2, '충원합격순위': 6, '평균': 4.5, '70% cut': 5.1, '환산점수70% cut': 391.8 },
+      { '모집전형': '지역인재', '모집단위': '임상병리학과', '모집인원': 14, '경쟁률': 8.9, '충원합격순위': 4, '평균': 4.8, '70% cut': 5.4, '환산점수70% cut': 383.4 },
+      { '모집전형': '지역인재', '모집단위': '경영학과', '모집인원': 20, '경쟁률': 6.5, '충원합격순위': 9, '평균': 5.2, '70% cut': 5.9, '환산점수70% cut': 371.2 },
+      { '모집전형': '지역인재', '모집단위': '사회복지학과', '모집인원': 22, '경쟁률': 5.3, '충원합격순위': 7, '평균': 5.5, '70% cut': 6.2, '환산점수70% cut': 362.8 },
+      { '모집전형': '교과전형', '모집단위': '의예과', '모집인원': 20, '경쟁률': 31.5, '충원합격순위': 2, '평균': 2.9, '70% cut': 3.4, '환산점수70% cut': 432.1 },
+      { '모집전형': '교과전형', '모집단위': '한의예과', '모집인원': 15, '경쟁률': 25.8, '충원합격순위': 3, '평균': 3.2, '70% cut': 3.7, '환산점수70% cut': 424.6 },
+      { '모집전형': '교과전형', '모집단위': '약학과', '모집인원': 15, '경쟁률': 21.3, '충원합격순위': 4, '평균': 3.5, '70% cut': 4.1, '환산점수70% cut': 416.8 },
+      { '모집전형': '교과전형', '모집단위': '간호학과', '모집인원': 25, '경쟁률': 13.7, '충원합격순위': 11, '평균': 3.9, '70% cut': 4.5, '환산점수70% cut': 405.3 },
     ];
   }
 
@@ -1029,21 +1044,21 @@
 
   function getWkuSampleData() {
     return [
-      { '모집전형':'학생부종합', '단과대학':'약학대학',       '모집단위':'약학과',           '모집인원':12, '지원인원':227, '경쟁률':18.92, '충원인원':7,  '50%cut':1.35, '70%cut':1.41 },
-      { '모집전형':'학생부종합', '단과대학':'약학대학',       '모집단위':'한약학과',          '모집인원':17, '지원인원':230, '경쟁률':13.53, '충원인원':2,  '50%cut':2.23, '70%cut':2.33 },
-      { '모집전형':'학생부종합', '단과대학':'사범대학',       '모집단위':'수학교육과',         '모집인원':10, '지원인원':41,  '경쟁률':4.1,   '충원인원':30, '50%cut':3.17, '70%cut':3.28 },
-      { '모집전형':'학생부종합', '단과대학':'사범대학',       '모집단위':'국어교육과',         '모집인원':10, '지원인원':37,  '경쟁률':3.7,   '충원인원':10, '50%cut':3.95, '70%cut':4.5  },
-      { '모집전형':'학생부종합', '단과대학':'사범대학',       '모집단위':'가정교육과',         '모집인원':10, '지원인원':45,  '경쟁률':4.5,   '충원인원':35, '50%cut':3.97, '70%cut':3.17 },
-      { '모집전형':'학생부종합', '단과대학':'경영대학',       '모집단위':'회계세무학과',       '모집인원':5,  '지원인원':14,  '경쟁률':2.8,   '충원인원':9,  '50%cut':4.99, '70%cut':5.56 },
-      { '모집전형':'학생부종합', '단과대학':'경영대학',       '모집단위':'경영학과',           '모집인원':20, '지원인원':71,  '경쟁률':3.55,  '충원인원':51, '50%cut':5.71, '70%cut':5.96 },
-      { '모집전형':'교과일반',   '단과대학':'보건과학대학',   '모집단위':'식품영양학과',       '모집인원':19, '지원인원':76,  '경쟁률':4.0,   '충원인원':52, '50%cut':3.48, '70%cut':3.66 },
-      { '모집전형':'교과일반',   '단과대학':'디자인융합계열', '모집단위':'디자인융합계열',     '모집인원':21, '지원인원':151, '경쟁률':7.19,  '충원인원':27, '50%cut':3.58, '70%cut':3.83 },
-      { '모집전형':'교과일반',   '단과대학':'보건과학대학',   '모집단위':'동물보건학과',       '모집인원':30, '지원인원':100, '경쟁률':3.33,  '충원인원':64, '50%cut':3.99, '70%cut':4.21 },
-      { '모집전형':'교과일반',   '단과대학':'보건과학대학',   '모집단위':'반려동물산업학과',   '모집인원':22, '지원인원':112, '경쟁률':5.09,  '충원인원':51, '50%cut':4.06, '70%cut':4.27 },
-      { '모집전형':'교과일반',   '단과대학':'보건과학대학',   '모집단위':'의료상담학과',       '모집인원':20, '지원인원':68,  '경쟁률':3.4,   '충원인원':48, '50%cut':4.09, '70%cut':4.12 },
-      { '모집전형':'교과일반',   '단과대학':'보건과학대학',   '모집단위':'뷰티디자인학부',     '모집인원':30, '지원인원':150, '경쟁률':5.0,   '충원인원':55, '50%cut':4.26, '70%cut':4.61 },
-      { '모집전형':'교과일반',   '단과대학':'사회과학대학',   '모집단위':'행정학과',           '모집인원':15, '지원인원':80,  '경쟁률':5.33,  '충원인원':45, '50%cut':4.5,  '70%cut':4.8  },
-      { '모집전형':'교과일반',   '단과대학':'보건과학대학',   '모집단위':'안전보건학과',       '모집인원':21, '지원인원':47,  '경쟁률':2.24,  '충원인원':26, '50%cut':4.87, '70%cut':4.94 },
+      { '모집전형': '학생부종합', '단과대학': '약학대학', '모집단위': '약학과', '모집인원': 12, '지원인원': 227, '경쟁률': 18.92, '충원인원': 7, '50%cut': 1.35, '70%cut': 1.41 },
+      { '모집전형': '학생부종합', '단과대학': '약학대학', '모집단위': '한약학과', '모집인원': 17, '지원인원': 230, '경쟁률': 13.53, '충원인원': 2, '50%cut': 2.23, '70%cut': 2.33 },
+      { '모집전형': '학생부종합', '단과대학': '사범대학', '모집단위': '수학교육과', '모집인원': 10, '지원인원': 41, '경쟁률': 4.1, '충원인원': 30, '50%cut': 3.17, '70%cut': 3.28 },
+      { '모집전형': '학생부종합', '단과대학': '사범대학', '모집단위': '국어교육과', '모집인원': 10, '지원인원': 37, '경쟁률': 3.7, '충원인원': 10, '50%cut': 3.95, '70%cut': 4.5 },
+      { '모집전형': '학생부종합', '단과대학': '사범대학', '모집단위': '가정교육과', '모집인원': 10, '지원인원': 45, '경쟁률': 4.5, '충원인원': 35, '50%cut': 3.97, '70%cut': 3.17 },
+      { '모집전형': '학생부종합', '단과대학': '경영대학', '모집단위': '회계세무학과', '모집인원': 5, '지원인원': 14, '경쟁률': 2.8, '충원인원': 9, '50%cut': 4.99, '70%cut': 5.56 },
+      { '모집전형': '학생부종합', '단과대학': '경영대학', '모집단위': '경영학과', '모집인원': 20, '지원인원': 71, '경쟁률': 3.55, '충원인원': 51, '50%cut': 5.71, '70%cut': 5.96 },
+      { '모집전형': '교과일반', '단과대학': '보건과학대학', '모집단위': '식품영양학과', '모집인원': 19, '지원인원': 76, '경쟁률': 4.0, '충원인원': 52, '50%cut': 3.48, '70%cut': 3.66 },
+      { '모집전형': '교과일반', '단과대학': '디자인융합계열', '모집단위': '디자인융합계열', '모집인원': 21, '지원인원': 151, '경쟁률': 7.19, '충원인원': 27, '50%cut': 3.58, '70%cut': 3.83 },
+      { '모집전형': '교과일반', '단과대학': '보건과학대학', '모집단위': '동물보건학과', '모집인원': 30, '지원인원': 100, '경쟁률': 3.33, '충원인원': 64, '50%cut': 3.99, '70%cut': 4.21 },
+      { '모집전형': '교과일반', '단과대학': '보건과학대학', '모집단위': '반려동물산업학과', '모집인원': 22, '지원인원': 112, '경쟁률': 5.09, '충원인원': 51, '50%cut': 4.06, '70%cut': 4.27 },
+      { '모집전형': '교과일반', '단과대학': '보건과학대학', '모집단위': '의료상담학과', '모집인원': 20, '지원인원': 68, '경쟁률': 3.4, '충원인원': 48, '50%cut': 4.09, '70%cut': 4.12 },
+      { '모집전형': '교과일반', '단과대학': '보건과학대학', '모집단위': '뷰티디자인학부', '모집인원': 30, '지원인원': 150, '경쟁률': 5.0, '충원인원': 55, '50%cut': 4.26, '70%cut': 4.61 },
+      { '모집전형': '교과일반', '단과대학': '사회과학대학', '모집단위': '행정학과', '모집인원': 15, '지원인원': 80, '경쟁률': 5.33, '충원인원': 45, '50%cut': 4.5, '70%cut': 4.8 },
+      { '모집전형': '교과일반', '단과대학': '보건과학대학', '모집단위': '안전보건학과', '모집인원': 21, '지원인원': 47, '경쟁률': 2.24, '충원인원': 26, '50%cut': 4.87, '70%cut': 4.94 },
     ];
   }
 
@@ -1088,21 +1103,21 @@
 
   function getJnuSampleData() {
     return [
-      { 'campus':'광주', '모집전형':'학생부교과(지역인재)', '모집단위':'의예과',        '모집인원':30, '경쟁률':8.5,  '예비순위':15, '평균등급':1.28, '표준편차':0.12, '50%cut':1.28, '70%cut':1.38 },
-      { 'campus':'광주', '모집전형':'학생부교과(지역인재)', '모집단위':'치의예과',       '모집인원':12, '경쟁률':5.2,  '예비순위':8,  '평균등급':1.45, '표준편차':0.15, '50%cut':1.45, '70%cut':1.58 },
-      { 'campus':'광주', '모집전형':'학생부교과(지역인재)', '모집단위':'간호학과',       '모집인원':25, '경쟁률':6.3,  '예비순위':22, '평균등급':2.15, '표준편차':0.21, '50%cut':2.15, '70%cut':2.35 },
-      { 'campus':'광주', '모집전형':'학생부교과(지역인재)', '모집단위':'약학부',         '모집인원':20, '경쟁률':9.1,  '예비순위':12, '평균등급':1.72, '표준편차':0.18, '50%cut':1.72, '70%cut':1.88 },
-      { 'campus':'광주', '모집전형':'학생부교과(지역인재)', '모집단위':'수학과',         '모집인원':18, '경쟁률':3.8,  '예비순위':14, '평균등급':2.78, '표준편차':0.35, '50%cut':2.78, '70%cut':3.12 },
-      { 'campus':'광주', '모집전형':'학생부교과(지역인재)', '모집단위':'컴퓨터정보통신공학부', '모집인원':32, '경쟁률':4.5, '예비순위':20, '평균등급':2.98, '표준편차':0.30, '50%cut':2.98, '70%cut':3.25 },
-      { 'campus':'광주', '모집전형':'학생부교과(지역인재)', '모집단위':'법학부',         '모집인원':20, '경쟁률':4.2,  '예비순위':18, '평균등급':2.85, '표준편차':0.28, '50%cut':2.85, '70%cut':3.08 },
-      { 'campus':'광주', '모집전형':'학생부교과(일반)', '모집단위':'의예과',           '모집인원':10, '경쟁률':14.2, '예비순위':5,  '평균등급':1.18, '표준편차':0.08, '50%cut':1.18, '70%cut':1.25 },
-      { 'campus':'광주', '모집전형':'학생부교과(일반)', '모집단위':'약학부',           '모집인원':10, '경쟁률':11.5, '예비순위':7,  '평균등급':1.62, '표준편차':0.14, '50%cut':1.62, '70%cut':1.75 },
-      { 'campus':'광주', '모집전형':'학생부교과(일반)', '모집단위':'간호학과',         '모집인원':12, '경쟁률':8.4,  '예비순위':10, '평균등급':2.05, '표준편차':0.20, '50%cut':2.05, '70%cut':2.22 },
-      { 'campus':'광주', '모집전형':'학생부교과(일반)', '모집단위':'경제학부',         '모집인원':22, '경쟁률':3.5,  '예비순위':16, '평균등급':3.12, '표준편차':0.32, '50%cut':3.12, '70%cut':3.40 },
-      { 'campus':'여수', '모집전형':'학생부교과(지역인재)', '모집단위':'해양기술학부',  '모집인원':28, '경쟁률':2.8,  '예비순위':18, '평균등급':3.85, '표준편차':0.40, '50%cut':3.85, '70%cut':4.22 },
-      { 'campus':'여수', '모집전형':'학생부교과(지역인재)', '모집단위':'수산생명의학과', '모집인원':20, '경쟁률':3.1,  '예비순위':15, '평균등급':3.62, '표준편차':0.38, '50%cut':3.62, '70%cut':3.98 },
-      { 'campus':'여수', '모집전형':'학생부교과(일반)', '모집단위':'해양기술학부',     '모집인원':12, '경쟁률':3.4,  '예비순위':8,  '평균등급':3.72, '표준편차':0.38, '50%cut':3.72, '70%cut':4.08 },
-      { 'campus':'여수', '모집전형':'학생부교과(일반)', '모집단위':'건축학부',         '모집인원':18, '경쟁률':2.9,  '예비순위':12, '평균등급':4.05, '표준편차':0.42, '50%cut':4.05, '70%cut':4.45 },
+      { 'campus': '광주', '모집전형': '학생부교과(지역인재)', '모집단위': '의예과', '모집인원': 30, '경쟁률': 8.5, '예비순위': 15, '평균등급': 1.28, '표준편차': 0.12, '50%cut': 1.28, '70%cut': 1.38 },
+      { 'campus': '광주', '모집전형': '학생부교과(지역인재)', '모집단위': '치의예과', '모집인원': 12, '경쟁률': 5.2, '예비순위': 8, '평균등급': 1.45, '표준편차': 0.15, '50%cut': 1.45, '70%cut': 1.58 },
+      { 'campus': '광주', '모집전형': '학생부교과(지역인재)', '모집단위': '간호학과', '모집인원': 25, '경쟁률': 6.3, '예비순위': 22, '평균등급': 2.15, '표준편차': 0.21, '50%cut': 2.15, '70%cut': 2.35 },
+      { 'campus': '광주', '모집전형': '학생부교과(지역인재)', '모집단위': '약학부', '모집인원': 20, '경쟁률': 9.1, '예비순위': 12, '평균등급': 1.72, '표준편차': 0.18, '50%cut': 1.72, '70%cut': 1.88 },
+      { 'campus': '광주', '모집전형': '학생부교과(지역인재)', '모집단위': '수학과', '모집인원': 18, '경쟁률': 3.8, '예비순위': 14, '평균등급': 2.78, '표준편차': 0.35, '50%cut': 2.78, '70%cut': 3.12 },
+      { 'campus': '광주', '모집전형': '학생부교과(지역인재)', '모집단위': '컴퓨터정보통신공학부', '모집인원': 32, '경쟁률': 4.5, '예비순위': 20, '평균등급': 2.98, '표준편차': 0.30, '50%cut': 2.98, '70%cut': 3.25 },
+      { 'campus': '광주', '모집전형': '학생부교과(지역인재)', '모집단위': '법학부', '모집인원': 20, '경쟁률': 4.2, '예비순위': 18, '평균등급': 2.85, '표준편차': 0.28, '50%cut': 2.85, '70%cut': 3.08 },
+      { 'campus': '광주', '모집전형': '학생부교과(일반)', '모집단위': '의예과', '모집인원': 10, '경쟁률': 14.2, '예비순위': 5, '평균등급': 1.18, '표준편차': 0.08, '50%cut': 1.18, '70%cut': 1.25 },
+      { 'campus': '광주', '모집전형': '학생부교과(일반)', '모집단위': '약학부', '모집인원': 10, '경쟁률': 11.5, '예비순위': 7, '평균등급': 1.62, '표준편차': 0.14, '50%cut': 1.62, '70%cut': 1.75 },
+      { 'campus': '광주', '모집전형': '학생부교과(일반)', '모집단위': '간호학과', '모집인원': 12, '경쟁률': 8.4, '예비순위': 10, '평균등급': 2.05, '표준편차': 0.20, '50%cut': 2.05, '70%cut': 2.22 },
+      { 'campus': '광주', '모집전형': '학생부교과(일반)', '모집단위': '경제학부', '모집인원': 22, '경쟁률': 3.5, '예비순위': 16, '평균등급': 3.12, '표준편차': 0.32, '50%cut': 3.12, '70%cut': 3.40 },
+      { 'campus': '여수', '모집전형': '학생부교과(지역인재)', '모집단위': '해양기술학부', '모집인원': 28, '경쟁률': 2.8, '예비순위': 18, '평균등급': 3.85, '표준편차': 0.40, '50%cut': 3.85, '70%cut': 4.22 },
+      { 'campus': '여수', '모집전형': '학생부교과(지역인재)', '모집단위': '수산생명의학과', '모집인원': 20, '경쟁률': 3.1, '예비순위': 15, '평균등급': 3.62, '표준편차': 0.38, '50%cut': 3.62, '70%cut': 3.98 },
+      { 'campus': '여수', '모집전형': '학생부교과(일반)', '모집단위': '해양기술학부', '모집인원': 12, '경쟁률': 3.4, '예비순위': 8, '평균등급': 3.72, '표준편차': 0.38, '50%cut': 3.72, '70%cut': 4.08 },
+      { 'campus': '여수', '모집전형': '학생부교과(일반)', '모집단위': '건축학부', '모집인원': 18, '경쟁률': 2.9, '예비순위': 12, '평균등급': 4.05, '표준편차': 0.42, '50%cut': 4.05, '70%cut': 4.45 },
     ];
   }
 
@@ -1122,28 +1137,28 @@
       JNU_DATA = rows
         .filter(r => r[4] && r[12] !== '' && !isNaN(parseFloat(r[12])))
         .map(r => ({
-          'campus':    String(r[0] || '').trim(),
-          '모집전형':  String(r[2] || '').trim(),
-          '모집단위':  String(r[4] || '').trim(),
-          '모집인원':  r[5],
-          '경쟁률':    r[8],
-          '예비순위':  r[9],
-          '평균등급':  r[10],
-          '표준편차':  r[11],
-          '50%cut':    r[12],
-          '70%cut':    r[13],
-          '환산평균':  r[14],
-          '환산편차':  r[15],
+          'campus': String(r[0] || '').trim(),
+          '모집전형': String(r[2] || '').trim(),
+          '모집단위': String(r[4] || '').trim(),
+          '모집인원': r[5],
+          '경쟁률': r[8],
+          '예비순위': r[9],
+          '평균등급': r[10],
+          '표준편차': r[11],
+          '50%cut': r[12],
+          '70%cut': r[13],
+          '환산평균': r[14],
+          '환산편차': r[15],
           '환산50%cut': r[16],
           '환산70%cut': r[17],
-          '면접평균':  r[19],
-          '면접편차':  r[20],
-          '서류평균':  r[21],
-          '서류편차':  r[22],
-          '실기평균':  r[23],
-          '실기편차':  r[24],
-          '총점평균':  r[25],
-          '총점편차':  r[26],
+          '면접평균': r[19],
+          '면접편차': r[20],
+          '서류평균': r[21],
+          '서류편차': r[22],
+          '실기평균': r[23],
+          '실기편차': r[24],
+          '총점평균': r[25],
+          '총점편차': r[26],
         }));
       adIsSampleData['전남대'] = false;
     } catch (e) {
@@ -1155,21 +1170,21 @@
 
   function getJjuSampleData() {
     return [
-      { '모집전형':'학생부교과(일반)', '모집단위':'간호학과',        '모집인원':'25', '경쟁률':'13.7', '충원합격':'11', '최고':3.0, '평균':3.9, '70%cut':4.5, '전형요소':'교과100' },
-      { '모집전형':'학생부교과(일반)', '모집단위':'물리치료학과',     '모집인원':'20', '경쟁률':'10.2', '충원합격':'8',  '최고':3.2, '평균':4.1, '70%cut':4.8, '전형요소':'교과100' },
-      { '모집전형':'학생부교과(일반)', '모집단위':'임상병리학과',     '모집인원':'15', '경쟁률':'8.5',  '충원합격':'6',  '최고':3.5, '평균':4.3, '70%cut':5.0, '전형요소':'교과100' },
-      { '모집전형':'학생부교과(일반)', '모집단위':'컴퓨터공학과',     '모집인원':'30', '경쟁률':'6.8',  '충원합격':'14', '최고':3.8, '평균':4.6, '70%cut':5.3, '전형요소':'교과100' },
-      { '모집전형':'학생부교과(일반)', '모집단위':'경영학과',         '모집인원':'35', '경쟁률':'5.9',  '충원합격':'18', '최고':4.0, '평균':4.8, '70%cut':5.5, '전형요소':'교과100' },
-      { '모집전형':'학생부교과(일반)', '모집단위':'사회복지학과',     '모집인원':'22', '경쟁률':'5.2',  '충원합격':'12', '최고':4.2, '평균':5.1, '70%cut':5.8, '전형요소':'교과100' },
-      { '모집전형':'학생부교과(일반)', '모집단위':'경찰행정학과',     '모집인원':'20', '경쟁률':'9.3',  '충원합격':'9',  '최고':3.6, '평균':4.4, '70%cut':5.1, '전형요소':'교과100' },
-      { '모집전형':'학생부교과(일반)', '모집단위':'건축학부',         '모집인원':'18', '경쟁률':'4.8',  '충원합격':'10', '최고':4.5, '평균':5.3, '70%cut':6.0, '전형요소':'교과100' },
-      { '모집전형':'학생부교과(일반)', '모집단위':'식품영양학과',     '모집인원':'20', '경쟁률':'6.1',  '충원합격':'11', '최고':4.1, '평균':5.0, '70%cut':5.7, '전형요소':'교과100' },
-      { '모집전형':'학생부교과(일반)', '모집단위':'국어국문학과',     '모집인원':'15', '경쟁률':'4.3',  '충원합격':'7',  '최고':4.6, '평균':5.4, '70%cut':6.1, '전형요소':'교과100' },
-      { '모집전형':'학생부종합(지역인재)', '모집단위':'간호학과',     '모집인원':'15', '경쟁률':'8.9',  '충원합격':'6',  '최고':3.3, '평균':4.2, '70%cut':4.9, '전형요소':'서류100' },
-      { '모집전형':'학생부종합(지역인재)', '모집단위':'컴퓨터공학과', '모집인원':'18', '경쟁률':'5.4',  '충원합격':'9',  '최고':4.0, '평균':4.9, '70%cut':5.6, '전형요소':'서류100' },
-      { '모집전형':'학생부종합(지역인재)', '모집단위':'경영학과',     '모집인원':'20', '경쟁률':'4.7',  '충원합격':'11', '최고':4.2, '평균':5.1, '70%cut':5.8, '전형요소':'서류100' },
-      { '모집전형':'학생부종합(지역인재)', '모집단위':'사회복지학과', '모집인원':'14', '경쟁률':'4.1',  '충원합격':'8',  '최고':4.5, '평균':5.4, '70%cut':6.0, '전형요소':'서류100' },
-      { '모집전형':'학생부종합(지역인재)', '모집단위':'경찰행정학과', '모집인원':'12', '경쟁률':'7.2',  '충원합격':'5',  '최고':3.8, '평균':4.7, '70%cut':5.4, '전형요소':'서류100' },
+      { '모집전형': '학생부교과(일반)', '모집단위': '간호학과', '모집인원': '25', '경쟁률': '13.7', '충원합격': '11', '최고': 3.0, '평균': 3.9, '70%cut': 4.5, '전형요소': '교과100' },
+      { '모집전형': '학생부교과(일반)', '모집단위': '물리치료학과', '모집인원': '20', '경쟁률': '10.2', '충원합격': '8', '최고': 3.2, '평균': 4.1, '70%cut': 4.8, '전형요소': '교과100' },
+      { '모집전형': '학생부교과(일반)', '모집단위': '임상병리학과', '모집인원': '15', '경쟁률': '8.5', '충원합격': '6', '최고': 3.5, '평균': 4.3, '70%cut': 5.0, '전형요소': '교과100' },
+      { '모집전형': '학생부교과(일반)', '모집단위': '컴퓨터공학과', '모집인원': '30', '경쟁률': '6.8', '충원합격': '14', '최고': 3.8, '평균': 4.6, '70%cut': 5.3, '전형요소': '교과100' },
+      { '모집전형': '학생부교과(일반)', '모집단위': '경영학과', '모집인원': '35', '경쟁률': '5.9', '충원합격': '18', '최고': 4.0, '평균': 4.8, '70%cut': 5.5, '전형요소': '교과100' },
+      { '모집전형': '학생부교과(일반)', '모집단위': '사회복지학과', '모집인원': '22', '경쟁률': '5.2', '충원합격': '12', '최고': 4.2, '평균': 5.1, '70%cut': 5.8, '전형요소': '교과100' },
+      { '모집전형': '학생부교과(일반)', '모집단위': '경찰행정학과', '모집인원': '20', '경쟁률': '9.3', '충원합격': '9', '최고': 3.6, '평균': 4.4, '70%cut': 5.1, '전형요소': '교과100' },
+      { '모집전형': '학생부교과(일반)', '모집단위': '건축학부', '모집인원': '18', '경쟁률': '4.8', '충원합격': '10', '최고': 4.5, '평균': 5.3, '70%cut': 6.0, '전형요소': '교과100' },
+      { '모집전형': '학생부교과(일반)', '모집단위': '식품영양학과', '모집인원': '20', '경쟁률': '6.1', '충원합격': '11', '최고': 4.1, '평균': 5.0, '70%cut': 5.7, '전형요소': '교과100' },
+      { '모집전형': '학생부교과(일반)', '모집단위': '국어국문학과', '모집인원': '15', '경쟁률': '4.3', '충원합격': '7', '최고': 4.6, '평균': 5.4, '70%cut': 6.1, '전형요소': '교과100' },
+      { '모집전형': '학생부종합(지역인재)', '모집단위': '간호학과', '모집인원': '15', '경쟁률': '8.9', '충원합격': '6', '최고': 3.3, '평균': 4.2, '70%cut': 4.9, '전형요소': '서류100' },
+      { '모집전형': '학생부종합(지역인재)', '모집단위': '컴퓨터공학과', '모집인원': '18', '경쟁률': '5.4', '충원합격': '9', '최고': 4.0, '평균': 4.9, '70%cut': 5.6, '전형요소': '서류100' },
+      { '모집전형': '학생부종합(지역인재)', '모집단위': '경영학과', '모집인원': '20', '경쟁률': '4.7', '충원합격': '11', '최고': 4.2, '평균': 5.1, '70%cut': 5.8, '전형요소': '서류100' },
+      { '모집전형': '학생부종합(지역인재)', '모집단위': '사회복지학과', '모집인원': '14', '경쟁률': '4.1', '충원합격': '8', '최고': 4.5, '평균': 5.4, '70%cut': 6.0, '전형요소': '서류100' },
+      { '모집전형': '학생부종합(지역인재)', '모집단위': '경찰행정학과', '모집인원': '12', '경쟁률': '7.2', '충원합격': '5', '최고': 3.8, '평균': 4.7, '70%cut': 5.4, '전형요소': '서류100' },
     ];
   }
 
@@ -1190,18 +1205,18 @@
         .filter(r => r[2] && r[2] !== '')
         .map(r => {
           const high = parseFloat(r[7]);
-          const avg  = parseFloat(r[8]);
-          const cut  = parseFloat(r[9]);
+          const avg = parseFloat(r[8]);
+          const cut = parseFloat(r[9]);
           const isValid = !isNaN(high) && !isNaN(avg) && !isNaN(cut);
           return {
             '모집전형': String(r[0] || '').trim(),
             '모집단위': String(r[2] || '').trim(),
             '모집인원': r[3],
-            '경쟁률':   r[5],
+            '경쟁률': r[5],
             '충원합격': r[6],
-            '최고':     isValid ? high : null,
-            '평균':     isValid ? avg  : null,
-            '70%cut':   isValid ? cut  : null,
+            '최고': isValid ? high : null,
+            '평균': isValid ? avg : null,
+            '70%cut': isValid ? cut : null,
             '전형요소': String(r[10] || '').trim(),
           };
         })
@@ -1216,18 +1231,18 @@
 
   function getCauSampleData() {
     return [
-      { 'campus':'서울', '계열':'의학', '단과대학':'의과대학', '모집전형':'학교장추천전형', '모집단위':'의학부', '모집인원':'40', '지원인원':'1240', '경쟁률':'31.0', '실질경쟁률':'12.4', '충원율':'25', '지원자평균':'1.5', '50%cut':1.2, '70%cut':1.4, 'passAvg':1.3 },
-      { 'campus':'서울', '계열':'자연', '단과대학':'공과대학', '모집전형':'학교장추천전형', '모집단위':'전자전기공학부', '모집인원':'35', '지원인원':'700', '경쟁률':'20.0', '실질경쟁률':'8.1', '충원율':'34', '지원자평균':'2.3', '50%cut':2.0, '70%cut':2.4, 'passAvg':2.2 },
-      { 'campus':'서울', '계열':'자연', '단과대학':'소프트웨어대학', '모집전형':'학교장추천전형', '모집단위':'소프트웨어학부', '모집인원':'30', '지원인원':'570', '경쟁률':'19.0', '실질경쟁률':'7.6', '충원율':'30', '지원자평균':'2.4', '50%cut':2.1, '70%cut':2.6, 'passAvg':2.3 },
-      { 'campus':'서울', '계열':'인문', '단과대학':'경영경제대학', '모집전형':'학교장추천전형', '모집단위':'경영학부', '모집인원':'45', '지원인원':'855', '경쟁률':'19.0', '실질경쟁률':'7.6', '충원율':'36', '지원자평균':'2.5', '50%cut':2.2, '70%cut':2.7, 'passAvg':2.4 },
-      { 'campus':'서울', '계열':'인문', '단과대학':'사회과학대학', '모집전형':'학교장추천전형', '모집단위':'심리학과', '모집인원':'15', '지원인원':'255', '경쟁률':'17.0', '실질경쟁률':'6.8', '충원율':'27', '지원자평균':'2.7', '50%cut':2.4, '70%cut':2.9, 'passAvg':2.6 },
-      { 'campus':'서울', '계열':'자연', '단과대학':'공과대학', '모집전형':'학교장추천전형', '모집단위':'화학공학과', '모집인원':'22', '지원인원':'374', '경쟁률':'17.0', '실질경쟁률':'6.8', '충원율':'32', '지원자평균':'2.8', '50%cut':2.5, '70%cut':3.0, 'passAvg':2.7 },
-      { 'campus':'서울', '계열':'인문', '단과대학':'인문대학', '모집전형':'학교장추천전형', '모집단위':'국어국문학과', '모집인원':'12', '지원인원':'192', '경쟁률':'16.0', '실질경쟁률':'6.4', '충원율':'25', '지원자평균':'3.0', '50%cut':2.7, '70%cut':3.2, 'passAvg':2.9 },
-      { 'campus':'안성', '계열':'예체능', '단과대학':'예술대학', '모집전형':'학교장추천전형', '모집단위':'연극학과', '모집인원':'10', '지원인원':'110', '경쟁률':'11.0', '실질경쟁률':'4.4', '충원율':'20', '지원자평균':'3.5', '50%cut':3.2, '70%cut':3.8, 'passAvg':3.4 },
-      { 'campus':'서울', '계열':'의학', '단과대학':'의과대학', '모집전형':'다빈치인재전형', '모집단위':'의학부', '모집인원':'20', '지원인원':'840', '경쟁률':'42.0', '실질경쟁률':'16.8', '충원율':'15', '지원자평균':'1.8', '50%cut':1.4, '70%cut':1.6, 'passAvg':1.5 },
-      { 'campus':'서울', '계열':'자연', '단과대학':'공과대학', '모집전형':'다빈치인재전형', '모집단위':'전자전기공학부', '모집인원':'18', '지원인원':'432', '경쟁률':'24.0', '실질경쟁률':'9.6', '충원율':'22', '지원자평균':'2.6', '50%cut':2.3, '70%cut':2.7, 'passAvg':2.5 },
-      { 'campus':'서울', '계열':'자연', '단과대학':'소프트웨어대학', '모집전형':'다빈치인재전형', '모집단위':'소프트웨어학부', '모집인원':'15', '지원인원':'345', '경쟁률':'23.0', '실질경쟁률':'9.2', '충원율':'20', '지원자평균':'2.7', '50%cut':2.4, '70%cut':2.9, 'passAvg':2.6 },
-      { 'campus':'서울', '계열':'인문', '단과대학':'경영경제대학', '모집전형':'다빈치인재전형', '모집단위':'경영학부', '모집인원':'20', '지원인원':'440', '경쟁률':'22.0', '실질경쟁률':'8.8', '충원율':'25', '지원자평균':'2.8', '50%cut':2.5, '70%cut':3.0, 'passAvg':2.7 },
+      { 'campus': '서울', '계열': '의학', '단과대학': '의과대학', '모집전형': '학교장추천전형', '모집단위': '의학부', '모집인원': '40', '지원인원': '1240', '경쟁률': '31.0', '실질경쟁률': '12.4', '충원율': '25', '지원자평균': '1.5', '50%cut': 1.2, '70%cut': 1.4, 'passAvg': 1.3 },
+      { 'campus': '서울', '계열': '자연', '단과대학': '공과대학', '모집전형': '학교장추천전형', '모집단위': '전자전기공학부', '모집인원': '35', '지원인원': '700', '경쟁률': '20.0', '실질경쟁률': '8.1', '충원율': '34', '지원자평균': '2.3', '50%cut': 2.0, '70%cut': 2.4, 'passAvg': 2.2 },
+      { 'campus': '서울', '계열': '자연', '단과대학': '소프트웨어대학', '모집전형': '학교장추천전형', '모집단위': '소프트웨어학부', '모집인원': '30', '지원인원': '570', '경쟁률': '19.0', '실질경쟁률': '7.6', '충원율': '30', '지원자평균': '2.4', '50%cut': 2.1, '70%cut': 2.6, 'passAvg': 2.3 },
+      { 'campus': '서울', '계열': '인문', '단과대학': '경영경제대학', '모집전형': '학교장추천전형', '모집단위': '경영학부', '모집인원': '45', '지원인원': '855', '경쟁률': '19.0', '실질경쟁률': '7.6', '충원율': '36', '지원자평균': '2.5', '50%cut': 2.2, '70%cut': 2.7, 'passAvg': 2.4 },
+      { 'campus': '서울', '계열': '인문', '단과대학': '사회과학대학', '모집전형': '학교장추천전형', '모집단위': '심리학과', '모집인원': '15', '지원인원': '255', '경쟁률': '17.0', '실질경쟁률': '6.8', '충원율': '27', '지원자평균': '2.7', '50%cut': 2.4, '70%cut': 2.9, 'passAvg': 2.6 },
+      { 'campus': '서울', '계열': '자연', '단과대학': '공과대학', '모집전형': '학교장추천전형', '모집단위': '화학공학과', '모집인원': '22', '지원인원': '374', '경쟁률': '17.0', '실질경쟁률': '6.8', '충원율': '32', '지원자평균': '2.8', '50%cut': 2.5, '70%cut': 3.0, 'passAvg': 2.7 },
+      { 'campus': '서울', '계열': '인문', '단과대학': '인문대학', '모집전형': '학교장추천전형', '모집단위': '국어국문학과', '모집인원': '12', '지원인원': '192', '경쟁률': '16.0', '실질경쟁률': '6.4', '충원율': '25', '지원자평균': '3.0', '50%cut': 2.7, '70%cut': 3.2, 'passAvg': 2.9 },
+      { 'campus': '안성', '계열': '예체능', '단과대학': '예술대학', '모집전형': '학교장추천전형', '모집단위': '연극학과', '모집인원': '10', '지원인원': '110', '경쟁률': '11.0', '실질경쟁률': '4.4', '충원율': '20', '지원자평균': '3.5', '50%cut': 3.2, '70%cut': 3.8, 'passAvg': 3.4 },
+      { 'campus': '서울', '계열': '의학', '단과대학': '의과대학', '모집전형': '다빈치인재전형', '모집단위': '의학부', '모집인원': '20', '지원인원': '840', '경쟁률': '42.0', '실질경쟁률': '16.8', '충원율': '15', '지원자평균': '1.8', '50%cut': 1.4, '70%cut': 1.6, 'passAvg': 1.5 },
+      { 'campus': '서울', '계열': '자연', '단과대학': '공과대학', '모집전형': '다빈치인재전형', '모집단위': '전자전기공학부', '모집인원': '18', '지원인원': '432', '경쟁률': '24.0', '실질경쟁률': '9.6', '충원율': '22', '지원자평균': '2.6', '50%cut': 2.3, '70%cut': 2.7, 'passAvg': 2.5 },
+      { 'campus': '서울', '계열': '자연', '단과대학': '소프트웨어대학', '모집전형': '다빈치인재전형', '모집단위': '소프트웨어학부', '모집인원': '15', '지원인원': '345', '경쟁률': '23.0', '실질경쟁률': '9.2', '충원율': '20', '지원자평균': '2.7', '50%cut': 2.4, '70%cut': 2.9, 'passAvg': 2.6 },
+      { 'campus': '서울', '계열': '인문', '단과대학': '경영경제대학', '모집전형': '다빈치인재전형', '모집단위': '경영학부', '모집인원': '20', '지원인원': '440', '경쟁률': '22.0', '실질경쟁률': '8.8', '충원율': '25', '지원자평균': '2.8', '50%cut': 2.5, '70%cut': 3.0, 'passAvg': 2.7 },
     ];
   }
 
@@ -1247,20 +1262,20 @@
       CAU_DATA = rows
         .filter(r => r[4] && r[4] !== '' && r[11] !== '' && !isNaN(parseFloat(r[11])))
         .map(r => ({
-          'campus':     String(r[0] || '').trim(),
-          '계열':       String(r[1] || '').trim(),
-          '단과대학':   String(r[2] || '').trim(),
-          '모집전형':   String(r[3] || '').trim(),
-          '모집단위':   String(r[4] || '').trim(),
-          '모집인원':   r[5],
-          '지원인원':   r[6],
-          '경쟁률':     r[7],
+          'campus': String(r[0] || '').trim(),
+          '계열': String(r[1] || '').trim(),
+          '단과대학': String(r[2] || '').trim(),
+          '모집전형': String(r[3] || '').trim(),
+          '모집단위': String(r[4] || '').trim(),
+          '모집인원': r[5],
+          '지원인원': r[6],
+          '경쟁률': r[7],
           '실질경쟁률': r[8],
-          '충원율':     r[9],
+          '충원율': r[9],
           '지원자평균': r[10],
-          'passAvg':    parseFloat(r[11]),
-          '50%cut':     parseFloat(r[12]),
-          '70%cut':     parseFloat(r[13]),
+          'passAvg': parseFloat(r[11]),
+          '50%cut': parseFloat(r[12]),
+          '70%cut': parseFloat(r[13]),
         }))
         .filter(d => d['모집단위'] && !isNaN(d['50%cut']) && !isNaN(d['70%cut']));
       adIsSampleData['중앙대'] = false;
@@ -1273,47 +1288,47 @@
 
   function getCnuSampleData() {
     return [
-      { '모집전형':'지역인재전형', '모집단위':'의예과',        '모집인원':30,  '지원인원':690,  '경쟁률':23.0, '최저충족률(%)':62, '실질경쟁률':8.8,  '충원합격인원':5,  '충원율(%)':17, '1단계 최고 등급':1.1, '1단계 평균 등급':1.4, '1단계 최저 등급':1.7, '평균(등급)':1.3, '70%(등급)':1.5, '최저(등급)':1.7, '표준편차(등급)':0.18, '평균(환산점수)':null, '70%(환산점수)':null, '표준편차(환산점수)':null },
-      { '모집전형':'지역인재전형', '모집단위':'치의예과',       '모집인원':22,  '지원인원':484,  '경쟁률':22.0, '최저충족률(%)':58, '실질경쟁률':8.0,  '충원합격인원':4,  '충원율(%)':18, '1단계 최고 등급':1.2, '1단계 평균 등급':1.6, '1단계 최저 등급':1.9, '평균(등급)':1.5, '70%(등급)':1.7, '최저(등급)':2.0, '표준편차(등급)':0.21, '평균(환산점수)':null, '70%(환산점수)':null, '표준편차(환산점수)':null },
-      { '모집전형':'지역인재전형', '모집단위':'약학과',         '모집인원':18,  '지원인원':360,  '경쟁률':20.0, '최저충족률(%)':55, '실질경쟁률':7.2,  '충원합격인원':3,  '충원율(%)':17, '1단계 최고 등급':1.3, '1단계 평균 등급':1.7, '1단계 최저 등급':2.1, '평균(등급)':1.6, '70%(등급)':1.8, '최저(등급)':2.1, '표준편차(등급)':0.20, '평균(환산점수)':null, '70%(환산점수)':null, '표준편차(환산점수)':null },
-      { '모집전형':'지역인재전형', '모집단위':'수의예과',       '모집인원':15,  '지원인원':270,  '경쟁률':18.0, '최저충족률(%)':50, '실질경쟁률':6.5,  '충원합격인원':2,  '충원율(%)':13, '1단계 최고 등급':1.4, '1단계 평균 등급':1.8, '1단계 최저 등급':2.2, '평균(등급)':1.7, '70%(등급)':1.9, '최저(등급)':2.2, '표준편차(등급)':0.22, '평균(환산점수)':null, '70%(환산점수)':null, '표준편차(환산점수)':null },
-      { '모집전형':'지역인재전형', '모집단위':'간호학과',       '모집인원':25,  '지원인원':400,  '경쟁률':16.0, '최저충족률(%)':48, '실질경쟁률':5.8,  '충원합격인원':6,  '충원율(%)':24, '1단계 최고 등급':1.5, '1단계 평균 등급':2.0, '1단계 최저 등급':2.4, '평균(등급)':1.9, '70%(등급)':2.1, '최저(등급)':2.4, '표준편차(등급)':0.23, '평균(환산점수)':null, '70%(환산점수)':null, '표준편차(환산점수)':null },
-      { '모집전형':'지역인재전형', '모집단위':'컴퓨터공학과',   '모집인원':20,  '지원인원':320,  '경쟁률':16.0, '최저충족률(%)':45, '실질경쟁률':5.4,  '충원합격인원':5,  '충원율(%)':25, '1단계 최고 등급':1.7, '1단계 평균 등급':2.2, '1단계 최저 등급':2.7, '평균(등급)':2.1, '70%(등급)':2.4, '최저(등급)':2.7, '표준편차(등급)':0.27, '평균(환산점수)':null, '70%(환산점수)':null, '표준편차(환산점수)':null },
-      { '모집전형':'지역인재전형', '모집단위':'전기전자공학부',  '모집인원':22,  '지원인원':330,  '경쟁률':15.0, '최저충족률(%)':42, '실질경쟁률':4.9,  '충원합격인원':5,  '충원율(%)':23, '1단계 최고 등급':1.8, '1단계 평균 등급':2.3, '1단계 최저 등급':2.8, '평균(등급)':2.2, '70%(등급)':2.5, '최저(등급)':2.8, '표준편차(등급)':0.28, '평균(환산점수)':null, '70%(환산점수)':null, '표준편차(환산점수)':null },
-      { '모집전형':'지역인재전형', '모집단위':'경영학부',        '모집인원':30,  '지원인원':420,  '경쟁률':14.0, '최저충족률(%)':40, '실질경쟁률':4.5,  '충원합격인원':7,  '충원율(%)':23, '1단계 최고 등급':1.9, '1단계 평균 등급':2.4, '1단계 최저 등급':2.9, '평균(등급)':2.3, '70%(등급)':2.6, '최저(등급)':2.9, '표준편차(등급)':0.29, '평균(환산점수)':null, '70%(환산점수)':null, '표준편차(환산점수)':null },
-      { '모집전형':'지역인재전형', '모집단위':'화학공학과',      '모집인원':18,  '지원인원':252,  '경쟁률':14.0, '최저충족률(%)':38, '실질경쟁률':4.2,  '충원합격인원':4,  '충원율(%)':22, '1단계 최고 등급':2.0, '1단계 평균 등급':2.5, '1단계 최저 등급':3.0, '평균(등급)':2.4, '70%(등급)':2.7, '최저(등급)':3.0, '표준편차(등급)':0.30, '평균(환산점수)':null, '70%(환산점수)':null, '표준편차(환산점수)':null },
-      { '모집전형':'지역인재전형', '모집단위':'행정학부',        '모집인원':15,  '지원인원':195,  '경쟁률':13.0, '최저충족률(%)':35, '실질경쟁률':3.8,  '충원합격인원':4,  '충원율(%)':27, '1단계 최고 등급':2.2, '1단계 평균 등급':2.7, '1단계 최저 등급':3.2, '평균(등급)':2.6, '70%(등급)':2.9, '최저(등급)':3.2, '표준편차(등급)':0.31, '평균(환산점수)':null, '70%(환산점수)':null, '표준편차(환산점수)':null },
-      { '모집전형':'일반전형',     '모집단위':'의예과',          '모집인원':25,  '지원인원':625,  '경쟁률':25.0, '최저충족률(%)':60, '실질경쟁률':9.5,  '충원합격인원':4,  '충원율(%)':16, '1단계 최고 등급':1.0, '1단계 평균 등급':1.3, '1단계 최저 등급':1.6, '평균(등급)':1.2, '70%(등급)':1.4, '최저(등급)':1.6, '표준편차(등급)':0.17, '평균(환산점수)':null, '70%(환산점수)':null, '표준편차(환산점수)':null },
-      { '모집전형':'일반전형',     '모집단위':'컴퓨터공학과',    '모집인원':25,  '지원인원':450,  '경쟁률':18.0, '최저충족률(%)':42, '실질경쟁률':5.2,  '충원합격인원':6,  '충원율(%)':24, '1단계 최고 등급':1.6, '1단계 평균 등급':2.1, '1단계 최저 등급':2.5, '평균(등급)':2.0, '70%(등급)':2.3, '최저(등급)':2.5, '표준편차(등급)':0.25, '평균(환산점수)':null, '70%(환산점수)':null, '표준편차(환산점수)':null },
-      { '모집전형':'일반전형',     '모집단위':'경영학부',         '모집인원':40,  '지원인원':640,  '경쟁률':16.0, '최저충족률(%)':38, '실질경쟁률':4.6,  '충원합격인원':8,  '충원율(%)':20, '1단계 최고 등급':1.8, '1단계 평균 등급':2.3, '1단계 최저 등급':2.8, '평균(등급)':2.2, '70%(등급)':2.5, '최저(등급)':2.8, '표준편차(등급)':0.28, '평균(환산점수)':null, '70%(환산점수)':null, '표준편차(환산점수)':null },
+      { '모집전형': '지역인재전형', '모집단위': '의예과', '모집인원': 30, '지원인원': 690, '경쟁률': 23.0, '최저충족률(%)': 62, '실질경쟁률': 8.8, '충원합격인원': 5, '충원율(%)': 17, '1단계 최고 등급': 1.1, '1단계 평균 등급': 1.4, '1단계 최저 등급': 1.7, '평균(등급)': 1.3, '70%(등급)': 1.5, '최저(등급)': 1.7, '표준편차(등급)': 0.18, '평균(환산점수)': null, '70%(환산점수)': null, '표준편차(환산점수)': null },
+      { '모집전형': '지역인재전형', '모집단위': '치의예과', '모집인원': 22, '지원인원': 484, '경쟁률': 22.0, '최저충족률(%)': 58, '실질경쟁률': 8.0, '충원합격인원': 4, '충원율(%)': 18, '1단계 최고 등급': 1.2, '1단계 평균 등급': 1.6, '1단계 최저 등급': 1.9, '평균(등급)': 1.5, '70%(등급)': 1.7, '최저(등급)': 2.0, '표준편차(등급)': 0.21, '평균(환산점수)': null, '70%(환산점수)': null, '표준편차(환산점수)': null },
+      { '모집전형': '지역인재전형', '모집단위': '약학과', '모집인원': 18, '지원인원': 360, '경쟁률': 20.0, '최저충족률(%)': 55, '실질경쟁률': 7.2, '충원합격인원': 3, '충원율(%)': 17, '1단계 최고 등급': 1.3, '1단계 평균 등급': 1.7, '1단계 최저 등급': 2.1, '평균(등급)': 1.6, '70%(등급)': 1.8, '최저(등급)': 2.1, '표준편차(등급)': 0.20, '평균(환산점수)': null, '70%(환산점수)': null, '표준편차(환산점수)': null },
+      { '모집전형': '지역인재전형', '모집단위': '수의예과', '모집인원': 15, '지원인원': 270, '경쟁률': 18.0, '최저충족률(%)': 50, '실질경쟁률': 6.5, '충원합격인원': 2, '충원율(%)': 13, '1단계 최고 등급': 1.4, '1단계 평균 등급': 1.8, '1단계 최저 등급': 2.2, '평균(등급)': 1.7, '70%(등급)': 1.9, '최저(등급)': 2.2, '표준편차(등급)': 0.22, '평균(환산점수)': null, '70%(환산점수)': null, '표준편차(환산점수)': null },
+      { '모집전형': '지역인재전형', '모집단위': '간호학과', '모집인원': 25, '지원인원': 400, '경쟁률': 16.0, '최저충족률(%)': 48, '실질경쟁률': 5.8, '충원합격인원': 6, '충원율(%)': 24, '1단계 최고 등급': 1.5, '1단계 평균 등급': 2.0, '1단계 최저 등급': 2.4, '평균(등급)': 1.9, '70%(등급)': 2.1, '최저(등급)': 2.4, '표준편차(등급)': 0.23, '평균(환산점수)': null, '70%(환산점수)': null, '표준편차(환산점수)': null },
+      { '모집전형': '지역인재전형', '모집단위': '컴퓨터공학과', '모집인원': 20, '지원인원': 320, '경쟁률': 16.0, '최저충족률(%)': 45, '실질경쟁률': 5.4, '충원합격인원': 5, '충원율(%)': 25, '1단계 최고 등급': 1.7, '1단계 평균 등급': 2.2, '1단계 최저 등급': 2.7, '평균(등급)': 2.1, '70%(등급)': 2.4, '최저(등급)': 2.7, '표준편차(등급)': 0.27, '평균(환산점수)': null, '70%(환산점수)': null, '표준편차(환산점수)': null },
+      { '모집전형': '지역인재전형', '모집단위': '전기전자공학부', '모집인원': 22, '지원인원': 330, '경쟁률': 15.0, '최저충족률(%)': 42, '실질경쟁률': 4.9, '충원합격인원': 5, '충원율(%)': 23, '1단계 최고 등급': 1.8, '1단계 평균 등급': 2.3, '1단계 최저 등급': 2.8, '평균(등급)': 2.2, '70%(등급)': 2.5, '최저(등급)': 2.8, '표준편차(등급)': 0.28, '평균(환산점수)': null, '70%(환산점수)': null, '표준편차(환산점수)': null },
+      { '모집전형': '지역인재전형', '모집단위': '경영학부', '모집인원': 30, '지원인원': 420, '경쟁률': 14.0, '최저충족률(%)': 40, '실질경쟁률': 4.5, '충원합격인원': 7, '충원율(%)': 23, '1단계 최고 등급': 1.9, '1단계 평균 등급': 2.4, '1단계 최저 등급': 2.9, '평균(등급)': 2.3, '70%(등급)': 2.6, '최저(등급)': 2.9, '표준편차(등급)': 0.29, '평균(환산점수)': null, '70%(환산점수)': null, '표준편차(환산점수)': null },
+      { '모집전형': '지역인재전형', '모집단위': '화학공학과', '모집인원': 18, '지원인원': 252, '경쟁률': 14.0, '최저충족률(%)': 38, '실질경쟁률': 4.2, '충원합격인원': 4, '충원율(%)': 22, '1단계 최고 등급': 2.0, '1단계 평균 등급': 2.5, '1단계 최저 등급': 3.0, '평균(등급)': 2.4, '70%(등급)': 2.7, '최저(등급)': 3.0, '표준편차(등급)': 0.30, '평균(환산점수)': null, '70%(환산점수)': null, '표준편차(환산점수)': null },
+      { '모집전형': '지역인재전형', '모집단위': '행정학부', '모집인원': 15, '지원인원': 195, '경쟁률': 13.0, '최저충족률(%)': 35, '실질경쟁률': 3.8, '충원합격인원': 4, '충원율(%)': 27, '1단계 최고 등급': 2.2, '1단계 평균 등급': 2.7, '1단계 최저 등급': 3.2, '평균(등급)': 2.6, '70%(등급)': 2.9, '최저(등급)': 3.2, '표준편차(등급)': 0.31, '평균(환산점수)': null, '70%(환산점수)': null, '표준편차(환산점수)': null },
+      { '모집전형': '일반전형', '모집단위': '의예과', '모집인원': 25, '지원인원': 625, '경쟁률': 25.0, '최저충족률(%)': 60, '실질경쟁률': 9.5, '충원합격인원': 4, '충원율(%)': 16, '1단계 최고 등급': 1.0, '1단계 평균 등급': 1.3, '1단계 최저 등급': 1.6, '평균(등급)': 1.2, '70%(등급)': 1.4, '최저(등급)': 1.6, '표준편차(등급)': 0.17, '평균(환산점수)': null, '70%(환산점수)': null, '표준편차(환산점수)': null },
+      { '모집전형': '일반전형', '모집단위': '컴퓨터공학과', '모집인원': 25, '지원인원': 450, '경쟁률': 18.0, '최저충족률(%)': 42, '실질경쟁률': 5.2, '충원합격인원': 6, '충원율(%)': 24, '1단계 최고 등급': 1.6, '1단계 평균 등급': 2.1, '1단계 최저 등급': 2.5, '평균(등급)': 2.0, '70%(등급)': 2.3, '최저(등급)': 2.5, '표준편차(등급)': 0.25, '평균(환산점수)': null, '70%(환산점수)': null, '표준편차(환산점수)': null },
+      { '모집전형': '일반전형', '모집단위': '경영학부', '모집인원': 40, '지원인원': 640, '경쟁률': 16.0, '최저충족률(%)': 38, '실질경쟁률': 4.6, '충원합격인원': 8, '충원율(%)': 20, '1단계 최고 등급': 1.8, '1단계 평균 등급': 2.3, '1단계 최저 등급': 2.8, '평균(등급)': 2.2, '70%(등급)': 2.5, '최저(등급)': 2.8, '표준편차(등급)': 0.28, '평균(환산점수)': null, '70%(환산점수)': null, '표준편차(환산점수)': null },
     ];
   }
 
   function getHufsGwagyoSampleData() {
     return [
-      { '학년도':2025, '모집전형':'학생부교과(학교장추천)', '캠퍼스':'서울캠퍼스', '모집단위':'ELLT학과',         '모집인원':4,  '경쟁률':7.0,  '실질경쟁률':5.0, '충원인원':6,  '70%(환산점수)':198.16 },
-      { '학년도':2025, '모집전형':'학생부교과(학교장추천)', '캠퍼스':'서울캠퍼스', '모집단위':'영미문학·문화학과',  '모집인원':4,  '경쟁률':8.3,  '실질경쟁률':5.5, '충원인원':17, '70%(환산점수)':196.87 },
-      { '학년도':2025, '모집전형':'학생부교과(학교장추천)', '캠퍼스':'서울캠퍼스', '모집단위':'프랑스어학부',      '모집인원':5,  '경쟁률':6.4,  '실질경쟁률':4.2, '충원인원':10, '70%(환산점수)':195.30 },
-      { '학년도':2025, '모집전형':'학생부교과(학교장추천)', '캠퍼스':'서울캠퍼스', '모집단위':'독일어과',          '모집인원':4,  '경쟁률':5.8,  '실질경쟁률':3.9, '충원인원':8,  '70%(환산점수)':193.41 },
-      { '학년도':2025, '모집전형':'학생부교과(학교장추천)', '캠퍼스':'서울캠퍼스', '모집단위':'스페인어과',        '모집인원':6,  '경쟁률':7.2,  '실질경쟁률':4.8, '충원인원':12, '70%(환산점수)':191.82 },
-      { '학년도':2025, '모집전형':'학생부교과(학교장추천)', '캠퍼스':'서울캠퍼스', '모집단위':'중국어학부',        '모집인원':7,  '경쟁률':9.1,  '실질경쟁률':6.0, '충원인원':15, '70%(환산점수)':190.57 },
-      { '학년도':2025, '모집전형':'학생부교과(학교장추천)', '캠퍼스':'서울캠퍼스', '모집단위':'법학부',            '모집인원':8,  '경쟁률':10.5, '실질경쟁률':7.1, '충원인원':20, '70%(환산점수)':188.73 },
-      { '학년도':2025, '모집전형':'학생부교과(학교장추천)', '캠퍼스':'글로벌캠퍼스', '모집단위':'영어학과',        '모집인원':5,  '경쟁률':6.0,  '실질경쟁률':4.0, '충원인원':9,  '70%(환산점수)':182.40 },
-      { '학년도':2025, '모집전형':'학생부교과(학교장추천)', '캠퍼스':'글로벌캠퍼스', '모집단위':'경영학부',        '모집인원':10, '경쟁률':8.8,  '실질경쟁률':5.9, '충원인원':18, '70%(환산점수)':179.60 },
-      { '학년도':2025, '모집전형':'학생부교과(학교장추천)', '캠퍼스':'글로벌캠퍼스', '모집단위':'국제학부',        '모집인원':8,  '경쟁률':7.5,  '실질경쟁률':5.0, '충원인원':14, '70%(환산점수)':175.20 },
+      { '학년도': 2025, '모집전형': '학생부교과(학교장추천)', '캠퍼스': '서울캠퍼스', '모집단위': 'ELLT학과', '모집인원': 4, '경쟁률': 7.0, '실질경쟁률': 5.0, '충원인원': 6, '70%(환산점수)': 198.16 },
+      { '학년도': 2025, '모집전형': '학생부교과(학교장추천)', '캠퍼스': '서울캠퍼스', '모집단위': '영미문학·문화학과', '모집인원': 4, '경쟁률': 8.3, '실질경쟁률': 5.5, '충원인원': 17, '70%(환산점수)': 196.87 },
+      { '학년도': 2025, '모집전형': '학생부교과(학교장추천)', '캠퍼스': '서울캠퍼스', '모집단위': '프랑스어학부', '모집인원': 5, '경쟁률': 6.4, '실질경쟁률': 4.2, '충원인원': 10, '70%(환산점수)': 195.30 },
+      { '학년도': 2025, '모집전형': '학생부교과(학교장추천)', '캠퍼스': '서울캠퍼스', '모집단위': '독일어과', '모집인원': 4, '경쟁률': 5.8, '실질경쟁률': 3.9, '충원인원': 8, '70%(환산점수)': 193.41 },
+      { '학년도': 2025, '모집전형': '학생부교과(학교장추천)', '캠퍼스': '서울캠퍼스', '모집단위': '스페인어과', '모집인원': 6, '경쟁률': 7.2, '실질경쟁률': 4.8, '충원인원': 12, '70%(환산점수)': 191.82 },
+      { '학년도': 2025, '모집전형': '학생부교과(학교장추천)', '캠퍼스': '서울캠퍼스', '모집단위': '중국어학부', '모집인원': 7, '경쟁률': 9.1, '실질경쟁률': 6.0, '충원인원': 15, '70%(환산점수)': 190.57 },
+      { '학년도': 2025, '모집전형': '학생부교과(학교장추천)', '캠퍼스': '서울캠퍼스', '모집단위': '법학부', '모집인원': 8, '경쟁률': 10.5, '실질경쟁률': 7.1, '충원인원': 20, '70%(환산점수)': 188.73 },
+      { '학년도': 2025, '모집전형': '학생부교과(학교장추천)', '캠퍼스': '글로벌캠퍼스', '모집단위': '영어학과', '모집인원': 5, '경쟁률': 6.0, '실질경쟁률': 4.0, '충원인원': 9, '70%(환산점수)': 182.40 },
+      { '학년도': 2025, '모집전형': '학생부교과(학교장추천)', '캠퍼스': '글로벌캠퍼스', '모집단위': '경영학부', '모집인원': 10, '경쟁률': 8.8, '실질경쟁률': 5.9, '충원인원': 18, '70%(환산점수)': 179.60 },
+      { '학년도': 2025, '모집전형': '학생부교과(학교장추천)', '캠퍼스': '글로벌캠퍼스', '모집단위': '국제학부', '모집인원': 8, '경쟁률': 7.5, '실질경쟁률': 5.0, '충원인원': 14, '70%(환산점수)': 175.20 },
     ];
   }
 
   function getHufsJonghapSampleData() {
     return [
-      { '학년도':2025, '모집전형':'학생부종합(면접형)', '캠퍼스':'서울캠퍼스', '모집단위':'ELLT학과',          '모집인원':6,  '경쟁률':7.8,  '충원인원':0,  '70%(등급)':3.37 },
-      { '학년도':2025, '모집전형':'학생부종합(면접형)', '캠퍼스':'서울캠퍼스', '모집단위':'영미문학·문화학과',   '모집인원':6,  '경쟁률':13.2, '충원인원':7,  '70%(등급)':2.84 },
-      { '학년도':2025, '모집전형':'학생부종합(면접형)', '캠퍼스':'서울캠퍼스', '모집단위':'프랑스어학부',       '모집인원':7,  '경쟁률':9.3,  '충원인원':3,  '70%(등급)':3.12 },
-      { '학년도':2025, '모집전형':'학생부종합(면접형)', '캠퍼스':'서울캠퍼스', '모집단위':'독일어과',           '모집인원':5,  '경쟁률':8.1,  '충원인원':2,  '70%(등급)':3.45 },
-      { '학년도':2025, '모집전형':'학생부종합(면접형)', '캠퍼스':'서울캠퍼스', '모집단위':'법학부',             '모집인원':10, '경쟁률':12.4, '충원인원':5,  '70%(등급)':2.91 },
-      { '학년도':2025, '모집전형':'학생부종합(서류형)', '캠퍼스':'서울캠퍼스', '모집단위':'중국어학부',         '모집인원':8,  '경쟁률':11.7, '충원인원':4,  '70%(등급)':3.58 },
-      { '학년도':2025, '모집전형':'학생부종합(서류형)', '캠퍼스':'글로벌캠퍼스', '모집단위':'영어학과',         '모집인원':6,  '경쟁률':7.2,  '충원인원':2,  '70%(등급)':4.10 },
-      { '학년도':2025, '모집전형':'학생부종합(서류형)', '캠퍼스':'글로벌캠퍼스', '모집단위':'경영학부',         '모집인원':12, '경쟁률':10.5, '충원인원':6,  '70%(등급)':3.82 },
+      { '학년도': 2025, '모집전형': '학생부종합(면접형)', '캠퍼스': '서울캠퍼스', '모집단위': 'ELLT학과', '모집인원': 6, '경쟁률': 7.8, '충원인원': 0, '70%(등급)': 3.37 },
+      { '학년도': 2025, '모집전형': '학생부종합(면접형)', '캠퍼스': '서울캠퍼스', '모집단위': '영미문학·문화학과', '모집인원': 6, '경쟁률': 13.2, '충원인원': 7, '70%(등급)': 2.84 },
+      { '학년도': 2025, '모집전형': '학생부종합(면접형)', '캠퍼스': '서울캠퍼스', '모집단위': '프랑스어학부', '모집인원': 7, '경쟁률': 9.3, '충원인원': 3, '70%(등급)': 3.12 },
+      { '학년도': 2025, '모집전형': '학생부종합(면접형)', '캠퍼스': '서울캠퍼스', '모집단위': '독일어과', '모집인원': 5, '경쟁률': 8.1, '충원인원': 2, '70%(등급)': 3.45 },
+      { '학년도': 2025, '모집전형': '학생부종합(면접형)', '캠퍼스': '서울캠퍼스', '모집단위': '법학부', '모집인원': 10, '경쟁률': 12.4, '충원인원': 5, '70%(등급)': 2.91 },
+      { '학년도': 2025, '모집전형': '학생부종합(서류형)', '캠퍼스': '서울캠퍼스', '모집단위': '중국어학부', '모집인원': 8, '경쟁률': 11.7, '충원인원': 4, '70%(등급)': 3.58 },
+      { '학년도': 2025, '모집전형': '학생부종합(서류형)', '캠퍼스': '글로벌캠퍼스', '모집단위': '영어학과', '모집인원': 6, '경쟁률': 7.2, '충원인원': 2, '70%(등급)': 4.10 },
+      { '학년도': 2025, '모집전형': '학생부종합(서류형)', '캠퍼스': '글로벌캠퍼스', '모집단위': '경영학부', '모집인원': 12, '경쟁률': 10.5, '충원인원': 6, '70%(등급)': 3.82 },
     ];
   }
 
@@ -1321,8 +1336,8 @@
     const badge = document.getElementById('adist-badge');
     if (badge) badge.textContent = '한국외대 데이터를 불러오는 중...';
 
-    const gwagyoNumFields = ['모집인원','경쟁률','실질경쟁률','충원인원','70%(환산점수)'];
-    const jonghapNumFields = ['모집인원','경쟁률','충원인원','70%(등급)'];
+    const gwagyoNumFields = ['모집인원', '경쟁률', '실질경쟁률', '충원인원', '70%(환산점수)'];
+    const jonghapNumFields = ['모집인원', '경쟁률', '충원인원', '70%(등급)'];
 
     async function fetchSheet(sheetName, numFields) {
       const url = `https://docs.google.com/spreadsheets/d/${HUFS_SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`;
@@ -1367,19 +1382,19 @@
 
   function getHyuSampleData() {
     return [
-      { '학년도':2025, '모집전형':'학생부교과(추천형)', '모집단위':'컴퓨터소프트웨어학부', '계열':'자연', '모집인원':13, '경쟁률':14.38, '추가합격 인원':45, '평균등급':1.30, '50%cut':'-',   '70%cut':null,  '수능최저 충족률':'69.2' },
-      { '학년도':2025, '모집전형':'학생부교과(추천형)', '모집단위':'융합전자공학부',      '계열':'자연', '모집인원':13, '경쟁률':15.85, '추가합격 인원':53, '평균등급':1.46, '50%cut':'-',   '70%cut':null,  '수능최저 충족률':'67.3' },
-      { '학년도':2025, '모집전형':'학생부교과(추천형)', '모집단위':'자원환경공학과',     '계열':'자연', '모집인원':3,  '경쟁률':13.33, '추가합격 인원':2,  '평균등급':1.46, '50%cut':'-',   '70%cut':null,  '수능최저 충족률':'63.2' },
-      { '학년도':2025, '모집전형':'학생부교과(추천형)', '모집단위':'건축학부',           '계열':'자연', '모집인원':5,  '경쟁률':10.80, '추가합격 인원':8,  '평균등급':1.52, '50%cut':'-',   '70%cut':null,  '수능최저 충족률':'66' },
-      { '학년도':2025, '모집전형':'학생부교과(추천형)', '모집단위':'도시공학과',         '계열':'자연', '모집인원':5,  '경쟁률':16.00, '추가합격 인원':5,  '평균등급':1.57, '50%cut':'-',   '70%cut':null,  '수능최저 충족률':'43.8' },
-      { '학년도':2025, '모집전형':'학생부교과(추천형)', '모집단위':'전기공학전공',       '계열':'자연', '모집인원':5,  '경쟁률':13.00, '추가합격 인원':2,  '평균등급':1.59, '50%cut':'-',   '70%cut':null,  '수능최저 충족률':'48.4' },
-      { '학년도':2025, '모집전형':'학생부교과(추천형)', '모집단위':'건설환경공학과',     '계열':'자연', '모집인원':6,  '경쟁률':18.33, '추가합격 인원':5,  '평균등급':1.64, '50%cut':'-',   '70%cut':null,  '수능최저 충족률':'50' },
-      { '학년도':2025, '모집전형':'학생부교과(추천형)', '모집단위':'정보시스템학과',     '계열':'상경', '모집인원':5,  '경쟁률':18.60, '추가합격 인원':8,  '평균등급':1.69, '50%cut':'-',   '70%cut':null,  '수능최저 충족률':'60.9' },
-      { '학년도':2025, '모집전형':'학생부교과(추천형)', '모집단위':'건축공학부',         '계열':'자연', '모집인원':5,  '경쟁률':10.60, '추가합격 인원':4,  '평균등급':1.71, '50%cut':'-',   '70%cut':null,  '수능최저 충족률':'35.8' },
-      { '학년도':2024, '모집전형':'학생부교과(추천형)', '모집단위':'컴퓨터소프트웨어학부', '계열':'자연', '모집인원':13, '경쟁률':13.92, '추가합격 인원':38, '평균등급':1.35, '50%cut':'1.28','70%cut':1.38, '수능최저 충족률':'65.4' },
-      { '학년도':2024, '모집전형':'학생부교과(추천형)', '모집단위':'융합전자공학부',      '계열':'자연', '모집인원':13, '경쟁률':14.62, '추가합격 인원':48, '평균등급':1.50, '50%cut':'1.42','70%cut':1.54, '수능최저 충족률':'62.1' },
-      { '학년도':2024, '모집전형':'학생부교과(추천형)', '모집단위':'건축학부',           '계열':'자연', '모집인원':5,  '경쟁률':9.80,  '추가합격 인원':7,  '평균등급':1.58, '50%cut':'1.51','70%cut':1.62, '수능최저 충족률':'61.0' },
-      { '학년도':2024, '모집전형':'학생부교과(추천형)', '모집단위':'건설환경공학과',     '계열':'자연', '모집인원':6,  '경쟁률':16.50, '추가합격 인원':4,  '평균등급':1.68, '50%cut':'1.60','70%cut':1.72, '수능최저 충족률':'47.3' },
+      { '학년도': 2025, '모집전형': '학생부교과(추천형)', '모집단위': '컴퓨터소프트웨어학부', '계열': '자연', '모집인원': 13, '경쟁률': 14.38, '추가합격 인원': 45, '평균등급': 1.30, '50%cut': '-', '70%cut': null, '수능최저 충족률': '69.2' },
+      { '학년도': 2025, '모집전형': '학생부교과(추천형)', '모집단위': '융합전자공학부', '계열': '자연', '모집인원': 13, '경쟁률': 15.85, '추가합격 인원': 53, '평균등급': 1.46, '50%cut': '-', '70%cut': null, '수능최저 충족률': '67.3' },
+      { '학년도': 2025, '모집전형': '학생부교과(추천형)', '모집단위': '자원환경공학과', '계열': '자연', '모집인원': 3, '경쟁률': 13.33, '추가합격 인원': 2, '평균등급': 1.46, '50%cut': '-', '70%cut': null, '수능최저 충족률': '63.2' },
+      { '학년도': 2025, '모집전형': '학생부교과(추천형)', '모집단위': '건축학부', '계열': '자연', '모집인원': 5, '경쟁률': 10.80, '추가합격 인원': 8, '평균등급': 1.52, '50%cut': '-', '70%cut': null, '수능최저 충족률': '66' },
+      { '학년도': 2025, '모집전형': '학생부교과(추천형)', '모집단위': '도시공학과', '계열': '자연', '모집인원': 5, '경쟁률': 16.00, '추가합격 인원': 5, '평균등급': 1.57, '50%cut': '-', '70%cut': null, '수능최저 충족률': '43.8' },
+      { '학년도': 2025, '모집전형': '학생부교과(추천형)', '모집단위': '전기공학전공', '계열': '자연', '모집인원': 5, '경쟁률': 13.00, '추가합격 인원': 2, '평균등급': 1.59, '50%cut': '-', '70%cut': null, '수능최저 충족률': '48.4' },
+      { '학년도': 2025, '모집전형': '학생부교과(추천형)', '모집단위': '건설환경공학과', '계열': '자연', '모집인원': 6, '경쟁률': 18.33, '추가합격 인원': 5, '평균등급': 1.64, '50%cut': '-', '70%cut': null, '수능최저 충족률': '50' },
+      { '학년도': 2025, '모집전형': '학생부교과(추천형)', '모집단위': '정보시스템학과', '계열': '상경', '모집인원': 5, '경쟁률': 18.60, '추가합격 인원': 8, '평균등급': 1.69, '50%cut': '-', '70%cut': null, '수능최저 충족률': '60.9' },
+      { '학년도': 2025, '모집전형': '학생부교과(추천형)', '모집단위': '건축공학부', '계열': '자연', '모집인원': 5, '경쟁률': 10.60, '추가합격 인원': 4, '평균등급': 1.71, '50%cut': '-', '70%cut': null, '수능최저 충족률': '35.8' },
+      { '학년도': 2024, '모집전형': '학생부교과(추천형)', '모집단위': '컴퓨터소프트웨어학부', '계열': '자연', '모집인원': 13, '경쟁률': 13.92, '추가합격 인원': 38, '평균등급': 1.35, '50%cut': '1.28', '70%cut': 1.38, '수능최저 충족률': '65.4' },
+      { '학년도': 2024, '모집전형': '학생부교과(추천형)', '모집단위': '융합전자공학부', '계열': '자연', '모집인원': 13, '경쟁률': 14.62, '추가합격 인원': 48, '평균등급': 1.50, '50%cut': '1.42', '70%cut': 1.54, '수능최저 충족률': '62.1' },
+      { '학년도': 2024, '모집전형': '학생부교과(추천형)', '모집단위': '건축학부', '계열': '자연', '모집인원': 5, '경쟁률': 9.80, '추가합격 인원': 7, '평균등급': 1.58, '50%cut': '1.51', '70%cut': 1.62, '수능최저 충족률': '61.0' },
+      { '학년도': 2024, '모집전형': '학생부교과(추천형)', '모집단위': '건설환경공학과', '계열': '자연', '모집인원': 6, '경쟁률': 16.50, '추가합격 인원': 4, '평균등급': 1.68, '50%cut': '1.60', '70%cut': 1.72, '수능최저 충족률': '47.3' },
     ];
   }
 
@@ -1420,18 +1435,59 @@
     }
   }
 
+  async function fetchHiuDataFromGviz() {
+    const badge = document.getElementById('adist-badge');
+    if (badge) badge.textContent = '홍익대 데이터를 불러오는 중...';
+    const numFields = ['학년도', '모집인원', '지원자수', '경쟁률', '추가합격률', '평균(등급)', '70%(등급)'];
+    try {
+      const url = `https://docs.google.com/spreadsheets/d/${HIU_SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent('홍익대 입시 결과(24~25)')}`;
+      const res = await fetch(url);
+      const text = await res.text();
+      const match = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\);/);
+      if (!match) throw new Error('No match');
+      const json = JSON.parse(match[1]);
+      const table = json.table;
+      if (!table || !table.rows || table.rows.length === 0) throw new Error('Empty');
+      const headers = table.cols.map(c => (c.label || '').trim());
+      HIU_DATA = table.rows
+        .map(r => {
+          const obj = {};
+          headers.forEach((h, i) => {
+            if (!h) return;
+            const raw = r.c[i] ? r.c[i].v : null;
+            if (numFields.includes(h)) {
+              obj[h] = (raw !== null && raw !== '' && raw !== '-') ? parseFloat(raw) : null;
+            } else {
+              obj[h] = raw !== null ? String(raw) : '';
+            }
+          });
+          // 캠퍼스 정보를 모집전형 앞에 붙여 필터링에 활용
+          if (obj['캠퍼스']) {
+            obj['모집전형'] = `[${obj['캠퍼스']}] ${obj['모집전형'] || ''}`;
+          }
+          return obj;
+        })
+        .filter(d => d['모집단위'] && d['학년도']);
+      adIsSampleData['홍익대'] = false;
+    } catch (e) {
+      console.error('HIU Data Fetch Error:', e);
+      HIU_DATA = [];
+      adIsSampleData['홍익대'] = true;
+    }
+  }
+
   function getCbnuSampleData() {
     return [
-      { '모집전형':'충북대 교과전형', '모집단위':'의예과',         '모집인원':8,  '지원인원':184,  '경쟁률':23.0, '최저충족률(%)':62, '실질경쟁률':8.8,  '충원합격인원':1, '충원율(%)':12, '1단계 최고 등급':null, '1단계 평균 등급':null, '1단계 최저 등급':null, '평균(등급)':1.45, '70%(등급)':1.55, '최저(등급)':1.70, '표준편차(등급)':0.14, '평균(환산점수)':null, '70%(환산점수)':null, '표준편차(환산점수)':null, '최초서류평균':null, '최초서류편차':null, '서류평균':null, '서류편차':null },
-      { '모집전형':'충북대 교과전형', '모집단위':'약학과',          '모집인원':12, '지원인원':252,  '경쟁률':21.0, '최저충족률(%)':58, '실질경쟁률':7.5,  '충원합격인원':2, '충원율(%)':17, '1단계 최고 등급':null, '1단계 평균 등급':null, '1단계 최저 등급':null, '평균(등급)':1.72, '70%(등급)':1.85, '최저(등급)':2.00, '표준편차(등급)':0.18, '평균(환산점수)':null, '70%(환산점수)':null, '표준편차(환산점수)':null, '최초서류평균':null, '최초서류편차':null, '서류평균':null, '서류편차':null },
-      { '모집전형':'충북대 교과전형', '모집단위':'국어국문학과',    '모집인원':9,  '지원인원':120,  '경쟁률':13.3, '최저충족률(%)':50, '실질경쟁률':4.9,  '충원합격인원':3, '충원율(%)':33, '1단계 최고 등급':null, '1단계 평균 등급':null, '1단계 최저 등급':null, '평균(등급)':2.86, '70%(등급)':2.95, '최저(등급)':3.10, '표준편차(등급)':0.15, '평균(환산점수)':null, '70%(환산점수)':null, '표준편차(환산점수)':null, '최초서류평균':null, '최초서류편차':null, '서류평균':null, '서류편차':null },
-      { '모집전형':'충북대 교과전형', '모집단위':'영어영문학과',     '모집인원':17, '지원인원':250,  '경쟁률':14.7, '최저충족률(%)':44, '실질경쟁률':6.4,  '충원합격인원':4, '충원율(%)':24, '1단계 최고 등급':null, '1단계 평균 등급':null, '1단계 최저 등급':null, '평균(등급)':2.88, '70%(등급)':3.01, '최저(등급)':3.13, '표준편차(등급)':0.21, '평균(환산점수)':null, '70%(환산점수)':null, '표준편차(환산점수)':null, '최초서류평균':null, '최초서류편차':null, '서류평균':null, '서류편차':null },
-      { '모집전형':'충북대 교과전형', '모집단위':'기계공학부',       '모집인원':25, '지원인원':350,  '경쟁률':14.0, '최저충족률(%)':40, '실질경쟁률':5.6,  '충원합격인원':5, '충원율(%)':20, '1단계 최고 등급':null, '1단계 평균 등급':null, '1단계 최저 등급':null, '평균(등급)':3.12, '70%(등급)':3.29, '최저(등급)':3.46, '표준편차(등급)':0.27, '평균(환산점수)':null, '70%(환산점수)':null, '표준편차(환산점수)':null, '최초서류평균':null, '최초서류편차':null, '서류평균':null, '서류편차':null },
-      { '모집전형':'충북대 종합전형1', '모집단위':'의예과',          '모집인원':5,  '지원인원':95,   '경쟁률':19.0, '최저충족률(%)':null, '실질경쟁률':null, '충원합격인원':1, '충원율(%)':20, '1단계 최고 등급':null, '1단계 평균 등급':null, '1단계 최저 등급':null, '평균(등급)':1.51, '70%(등급)':1.62, '최저(등급)':1.75, '표준편차(등급)':0.12, '평균(환산점수)':null, '70%(환산점수)':null, '표준편차(환산점수)':null, '최초서류평균':86.2, '최초서류편차':2.1, '서류평균':84.5, '서류편차':1.8 },
-      { '모집전형':'충북대 종합전형1', '모집단위':'건축학과',        '모집인원':2,  '지원인원':35,   '경쟁률':17.5, '최저충족률(%)':null, '실질경쟁률':null, '충원합격인원':1, '충원율(%)':50, '1단계 최고 등급':null, '1단계 평균 등급':null, '1단계 최저 등급':null, '평균(등급)':3.13, '70%(등급)':3.15, '최저(등급)':3.19, '표준편차(등급)':0.06, '평균(환산점수)':null, '70%(환산점수)':null, '표준편차(환산점수)':null, '최초서류평균':85.2, '최초서류편차':2.1, '서류평균':82.5, '서류편차':1.8 },
-      { '모집전형':'충북대 종합전형1', '모집단위':'환경공학과',      '모집인원':4,  '지원인원':57,   '경쟁률':14.3, '최저충족률(%)':null, '실질경쟁률':null, '충원합격인원':2, '충원율(%)':50, '1단계 최고 등급':null, '1단계 평균 등급':null, '1단계 최저 등급':null, '평균(등급)':2.73, '70%(등급)':2.87, '최저(등급)':2.91, '표준편차(등급)':0.16, '평균(환산점수)':null, '70%(환산점수)':null, '표준편차(환산점수)':null, '최초서류평균':81.4, '최초서류편차':1.5, '서류평균':80.1, '서류편차':2.0 },
-      { '모집전형':'충북대 종합전형2', '모집단위':'기계공학부',      '모집인원':10, '지원인원':178,  '경쟁률':17.8, '최저충족률(%)':null, '실질경쟁률':null, '충원합격인원':3, '충원율(%)':30, '1단계 최고 등급':null, '1단계 평균 등급':null, '1단계 최저 등급':null, '평균(등급)':3.12, '70%(등급)':3.29, '최저(등급)':3.46, '표준편차(등급)':0.27, '평균(환산점수)':null, '70%(환산점수)':null, '표준편차(환산점수)':null, '최초서류평균':83.6, '최초서류편차':1.9, '서류평균':81.2, '서류편차':1.7 },
-      { '모집전형':'충북대 종합전형2', '모집단위':'전자공학부',      '모집인원':8,  '지원인원':136,  '경쟁률':17.0, '최저충족률(%)':null, '실질경쟁률':null, '충원합격인원':2, '충원율(%)':25, '1단계 최고 등급':null, '1단계 평균 등급':null, '1단계 최저 등급':null, '평균(등급)':3.25, '70%(등급)':3.40, '최저(등급)':3.58, '표준편차(등급)':0.22, '평균(환산점수)':null, '70%(환산점수)':null, '표준편차(환산점수)':null, '최초서류평균':82.1, '최초서류편차':1.8, '서류평균':80.5, '서류편차':1.5 },
+      { '모집전형': '충북대 교과전형', '모집단위': '의예과', '모집인원': 8, '지원인원': 184, '경쟁률': 23.0, '최저충족률(%)': 62, '실질경쟁률': 8.8, '충원합격인원': 1, '충원율(%)': 12, '1단계 최고 등급': null, '1단계 평균 등급': null, '1단계 최저 등급': null, '평균(등급)': 1.45, '70%(등급)': 1.55, '최저(등급)': 1.70, '표준편차(등급)': 0.14, '평균(환산점수)': null, '70%(환산점수)': null, '표준편차(환산점수)': null, '최초서류평균': null, '최초서류편차': null, '서류평균': null, '서류편차': null },
+      { '모집전형': '충북대 교과전형', '모집단위': '약학과', '모집인원': 12, '지원인원': 252, '경쟁률': 21.0, '최저충족률(%)': 58, '실질경쟁률': 7.5, '충원합격인원': 2, '충원율(%)': 17, '1단계 최고 등급': null, '1단계 평균 등급': null, '1단계 최저 등급': null, '평균(등급)': 1.72, '70%(등급)': 1.85, '최저(등급)': 2.00, '표준편차(등급)': 0.18, '평균(환산점수)': null, '70%(환산점수)': null, '표준편차(환산점수)': null, '최초서류평균': null, '최초서류편차': null, '서류평균': null, '서류편차': null },
+      { '모집전형': '충북대 교과전형', '모집단위': '국어국문학과', '모집인원': 9, '지원인원': 120, '경쟁률': 13.3, '최저충족률(%)': 50, '실질경쟁률': 4.9, '충원합격인원': 3, '충원율(%)': 33, '1단계 최고 등급': null, '1단계 평균 등급': null, '1단계 최저 등급': null, '평균(등급)': 2.86, '70%(등급)': 2.95, '최저(등급)': 3.10, '표준편차(등급)': 0.15, '평균(환산점수)': null, '70%(환산점수)': null, '표준편차(환산점수)': null, '최초서류평균': null, '최초서류편차': null, '서류평균': null, '서류편차': null },
+      { '모집전형': '충북대 교과전형', '모집단위': '영어영문학과', '모집인원': 17, '지원인원': 250, '경쟁률': 14.7, '최저충족률(%)': 44, '실질경쟁률': 6.4, '충원합격인원': 4, '충원율(%)': 24, '1단계 최고 등급': null, '1단계 평균 등급': null, '1단계 최저 등급': null, '평균(등급)': 2.88, '70%(등급)': 3.01, '최저(등급)': 3.13, '표준편차(등급)': 0.21, '평균(환산점수)': null, '70%(환산점수)': null, '표준편차(환산점수)': null, '최초서류평균': null, '최초서류편차': null, '서류평균': null, '서류편차': null },
+      { '모집전형': '충북대 교과전형', '모집단위': '기계공학부', '모집인원': 25, '지원인원': 350, '경쟁률': 14.0, '최저충족률(%)': 40, '실질경쟁률': 5.6, '충원합격인원': 5, '충원율(%)': 20, '1단계 최고 등급': null, '1단계 평균 등급': null, '1단계 최저 등급': null, '평균(등급)': 3.12, '70%(등급)': 3.29, '최저(등급)': 3.46, '표준편차(등급)': 0.27, '평균(환산점수)': null, '70%(환산점수)': null, '표준편차(환산점수)': null, '최초서류평균': null, '최초서류편차': null, '서류평균': null, '서류편차': null },
+      { '모집전형': '충북대 종합전형1', '모집단위': '의예과', '모집인원': 5, '지원인원': 95, '경쟁률': 19.0, '최저충족률(%)': null, '실질경쟁률': null, '충원합격인원': 1, '충원율(%)': 20, '1단계 최고 등급': null, '1단계 평균 등급': null, '1단계 최저 등급': null, '평균(등급)': 1.51, '70%(등급)': 1.62, '최저(등급)': 1.75, '표준편차(등급)': 0.12, '평균(환산점수)': null, '70%(환산점수)': null, '표준편차(환산점수)': null, '최초서류평균': 86.2, '최초서류편차': 2.1, '서류평균': 84.5, '서류편차': 1.8 },
+      { '모집전형': '충북대 종합전형1', '모집단위': '건축학과', '모집인원': 2, '지원인원': 35, '경쟁률': 17.5, '최저충족률(%)': null, '실질경쟁률': null, '충원합격인원': 1, '충원율(%)': 50, '1단계 최고 등급': null, '1단계 평균 등급': null, '1단계 최저 등급': null, '평균(등급)': 3.13, '70%(등급)': 3.15, '최저(등급)': 3.19, '표준편차(등급)': 0.06, '평균(환산점수)': null, '70%(환산점수)': null, '표준편차(환산점수)': null, '최초서류평균': 85.2, '최초서류편차': 2.1, '서류평균': 82.5, '서류편차': 1.8 },
+      { '모집전형': '충북대 종합전형1', '모집단위': '환경공학과', '모집인원': 4, '지원인원': 57, '경쟁률': 14.3, '최저충족률(%)': null, '실질경쟁률': null, '충원합격인원': 2, '충원율(%)': 50, '1단계 최고 등급': null, '1단계 평균 등급': null, '1단계 최저 등급': null, '평균(등급)': 2.73, '70%(등급)': 2.87, '최저(등급)': 2.91, '표준편차(등급)': 0.16, '평균(환산점수)': null, '70%(환산점수)': null, '표준편차(환산점수)': null, '최초서류평균': 81.4, '최초서류편차': 1.5, '서류평균': 80.1, '서류편차': 2.0 },
+      { '모집전형': '충북대 종합전형2', '모집단위': '기계공학부', '모집인원': 10, '지원인원': 178, '경쟁률': 17.8, '최저충족률(%)': null, '실질경쟁률': null, '충원합격인원': 3, '충원율(%)': 30, '1단계 최고 등급': null, '1단계 평균 등급': null, '1단계 최저 등급': null, '평균(등급)': 3.12, '70%(등급)': 3.29, '최저(등급)': 3.46, '표준편차(등급)': 0.27, '평균(환산점수)': null, '70%(환산점수)': null, '표준편차(환산점수)': null, '최초서류평균': 83.6, '최초서류편차': 1.9, '서류평균': 81.2, '서류편차': 1.7 },
+      { '모집전형': '충북대 종합전형2', '모집단위': '전자공학부', '모집인원': 8, '지원인원': 136, '경쟁률': 17.0, '최저충족률(%)': null, '실질경쟁률': null, '충원합격인원': 2, '충원율(%)': 25, '1단계 최고 등급': null, '1단계 평균 등급': null, '1단계 최저 등급': null, '평균(등급)': 3.25, '70%(등급)': 3.40, '최저(등급)': 3.58, '표준편차(등급)': 0.22, '평균(환산점수)': null, '70%(환산점수)': null, '표준편차(환산점수)': null, '최초서류평균': 82.1, '최초서류편차': 1.8, '서류평균': 80.5, '서류편차': 1.5 },
     ];
   }
 
@@ -1440,16 +1496,16 @@
     if (badge) badge.textContent = '충북대학교 데이터를 불러오는 중...';
 
     const sheetNames = ['충북대 교과전형', '충북대 종합전형1', '충북대 종합전형2'];
-    const numFields = ['모집인원','지원인원','경쟁률','최저충족률(%)','실질경쟁률',
-      '충원합격인원','충원율(%)','1단계 최고 등급','1단계 평균 등급','1단계 최저 등급',
-      '평균(등급)','70%(등급)','최저(등급)','표준편차(등급)',
-      '평균(환산점수)','70%(환산점수)','표준편차(환산점수)',
-      '최초서류평균','최초서류편차','서류평균','서류편차'];
+    const numFields = ['모집인원', '지원인원', '경쟁률', '최저충족률(%)', '실질경쟁률',
+      '충원합격인원', '충원율(%)', '1단계 최고 등급', '1단계 평균 등급', '1단계 최저 등급',
+      '평균(등급)', '70%(등급)', '최저(등급)', '표준편차(등급)',
+      '평균(환산점수)', '70%(환산점수)', '표준편차(환산점수)',
+      '최초서류평균', '최초서류편차', '서류평균', '서류편차'];
     const headerAlias = {
       '최종평균(등급)': '평균(등급)',
       '최종편차(등급)': '표준편차(등급)',
-      '편차(등급)':     '표준편차(등급)',
-      '70%cut':         '70%(등급)',
+      '편차(등급)': '표준편차(등급)',
+      '70%cut': '70%(등급)',
     };
 
     try {
@@ -1509,10 +1565,10 @@
       const headers = table.cols.map(c => (c.label || '').trim());
 
       // 행 → 객체 변환
-      const numFields = ['모집인원','지원인원','경쟁률','최저충족률(%)','실질경쟁률',
-        '충원합격인원','충원율(%)','1단계 최고 등급','1단계 평균 등급','1단계 최저 등급',
-        '평균(등급)','70%(등급)','최저(등급)','표준편차(등급)',
-        '평균(환산점수)','70%(환산점수)','표준편차(환산점수)'];
+      const numFields = ['모집인원', '지원인원', '경쟁률', '최저충족률(%)', '실질경쟁률',
+        '충원합격인원', '충원율(%)', '1단계 최고 등급', '1단계 평균 등급', '1단계 최저 등급',
+        '평균(등급)', '70%(등급)', '최저(등급)', '표준편차(등급)',
+        '평균(환산점수)', '70%(환산점수)', '표준편차(환산점수)'];
 
       CNU_DATA = table.rows
         .map(r => {
@@ -1542,11 +1598,11 @@
     if (!adInitialized) {
       adInitialized = true;
       renderShell(root);
-      
+
       // 실제 GAS 데이터 병렬 호출
       const badge = document.getElementById('adist-badge');
       if (badge) badge.textContent = '입시결과 데이터를 불러오는 중...';
-      
+
       await Promise.all([
         fetchKuDataFromGas(),
         fetchKhuJonghapDataFromGas(),
@@ -1565,11 +1621,12 @@
         fetchCnuDataFromGviz(),
         fetchCbnuDataFromGviz(),
         fetchHufsDataFromGviz(),
-        fetchHyuDataFromGviz()
+        fetchHyuDataFromGviz(),
+        fetchHiuDataFromGviz()
       ]);
-      
+
       if (badge) badge.textContent = '';
-      
+
       loadData('건국대');
     } else {
       setTimeout(() => window.dispatchEvent(new Event('resize')), 120);
@@ -1623,6 +1680,7 @@
               <option value="충북대">충북대학교</option>
               <option value="한국외대">한국외국어대학교</option>
               <option value="한양대">한양대학교</option>
+              <option value="홍익대">홍익대학교</option>
             </select>
           </div>
 
@@ -1724,12 +1782,12 @@
 
     // 학년도 드롭다운 먼저 채우기 (rawData 술독 전)
     const yearWrap = document.getElementById('adist-year-wrap');
-    const yearSel  = document.getElementById('adist-year-sel');
+    const yearSel = document.getElementById('adist-year-sel');
     if (meta.hasYear) {
       yearWrap.style.display = 'flex';
       const allData = meta.data();
       const years = [...new Set(allData.map(d => d['학년도'] || d.year))]
-        .filter(Boolean).sort((a,b)=>b-a);
+        .filter(Boolean).sort((a, b) => b - a);
       yearSel.innerHTML = years.map(y => `<option value="${y}">${y}학년도</option>`).join('');
       adCurrentYear = years[0] ?? '';
     } else {
@@ -1784,6 +1842,8 @@
         isSample = adIsSampleData['충남대'];
       } else if (uniName === '충북대') {
         isSample = adIsSampleData['충북대'];
+      } else if (uniName === '홍익대') {
+        isSample = adIsSampleData['홍익대'];
       } else {
         isSample = adIsSampleData[`${uniName}_${adCurrentType}`];
         if (isSample === undefined) isSample = true;
@@ -1796,7 +1856,7 @@
   }
 
   // 학년도 변경 핸들러 (군산대는 전형도 함께 갱신)
-  window.adOnYearChange = function() {
+  window.adOnYearChange = function () {
     const yearSel = document.getElementById('adist-year-sel');
     adCurrentYear = parseInt(yearSel.value);
 
@@ -1817,7 +1877,7 @@
 
   function loadTypeData() {
     const meta = UNI_META[adCurrentUni];
-    if (adCurrentUni === '건국대' || adCurrentUni === '군산대' || adCurrentUni === '동국대') {
+    if (adCurrentUni === '건국대' || adCurrentUni === '군산대' || adCurrentUni === '동국대' || adCurrentUni === '홍익대') {
       adRawData = meta.data();
     } else {
       adRawData = meta.data(adCurrentType);
@@ -1844,6 +1904,8 @@
         pool = adRawData.filter(d => d['학년도'] == adCurrentYear);
       } else if (adCurrentUni === '한양대') {
         pool = adRawData.filter(d => d['학년도'] == adCurrentYear && d['모집전형'] == adCurrentType);
+      } else if (adCurrentUni === '홍익대') {
+        pool = adRawData.filter(d => d['학년도'] == adCurrentYear && d['모집전형'] == adCurrentType);
       }
     }
 
@@ -1860,12 +1922,12 @@
   // ════════════════════════════════════════════════════════════════════════════
   // ██  대학/전형 변경 핸들러
   // ════════════════════════════════════════════════════════════════════════════
-  window.adOnUniChange = function() {
+  window.adOnUniChange = function () {
     const sel = document.getElementById('adist-uni-sel');
     loadData(sel.value);
   };
 
-  window.adOnTypeChange = function() {
+  window.adOnTypeChange = function () {
     const sel = document.getElementById('adist-type-sel');
     adCurrentType = sel.value;
     loadTypeData();
@@ -1876,16 +1938,16 @@
   // ════════════════════════════════════════════════════════════════════════════
   // ██  메인 차트 업데이트
   // ════════════════════════════════════════════════════════════════════════════
-  window.adUpdateMain = function() {
-    const meta     = UNI_META[adCurrentUni];
-    const colors   = meta.colors;
-    const yMaxSel  = document.getElementById('adist-ymax-sel');
-    const yearSel  = document.getElementById('adist-year-sel');
-    const empty    = document.getElementById('adist-empty');
-    const panel    = document.getElementById('adist-chart-panel');
-    const legend   = document.getElementById('adist-legend');
-    const badge    = document.getElementById('adist-badge');
-    const yMaxRaw  = yMaxSel?.value || 'auto';
+  window.adUpdateMain = function () {
+    const meta = UNI_META[adCurrentUni];
+    const colors = meta.colors;
+    const yMaxSel = document.getElementById('adist-ymax-sel');
+    const yearSel = document.getElementById('adist-year-sel');
+    const empty = document.getElementById('adist-empty');
+    const panel = document.getElementById('adist-chart-panel');
+    const legend = document.getElementById('adist-legend');
+    const badge = document.getElementById('adist-badge');
+    const yMaxRaw = yMaxSel?.value || 'auto';
 
     // 데이터 필터링 (상태 변수 adCurrentYear/adCurrentType 직접 사용)
     const meta2 = UNI_META[adCurrentUni];
@@ -1897,43 +1959,47 @@
       if (adCurrentUni === '건국대') {
         data = adRawData
           .filter(d => d['학년도'] == year && d['모집전형'] == type)
-          .sort((a,b) => (parseFloat(a['50%cut(등급)'])||999)-(parseFloat(b['50%cut(등급)'])||999));
+          .sort((a, b) => (parseFloat(a['50%cut(등급)']) || 999) - (parseFloat(b['50%cut(등급)']) || 999));
       } else if (adCurrentUni === '군산대') {
         data = adRawData
           .filter(d => d.year == year && d.type == type)
-          .sort((a,b) => (parseFloat(a.avgGrade)||999)-(parseFloat(b.avgGrade)||999));
+          .sort((a, b) => (parseFloat(a.avgGrade) || 999) - (parseFloat(b.avgGrade) || 999));
       } else if (adCurrentUni === '동국대') {
         data = adRawData
           .filter(d => d['학년도'] == year && d['모집전형'] == type)
-          .sort((a,b) => (parseFloat(a['평균(등급)'])||999)-(parseFloat(b['평균(등급)'])||999));
+          .sort((a, b) => (parseFloat(a['평균(등급)']) || 999) - (parseFloat(b['평균(등급)']) || 999));
       } else if (adCurrentUni === '한국외대') {
         if (adCurrentType === '교과전형') {
           data = adRawData
             .filter(d => d['학년도'] == year)
-            .sort((a,b) => (parseFloat(b['70%(환산점수)'])||0)-(parseFloat(a['70%(환산점수)'])||0));
+            .sort((a, b) => (parseFloat(b['70%(환산점수)']) || 0) - (parseFloat(a['70%(환산점수)']) || 0));
         } else {
           data = adRawData
             .filter(d => d['학년도'] == year)
-            .sort((a,b) => (parseFloat(a['70%(등급)'])||999)-(parseFloat(b['70%(등급)'])||999));
+            .sort((a, b) => (parseFloat(a['70%(등급)']) || 999) - (parseFloat(b['70%(등급)']) || 999));
         }
       } else if (adCurrentUni === '한양대') {
         data = adRawData
           .filter(d => d['학년도'] == year && d['모집전형'] == type)
-          .sort((a,b) => (parseFloat(a['평균등급'])||999)-(parseFloat(b['평균등급'])||999));
+          .sort((a, b) => (parseFloat(a['평균등급']) || 999) - (parseFloat(b['평균등급']) || 999));
+      } else if (adCurrentUni === '홍익대') {
+        data = adRawData
+          .filter(d => d['학년도'] == year && d['모집전형'] == type)
+          .sort((a, b) => (parseFloat(a['평균(등급)']) || 999) - (parseFloat(b['평균(등급)']) || 999));
       }
     } else {
       if (adCurrentUni === '서강대' || adCurrentUni === '성균관대' || adCurrentUni === '원광대' || adCurrentUni === '전남대') {
-        data = [...adRawData].sort((a,b) => (parseFloat(a['50%cut'])||999)-(parseFloat(b['50%cut'])||999));
+        data = [...adRawData].sort((a, b) => (parseFloat(a['50%cut']) || 999) - (parseFloat(b['50%cut']) || 999));
       } else if (adCurrentUni === '전주대') {
-        data = [...adRawData].sort((a,b) => (parseFloat(a['평균'])||999)-(parseFloat(b['평균'])||999));
+        data = [...adRawData].sort((a, b) => (parseFloat(a['평균']) || 999) - (parseFloat(b['평균']) || 999));
       } else if (adCurrentUni === '중앙대') {
-        data = [...adRawData].sort((a,b) => (parseFloat(a['50%cut'])||999)-(parseFloat(b['50%cut'])||999));
+        data = [...adRawData].sort((a, b) => (parseFloat(a['50%cut']) || 999) - (parseFloat(b['50%cut']) || 999));
       } else if (adCurrentUni === '서울시립대') {
-        data = [...adRawData].sort((a,b) => (parseFloat(a.grade)||999)-(parseFloat(b.grade)||999));
+        data = [...adRawData].sort((a, b) => (parseFloat(a.grade) || 999) - (parseFloat(b.grade) || 999));
       } else if (adCurrentUni === '우석대') {
-        data = [...adRawData].sort((a,b) => (parseFloat(a['평균'])||999)-(parseFloat(b['평균'])||999));
+        data = [...adRawData].sort((a, b) => (parseFloat(a['평균']) || 999) - (parseFloat(b['평균']) || 999));
       } else if (adCurrentUni === '충남대' || adCurrentUni === '충북대') {
-        data = [...adRawData].sort((a,b) => (parseFloat(a['평균(등급)'])||999)-(parseFloat(b['평균(등급)'])||999));
+        data = [...adRawData].sort((a, b) => (parseFloat(a['평균(등급)']) || 999) - (parseFloat(b['평균(등급)']) || 999));
       } else {
         data = [...adRawData];
       }
@@ -1958,7 +2024,7 @@
     adCurrentYMin = yMin;
 
     if (!data.length) {
-      empty.style.display  = 'block'; panel.style.display = 'none'; return;
+      empty.style.display = 'block'; panel.style.display = 'none'; return;
     }
     empty.style.display = 'none'; panel.style.display = 'block';
 
@@ -2017,6 +2083,8 @@
       }
     } else if (adCurrentUni === '한양대') {
       adMainChart = buildHyuChart(ctx, data, colors, yMax);
+    } else if (adCurrentUni === '홍익대') {
+      adMainChart = buildHiuChart(ctx, data, colors, yMax);
     } else if (adCurrentType === '학생부교과') {
       adMainChart = buildKhuGwagyoChart(ctx, data, colors, yMax);
     } else {
@@ -2111,6 +2179,16 @@
           <svg width="14" height="14"><line x1="1" y1="7" x2="13" y2="7" stroke="${colors.accent}" stroke-width="2.5"/></svg>
           <span>클릭 시 상세 정보</span>
         </div>`;
+    } else if (adCurrentUni === '홍익대') {
+      html = `
+        <div style="display:flex;align-items:center;gap:.4rem;">
+          <div style="width:14px;height:14px;border-radius:4px;background:${colors.barLight}; border:1px solid ${colors.barDark};"></div>
+          <span>평균 ~ 70% 등급 구간</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:.4rem;">
+          <svg width="14" height="14"><line x1="1" y1="7" x2="13" y2="7" stroke="${colors.accent}" stroke-width="2.5"/></svg>
+          <span>클릭 시 상세 정보</span>
+        </div>`;
     } else if (adCurrentUni === '광운대') {
       html = `
         <div style="display:flex;align-items:center;gap:.4rem;">
@@ -2195,11 +2273,11 @@
 
   // ── 건국대: 50%~70%cut floating bar ──────────────────────────────────────
   function buildKuChart(ctx, data, colors, yMax) {
-    const labels     = data.map(d => d['모집단위']);
+    const labels = data.map(d => d['모집단위']);
     const dataPoints = data.map(d => {
       const c50 = parseFloat(d['50%cut(등급)']);
       const c70 = parseFloat(d['70%cut(등급)']);
-      return (isNaN(c50)||isNaN(c70)) ? null : [c50, c70];
+      return (isNaN(c50) || isNaN(c70)) ? null : [c50, c70];
     });
 
     return new Chart(ctx, {
@@ -2213,11 +2291,11 @@
             const { ctx: c, chartArea } = context.chart;
             if (!chartArea) return colors.bar;
             const g = c.createLinearGradient(chartArea.left, 0, chartArea.right, 0);
-            g.addColorStop(0,   colors.barDark);
-            g.addColorStop(0.25,colors.bar);
+            g.addColorStop(0, colors.barDark);
+            g.addColorStop(0.25, colors.bar);
             g.addColorStop(0.5, colors.barLight);
-            g.addColorStop(0.75,colors.bar);
-            g.addColorStop(1,   colors.barDark);
+            g.addColorStop(0.75, colors.bar);
+            g.addColorStop(1, colors.barDark);
             return g;
           },
           borderRadius: 5, borderSkipped: false,
@@ -2229,7 +2307,7 @@
           const d = adDispData[ctx2.dataIndex];
           if (!d) return '';
           return [`모집인원: ${d['모집인원']}명`, `경쟁률: ${d['경쟁률']}:1`,
-                  `50%cut: ${d['50%cut(등급)']}등급`, `70%cut: ${d['70%cut(등급)']}등급`];
+          `50%cut: ${d['50%cut(등급)']}등급`, `70%cut: ${d['70%cut(등급)']}등급`];
         },
         (e, els) => { if (els.length) adShowModal(adDispData[els[0].index]); }
       )
@@ -2277,10 +2355,10 @@
 
   // ── 경희대 학생부교과: gradeAvg~grade70 floating bar ─────────────────────
   function buildKhuGwagyoChart(ctx, data, colors, yMax) {
-    const labels     = data.map(d => d.major);
+    const labels = data.map(d => d.major);
     const dataPoints = data.map(d => {
       const top = parseFloat(d.gradeAvg), bot = parseFloat(d.grade70);
-      return (isNaN(top)||isNaN(bot)) ? null : [top, bot];
+      return (isNaN(top) || isNaN(bot)) ? null : [top, bot];
     });
 
     return new Chart(ctx, {
@@ -2312,7 +2390,7 @@
             `평균등급: ${d.gradeAvg}`,
             `50%cut: ${d.grade50}등급`,
             `70%cut: ${d.grade70}등급`,
-            `수능최저 충족율: ${d.minSatRate||'-'}`,
+            `수능최저 충족율: ${d.minSatRate || '-'}`,
           ];
         },
         (e, els) => { if (els.length) adShowModal(adDispData[els[0].index]); }
@@ -2322,10 +2400,10 @@
 
   // ── 경희대 학생부종합: avg~cut70 floating bar + 빨간 평균선 플러그인 ──────
   function buildKhuJonghapChart(ctx, data, colors, yMax) {
-    const labels     = data.map(d => d.name);
-    const barData    = data.map(d => {
+    const labels = data.map(d => d.name);
+    const barData = data.map(d => {
       const top = parseFloat(d.avg), bot = parseFloat(d.cut70);
-      return (isNaN(top)||isNaN(bot)) ? null : [top, bot];
+      return (isNaN(top) || isNaN(bot)) ? null : [top, bot];
     });
     const rawData = data;  // 클로저용
 
@@ -2338,7 +2416,7 @@
           const avg = rawData[i]?.avg;
           if (avg == null) return;
           const yPos = y.getPixelForValue(avg);
-          const hw   = bar.width / 2;
+          const hw = bar.width / 2;
           c.save();
           c.beginPath();
           c.strokeStyle = '#ef4444'; c.lineWidth = 3;
@@ -2380,9 +2458,9 @@
             const { ctx: c, chartArea } = context.chart;
             if (!chartArea) return colors.bar;
             const g = c.createLinearGradient(20, 0, 0, 0);
-            g.addColorStop(0,   '#818cf8');
+            g.addColorStop(0, '#818cf8');
             g.addColorStop(0.5, '#c7d2fe');
-            g.addColorStop(1,   '#4f46e5');
+            g.addColorStop(1, '#4f46e5');
             return g;
           },
           borderRadius: 5, borderSkipped: false,
@@ -2396,11 +2474,11 @@
 
   // ── 동국대: 평균~최저 floating bar ───────────────────────────────────────
   function buildDguChart(ctx, data, colors, yMax) {
-    const labels     = data.map(d => d['모집단위']);
+    const labels = data.map(d => d['모집단위']);
     const dataPoints = data.map(d => {
       const avg = parseFloat(d['평균(등급)']);
       const min = parseFloat(d['최저(등급)']);
-      return (isNaN(avg)||isNaN(min)) ? null : [avg, min];
+      return (isNaN(avg) || isNaN(min)) ? null : [avg, min];
     });
 
     return new Chart(ctx, {
@@ -2414,11 +2492,11 @@
             const { ctx: c, chartArea } = context.chart;
             if (!chartArea) return colors.bar;
             const g = c.createLinearGradient(chartArea.left, 0, chartArea.right, 0);
-            g.addColorStop(0,   colors.barDark);
-            g.addColorStop(0.25,colors.bar);
+            g.addColorStop(0, colors.barDark);
+            g.addColorStop(0.25, colors.bar);
             g.addColorStop(0.5, colors.barLight);
-            g.addColorStop(0.75,colors.bar);
-            g.addColorStop(1,   colors.barDark);
+            g.addColorStop(0.75, colors.bar);
+            g.addColorStop(1, colors.barDark);
             return g;
           },
           borderRadius: 5, borderSkipped: false,
@@ -2443,7 +2521,7 @@
 
   // ── 충남대: 평균(등급) ± 표준편차(등급) floating bar ─────────────────────
   function buildCnuChart(ctx, data, colors, yMax) {
-    const labels     = data.map(d => d['모집단위']);
+    const labels = data.map(d => d['모집단위']);
     const dataPoints = data.map(d => {
       const avg = parseFloat(d['평균(등급)']);
       const std = parseFloat(d['표준편차(등급)']) || 0;
@@ -2463,11 +2541,11 @@
             const { ctx: c, chartArea } = context.chart;
             if (!chartArea) return colors.bar;
             const g = c.createLinearGradient(chartArea.left, 0, chartArea.right, 0);
-            g.addColorStop(0,   colors.barDark);
+            g.addColorStop(0, colors.barDark);
             g.addColorStop(0.3, colors.bar);
             g.addColorStop(0.5, colors.barLight);
             g.addColorStop(0.7, colors.bar);
-            g.addColorStop(1,   colors.barDark);
+            g.addColorStop(1, colors.barDark);
             return g;
           },
           borderRadius: 5, borderSkipped: false,
@@ -2498,7 +2576,7 @@
 
   // ── 충북대: 평균(등급) ± 표준편차(등급) floating bar ─────────────────────
   function buildCbnuChart(ctx, data, colors, yMax) {
-    const labels     = data.map(d => d['모집단위']);
+    const labels = data.map(d => d['모집단위']);
     const dataPoints = data.map(d => {
       const avg = parseFloat(d['평균(등급)']);
       const std = parseFloat(d['표준편차(등급)']) || 0;
@@ -2518,11 +2596,11 @@
             const { ctx: c, chartArea } = context.chart;
             if (!chartArea) return colors.bar;
             const g = c.createLinearGradient(chartArea.left, 0, chartArea.right, 0);
-            g.addColorStop(0,   colors.barDark);
+            g.addColorStop(0, colors.barDark);
             g.addColorStop(0.3, colors.bar);
             g.addColorStop(0.5, colors.barLight);
             g.addColorStop(0.7, colors.bar);
-            g.addColorStop(1,   colors.barDark);
+            g.addColorStop(1, colors.barDark);
             return g;
           },
           borderRadius: 5, borderSkipped: false,
@@ -2549,11 +2627,11 @@
 
   // ── 한국외대 교과전형: 70%(환산점수) 바 차트 (비반전 Y축) ─────────────────
   function buildHufsGwagyoChart(ctx, data, colors) {
-    const labels     = data.map(d => d['모집단위'] + (d['캠퍼스'] ? ` (${d['캠퍼스'].replace('캠퍼스','')})` : ''));
+    const labels = data.map(d => d['모집단위'] + (d['캠퍼스'] ? ` (${d['캠퍼스'].replace('캠퍼스', '')})` : ''));
     const dataPoints = data.map(d => { const v = parseFloat(d['70%(환산점수)']); return isNaN(v) ? null : v; });
-    const valid      = dataPoints.filter(v => v !== null);
-    const yMin       = valid.length ? Math.max(140, Math.floor(Math.min(...valid)) - 3) : 140;
-    const yMax       = valid.length ? Math.min(200, Math.ceil(Math.max(...valid))  + 2) : 200;
+    const valid = dataPoints.filter(v => v !== null);
+    const yMin = valid.length ? Math.max(140, Math.floor(Math.min(...valid)) - 3) : 140;
+    const yMax = valid.length ? Math.min(200, Math.ceil(Math.max(...valid)) + 2) : 200;
 
     return new Chart(ctx, {
       type: 'bar',
@@ -2582,7 +2660,7 @@
             min: yMin, max: yMax, reverse: false,
             title: { display: true, text: '환산점수', font: { weight: 'bold', size: 12 }, color: '#adb5bd' },
             ticks: { color: '#adb5bd' },
-            grid:  { color: 'rgba(127,127,127,0.13)' }
+            grid: { color: 'rgba(127,127,127,0.13)' }
           },
           x: {
             grid: { display: false },
@@ -2615,7 +2693,7 @@
 
   // ── 한국외대 종합전형: 70%(등급) floating bar (표준 등급 Y축) ──────────────
   function buildHufsJonghapChart(ctx, data, colors, yMax) {
-    const labels     = data.map(d => d['모집단위'] + (d['캠퍼스'] ? ` (${d['캠퍼스'].replace('캠퍼스','')})` : ''));
+    const labels = data.map(d => d['모집단위'] + (d['캠퍼스'] ? ` (${d['캠퍼스'].replace('캠퍼스', '')})` : ''));
     const dataPoints = data.map(d => {
       const g = parseFloat(d['70%(등급)']);
       return isNaN(g) ? null : [Math.max(1, g - 0.08), Math.min(9, g + 0.08)];
@@ -2650,7 +2728,7 @@
 
   // ── 한양대: 50%~70%cut floating bar + 평균등급 tooltip ───────────────────
   function buildHyuChart(ctx, data, colors, yMax) {
-    const labels     = data.map(d => d['모집단위']);
+    const labels = data.map(d => d['모집단위']);
     const dataPoints = data.map(d => {
       const c50 = parseFloat(d['50%cut']);
       const c70 = parseFloat(d['70%cut']);
@@ -2672,11 +2750,11 @@
             const { ctx: c, chartArea } = context.chart;
             if (!chartArea) return colors.bar;
             const g = c.createLinearGradient(chartArea.left, 0, chartArea.right, 0);
-            g.addColorStop(0,   colors.barDark);
-            g.addColorStop(0.25,colors.bar);
+            g.addColorStop(0, colors.barDark);
+            g.addColorStop(0.25, colors.bar);
             g.addColorStop(0.5, colors.barLight);
-            g.addColorStop(0.75,colors.bar);
-            g.addColorStop(1,   colors.barDark);
+            g.addColorStop(0.75, colors.bar);
+            g.addColorStop(1, colors.barDark);
             return g;
           },
           borderRadius: 5, borderSkipped: false,
@@ -2692,10 +2770,61 @@
             `경쟁률: ${d['경쟁률']}:1`,
           ];
           if (d['추가합격 인원'] != null) lines.push(`추가합격: ${d['추가합격 인원']}명`);
-          if (d['평균등급'] != null)    lines.push(`평균등급: ${d['평균등급']}등급`);
+          if (d['평균등급'] != null) lines.push(`평균등급: ${d['평균등급']}등급`);
           if (d['50%cut'] && d['50%cut'] !== '-' && d['50%cut'] !== '') lines.push(`50%cut: ${d['50%cut']}등급`);
-          if (d['70%cut'] != null)    lines.push(`70%cut: ${d['70%cut']}등급`);
+          if (d['70%cut'] != null) lines.push(`70%cut: ${d['70%cut']}등급`);
           if (d['수능최저 충족률'] && d['수능최저 충족률'] !== '') lines.push(`수능최저 충족률: ${d['수능최저 충족률']}%`);
+          return lines;
+        },
+        (e, els) => { if (els.length) adShowModal(adDispData[els[0].index]); }
+      )
+    });
+  }
+
+  // ── 홍익대: 평균~70% floating bar ───────────────────────────────────────
+  function buildHiuChart(ctx, data, colors, yMax) {
+    const labels = data.map(d => d['모집단위']);
+    const dataPoints = data.map(d => {
+      const avg = parseFloat(d['평균(등급)']);
+      const c70 = parseFloat(d['70%(등급)']);
+      if (!isNaN(avg) && !isNaN(c70)) return [avg, c70];
+      if (!isNaN(avg)) return [Math.max(1, avg - 0.05), Math.min(9, avg + 0.05)];
+      return null;
+    });
+
+    return new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: '평균~70% 범위',
+          data: dataPoints,
+          backgroundColor(context) {
+            const { ctx: c, chartArea } = context.chart;
+            if (!chartArea) return colors.bar;
+            const g = c.createLinearGradient(chartArea.left, 0, chartArea.right, 0);
+            g.addColorStop(0, colors.barDark);
+            g.addColorStop(0.25, colors.bar);
+            g.addColorStop(0.5, colors.barLight);
+            g.addColorStop(0.75, colors.bar);
+            g.addColorStop(1, colors.barDark);
+            return g;
+          },
+          borderRadius: 5, borderSkipped: false,
+          barPercentage: 0.65, categoryPercentage: 0.75,
+        }]
+      },
+      options: chartOptions(yMax, colors,
+        ctx2 => {
+          const d = adDispData[ctx2.dataIndex];
+          if (!d) return '';
+          const lines = [
+            `모집인원: ${d['모집인원'] ?? '-'}명`,
+            `경쟁률: ${d['경쟁률'] ?? '-'}:1`,
+          ];
+          if (d['추가합격률'] != null && d['추가합격률'] !== '') lines.push(`추가합격률: ${d['추가합격률']}`);
+          if (d['평균(등급)'] != null) lines.push(`평균등급: ${d['평균(등급)']}등급`);
+          if (d['70%(등급)'] != null) lines.push(`70%(등급): ${d['70%(등급)']}등급`);
           return lines;
         },
         (e, els) => { if (els.length) adShowModal(adDispData[els[0].index]); }
@@ -2705,11 +2834,11 @@
 
   // ── 서강대: 50%~70%cut floating bar ──────────────────────────────────────
   function buildSguChart(ctx, data, colors, yMax) {
-    const labels     = data.map(d => d['모집단위']);
+    const labels = data.map(d => d['모집단위']);
     const dataPoints = data.map(d => {
       const c50 = parseFloat(d['50%cut']);
       const c70 = parseFloat(d['70%cut']);
-      return (isNaN(c50)||isNaN(c70)) ? null : [c50, c70];
+      return (isNaN(c50) || isNaN(c70)) ? null : [c50, c70];
     });
 
     return new Chart(ctx, {
@@ -2723,11 +2852,11 @@
             const { ctx: c, chartArea } = context.chart;
             if (!chartArea) return colors.bar;
             const g = c.createLinearGradient(chartArea.left, 0, chartArea.right, 0);
-            g.addColorStop(0,   colors.barDark);
-            g.addColorStop(0.25,colors.bar);
+            g.addColorStop(0, colors.barDark);
+            g.addColorStop(0.25, colors.bar);
             g.addColorStop(0.5, colors.barLight);
-            g.addColorStop(0.75,colors.bar);
-            g.addColorStop(1,   colors.barDark);
+            g.addColorStop(0.75, colors.bar);
+            g.addColorStop(1, colors.barDark);
             return g;
           },
           borderRadius: 5, borderSkipped: false,
@@ -2753,7 +2882,7 @@
 
   // ── 서울시립대: 학생부등급 ± 표준편차 floating bar ───────────────────────
   function buildUosChart(ctx, data, colors, yMax) {
-    const labels     = data.map(d => d.dept);
+    const labels = data.map(d => d.dept);
     const dataPoints = data.map(d => {
       const g = parseFloat(d.grade);
       if (isNaN(g)) return null;
@@ -2773,11 +2902,11 @@
             const { ctx: c, chartArea } = context.chart;
             if (!chartArea) return colors.bar;
             const g = c.createLinearGradient(chartArea.left, 0, chartArea.right, 0);
-            g.addColorStop(0,   colors.barDark);
+            g.addColorStop(0, colors.barDark);
             g.addColorStop(0.3, colors.bar);
             g.addColorStop(0.5, colors.barLight);
             g.addColorStop(0.7, colors.bar);
-            g.addColorStop(1,   colors.barDark);
+            g.addColorStop(1, colors.barDark);
             return g;
           },
           borderColor: colors.barDark,
@@ -2805,11 +2934,11 @@
 
   // ── 성균관대: 50%~70%cut floating bar ──────────────────────────────────────
   function buildSkuChart(ctx, data, colors, yMax) {
-    const labels     = data.map(d => d['모집단위']);
+    const labels = data.map(d => d['모집단위']);
     const dataPoints = data.map(d => {
       const c50 = parseFloat(d['50%cut']);
       const c70 = parseFloat(d['70%cut']);
-      return (isNaN(c50)||isNaN(c70)) ? null : [c50, c70];
+      return (isNaN(c50) || isNaN(c70)) ? null : [c50, c70];
     });
 
     return new Chart(ctx, {
@@ -2823,11 +2952,11 @@
             const { ctx: c, chartArea } = context.chart;
             if (!chartArea) return colors.bar;
             const g = c.createLinearGradient(chartArea.left, 0, chartArea.right, 0);
-            g.addColorStop(0,   colors.barDark);
-            g.addColorStop(0.25,colors.bar);
+            g.addColorStop(0, colors.barDark);
+            g.addColorStop(0.25, colors.bar);
             g.addColorStop(0.5, colors.barLight);
-            g.addColorStop(0.75,colors.bar);
-            g.addColorStop(1,   colors.barDark);
+            g.addColorStop(0.75, colors.bar);
+            g.addColorStop(1, colors.barDark);
             return g;
           },
           borderRadius: 5, borderSkipped: false,
@@ -2853,11 +2982,11 @@
 
   // ── 우석대: 평균~70%cut floating bar ─────────────────────────────────────
   function buildWsuChart(ctx, data, colors, yMax) {
-    const labels     = data.map(d => d['모집단위']);
+    const labels = data.map(d => d['모집단위']);
     const dataPoints = data.map(d => {
       const avg = parseFloat(d['평균']);
       const c70 = parseFloat(d['70% cut']);
-      return (isNaN(avg)||isNaN(c70)) ? null : [avg, c70];
+      return (isNaN(avg) || isNaN(c70)) ? null : [avg, c70];
     });
 
     return new Chart(ctx, {
@@ -2871,11 +3000,11 @@
             const { ctx: c, chartArea } = context.chart;
             if (!chartArea) return colors.bar;
             const g = c.createLinearGradient(chartArea.left, 0, chartArea.right, 0);
-            g.addColorStop(0,   colors.barDark);
-            g.addColorStop(0.25,colors.bar);
+            g.addColorStop(0, colors.barDark);
+            g.addColorStop(0.25, colors.bar);
             g.addColorStop(0.5, colors.barLight);
-            g.addColorStop(0.75,colors.bar);
-            g.addColorStop(1,   colors.barDark);
+            g.addColorStop(0.75, colors.bar);
+            g.addColorStop(1, colors.barDark);
             return g;
           },
           borderRadius: 5, borderSkipped: false,
@@ -2899,11 +3028,11 @@
   }
 
   function buildWkuChart(ctx, data, colors, yMax) {
-    const labels     = data.map(d => d['모집단위']);
+    const labels = data.map(d => d['모집단위']);
     const dataPoints = data.map(d => {
       const c50 = parseFloat(d['50%cut']);
       const c70 = parseFloat(d['70%cut']);
-      return (isNaN(c50)||isNaN(c70)) ? null : [c50, c70];
+      return (isNaN(c50) || isNaN(c70)) ? null : [c50, c70];
     });
 
     return new Chart(ctx, {
@@ -2917,11 +3046,11 @@
             const { ctx: c, chartArea } = context.chart;
             if (!chartArea) return colors.bar;
             const g = c.createLinearGradient(chartArea.left, 0, chartArea.right, 0);
-            g.addColorStop(0,   colors.barDark);
-            g.addColorStop(0.25,colors.bar);
+            g.addColorStop(0, colors.barDark);
+            g.addColorStop(0.25, colors.bar);
             g.addColorStop(0.5, colors.barLight);
-            g.addColorStop(0.75,colors.bar);
-            g.addColorStop(1,   colors.barDark);
+            g.addColorStop(0.75, colors.bar);
+            g.addColorStop(1, colors.barDark);
             return g;
           },
           borderRadius: 5, borderSkipped: false,
@@ -2947,11 +3076,11 @@
   }
 
   function buildJnuChart(ctx, data, colors, yMax) {
-    const labels     = data.map(d => d['모집단위']);
+    const labels = data.map(d => d['모집단위']);
     const dataPoints = data.map(d => {
       const c50 = parseFloat(d['50%cut']);
       const c70 = parseFloat(d['70%cut']);
-      return (isNaN(c50)||isNaN(c70)) ? null : [c50, c70];
+      return (isNaN(c50) || isNaN(c70)) ? null : [c50, c70];
     });
 
     return new Chart(ctx, {
@@ -2965,11 +3094,11 @@
             const { ctx: c, chartArea } = context.chart;
             if (!chartArea) return colors.bar;
             const g = c.createLinearGradient(chartArea.left, 0, chartArea.right, 0);
-            g.addColorStop(0,   colors.barDark);
-            g.addColorStop(0.25,colors.bar);
+            g.addColorStop(0, colors.barDark);
+            g.addColorStop(0.25, colors.bar);
             g.addColorStop(0.5, colors.barLight);
-            g.addColorStop(0.75,colors.bar);
-            g.addColorStop(1,   colors.barDark);
+            g.addColorStop(0.75, colors.bar);
+            g.addColorStop(1, colors.barDark);
             return g;
           },
           borderRadius: 5, borderSkipped: false,
@@ -2998,11 +3127,11 @@
   }
 
   function buildJjuChart(ctx, data, colors, yMax) {
-    const labels     = data.map(d => d['모집단위']);
+    const labels = data.map(d => d['모집단위']);
     const dataPoints = data.map(d => {
       const high = parseFloat(d['최고']);
-      const cut  = parseFloat(d['70%cut']);
-      return (isNaN(high)||isNaN(cut)) ? null : [high, cut];
+      const cut = parseFloat(d['70%cut']);
+      return (isNaN(high) || isNaN(cut)) ? null : [high, cut];
     });
 
     return new Chart(ctx, {
@@ -3016,11 +3145,11 @@
             const { ctx: c, chartArea } = context.chart;
             if (!chartArea) return colors.bar;
             const g = c.createLinearGradient(chartArea.left, 0, chartArea.right, 0);
-            g.addColorStop(0,   colors.barDark);
-            g.addColorStop(0.25,colors.bar);
+            g.addColorStop(0, colors.barDark);
+            g.addColorStop(0.25, colors.bar);
             g.addColorStop(0.5, colors.barLight);
-            g.addColorStop(0.75,colors.bar);
-            g.addColorStop(1,   colors.barDark);
+            g.addColorStop(0.75, colors.bar);
+            g.addColorStop(1, colors.barDark);
             return g;
           },
           borderRadius: 5, borderSkipped: false,
@@ -3046,11 +3175,11 @@
   }
 
   function buildCauChart(ctx, data, colors, yMax) {
-    const labels     = data.map(d => d['모집단위']);
+    const labels = data.map(d => d['모집단위']);
     const dataPoints = data.map(d => {
       const c50 = parseFloat(d['50%cut']);
       const c70 = parseFloat(d['70%cut']);
-      return (isNaN(c50)||isNaN(c70)) ? null : [c50, c70];
+      return (isNaN(c50) || isNaN(c70)) ? null : [c50, c70];
     });
 
     return new Chart(ctx, {
@@ -3064,11 +3193,11 @@
             const { ctx: c, chartArea } = context.chart;
             if (!chartArea) return colors.bar;
             const g = c.createLinearGradient(chartArea.left, 0, chartArea.right, 0);
-            g.addColorStop(0,   colors.barDark);
-            g.addColorStop(0.25,colors.bar);
+            g.addColorStop(0, colors.barDark);
+            g.addColorStop(0.25, colors.bar);
             g.addColorStop(0.5, colors.barLight);
-            g.addColorStop(0.75,colors.bar);
-            g.addColorStop(1,   colors.barDark);
+            g.addColorStop(0.75, colors.bar);
+            g.addColorStop(1, colors.barDark);
             return g;
           },
           borderRadius: 5, borderSkipped: false,
@@ -3135,6 +3264,11 @@
         if (!isNaN(c50)) vals.push(c50);
         if (!isNaN(c70)) vals.push(c70);
         if (!isNaN(avg)) vals.push(avg);
+      } else if (schema === 'hiu') {
+        const avg = parseFloat(d['평균(등급)']);
+        const c70 = parseFloat(d['70%(등급)']);
+        if (!isNaN(avg)) vals.push(avg);
+        if (!isNaN(c70)) vals.push(c70);
       }
     });
     const valid = vals.filter(v => !isNaN(v) && v > 0);
@@ -3169,11 +3303,11 @@
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: adCurrentUni==='건국대' ? 'rgba(196,214,0,0.92)' : (adCurrentUni==='광운대' ? 'rgba(140,21,21,0.92)' : (adCurrentUni==='동국대' ? 'rgba(163,61,26,0.92)' : (adCurrentUni==='서강대' ? 'rgba(0,47,97,0.92)' : (adCurrentUni==='서울시립대' ? 'rgba(13,26,50,0.95)' : (adCurrentUni==='성균관대' ? 'rgba(0,62,41,0.95)' : (adCurrentUni==='우석대' ? 'rgba(26,60,110,0.95)' : (adCurrentUni==='충남대' ? 'rgba(0,24,82,0.95)' : (adCurrentUni==='충북대' ? 'rgba(118,35,47,0.95)' : (adCurrentUni==='한국외대' ? 'rgba(0,44,95,0.95)' : (adCurrentUni==='한양대' ? 'rgba(14,74,132,0.95)' : 'rgba(79,70,229,0.92)'))))))))))
-,
-          titleColor: adCurrentUni==='건국대' ? '#034C2F' : (adCurrentUni==='광운대' ? '#fca5a5' : (adCurrentUni==='동국대' ? '#f4a37e' : (adCurrentUni==='서강대' ? '#dfa800' : (adCurrentUni==='서울시립대' ? '#4a69bd' : (adCurrentUni==='성균관대' ? '#a3e6c5' : (adCurrentUni==='우석대' ? '#93c5fd' : (adCurrentUni==='충남대' ? '#4a7fd4' : (adCurrentUni==='충북대' ? '#f4a5ae' : (adCurrentUni==='한국외대' ? '#d4af37' : (adCurrentUni==='한양대' ? '#d4af37' : '#e0e7ff'))))))))))
-,
-          bodyColor: adCurrentUni==='건국대' ? '#222' : (adCurrentUni==='광운대' ? '#fff' : (adCurrentUni==='동국대' ? '#fff' : (adCurrentUni==='서강대' ? '#fff' : '#fff'))),
+          backgroundColor: adCurrentUni === '건국대' ? 'rgba(196,214,0,0.92)' : (adCurrentUni === '광운대' ? 'rgba(140,21,21,0.92)' : (adCurrentUni === '동국대' ? 'rgba(163,61,26,0.92)' : (adCurrentUni === '서강대' ? 'rgba(0,47,97,0.92)' : (adCurrentUni === '서울시립대' ? 'rgba(13,26,50,0.95)' : (adCurrentUni === '성균관대' ? 'rgba(0,62,41,0.95)' : (adCurrentUni === '우석대' ? 'rgba(26,60,110,0.95)' : (adCurrentUni === '충남대' ? 'rgba(0,24,82,0.95)' : (adCurrentUni === '충북대' ? 'rgba(118,35,47,0.95)' : (adCurrentUni === '한국외대' ? 'rgba(0,44,95,0.95)' : (adCurrentUni === '한양대' ? 'rgba(14,74,132,0.95)' : (adCurrentUni === '홍익대' ? 'rgba(29,78,216,0.95)' : 'rgba(79,70,229,0.92)')))))))))))
+          ,
+          titleColor: adCurrentUni === '건국대' ? '#034C2F' : (adCurrentUni === '광운대' ? '#fca5a5' : (adCurrentUni === '동국대' ? '#f4a37e' : (adCurrentUni === '서강대' ? '#dfa800' : (adCurrentUni === '서울시립대' ? '#4a69bd' : (adCurrentUni === '성균관대' ? '#a3e6c5' : (adCurrentUni === '우석대' ? '#93c5fd' : (adCurrentUni === '충남대' ? '#4a7fd4' : (adCurrentUni === '충북대' ? '#f4a5ae' : (adCurrentUni === '한국외대' ? '#d4af37' : (adCurrentUni === '한양대' ? '#d4af37' : (adCurrentUni === '홍익대' ? '#bfdbfe' : '#e0e7ff')))))))))))
+          ,
+          bodyColor: adCurrentUni === '건국대' ? '#222' : (adCurrentUni === '광운대' ? '#fff' : (adCurrentUni === '동국대' ? '#fff' : (adCurrentUni === '서강대' ? '#fff' : '#fff'))),
           titleFont: { size: 13, weight: 'bold' },
           bodyFont: { size: 11.5 },
           padding: 12, cornerRadius: 10, displayColors: false,
@@ -3195,12 +3329,12 @@
   // ════════════════════════════════════════════════════════════════════════════
   function adShowModal(data) {
     const modal = document.getElementById('adist-modal');
-    const body  = document.getElementById('adist-modal-body');
+    const body = document.getElementById('adist-modal-body');
     if (!modal || !body || !data) return;
 
-    const v = (val, fallback='-') => (val===''||val===undefined||val===null) ? fallback : val;
+    const v = (val, fallback = '-') => (val === '' || val === undefined || val === null) ? fallback : val;
     const rowS = `display:flex;justify-content:space-between;align-items:center;padding:.55rem 0;border-bottom:1px solid var(--panel-border);font-size:.88rem;color:var(--text-primary);`;
-    const scS  = `font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-secondary);margin:.85rem 0 .35rem;`;
+    const scS = `font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-secondary);margin:.85rem 0 .35rem;`;
 
     let html = '';
 
@@ -3224,7 +3358,7 @@
           <span style="font-weight:800;font-size:1rem;color:var(--text-primary);">${v(data['70%cut(등급)'])} <small style="font-size:.8rem;font-weight:400;color:var(--text-secondary);">등급</small></span></div>
       `;
 
-    // ── 경희대 학생부교과 모달 ────────────────────────────────────────────────
+      // ── 경희대 학생부교과 모달 ────────────────────────────────────────────────
     } else if (adCurrentType === '학생부교과') {
       const fn = val => `<span style="font-weight:700;font-size:1rem;color:var(--text-primary);">${v(val)}</span>`;
       html = `
@@ -3261,7 +3395,7 @@
         <div style="${rowS} border-bottom:none;"><span style="color:var(--text-secondary);">70%cut 환산</span><span style="font-weight:700;">${v(data.score70)}</span></div>
       `;
 
-    // ── 동국대 모달 ──────────────────────────────────────────────────────
+      // ── 동국대 모달 ──────────────────────────────────────────────────────
     } else if (adCurrentUni === '동국대') {
       const is10 = (data['모집전형'] || '').includes('학생부교과');
       html = `
@@ -3290,7 +3424,7 @@
         ` : ''}
       `;
 
-    // ── 한국외대 모달 ─────────────────────────────────────────────────────
+      // ── 한국외대 모달 ─────────────────────────────────────────────────────
     } else if (adCurrentUni === '한국외대') {
       const isGyogwa = adCurrentType === '교과전형';
       const scoreField = isGyogwa ? '70%(환산점수)' : '70%(등급)';
@@ -3320,7 +3454,7 @@
         <div style="${rowS} border-bottom:none;"><span style="color:var(--text-secondary);">충원인원</span><span style="font-weight:700;">${v(data['충원인원'])}명</span></div>
       `;
 
-    // ── 충북대 모달 ──────────────────────────────────────────────────────
+      // ── 충북대 모달 ──────────────────────────────────────────────────────
     } else if (adCurrentUni === '충북대') {
       const hasSeoRyu = (data['서류평균'] != null && !isNaN(parseFloat(data['서류평균'])));
       const hasChoSeoRyu = (data['최초서류평균'] != null && !isNaN(parseFloat(data['최초서류평균'])));
@@ -3366,7 +3500,7 @@
         ` : ''}
       `;
 
-    // ── 충남대 모달 ──────────────────────────────────────────────────────
+      // ── 충남대 모달 ──────────────────────────────────────────────────────
     } else if (adCurrentUni === '충남대') {
       html = `
         <div style="font-size:1.15rem;font-weight:800;color:var(--text-primary);padding-bottom:.7rem;border-bottom:2px solid #003087;margin-bottom:.2rem;">
@@ -3410,7 +3544,7 @@
         ` : ''}
       `;
 
-    // ── 서강대 모달 ──────────────────────────────────────────────────────
+      // ── 서강대 모달 ──────────────────────────────────────────────────────
     } else if (adCurrentUni === '서강대') {
       html = `
         <div style="font-size:1.15rem;font-weight:800;color:var(--text-primary);padding-bottom:.7rem;border-bottom:2px solid #004ea2;margin-bottom:.2rem;">
@@ -3442,7 +3576,7 @@
         <div style="${rowS} border-bottom:none;"><span style="color:var(--text-secondary);">충원율</span><span style="font-weight:700;color:var(--success-color);">${v(data['충원율 (%)'])}%</span></div>
       `;
 
-    // ── 성균관대 모달 ────────────────────────────────────────────────────
+      // ── 성균관대 모달 ────────────────────────────────────────────────────
     } else if (adCurrentUni === '성균관대') {
       html = `
         <div style="font-size:1.15rem;font-weight:800;color:var(--text-primary);padding-bottom:.7rem;border-bottom:2px solid #003e29;margin-bottom:.2rem;">
@@ -3473,7 +3607,7 @@
         <div style="${rowS} border-bottom:none;"><span style="color:var(--text-secondary);">충원율</span><span style="font-weight:700;color:var(--success-color);">${v(data['충원율'])}</span></div>
       `;
 
-    // ── 우석대 모달 ──────────────────────────────────────────────────────
+      // ── 우석대 모달 ──────────────────────────────────────────────────────
     } else if (adCurrentUni === '우석대') {
       html = `
         <div style="font-size:1.15rem;font-weight:800;color:var(--text-primary);padding-bottom:.7rem;border-bottom:2px solid #1a3c6e;margin-bottom:.2rem;">
@@ -3504,7 +3638,7 @@
         <div style="${rowS} border-bottom:none;"><span style="color:var(--text-secondary);">70%cut 환산</span><span style="font-weight:700;">${v(data['환산점수70% cut'] ?? data['환산점수'])}</span></div>
       `;
 
-    // ── 서울시립대 모달 ──────────────────────────────────────────────────
+      // ── 서울시립대 모달 ──────────────────────────────────────────────────
     } else if (adCurrentUni === '서울시립대') {
       html = `
         <div style="font-size:1.15rem;font-weight:800;color:var(--text-primary);padding-bottom:.7rem;border-bottom:2px solid #1a2b50;margin-bottom:.2rem;">
@@ -3534,7 +3668,7 @@
           <span style="font-weight:700;">${v(data.score)}</span></div>` : ''}
       `;
 
-    // ── 군산대 입결 모달 ────────────────────────────────────────────────
+      // ── 군산대 입결 모달 ────────────────────────────────────────────────
     } else if (adCurrentUni === '군산대') {
       html = `
         <div style="font-size:1.15rem;font-weight:800;color:var(--text-primary);padding-bottom:.7rem;border-bottom:2px solid var(--accent-primary);margin-bottom:.2rem;">
@@ -3550,7 +3684,7 @@
         <div style="${rowS} border-bottom:none;"><span style="color:var(--text-secondary);">70% 점수 / 등급</span><span style="font-weight:800;font-size:1.05rem;color:var(--text-primary);">${v(data.cut70Score)} <small style="font-size:.8rem;font-weight:400;color:var(--text-secondary);">/ ${v(data.cut70Grade)}등급</small></span></div>
       `;
 
-    // ── 광운대 학생부종합 모달 ────────────────────────────────────────────────
+      // ── 광운대 학생부종합 모달 ────────────────────────────────────────────────
     } else if (adCurrentUni === '광운대') {
       html = `
         <div style="font-size:1.15rem;font-weight:800;color:var(--text-primary);padding-bottom:.7rem;border-bottom:2px solid var(--accent-primary);margin-bottom:.2rem;">
@@ -3565,12 +3699,12 @@
         <div style="${rowS} border-bottom:none;"><span style="color:var(--text-secondary);">예비 번호</span><span style="font-weight:700;">${v(data.reserve)}번</span></div>
       `;
 
-    // ── 전남대 모달 ──────────────────────────────────────────────────────
+      // ── 전남대 모달 ──────────────────────────────────────────────────────
     } else if (adCurrentUni === '전남대') {
-      const hasConv      = data['환산평균'] !== undefined && data['환산평균'] !== '';
+      const hasConv = data['환산평균'] !== undefined && data['환산평균'] !== '';
       const hasInterview = data['면접평균'] !== undefined && data['면접평균'] !== '';
-      const hasDoc       = data['서류평균'] !== undefined && data['서류평균'] !== '';
-      const hasPrac      = data['실기평균'] !== undefined && data['실기평균'] !== '';
+      const hasDoc = data['서류평균'] !== undefined && data['서류평균'] !== '';
+      const hasPrac = data['실기평균'] !== undefined && data['실기평균'] !== '';
       html = `
         <div style="font-size:1.15rem;font-weight:800;color:var(--text-primary);padding-bottom:.7rem;border-bottom:2px solid #16a34a;margin-bottom:.2rem;">
           ${v(data['모집단위'])}
@@ -3601,17 +3735,17 @@
         <div style="${scS}">모집 정보</div>
         <div style="${rowS}"><span style="color:var(--text-secondary);">모집인원</span><span style="font-weight:700;">${v(data['모집인원'])}명</span></div>
         <div style="${rowS}"><span style="color:var(--text-secondary);">경쟁률</span><span style="font-weight:700;color:#16a34a;">${v(data['경쟁률'])}:1</span></div>
-        <div style="${rowS}${hasConv||hasInterview||hasDoc||hasPrac ? '' : ' border-bottom:none;'}"><span style="color:var(--text-secondary);">예비순위</span><span style="font-weight:700;">${v(data['예비순위'])}번</span></div>
+        <div style="${rowS}${hasConv || hasInterview || hasDoc || hasPrac ? '' : ' border-bottom:none;'}"><span style="color:var(--text-secondary);">예비순위</span><span style="font-weight:700;">${v(data['예비순위'])}번</span></div>
         ${hasConv ? `
         <div style="${scS}">환산 점수</div>
         <div style="${rowS}"><span style="color:var(--text-secondary);">환산 평균</span><span style="font-weight:700;">${v(data['환산평균'])}</span></div>
         <div style="${rowS}"><span style="color:var(--text-secondary);">환산 50%cut</span><span style="font-weight:700;">${v(data['환산50%cut'])}</span></div>
-        <div style="${rowS}${hasInterview||hasDoc||hasPrac ? '' : ' border-bottom:none;'}"><span style="color:var(--text-secondary);">환산 70%cut</span><span style="font-weight:700;">${v(data['환산70%cut'])}</span></div>
+        <div style="${rowS}${hasInterview || hasDoc || hasPrac ? '' : ' border-bottom:none;'}"><span style="color:var(--text-secondary);">환산 70%cut</span><span style="font-weight:700;">${v(data['환산70%cut'])}</span></div>
         ` : ''}
         ${hasInterview ? `
         <div style="${scS}">면접 점수</div>
         <div style="${rowS}"><span style="color:var(--text-secondary);">면접 평균</span><span style="font-weight:700;">${v(data['면접평균'])}</span></div>
-        <div style="${rowS}${hasDoc||hasPrac ? '' : ' border-bottom:none;'}"><span style="color:var(--text-secondary);">면접 표준편차</span><span style="font-weight:700;">${v(data['면접편차'])}</span></div>
+        <div style="${rowS}${hasDoc || hasPrac ? '' : ' border-bottom:none;'}"><span style="color:var(--text-secondary);">면접 표준편차</span><span style="font-weight:700;">${v(data['면접편차'])}</span></div>
         ` : ''}
         ${hasDoc ? `
         <div style="${scS}">서류 점수</div>
@@ -3625,7 +3759,7 @@
         ` : ''}
       `;
 
-    // ── 원광대 모달 ──────────────────────────────────────────────────────
+      // ── 원광대 모달 ──────────────────────────────────────────────────────
     } else if (adCurrentUni === '원광대') {
       html = `
         <div style="font-size:1.15rem;font-weight:800;color:var(--text-primary);padding-bottom:.7rem;border-bottom:2px solid #0d9488;margin-bottom:.2rem;">
@@ -3656,7 +3790,7 @@
         <div style="${rowS} border-bottom:none;"><span style="color:var(--text-secondary);">충원인원</span><span style="font-weight:700;color:var(--success-color);">${v(data['충원인원'])}명</span></div>
       `;
 
-    // ── 전주대 모달 ──────────────────────────────────────────────────────
+      // ── 전주대 모달 ──────────────────────────────────────────────────────
     } else if (adCurrentUni === '전주대') {
       html = `
         <div style="font-size:1.15rem;font-weight:800;color:var(--text-primary);padding-bottom:.7rem;border-bottom:2px solid #2563eb;margin-bottom:.2rem;">
@@ -3690,7 +3824,7 @@
         <div style="${rowS} border-bottom:none;"><span style="color:var(--text-secondary);">전형요소</span><span style="font-weight:600;font-size:.85rem;">${v(data['전형요소'])}</span></div>
       `;
 
-    // ── 중앙대 모달 ──────────────────────────────────────────────────────
+      // ── 중앙대 모달 ──────────────────────────────────────────────────────
     } else if (adCurrentUni === '중앙대') {
       html = `
         <div style="font-size:1.15rem;font-weight:800;color:var(--text-primary);padding-bottom:.7rem;border-bottom:2px solid #2a5599;margin-bottom:.2rem;">
@@ -3729,7 +3863,7 @@
         <div style="${rowS} border-bottom:none;"><span style="color:var(--text-secondary);">충원율</span><span style="font-weight:700;color:var(--success-color);">${v(data['충원율'])}%</span></div>
       `;
 
-    // ── 경희대 학생부종합 모달 ────────────────────────────────────────────────
+      // ── 경희대 학생부종합 모달 ────────────────────────────────────────────────
     } else if (adCurrentUni === '경희대') {
       const barPct = val => Math.min(100, Math.max(0, val)).toFixed(1);
       html = `
@@ -3758,13 +3892,13 @@
             <span>서류 평가</span><span style="font-weight:700;">${v(data.doc)}</span>
           </div>
           <div style="background:rgba(127,127,127,.12);border-radius:99px;height:8px;">
-            <div style="height:8px;border-radius:99px;background:var(--success-color);width:${barPct(data.doc||0)}%;"></div>
+            <div style="height:8px;border-radius:99px;background:var(--success-color);width:${barPct(data.doc || 0)}%;"></div>
           </div>
           <div style="display:flex;justify-content:space-between;font-size:.82rem;margin:.55rem 0 .25rem;color:var(--text-primary);">
             <span>면접 평가</span><span style="font-weight:700;">${v(data.interview)}</span>
           </div>
           <div style="background:rgba(127,127,127,.12);border-radius:99px;height:8px;">
-            <div style="height:8px;border-radius:99px;background:var(--success-color);width:${barPct(data.interview||0)}%;"></div>
+            <div style="height:8px;border-radius:99px;background:var(--success-color);width:${barPct(data.interview || 0)}%;"></div>
           </div>
         </div>
         <div style="${scS}">경쟁률 / 충원</div>
@@ -3775,7 +3909,7 @@
         <div style="${rowS} border-bottom:none;"><span style="color:var(--text-secondary);">2024 충원율</span><span style="font-weight:600;">${v(data.ratio2024)}%</span></div>
       `;
 
-    // ── 한양대 모달 ──────────────────────────────────────────────────────
+      // ── 한양대 모달 ──────────────────────────────────────────────────────
     } else if (adCurrentUni === '한양대') {
       const has50 = data['50%cut'] && data['50%cut'] !== '-' && data['50%cut'] !== '';
       html = `
@@ -3807,13 +3941,40 @@
         <div style="${rowS}"><span style="color:var(--text-secondary);">추가합격 인원</span><span style="font-weight:700;">${v(data['추가합격 인원'])}명</span></div>
         ${data['수능최저 충족률'] && data['수능최저 충족률'] !== '' ? `<div style="${rowS} border-bottom:none;"><span style="color:var(--text-secondary);">수능최저 충족률</span><span style="font-weight:700;color:var(--success-color);">${v(data['수능최저 충족률'])}%</span></div>` : ''}
       `;
+
+      // ── 홍익대 모달 ──────────────────────────────────────────────────────
+    } else if (adCurrentUni === '홍익대') {
+      html = `
+        <div style="font-size:1.15rem;font-weight:800;color:var(--text-primary);padding-bottom:.7rem;border-bottom:2px solid #1d4ed8;margin-bottom:.2rem;">
+          ${v(data['모집단위'])}
+          <span style="display:block;font-size:.82rem;font-weight:500;color:var(--text-secondary);margin-top:.15rem;">
+            홍익대 · ${v(data['학년도'])}학년도 · ${v(data['모집전형'])}
+          </span>
+        </div>
+        <div style="${scS}">등급 컷</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.8rem;text-align:center;">
+          <div style="background:rgba(29,78,216,.12);padding:.7rem;border-radius:10px;border:1px solid rgba(29,78,216,.3);">
+            <div style="font-size:.72rem;color:var(--text-secondary);">평균(등급)</div>
+            <div style="font-size:1.4rem;font-weight:800;color:#1d4ed8;">${v(data['평균(등급)'])}</div>
+          </div>
+          <div style="background:var(--upload-card-bg);padding:.7rem;border-radius:10px;border:1px solid var(--panel-border);">
+            <div style="font-size:.72rem;color:var(--text-secondary);">70%(등급)</div>
+            <div style="font-size:1.15rem;font-weight:700;color:var(--text-primary);">${v(data['70%(등급)'])}</div>
+          </div>
+        </div>
+        <div style="${scS}">모집 정보</div>
+        <div style="${rowS}"><span style="color:var(--text-secondary);">모집인원</span><span style="font-weight:700;">${v(data['모집인원'])}명</span></div>
+        <div style="${rowS}"><span style="color:var(--text-secondary);">지원자수</span><span style="font-weight:700;">${v(data['지원자수'])}명</span></div>
+        <div style="${rowS}"><span style="color:var(--text-secondary);">경쟁률</span><span style="font-weight:700;color:#1d4ed8;">${v(data['경쟁률'])}:1</span></div>
+        <div style="${rowS} border-bottom:none;"><span style="color:var(--text-secondary);">추가합격률</span><span style="font-weight:700;">${v(data['추가합격률'])}</span></div>
+      `;
     }
 
     body.innerHTML = html;
     modal.style.display = 'flex';
   }
 
-  window.adCloseModal = function() {
+  window.adCloseModal = function () {
     const modal = document.getElementById('adist-modal');
     if (modal) modal.style.display = 'none';
   };
