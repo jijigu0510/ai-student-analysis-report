@@ -1,9 +1,9 @@
 
 
 // Firebase에서 GAS URL을 받아오는 콜백 — urls = { '1': {'3': url, ...}, '2': {...}, '3': {...} }
-window.onFirebaseGasUrls = function(urls) {
+window.onFirebaseGasUrls = function (urls) {
   if (!urls) return;
-  ['1','2','3'].forEach(grade => {
+  ['1', '2', '3'].forEach(grade => {
     const gradeUrls = urls[grade];
     if (!gradeUrls) return;
     Object.keys(gradeUrls).forEach(month => {
@@ -22,7 +22,7 @@ window.onFirebaseGasUrls = function(urls) {
 
 document.addEventListener("DOMContentLoaded", () => {
   // Global error handler for debugging
-  window.onerror = function(message, source, lineno, colno, error) {
+  window.onerror = function (message, source, lineno, colno, error) {
     console.error("Global Error:", message, "at", source, ":", lineno);
     // Don't alert for every small thing, but for major script errors
     if (message.includes("renderCourseTable") || message.includes("extractCourseData")) {
@@ -36,14 +36,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const pfBtn = document.getElementById("pf-analyzeBtn");
   if (pfForm && pfBtn) {
     console.log("[PF-DEBUG] Early listener attachment attempted.");
-    pfForm.addEventListener("submit", async function(e) {
+    pfForm.addEventListener("submit", async function (e) {
       e.preventDefault();
       console.log("[PF-DEBUG] Form Submit Triggered!");
-      
+
       const idx = document.getElementById("pf-student-select").value;
-      if (idx === "" || !pfStudents[idx]) { 
-        alert("분석할 학생을 선택하세요."); 
-        return; 
+      if (idx === "" || !pfStudents[idx]) {
+        alert("분석할 학생을 선택하세요.");
+        return;
       }
       const s = pfStudents[idx];
       const apiKeyInput = document.getElementById("pf-api-key");
@@ -55,7 +55,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       pfBtn.disabled = true;
       pfBtn.innerHTML = "<span class='spinner' style='width:20px;height:20px;border-width:2px;margin:0;'></span> 원인 분석 중...";
-      
+
       const pfLoadEl = document.getElementById("pf-loadingState");
       const pfEmptyEl = document.getElementById("pf-emptyState");
       const pfReportEl = document.getElementById("pf-reportViewer");
@@ -82,27 +82,27 @@ document.addEventListener("DOMContentLoaded", () => {
         const report = await generateAIReportPF(promptData, apiKey);
 
         if (pfReportEl) {
-           // 대학별 서류평가 기준 패널 삽입
-           const pfCriteriaEl = document.createElement("div");
-           pfCriteriaEl.id = "pfUniCriteriaPanel";
-           pfReportEl.innerHTML = "";
-           pfReportEl.appendChild(pfCriteriaEl);
-           renderUniCriteria(s.univ, pfCriteriaEl);
+          // 대학별 서류평가 기준 패널 삽입
+          const pfCriteriaEl = document.createElement("div");
+          pfCriteriaEl.id = "pfUniCriteriaPanel";
+          pfReportEl.innerHTML = "";
+          pfReportEl.appendChild(pfCriteriaEl);
+          renderUniCriteria(s.univ, pfCriteriaEl);
 
-           // 리포트 본문
-           const pfReportContent = document.createElement("div");
-           pfReportContent.className = "markdown-body";
-           pfReportContent.innerHTML = marked.parse(report);
-           pfReportEl.appendChild(pfReportContent);
-           pfReportEl.classList.remove("hidden");
+          // 리포트 본문
+          const pfReportContent = document.createElement("div");
+          pfReportContent.className = "markdown-body";
+          pfReportContent.innerHTML = marked.parse(report);
+          pfReportEl.appendChild(pfReportContent);
+          pfReportEl.classList.remove("hidden");
         }
         document.getElementById("pf-pdfAction")?.classList.remove("hidden");
-        
+
         // Setup PF PDF download
         const pfPdfBtn = document.getElementById("pf-pdfDownloadBtn");
         if (pfPdfBtn) {
           pfPdfBtn.onclick = () => {
-             const pfContent = `
+            const pfContent = `
                 <div class="print-only">
                     <h2 class='print-header' style='color:#000; text-align:center; margin-bottom:2rem; font-size:2.2rem; font-weight:800;'>수시 합불합 원인 심층 분석 리포트</h2>
                     <p style='text-align:right; color:#666; margin-bottom:1.5rem; font-size:0.9rem;'>분석 일시: ${new Date().toLocaleString('ko-KR')}</p>
@@ -132,19 +132,19 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
                 </div>
              `;
-             printWithIframe(pfContent);
+            printWithIframe(pfContent);
           };
         }
       } catch (err) {
         console.error(err);
         if (pfReportEl) {
-           pfReportEl.innerHTML = `
+          pfReportEl.innerHTML = `
              <div style='color:var(--error-color);padding:20px;background:rgba(255, 71, 87, 0.05);border-radius:12px;border:1px solid rgba(255, 71, 87, 0.2);'>
                <h3 style="margin-top:0;">⚠️ 분석 실패</h3>
                <div style="white-space: pre-wrap; background:rgba(0,0,0,0.2); padding:15px; border-radius:8px; font-family:monospace; font-size:0.9rem; margin-bottom:15px; border:1px solid rgba(255,255,255,0.1); line-height:1.5;">${err.message}</div>
              </div>
            `;
-           pfReportEl.classList.remove("hidden");
+          pfReportEl.classList.remove("hidden");
         }
       } finally {
         if (pfLoadEl) pfLoadEl.classList.add("hidden");
@@ -163,13 +163,13 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // --- Pass/Fail 상세 모달 오픈 함수 (전역) ---
-  window.openPfDetailModal = function(title, inputId) {
+  window.openPfDetailModal = function (title, inputId) {
     const el = document.getElementById(inputId);
     const content = el ? el.value : "";
     const modalTitle = document.getElementById("modalTitle");
     const modalBody = document.getElementById("modalBody");
     const modalOverlay = document.getElementById("analysisModal");
-    
+
     if (modalTitle) modalTitle.innerText = title;
     if (modalBody) {
       if (!content || content.includes("데이터 없음") || content.includes("찾을 수 없습니다") || content.trim() === "") {
@@ -265,9 +265,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const tabInterview = document.getElementById("tab-interview");
   const tabMockExam = document.getElementById("tab-mock-exam");
   const tabGpaMockCompare = document.getElementById("tab-gpa-mock-compare");
-  const tabGradeRank      = document.getElementById("tab-grade-rank");
+  const tabGradeRank = document.getElementById("tab-grade-rank");
   const tabPassFailExamples = document.getElementById("tab-passfail-examples");
-  const tabAdmissionDist  = document.getElementById("tab-admission-dist");
+  const tabAdmissionDist = document.getElementById("tab-admission-dist");
   const tabSchoolMockStatus = document.getElementById("tab-school-mock-status");
   const viewIndividual = document.getElementById("view-individual");
   const viewPassFail = document.getElementById("view-passfail");
@@ -277,8 +277,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const viewInterview = document.getElementById("view-interview");
   const viewMockExam = document.getElementById("view-mock-exam");
   const viewGpaMockCompare = document.getElementById("view-gpa-mock-compare");
-  const viewGradeRank      = document.getElementById("view-grade-rank");
-  const viewAdmissionDist  = document.getElementById("view-admission-dist");
+  const viewGradeRank = document.getElementById("view-grade-rank");
+  const viewAdmissionDist = document.getElementById("view-admission-dist");
   const viewSchoolMockStatus = document.getElementById("view-school-mock-status");
 
   const allTabs = [tabIndividual, tabPassFail, tabPassFailExamples, tabSetech, tabCsat, tabInterview, tabMockExam, tabGpaMockCompare, tabGradeRank, tabAdmissionDist, tabSchoolMockStatus].filter(Boolean);
@@ -361,7 +361,7 @@ document.addEventListener("DOMContentLoaded", () => {
       mainTabsContainer.style.display = "none";
       showTabsBtn.style.display = "block";
     });
-    
+
     showTabsBtn.addEventListener("click", () => {
       mainTabsContainer.style.display = "flex";
       showTabsBtn.style.display = "none";
@@ -438,7 +438,7 @@ document.addEventListener("DOMContentLoaded", () => {
           targetInput.files = dt.files;
           uniInput.files = dt.files;
           targetInput.dispatchEvent(new Event('change', { bubbles: true }));
-        } catch(e) {
+        } catch (e) {
           console.warn("파일 복원 실패:", e);
         }
       }
@@ -448,7 +448,7 @@ document.addEventListener("DOMContentLoaded", () => {
     mappings.forEach(mapping => {
       const uniInput = document.getElementById(mapping.uniId);
       const targetInput = document.getElementById(mapping.targetId);
-      
+
       if (uniInput && targetInput) {
         uniInput.addEventListener('change', async (e) => {
           if (e.target.files && e.target.files.length > 0) {
@@ -476,7 +476,7 @@ document.addEventListener("DOMContentLoaded", () => {
               const h4 = container.querySelector('h4');
               const originalText = h4.innerHTML;
               // Prevent multiple (반영 완료!) texts if user changes repeatedly rapidly
-              if(!originalText.includes('(반영 완료!)')) {
+              if (!originalText.includes('(반영 완료!)')) {
                 h4.innerHTML += ' <span style="color:var(--success-color); font-size: 0.8rem; font-weight: normal;">(반영 완료!)</span>';
                 setTimeout(() => { h4.innerHTML = originalText; }, 3000);
               }
@@ -515,12 +515,12 @@ document.addEventListener("DOMContentLoaded", () => {
       uniApi.addEventListener('change', (e) => {
         const container = uniApi.closest('div');
         if (container) {
-           const labelSpan = container.querySelector('label span');
-           if (labelSpan && !labelSpan.innerHTML.includes('적용 완료')) {
-             const orig = labelSpan.innerHTML;
-             labelSpan.innerHTML = '<span style="color:var(--success-color); font-weight:bold;">(모든 탭에 적용 완료!)</span>';
-             setTimeout(() => labelSpan.innerHTML = orig, 3000);
-           }
+          const labelSpan = container.querySelector('label span');
+          if (labelSpan && !labelSpan.innerHTML.includes('적용 완료')) {
+            const orig = labelSpan.innerHTML;
+            labelSpan.innerHTML = '<span style="color:var(--success-color); font-weight:bold;">(모든 탭에 적용 완료!)</span>';
+            setTimeout(() => labelSpan.innerHTML = orig, 3000);
+          }
         }
       });
     }
@@ -536,21 +536,21 @@ document.addEventListener("DOMContentLoaded", () => {
   let mockDataByMonth = {}; // 키: '${grade}_${month}', 예: '1_3', '3_5'
   let currentMockMonth = '3';
   let currentMockGrade = '1';
-  const MONTHS_BY_GRADE = { '1': ['3','6','9','11'], '2': ['3','6','9','11'], '3': ['3','5','6','7','9','11'] };
+  const MONTHS_BY_GRADE = { '1': ['3', '6', '9', '11'], '2': ['3', '6', '9', '11'], '3': ['3', '5', '6', '7', '9', '11'] };
   const mockServerData = {}; // { '${grade}_${month}': { count, uploadedAt } }
 
   function dataKey() { return `${currentMockGrade}_${currentMockMonth}`; }
 
   function getDataForCurrentMonth() {
     // 현재 월의 전체 학년 데이터를 합침
-    return ['1','2','3'].flatMap(g => mockDataByMonth[`${g}_${currentMockMonth}`] || []);
+    return ['1', '2', '3'].flatMap(g => mockDataByMonth[`${g}_${currentMockMonth}`] || []);
   }
 
   // Firebase 모듈에서 데이터를 받아오는 콜백 — 키: '${grade}_${month}'
-  window.onFirebaseMockData = function(gradeMonthKey, serverData) {
+  window.onFirebaseMockData = function (gradeMonthKey, serverData) {
     if (!serverData || !Array.isArray(serverData.data)) return;
     mockServerData[gradeMonthKey] = {
-      count:      serverData.count || serverData.data.length,
+      count: serverData.count || serverData.data.length,
       uploadedAt: serverData.uploadedAt
     };
     if (!mockDataByMonth[gradeMonthKey] || mockDataByMonth[gradeMonthKey].length === 0) {
@@ -576,7 +576,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!mockMonthSelect) return;
     const months = MONTHS_BY_GRADE[grade];
     const prevMonth = mockMonthSelect.value;
-    const labels = { '3':'3월 모의고사','5':'5월 모의고사','6':'6월 모의고사','7':'7월 모의고사','9':'9월 모의고사','11':'11월 모의고사' };
+    const labels = { '3': '3월 모의고사', '5': '5월 모의고사', '6': '6월 모의고사', '7': '7월 모의고사', '9': '9월 모의고사', '11': '11월 모의고사' };
     mockMonthSelect.innerHTML = months.map(m => `<option value="${m}">${labels[m]}</option>`).join('');
     if (months.includes(prevMonth)) {
       mockMonthSelect.value = prevMonth;
@@ -611,24 +611,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (mockDropZone && mockFileInput) {
     mockDropZone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        mockDropZone.classList.add('dragover');
+      e.preventDefault();
+      mockDropZone.classList.add('dragover');
     });
     mockDropZone.addEventListener('dragleave', () => {
-        mockDropZone.classList.remove('dragover');
+      mockDropZone.classList.remove('dragover');
     });
     mockDropZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        mockDropZone.classList.remove('dragover');
-        if(e.dataTransfer.files.length > 0) {
-            processMockFiles(e.dataTransfer.files);
-        }
+      e.preventDefault();
+      mockDropZone.classList.remove('dragover');
+      if (e.dataTransfer.files.length > 0) {
+        processMockFiles(e.dataTransfer.files);
+      }
     });
     mockDropZone.addEventListener('click', () => mockFileInput.click());
     mockFileInput.addEventListener('change', (e) => {
-        if(e.target.files.length > 0) {
-            processMockFiles(e.target.files);
-        }
+      if (e.target.files.length > 0) {
+        processMockFiles(e.target.files);
+      }
     });
   }
   if (mockDownloadBtn) mockDownloadBtn.addEventListener('click', exportMockToCSV);
@@ -702,34 +702,34 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const mockPrintReportBtn = document.getElementById('mockPrintReportBtn');
   if (mockPrintReportBtn) {
-      mockPrintReportBtn.addEventListener('click', printMockIndividualReport);
+    mockPrintReportBtn.addEventListener('click', printMockIndividualReport);
   }
-  
+
   // GAS 설정 및 저장 로직
   if (mockGasSettingsBtn && mockGasSettingsArea) {
-      mockGasSettingsBtn.addEventListener('click', () => {
-          mockGasSettingsArea.classList.toggle('hidden');
-      });
+    mockGasSettingsBtn.addEventListener('click', () => {
+      mockGasSettingsArea.classList.toggle('hidden');
+    });
   }
 
   // 학년 선택 변경 시
   const mockGradeSelect = document.getElementById('mockGradeSelect');
   if (mockGradeSelect) {
-      mockGradeSelect.addEventListener('change', (e) => {
-          currentMockGrade = e.target.value;
-          updateMonthSelectForGrade(currentMockGrade);
-          if (uploadMonthText) uploadMonthText.innerText = currentMockMonth;
-          // 설정 패널 학년도 동기화
-          const mockGasGradeSelect = document.getElementById('mockGasGradeSelect');
-          if (mockGasGradeSelect) { mockGasGradeSelect.value = currentMockGrade; loadGasUrlsForGrade(currentMockGrade); }
-          mockSheetNames = [];
-          mockCachedSheetData = {};
-          const hasData = getDataForCurrentMonth().length > 0;
-          if (hasData) { showMockResults(); } else { if (mockResultArea) mockResultArea.classList.add('hidden'); }
-          refreshMockServerStatus();
-      });
-      // 초기 월 옵션 설정 (1학년 기본값)
+    mockGradeSelect.addEventListener('change', (e) => {
+      currentMockGrade = e.target.value;
       updateMonthSelectForGrade(currentMockGrade);
+      if (uploadMonthText) uploadMonthText.innerText = currentMockMonth;
+      // 설정 패널 학년도 동기화
+      const mockGasGradeSelect = document.getElementById('mockGasGradeSelect');
+      if (mockGasGradeSelect) { mockGasGradeSelect.value = currentMockGrade; loadGasUrlsForGrade(currentMockGrade); }
+      mockSheetNames = [];
+      mockCachedSheetData = {};
+      const hasData = getDataForCurrentMonth().length > 0;
+      if (hasData) { showMockResults(); } else { if (mockResultArea) mockResultArea.classList.add('hidden'); }
+      refreshMockServerStatus();
+    });
+    // 초기 월 옵션 설정 (1학년 기본값)
+    updateMonthSelectForGrade(currentMockGrade);
   }
 
   // 학년 데이터 삭제 버튼
@@ -747,7 +747,7 @@ document.addEventListener("DOMContentLoaded", () => {
       await StorageManager.save("mockDataByMonth", mockDataByMonth);
       if (typeof window.firebaseMockDelete === 'function') {
         for (const m of months) {
-          try { await window.firebaseMockDelete(`${currentMockGrade}_${m}`); } catch(e) {}
+          try { await window.firebaseMockDelete(`${currentMockGrade}_${m}`); } catch (e) { }
         }
       }
       if (mockResultArea) mockResultArea.classList.add('hidden');
@@ -758,17 +758,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 월 선택 변경 시
   if (mockMonthSelect) {
-      mockMonthSelect.addEventListener('change', (e) => {
-          currentMockMonth = e.target.value;
-          if (uploadMonthText) uploadMonthText.innerText = currentMockMonth;
-          const hasData = getDataForCurrentMonth().length > 0;
-          if (hasData) { showMockResults(); } else { if (mockResultArea) mockResultArea.classList.add('hidden'); }
-          // 시트 상태 초기화
-          updateSheetStatus('info', '배포된 GAS URL을 설정해 주세요.');
-          mockSheetNames = [];
-          mockCachedSheetData = {};
-          refreshMockServerStatus();
-      });
+    mockMonthSelect.addEventListener('change', (e) => {
+      currentMockMonth = e.target.value;
+      if (uploadMonthText) uploadMonthText.innerText = currentMockMonth;
+      const hasData = getDataForCurrentMonth().length > 0;
+      if (hasData) { showMockResults(); } else { if (mockResultArea) mockResultArea.classList.add('hidden'); }
+      // 시트 상태 초기화
+      updateSheetStatus('info', '배포된 GAS URL을 설정해 주세요.');
+      mockSheetNames = [];
+      mockCachedSheetData = {};
+      refreshMockServerStatus();
+    });
   }
 
   // 학년/월별 GAS URL 관리
@@ -789,7 +789,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function loadGasUrlsForGrade(grade) {
     const months = MONTHS_BY_GRADE[grade] || [];
-    ['3','5','6','7','9','11'].forEach(m => {
+    ['3', '5', '6', '7', '9', '11'].forEach(m => {
       const el = document.getElementById(`mockGasUrl_${m}`);
       if (el) el.value = months.includes(m) ? getMockGasUrl(grade, m) : '';
     });
@@ -800,37 +800,37 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const mockGasGradeSelectEl = document.getElementById('mockGasGradeSelect');
   if (mockGasGradeSelectEl) {
-      mockGasGradeSelectEl.addEventListener('change', (e) => loadGasUrlsForGrade(e.target.value));
-      loadGasUrlsForGrade(mockGasGradeSelectEl.value);
+    mockGasGradeSelectEl.addEventListener('change', (e) => loadGasUrlsForGrade(e.target.value));
+    loadGasUrlsForGrade(mockGasGradeSelectEl.value);
   }
 
   if (mockGasUrlSaveBtn) {
-      mockGasUrlSaveBtn.addEventListener('click', async () => {
-          const mockGasGradeSelect = document.getElementById('mockGasGradeSelect');
-          const grade = mockGasGradeSelect ? mockGasGradeSelect.value : '1';
-          const months = MONTHS_BY_GRADE[grade] || [];
-          const urls = {};
-          months.forEach(m => {
-              const el = document.getElementById(`mockGasUrl_${m}`);
-              const val = el ? el.value.trim() : '';
-              localStorage.setItem(`mockGasUrl_${grade}_${m}`, val);
-              urls[m] = val;
-          });
-          if (typeof window.firebaseGasSave === 'function') {
-              try { await window.firebaseGasSave(grade, urls); }
-              catch (e) { console.warn('[Firebase] GAS URL 저장 실패:', e.message); }
-          }
-          alert(`${grade}학년 연동 설정이 저장되었습니다.`);
-          mockGasSettingsArea.classList.add('hidden');
+    mockGasUrlSaveBtn.addEventListener('click', async () => {
+      const mockGasGradeSelect = document.getElementById('mockGasGradeSelect');
+      const grade = mockGasGradeSelect ? mockGasGradeSelect.value : '1';
+      const months = MONTHS_BY_GRADE[grade] || [];
+      const urls = {};
+      months.forEach(m => {
+        const el = document.getElementById(`mockGasUrl_${m}`);
+        const val = el ? el.value.trim() : '';
+        localStorage.setItem(`mockGasUrl_${grade}_${m}`, val);
+        urls[m] = val;
       });
+      if (typeof window.firebaseGasSave === 'function') {
+        try { await window.firebaseGasSave(grade, urls); }
+        catch (e) { console.warn('[Firebase] GAS URL 저장 실패:', e.message); }
+      }
+      alert(`${grade}학년 연동 설정이 저장되었습니다.`);
+      mockGasSettingsArea.classList.add('hidden');
+    });
   }
 
   // GAS 연동 초기화
   const mockLoadSheetsBtn = document.getElementById('mockLoadSheetsBtn');
   if (mockLoadSheetsBtn) {
-      mockLoadSheetsBtn.addEventListener('click', connectToGoogleSheet);
+    mockLoadSheetsBtn.addEventListener('click', connectToGoogleSheet);
   }
-  
+
   const mockGradeFilterSelect = document.getElementById('mockGradeFilterSelect');
   if (mockGradeFilterSelect) {
     mockGradeFilterSelect.addEventListener('change', () => {
@@ -840,7 +840,7 @@ document.addEventListener("DOMContentLoaded", () => {
         let data = getDataForCurrentMonth();
         if (gradeVal !== 'all') data = data.filter(d => String(d.학년) === gradeVal);
         const prev = mockClassSelect.value;
-        const classes = [...new Set(data.map(d => d.반))].sort((a,b) => Number(a)-Number(b));
+        const classes = [...new Set(data.map(d => d.반))].sort((a, b) => Number(a) - Number(b));
         mockClassSelect.innerHTML = '<option value="all">전체 반</option>';
         classes.forEach(cls => {
           const o = document.createElement('option'); o.value = cls; o.textContent = `${cls}반`;
@@ -855,8 +855,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (mockClassSelect) {
     mockClassSelect.addEventListener('change', (e) => {
-        updateStudentDropdown(e.target.value);
-        renderFilteredMockData();
+      updateStudentDropdown(e.target.value);
+      renderFilteredMockData();
     });
   }
 
@@ -866,100 +866,100 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ★ 자동 인코딩 판별 읽기 기능 (UTF-8 / EUC-KR 대응)
   function readFileAsText(file) {
-      return new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = (e) => {
-              const buffer = e.target.result;
-              const view = new Uint8Array(buffer);
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const buffer = e.target.result;
+        const view = new Uint8Array(buffer);
 
-              // UTF-8 fatal 모드: 잘못된 바이트 시퀀스가 있으면 예외 발생 → EUC-KR로 재시도
-              let text;
-              try {
-                  text = new TextDecoder('utf-8', { fatal: true }).decode(view);
-              } catch (_) {
-                  text = new TextDecoder('euc-kr').decode(view);
-              }
-              resolve(text);
-          };
-          reader.onerror = (e) => reject(e);
-          reader.readAsArrayBuffer(file);
-      });
+        // UTF-8 fatal 모드: 잘못된 바이트 시퀀스가 있으면 예외 발생 → EUC-KR로 재시도
+        let text;
+        try {
+          text = new TextDecoder('utf-8', { fatal: true }).decode(view);
+        } catch (_) {
+          text = new TextDecoder('euc-kr').decode(view);
+        }
+        resolve(text);
+      };
+      reader.onerror = (e) => reject(e);
+      reader.readAsArrayBuffer(file);
+    });
   }
 
   async function processMockFiles(files) {
-      const key = dataKey();
-      mockDataByMonth[key] = [];
+    const key = dataKey();
+    mockDataByMonth[key] = [];
 
-      for (let i = 0; i < files.length; i++) {
-          const file = files[i];
-          if (!file.name.toLowerCase().endsWith('.csv')) continue;
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      if (!file.name.toLowerCase().endsWith('.csv')) continue;
 
-          try {
-              let text = await readFileAsText(file);
-              text = text.replace(/❹/g, '우').replace(/④/g, '우');
-              const data = parseCSVString(text);
-              const extracted = extractMockStudentData(data);
-              mockDataByMonth[key] = mockDataByMonth[key].concat(extracted);
-          } catch (err) {
-              console.error(`Error processing file ${file.name}:`, err);
-          }
+      try {
+        let text = await readFileAsText(file);
+        text = text.replace(/❹/g, '우').replace(/④/g, '우');
+        const data = parseCSVString(text);
+        const extracted = extractMockStudentData(data);
+        mockDataByMonth[key] = mockDataByMonth[key].concat(extracted);
+      } catch (err) {
+        console.error(`Error processing file ${file.name}:`, err);
       }
+    }
 
-      if (mockDataByMonth[key].length > 0) {
-          showMockResults();
-          await StorageManager.save("mockDataByMonth", mockDataByMonth);
-          refreshMockServerStatus();
-      } else {
-          alert(`${currentMockGrade}학년 ${currentMockMonth}월 추출 자료가 없습니다. 성적표 파일이 맞는지 확인해 주세요.`);
-      }
+    if (mockDataByMonth[key].length > 0) {
+      showMockResults();
+      await StorageManager.save("mockDataByMonth", mockDataByMonth);
+      refreshMockServerStatus();
+    } else {
+      alert(`${currentMockGrade}학년 ${currentMockMonth}월 추출 자료가 없습니다. 성적표 파일이 맞는지 확인해 주세요.`);
+    }
   }
 
   async function saveToGoogleSheets() {
-      const gasUrl = getMockGasUrl(currentMockGrade, currentMockMonth);
-      if (!gasUrl) {
-          alert("먼저 [설정(⚙️)] 아이콘을 눌러 구글 앱 스크립트 URL을 저장해 주세요.");
-          if (mockGasSettingsArea) mockGasSettingsArea.classList.remove('hidden');
-          return;
-      }
-      
-      if (analyzedMockData.length === 0) {
-          alert("전송할 데이터가 없습니다.");
-          return;
-      }
-      
-      // 현재 필터링된 데이터만 보낼지, 전체를 보낼지 결정 (여기서는 현재 화면의 데이터 기준)
-      const selectedClass = mockClassSelect ? mockClassSelect.value : 'all';
-      const selectedStudent = mockStudentSelect ? mockStudentSelect.value : 'all';
-      
-      let filtered = analyzedMockData;
-      if (selectedClass !== 'all') filtered = filtered.filter(d => d.반 === selectedClass);
-      if (selectedStudent !== 'all') {
-          const [num, name] = selectedStudent.split('_');
-          filtered = filtered.filter(d => d.번호 === num && d.성명 === name);
-      }
-      
-      if (!confirm(`${filtered.length}개의 데이터를 구글 시트로 전송하시겠습니까?`)) return;
-      
-      const originalBtnText = mockSaveGasBtn.innerHTML;
-      mockSaveGasBtn.innerHTML = '<span>⏳</span> 전송 중...';
-      mockSaveGasBtn.disabled = true;
-      
-      try {
-          const response = await fetch(gasUrl, {
-              method: 'POST',
-              mode: 'no-cors', // GAS 웹 앱 특성상 redirection 때문에 no-cors가 유용할 수 있음
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(filtered)
-          });
-          
-          alert("데이터 전송 요청을 완료했습니다.\n(no-cors 모드에서는 상세 응답 확인이 제한적일 수 있으나 구글 시트를 확인해 보세요!)");
-      } catch (err) {
-          console.error("GAS 전송 오류:", err);
-          alert("전송 중 오류가 발생했습니다: " + err.message);
-      } finally {
-          mockSaveGasBtn.innerHTML = originalBtnText;
-          mockSaveGasBtn.disabled = false;
-      }
+    const gasUrl = getMockGasUrl(currentMockGrade, currentMockMonth);
+    if (!gasUrl) {
+      alert("먼저 [설정(⚙️)] 아이콘을 눌러 구글 앱 스크립트 URL을 저장해 주세요.");
+      if (mockGasSettingsArea) mockGasSettingsArea.classList.remove('hidden');
+      return;
+    }
+
+    if (analyzedMockData.length === 0) {
+      alert("전송할 데이터가 없습니다.");
+      return;
+    }
+
+    // 현재 필터링된 데이터만 보낼지, 전체를 보낼지 결정 (여기서는 현재 화면의 데이터 기준)
+    const selectedClass = mockClassSelect ? mockClassSelect.value : 'all';
+    const selectedStudent = mockStudentSelect ? mockStudentSelect.value : 'all';
+
+    let filtered = analyzedMockData;
+    if (selectedClass !== 'all') filtered = filtered.filter(d => d.반 === selectedClass);
+    if (selectedStudent !== 'all') {
+      const [num, name] = selectedStudent.split('_');
+      filtered = filtered.filter(d => d.번호 === num && d.성명 === name);
+    }
+
+    if (!confirm(`${filtered.length}개의 데이터를 구글 시트로 전송하시겠습니까?`)) return;
+
+    const originalBtnText = mockSaveGasBtn.innerHTML;
+    mockSaveGasBtn.innerHTML = '<span>⏳</span> 전송 중...';
+    mockSaveGasBtn.disabled = true;
+
+    try {
+      const response = await fetch(gasUrl, {
+        method: 'POST',
+        mode: 'no-cors', // GAS 웹 앱 특성상 redirection 때문에 no-cors가 유용할 수 있음
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(filtered)
+      });
+
+      alert("데이터 전송 요청을 완료했습니다.\n(no-cors 모드에서는 상세 응답 확인이 제한적일 수 있으나 구글 시트를 확인해 보세요!)");
+    } catch (err) {
+      console.error("GAS 전송 오류:", err);
+      alert("전송 중 오류가 발생했습니다: " + err.message);
+    } finally {
+      mockSaveGasBtn.innerHTML = originalBtnText;
+      mockSaveGasBtn.disabled = false;
+    }
   }
 
   // =========================================================================
@@ -971,166 +971,166 @@ document.addEventListener("DOMContentLoaded", () => {
    * 실패 시 진단 메시지 포함
    */
   async function gasGetJson(url) {
-      const cleanUrl = url.replace(/[?&]+$/, ''); // 끝의 ? & 제거
+    const cleanUrl = url.replace(/[?&]+$/, ''); // 끝의 ? & 제거
 
-      // 1단계: 일반 fetch (웹서버·localhost 환경에서 동작)
+    // 1단계: 일반 fetch (웹서버·localhost 환경에서 동작)
+    try {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 10000);
       try {
-          const ctrl = new AbortController();
-          const timer = setTimeout(() => ctrl.abort(), 10000);
-          try {
-              const res = await fetch(cleanUrl, { credentials: 'omit', signal: ctrl.signal });
-              clearTimeout(timer);
-              if (res.ok) {
-                  const text = await res.text();
-                  if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
-                      return JSON.parse(text);
-                  }
-              }
-          } finally {
-              clearTimeout(timer);
+        const res = await fetch(cleanUrl, { credentials: 'omit', signal: ctrl.signal });
+        clearTimeout(timer);
+        if (res.ok) {
+          const text = await res.text();
+          if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
+            return JSON.parse(text);
           }
-      } catch (e) {
-          if (e.name === 'AbortError') throw new Error('연결 시간 초과. GAS URL과 배포 상태를 확인해 주세요.');
-          // "Failed to fetch" = CORS 문제 → JSONP로 폴백
+        }
+      } finally {
+        clearTimeout(timer);
+      }
+    } catch (e) {
+      if (e.name === 'AbortError') throw new Error('연결 시간 초과. GAS URL과 배포 상태를 확인해 주세요.');
+      // "Failed to fetch" = CORS 문제 → JSONP로 폴백
+    }
+
+    // 2단계: JSONP (file:// 환경에서 CORS 우회)
+    return new Promise((resolve, reject) => {
+      const isFile = window.location.protocol === 'file:';
+      const cbName = '__gasJsonp_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+      const script = document.createElement('script');
+
+      const timer = setTimeout(() => {
+        cleanup();
+        reject(new Error(
+          '⏱ GAS 연결 시간 초과 (15초)\n\n' +
+          '확인 사항:\n' +
+          '① GAS 웹 앱 URL이 올바른지 확인\n' +
+          '② GAS 배포 설정 → 액세스 권한: 모든 사람\n' +
+          (isFile ? '③ ⚠️ 파일 직접 실행(file://) 환경입니다.\n   VS Code "Live Server" 확장으로 열면 해결됩니다.\n' : '') +
+          '\n시도 URL: ' + cleanUrl
+        ));
+      }, 15000);
+
+      function cleanup() {
+        clearTimeout(timer);
+        delete window[cbName];
+        if (script.parentNode) script.parentNode.removeChild(script);
       }
 
-      // 2단계: JSONP (file:// 환경에서 CORS 우회)
-      return new Promise((resolve, reject) => {
-          const isFile = window.location.protocol === 'file:';
-          const cbName = '__gasJsonp_' + Date.now() + '_' + Math.random().toString(36).slice(2);
-          const script = document.createElement('script');
+      window[cbName] = function (data) { cleanup(); resolve(data); };
 
-          const timer = setTimeout(() => {
-              cleanup();
-              reject(new Error(
-                  '⏱ GAS 연결 시간 초과 (15초)\n\n' +
-                  '확인 사항:\n' +
-                  '① GAS 웹 앱 URL이 올바른지 확인\n' +
-                  '② GAS 배포 설정 → 액세스 권한: 모든 사람\n' +
-                  (isFile ? '③ ⚠️ 파일 직접 실행(file://) 환경입니다.\n   VS Code "Live Server" 확장으로 열면 해결됩니다.\n' : '') +
-                  '\n시도 URL: ' + cleanUrl
-              ));
-          }, 15000);
+      script.onerror = function () {
+        cleanup();
+        reject(new Error(
+          '❌ GAS 서버에 연결할 수 없습니다\n\n' +
+          '가능한 원인:\n' +
+          '① GAS URL이 잘못되었거나 배포가 만료됨\n' +
+          '   → script.google.com/macros/s/.../exec 형식 확인\n' +
+          '② 학교 네트워크에서 Google 스크립트 서버 차단\n' +
+          '   → 모바일 핫스팟으로 변경 후 시도\n' +
+          '③ GAS 액세스 권한이 "모든 사람"으로 설정되지 않음\n' +
+          '   → GAS → 배포 → 배포 관리 → 수정에서 확인\n' +
+          (isFile ? '④ ⚠️ 파일 직접 실행(file://) 환경입니다.\n   VS Code "Live Server" 확장을 설치 후 실행하세요.\n' : '') +
+          '\n시도 URL: ' + script.src
+        ));
+      };
 
-          function cleanup() {
-              clearTimeout(timer);
-              delete window[cbName];
-              if (script.parentNode) script.parentNode.removeChild(script);
-          }
-
-          window[cbName] = function(data) { cleanup(); resolve(data); };
-
-          script.onerror = function() {
-              cleanup();
-              reject(new Error(
-                  '❌ GAS 서버에 연결할 수 없습니다\n\n' +
-                  '가능한 원인:\n' +
-                  '① GAS URL이 잘못되었거나 배포가 만료됨\n' +
-                  '   → script.google.com/macros/s/.../exec 형식 확인\n' +
-                  '② 학교 네트워크에서 Google 스크립트 서버 차단\n' +
-                  '   → 모바일 핫스팟으로 변경 후 시도\n' +
-                  '③ GAS 액세스 권한이 "모든 사람"으로 설정되지 않음\n' +
-                  '   → GAS → 배포 → 배포 관리 → 수정에서 확인\n' +
-                  (isFile ? '④ ⚠️ 파일 직접 실행(file://) 환경입니다.\n   VS Code "Live Server" 확장을 설치 후 실행하세요.\n' : '') +
-                  '\n시도 URL: ' + script.src
-              ));
-          };
-
-          const sep = cleanUrl.includes('?') ? '&' : '?';
-          script.src = cleanUrl + sep + 'callback=' + cbName;
-          document.head.appendChild(script);
-      });
+      const sep = cleanUrl.includes('?') ? '&' : '?';
+      script.src = cleanUrl + sep + 'callback=' + cbName;
+      document.head.appendChild(script);
+    });
   }
 
   /** 시트 연결 상태 표시 업데이트 */
   function updateSheetStatus(type, message) {
-      const el = document.getElementById('mockSheetStatus');
-      if (!el) return;
-      const colors = { loading: 'var(--text-secondary)', success: '#4caf50', error: '#f44336', info: '#64b5f6' };
-      el.innerHTML = `<p style="font-size:0.78rem; color:${colors[type] || colors.info}; margin:0;">${message}</p>`;
+    const el = document.getElementById('mockSheetStatus');
+    if (!el) return;
+    const colors = { loading: 'var(--text-secondary)', success: '#4caf50', error: '#f44336', info: '#64b5f6' };
+    el.innerHTML = `<p style="font-size:0.78rem; color:${colors[type] || colors.info}; margin:0;">${message}</p>`;
   }
 
   /** GAS 웹 앱으로 스프레드시트 시트 목록 로드 */
   async function connectToGoogleSheet() {
-      const gasUrl = getMockGasUrl(currentMockGrade, currentMockMonth);
+    const gasUrl = getMockGasUrl(currentMockGrade, currentMockMonth);
 
-      if (!gasUrl) {
-          alert(`${currentMockGrade}학년 ${currentMockMonth}월 연동 설정에 GAS 웹 앱 URL이 없습니다.\n⚙️ 연동 설정을 먼저 진행해 주세요.`);
-          if (mockGasSettingsArea) mockGasSettingsArea.classList.remove('hidden');
-          return null;
-      }
+    if (!gasUrl) {
+      alert(`${currentMockGrade}학년 ${currentMockMonth}월 연동 설정에 GAS 웹 앱 URL이 없습니다.\n⚙️ 연동 설정을 먼저 진행해 주세요.`);
+      if (mockGasSettingsArea) mockGasSettingsArea.classList.remove('hidden');
+      return null;
+    }
 
-      updateSheetStatus('loading', '⏳ 스프레드시트에 연결 중...');
-      const btn = document.getElementById('mockLoadSheetsBtn');
-      if (btn) { btn.disabled = true; btn.textContent = '연결 중...'; }
+    updateSheetStatus('loading', '⏳ 스프레드시트에 연결 중...');
+    const btn = document.getElementById('mockLoadSheetsBtn');
+    if (btn) { btn.disabled = true; btn.textContent = '연결 중...'; }
 
-      try {
-          const data = await gasGetJson(`${gasUrl}?action=sheets`);
-          if (!data.success) throw new Error(data.error || '시트 목록 로드 실패');
+    try {
+      const data = await gasGetJson(`${gasUrl}?action=sheets`);
+      if (!data.success) throw new Error(data.error || '시트 목록 로드 실패');
 
-          mockSheetNames = data.sheets || [];
-          mockCachedSheetData = {}; // 캐시 초기화
-          localStorage.setItem('mockGasUrl', gasUrl);
+      mockSheetNames = data.sheets || [];
+      mockCachedSheetData = {}; // 캐시 초기화
+      localStorage.setItem('mockGasUrl', gasUrl);
 
-          const preview = mockSheetNames.slice(0, 6).join(', ') + (mockSheetNames.length > 6 ? ' ...' : '');
-          updateSheetStatus('success', `✅ 연결 성공! ${mockSheetNames.length}개 시트: ${preview}`);
-          return mockSheetNames;
+      const preview = mockSheetNames.slice(0, 6).join(', ') + (mockSheetNames.length > 6 ? ' ...' : '');
+      updateSheetStatus('success', `✅ 연결 성공! ${mockSheetNames.length}개 시트: ${preview}`);
+      return mockSheetNames;
 
-      } catch (err) {
-          updateSheetStatus('error', `❌ 연결 실패: ${err.message}`);
-          console.error('GAS 연결 오류:', err);
-          return null;
-      } finally {
-          if (btn) { btn.disabled = false; btn.textContent = '시트 연결'; }
-      }
+    } catch (err) {
+      updateSheetStatus('error', `❌ 연결 실패: ${err.message}`);
+      console.error('GAS 연결 오류:', err);
+      return null;
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = '시트 연결'; }
+    }
   }
 
   /** 과목명 정규화 (매칭용) */
   function normalizeSubjectName(name) {
-      return name
-          .replace(/\s/g, '')
-          .replace(/Ⅰ/g, '1').replace(/Ⅱ/g, '2').replace(/Ⅲ/g, '3')
-          .replace(/Ⅳ/g, '4').replace(/Ⅴ/g, '5')
-          .replace(/I$/g, '1').replace(/II$/g, '2').replace(/III$/g, '3')
-          .toLowerCase();
+    return name
+      .replace(/\s/g, '')
+      .replace(/Ⅰ/g, '1').replace(/Ⅱ/g, '2').replace(/Ⅲ/g, '3')
+      .replace(/Ⅳ/g, '4').replace(/Ⅴ/g, '5')
+      .replace(/I$/g, '1').replace(/II$/g, '2').replace(/III$/g, '3')
+      .toLowerCase();
   }
 
   /** CSV 과목명 ↔ 스프레드시트 시트명 매칭 (퍼지) */
   function matchSubjectToSheet(subjectName) {
-      if (!mockSheetNames || mockSheetNames.length === 0) return null;
-      const normSubj = normalizeSubjectName(subjectName);
+    if (!mockSheetNames || mockSheetNames.length === 0) return null;
+    const normSubj = normalizeSubjectName(subjectName);
 
-      // 1. 완전 일치
-      for (const sheet of mockSheetNames) {
-          if (normalizeSubjectName(sheet) === normSubj) return sheet;
-      }
-      // 2. 포함 관계
-      for (const sheet of mockSheetNames) {
-          const normSheet = normalizeSubjectName(sheet);
-          if (normSubj.includes(normSheet) || normSheet.includes(normSubj)) return sheet;
-      }
-      // 3. 괄호 제거 후 핵심어 매칭
-      const coreSubj = normalizeSubjectName(subjectName.replace(/[（(][^)）]*[)）]/g, ''));
-      for (const sheet of mockSheetNames) {
-          const coreSheet = normalizeSubjectName(sheet.replace(/[（(][^)）]*[)）]/g, ''));
-          if (coreSubj === coreSheet || coreSubj.includes(coreSheet) || coreSheet.includes(coreSubj)) return sheet;
-      }
-      return null;
+    // 1. 완전 일치
+    for (const sheet of mockSheetNames) {
+      if (normalizeSubjectName(sheet) === normSubj) return sheet;
+    }
+    // 2. 포함 관계
+    for (const sheet of mockSheetNames) {
+      const normSheet = normalizeSubjectName(sheet);
+      if (normSubj.includes(normSheet) || normSheet.includes(normSubj)) return sheet;
+    }
+    // 3. 괄호 제거 후 핵심어 매칭
+    const coreSubj = normalizeSubjectName(subjectName.replace(/[（(][^)）]*[)）]/g, ''));
+    for (const sheet of mockSheetNames) {
+      const coreSheet = normalizeSubjectName(sheet.replace(/[（(][^)）]*[)）]/g, ''));
+      if (coreSubj === coreSheet || coreSubj.includes(coreSheet) || coreSheet.includes(coreSubj)) return sheet;
+    }
+    return null;
   }
 
   /** 특정 시트 데이터 가져오기 (캐시 적용) */
   async function fetchSubjectSheetData(sheetName) {
-      if (mockCachedSheetData[sheetName]) return mockCachedSheetData[sheetName];
+    if (mockCachedSheetData[sheetName]) return mockCachedSheetData[sheetName];
 
-      const gasUrl = getMockGasUrl(currentMockGrade, currentMockMonth);
-      if (!gasUrl) throw new Error(`${currentMockGrade}학년 ${currentMockMonth}월 GAS 연동 설정이 되어 있지 않습니다.`);
+    const gasUrl = getMockGasUrl(currentMockGrade, currentMockMonth);
+    if (!gasUrl) throw new Error(`${currentMockGrade}학년 ${currentMockMonth}월 GAS 연동 설정이 되어 있지 않습니다.`);
 
-      const data = await gasGetJson(`${gasUrl}?action=sheetData&sheet=${encodeURIComponent(sheetName)}`);
-      if (!data.success) throw new Error(data.error || `시트 '${sheetName}' 데이터 로드 실패`);
+    const data = await gasGetJson(`${gasUrl}?action=sheetData&sheet=${encodeURIComponent(sheetName)}`);
+    if (!data.success) throw new Error(data.error || `시트 '${sheetName}' 데이터 로드 실패`);
 
-      const rows = data.data || [];
-      mockCachedSheetData[sheetName] = rows;
-      return rows;
+    const rows = data.data || [];
+    mockCachedSheetData[sheetName] = rows;
+    return rows;
   }
 
   /**
@@ -1138,167 +1138,167 @@ document.addEventListener("DOMContentLoaded", () => {
    * 반환: { headers: string[], questions: { [번호]: {번호, 정답, 배점, 전국정답률, 영역, 성취기준, ...} } }
    */
   function parseSheetData(rows) {
-      if (!rows || rows.length < 2) return null;
+    if (!rows || rows.length < 2) return null;
 
-      const headers = rows[0].map(h => String(h).trim());
+    const headers = rows[0].map(h => String(h).trim());
 
-      // 컬럼 인덱스 탐색
-      const findCol = (...keywords) => headers.findIndex(h => keywords.some(k => new RegExp(k, 'i').test(h)));
-      const qNumCol      = findCol('^문항$', '문항번호', '번호', '문항\\s*no', 'no\\.', 'number');
-      const answerCol    = findCol('정답', '답');
-      const pointsCol    = findCol('배점', '점수');
-      const rateCol      = findCol('정답률', '정답율', '정답\\s*비율');
-      const domainCol    = findCol('영역', '출제', '단원', '범위');
-      const stdCol       = findCol('성취기준', '기준', '핵심개념', '학습목표');
-      const majorCatCol  = findCol('대분류');
-      const minorCatCol  = findCol('소분류');
-      const materialCol  = findCol('제재');
-      const evalFactorCol = findCol('평가\\s*요소');
-      const remarkCol    = findCol('특이사항');
-      const analysisCol  = findCol('분석\\s*내용');
+    // 컬럼 인덱스 탐색
+    const findCol = (...keywords) => headers.findIndex(h => keywords.some(k => new RegExp(k, 'i').test(h)));
+    const qNumCol = findCol('^문항$', '문항번호', '번호', '문항\\s*no', 'no\\.', 'number');
+    const answerCol = findCol('정답', '답');
+    const pointsCol = findCol('배점', '점수');
+    const rateCol = findCol('정답률', '정답율', '정답\\s*비율');
+    const domainCol = findCol('영역', '출제', '단원', '범위');
+    const stdCol = findCol('성취기준', '기준', '핵심개념', '학습목표');
+    const majorCatCol = findCol('대분류');
+    const minorCatCol = findCol('소분류');
+    const materialCol = findCol('제재');
+    const evalFactorCol = findCol('평가\\s*요소');
+    const remarkCol = findCol('특이사항');
+    const analysisCol = findCol('분석\\s*내용');
 
-      const knownCols = new Set([qNumCol, answerCol, pointsCol, rateCol, domainCol, stdCol, majorCatCol, minorCatCol, materialCol, evalFactorCol, remarkCol, analysisCol].filter(i => i !== -1));
-      const extraCols = headers.map((h, i) => ({ h, i })).filter(({ i }) => !knownCols.has(i) && i !== 0);
+    const knownCols = new Set([qNumCol, answerCol, pointsCol, rateCol, domainCol, stdCol, majorCatCol, minorCatCol, materialCol, evalFactorCol, remarkCol, analysisCol].filter(i => i !== -1));
+    const extraCols = headers.map((h, i) => ({ h, i })).filter(({ i }) => !knownCols.has(i) && i !== 0);
 
-      const questions = {};
+    const questions = {};
 
-      for (let r = 1; r < rows.length; r++) {
-          const row = rows[r];
-          if (!row || row.length === 0) continue;
+    for (let r = 1; r < rows.length; r++) {
+      const row = rows[r];
+      if (!row || row.length === 0) continue;
 
-          // 문항번호 찾기
-          let qNum = null;
-          if (qNumCol !== -1 && row[qNumCol] !== undefined) {
-              qNum = parseInt(String(row[qNumCol]).trim());
-          }
-          if (!qNum || isNaN(qNum)) {
-              // 첫 번째 셀이 숫자이면 문항번호로 간주
-              const first = parseInt(String(row[0] || '').trim());
-              if (!isNaN(first) && first > 0 && first <= 200) qNum = first;
-          }
-          if (!qNum || isNaN(qNum)) continue;
-
-          const get = (idx) => idx !== -1 && row[idx] !== undefined ? String(row[idx]).trim() : '';
-
-          // 배점: 평가요소 및 특이사항 컬럼의 () 안 숫자 추출 우선 -> 없으면 배점 컬럼 값 -> 없으면 2
-          let 배점val = '';
-          if (evalFactorCol !== -1) {
-              const evalText = get(evalFactorCol);
-              const m = evalText.match(/\((\d+)\s*점?\)/);
-              if (m) 배점val = m[1];
-          }
-          if (!배점val && remarkCol !== -1) {
-              const remarkText = get(remarkCol);
-              const m = remarkText.match(/\((\d+)\s*점?\)/);
-              if (m) 배점val = m[1];
-          }
-          if (!배점val) 배점val = get(pointsCol);
-          if (!배점val) 배점val = '2';
-          
-          // '점' 글자 제거
-          배점val = String(배점val).replace(/\s*점$/, '').trim();
-
-          const qObj = {
-              번호: qNum,
-              정답: get(answerCol),
-              배점: 배점val,
-              전국정답률: get(rateCol),
-              영역: get(domainCol),
-              성취기준: get(stdCol),
-              대분류: get(majorCatCol),
-              소분류: get(minorCatCol),
-              제재: get(materialCol),
-              평가요소: get(evalFactorCol),
-              특이사항: get(remarkCol),
-              분석내용: get(analysisCol),
-          };
-
-          // 기타 컬럼 추가
-          extraCols.forEach(({ h, i }) => {
-              if (h && row[i] !== undefined) qObj[h] = String(row[i]).trim();
-          });
-
-          questions[qNum] = qObj;
+      // 문항번호 찾기
+      let qNum = null;
+      if (qNumCol !== -1 && row[qNumCol] !== undefined) {
+        qNum = parseInt(String(row[qNumCol]).trim());
       }
+      if (!qNum || isNaN(qNum)) {
+        // 첫 번째 셀이 숫자이면 문항번호로 간주
+        const first = parseInt(String(row[0] || '').trim());
+        if (!isNaN(first) && first > 0 && first <= 200) qNum = first;
+      }
+      if (!qNum || isNaN(qNum)) continue;
 
-      return { headers, questions, extraColNames: extraCols.map(c => c.h).filter(Boolean), hasMajorCat: majorCatCol !== -1 };
+      const get = (idx) => idx !== -1 && row[idx] !== undefined ? String(row[idx]).trim() : '';
+
+      // 배점: 평가요소 및 특이사항 컬럼의 () 안 숫자 추출 우선 -> 없으면 배점 컬럼 값 -> 없으면 2
+      let 배점val = '';
+      if (evalFactorCol !== -1) {
+        const evalText = get(evalFactorCol);
+        const m = evalText.match(/\((\d+)\s*점?\)/);
+        if (m) 배점val = m[1];
+      }
+      if (!배점val && remarkCol !== -1) {
+        const remarkText = get(remarkCol);
+        const m = remarkText.match(/\((\d+)\s*점?\)/);
+        if (m) 배점val = m[1];
+      }
+      if (!배점val) 배점val = get(pointsCol);
+      if (!배점val) 배점val = '2';
+
+      // '점' 글자 제거
+      배점val = String(배점val).replace(/\s*점$/, '').trim();
+
+      const qObj = {
+        번호: qNum,
+        정답: get(answerCol),
+        배점: 배점val,
+        전국정답률: get(rateCol),
+        영역: get(domainCol),
+        성취기준: get(stdCol),
+        대분류: get(majorCatCol),
+        소분류: get(minorCatCol),
+        제재: get(materialCol),
+        평가요소: get(evalFactorCol),
+        특이사항: get(remarkCol),
+        분석내용: get(analysisCol),
+      };
+
+      // 기타 컬럼 추가
+      extraCols.forEach(({ h, i }) => {
+        if (h && row[i] !== undefined) qObj[h] = String(row[i]).trim();
+      });
+
+      questions[qNum] = qObj;
+    }
+
+    return { headers, questions, extraColNames: extraCols.map(c => c.h).filter(Boolean), hasMajorCat: majorCatCol !== -1 };
   }
 
   /** 개별 학생 과목 오답 분석 메인 함수 */
   async function analyzeWrongAnswersWithSheet(studentRecord, btnEl) {
-      const subjectName = studentRecord.과목;
-      const wrongStr = studentRecord.오답문항 || '';
-      const wrongItems = wrongStr.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n) && n > 0);
+    const subjectName = studentRecord.과목;
+    const wrongStr = studentRecord.오답문항 || '';
+    const wrongItems = wrongStr.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n) && n > 0);
 
-      if (wrongItems.length === 0) {
-          alert(`${subjectName}: 오답 문항 정보가 없습니다.`);
-          return;
+    if (wrongItems.length === 0) {
+      alert(`${subjectName}: 오답 문항 정보가 없습니다.`);
+      return;
+    }
+
+    const gasUrl = getMockGasUrl(currentMockGrade, currentMockMonth);
+    if (!gasUrl) {
+      alert('연동 설정에서 GAS 웹 앱 URL을 먼저 저장해 주세요.\n(⚙️ 연동 설정 버튼 클릭)');
+      if (document.getElementById('mockGasSettingsArea')) {
+        document.getElementById('mockGasSettingsArea').classList.remove('hidden');
+      }
+      return;
+    }
+
+    if (btnEl) { btnEl.disabled = true; btnEl.innerHTML = '⏳ 분석 중...'; }
+
+    try {
+      // 시트 목록 로드 (없으면 자동 연결)
+      if (mockSheetNames.length === 0) {
+        const names = await connectToGoogleSheet();
+        if (!names || names.length === 0) throw new Error('시트 목록을 가져올 수 없습니다.');
       }
 
-      const gasUrl = getMockGasUrl(currentMockGrade, currentMockMonth);
-      if (!gasUrl) {
-          alert('연동 설정에서 GAS 웹 앱 URL을 먼저 저장해 주세요.\n(⚙️ 연동 설정 버튼 클릭)');
-          if (document.getElementById('mockGasSettingsArea')) {
-              document.getElementById('mockGasSettingsArea').classList.remove('hidden');
-          }
-          return;
+      // 과목 → 시트 매칭
+      const matchedSheet = matchSubjectToSheet(subjectName);
+      if (!matchedSheet) {
+        throw new Error(
+          `'${subjectName}'에 해당하는 시트를 찾을 수 없습니다.\n`
+          + `스프레드시트의 시트 이름: ${mockSheetNames.join(', ')}`
+        );
       }
 
-      if (btnEl) { btnEl.disabled = true; btnEl.innerHTML = '⏳ 분석 중...'; }
+      // 시트 데이터 로드 & 파싱
+      const rows = await fetchSubjectSheetData(matchedSheet);
+      const parsed = parseSheetData(rows);
+      if (!parsed) throw new Error('시트 데이터를 파싱할 수 없습니다. 헤더 행이 있는지 확인해 주세요.');
 
-      try {
-          // 시트 목록 로드 (없으면 자동 연결)
-          if (mockSheetNames.length === 0) {
-              const names = await connectToGoogleSheet();
-              if (!names || names.length === 0) throw new Error('시트 목록을 가져올 수 없습니다.');
-          }
+      // 오답 문항 분석
+      const analysisItems = wrongItems.map(qNum => {
+        const qData = parsed.questions[qNum];
+        return qData ? { 번호: qNum, ...qData } : {
+          번호: qNum, 정답: '-', 배점: '-', 전국정답률: '', 영역: '-', 성취기준: '-',
+          대분류: '-', 소분류: '-', 제재: '-', 평가요소: '-', 특이사항: '-'
+        };
+      });
 
-          // 과목 → 시트 매칭
-          const matchedSheet = matchSubjectToSheet(subjectName);
-          if (!matchedSheet) {
-              throw new Error(
-                  `'${subjectName}'에 해당하는 시트를 찾을 수 없습니다.\n`
-                  + `스프레드시트의 시트 이름: ${mockSheetNames.join(', ')}`
-              );
-          }
+      showWrongAnswerAnalysisModal(studentRecord, matchedSheet, analysisItems, parsed.extraColNames);
 
-          // 시트 데이터 로드 & 파싱
-          const rows = await fetchSubjectSheetData(matchedSheet);
-          const parsed = parseSheetData(rows);
-          if (!parsed) throw new Error('시트 데이터를 파싱할 수 없습니다. 헤더 행이 있는지 확인해 주세요.');
-
-          // 오답 문항 분석
-          const analysisItems = wrongItems.map(qNum => {
-              const qData = parsed.questions[qNum];
-              return qData ? { 번호: qNum, ...qData } : { 
-                  번호: qNum, 정답: '-', 배점: '-', 전국정답률: '', 영역: '-', 성취기준: '-', 
-                  대분류: '-', 소분류: '-', 제재: '-', 평가요소: '-', 특이사항: '-' 
-              };
-          });
-
-          showWrongAnswerAnalysisModal(studentRecord, matchedSheet, analysisItems, parsed.extraColNames);
-
-      } catch (err) {
-          console.error('오답 분석 오류:', err);
-          alert('분석 중 오류가 발생했습니다:\n' + err.message);
-      } finally {
-          if (btnEl) { btnEl.disabled = false; btnEl.innerHTML = '📊 스프레드시트 오답 분석'; }
-      }
+    } catch (err) {
+      console.error('오답 분석 오류:', err);
+      alert('분석 중 오류가 발생했습니다:\n' + err.message);
+    } finally {
+      if (btnEl) { btnEl.disabled = false; btnEl.innerHTML = '📊 스프레드시트 오답 분석'; }
+    }
   }
 
   /** 오답 분석 결과를 모달에 표시 */
   function showWrongAnswerAnalysisModal(studentRecord, sheetName, analysisItems, extraColNames) {
-      const modalTitle = document.getElementById('modalTitle');
-      const modalBody  = document.getElementById('modalBody');
-      const modal      = document.getElementById('analysisModal');
-      if (!modal || !modalBody) return;
+    const modalTitle = document.getElementById('modalTitle');
+    const modalBody = document.getElementById('modalBody');
+    const modal = document.getElementById('analysisModal');
+    if (!modal || !modalBody) return;
 
-      if (modalTitle) {
-          modalTitle.textContent = `📊 ${studentRecord.성명} — ${studentRecord.과목} 오답 분석`;
-      }
+    if (modalTitle) {
+      modalTitle.textContent = `📊 ${studentRecord.성명} — ${studentRecord.과목} 오답 분석`;
+    }
 
-      // 학생 요약 헤더
-      const studentInfoHtml = `
+    // 학생 요약 헤더
+    const studentInfoHtml = `
           <div style="display:flex; flex-wrap:wrap; gap:1rem; margin-bottom:1.2rem;
                       background:rgba(255,255,255,0.05); padding:0.9rem 1.1rem;
                       border-radius:10px; border:1px solid var(--panel-border);">
@@ -1314,36 +1314,36 @@ document.addEventListener("DOMContentLoaded", () => {
                   <strong style="color:#ff6b6b;">${analysisItems.length}문항</strong></div>
           </div>`;
 
-      // 오답 테이블 빌드
-      const baseColDefs = [
-          { key: '번호',    label: '문항번호', style: 'font-weight:700; color:var(--accent-primary); text-align:center; min-width:80px;' },
-          { key: '대분류',  label: '대분류',   style: 'min-width:120px;' },
-          { key: '소분류',  label: '소분류', style: 'min-width:120px;' },
-          { key: '평가요소', label: '평가요소', style: 'min-width:150px; white-space:normal;' },
-          { key: '특이사항', label: '특이사항', style: 'min-width:150px; white-space:normal;' },
-          { key: '분석내용', label: '분석내용', style: 'min-width:250px; white-space:normal;' },
-          { key: '배점',    label: '배점',     style: 'text-align:center; min-width:60px;' },
-      ];
-      const allCols = baseColDefs;
+    // 오답 테이블 빌드
+    const baseColDefs = [
+      { key: '번호', label: '문항번호', style: 'font-weight:700; color:var(--accent-primary); text-align:center; min-width:80px;' },
+      { key: '대분류', label: '대분류', style: 'min-width:120px;' },
+      { key: '소분류', label: '소분류', style: 'min-width:120px;' },
+      { key: '평가요소', label: '평가요소', style: 'min-width:150px; white-space:normal;' },
+      { key: '특이사항', label: '특이사항', style: 'min-width:150px; white-space:normal;' },
+      { key: '분석내용', label: '분석내용', style: 'min-width:250px; white-space:normal;' },
+      { key: '배점', label: '배점', style: 'text-align:center; min-width:60px;' },
+    ];
+    const allCols = baseColDefs;
 
-      const thStyle = 'padding:10px 12px; text-align:left; border-bottom:1px solid var(--panel-border); white-space:nowrap; font-size:0.85rem;';
-      const tdBase  = 'padding:10px 12px; border-bottom:1px solid rgba(255,255,255,0.05);';
+    const thStyle = 'padding:10px 12px; text-align:left; border-bottom:1px solid var(--panel-border); white-space:nowrap; font-size:0.85rem;';
+    const tdBase = 'padding:10px 12px; border-bottom:1px solid rgba(255,255,255,0.05);';
 
-      let theadHtml = '<tr>' + allCols.map(c => `<th style="${thStyle}">${c.label}</th>`).join('') + '</tr>';
+    let theadHtml = '<tr>' + allCols.map(c => `<th style="${thStyle}">${c.label}</th>`).join('') + '</tr>';
 
-      let tbodyHtml = analysisItems.map((item, idx) => {
-          const rowBg = idx % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent';
+    let tbodyHtml = analysisItems.map((item, idx) => {
+      const rowBg = idx % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent';
 
-          return '<tr style="background:' + rowBg + ';">' + allCols.map(c => {
-              const val = item[c.key] !== undefined ? String(item[c.key]) : '-';
-              const display = c.key === '배점' && val && val !== '-' ? val + '점'
-                  : c.key === '번호' ? val + '번'
-                  : val;
-              return `<td style="${tdBase} ${c.style}">${display}</td>`;
-          }).join('') + '</tr>';
-      }).join('');
+      return '<tr style="background:' + rowBg + ';">' + allCols.map(c => {
+        const val = item[c.key] !== undefined ? String(item[c.key]) : '-';
+        const display = c.key === '배점' && val && val !== '-' ? val + '점'
+          : c.key === '번호' ? val + '번'
+            : val;
+        return `<td style="${tdBase} ${c.style}">${display}</td>`;
+      }).join('') + '</tr>';
+    }).join('');
 
-      const tableHtml = `
+    const tableHtml = `
           <div style="overflow-x:auto; margin-top:0.5rem; border-radius:8px; border:1px solid var(--panel-border);">
               <table style="width:100%; border-collapse:collapse; font-size:0.9rem;">
                   <thead style="background:rgba(255,255,255,0.08);">${theadHtml}</thead>
@@ -1351,25 +1351,25 @@ document.addEventListener("DOMContentLoaded", () => {
               </table>
           </div>`;
 
-      // 대분류별 집계
-      const catMap = {};
-      analysisItems.forEach(item => {
-          const c = item.대분류 || '미분류';
-          if (!catMap[c]) catMap[c] = [];
-          catMap[c].push(item.번호);
-      });
-      const catEntries = Object.entries(catMap).sort((a,b) => b[1].length - a[1].length);
+    // 대분류별 집계
+    const catMap = {};
+    analysisItems.forEach(item => {
+      const c = item.대분류 || '미분류';
+      if (!catMap[c]) catMap[c] = [];
+      catMap[c].push(item.번호);
+    });
+    const catEntries = Object.entries(catMap).sort((a, b) => b[1].length - a[1].length);
 
-      // 배점별 집계
-      const pointMap = {};
-      analysisItems.forEach(item => {
-          const p = item.배점 || '2';
-          if (!pointMap[p]) pointMap[p] = [];
-          pointMap[p].push(item.번호);
-      });
-      const pointEntries = Object.entries(pointMap).sort((a,b) => parseFloat(b[0]) - parseFloat(a[0]));
-      
-      let summaryHtml = `
+    // 배점별 집계
+    const pointMap = {};
+    analysisItems.forEach(item => {
+      const p = item.배점 || '2';
+      if (!pointMap[p]) pointMap[p] = [];
+      pointMap[p].push(item.번호);
+    });
+    const pointEntries = Object.entries(pointMap).sort((a, b) => parseFloat(b[0]) - parseFloat(a[0]));
+
+    let summaryHtml = `
           <div style="margin: 1.2rem 0; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
               <div style="padding: 1.2rem; background: rgba(99, 102, 241, 0.08); border-radius: 12px; border: 1px solid rgba(99, 102, 241, 0.2);">
                   <h4 style="margin: 0 0 0.8rem 0; font-size: 0.95rem; color: var(--accent-primary); display: flex; align-items: center; gap: 0.5rem;">
@@ -1390,111 +1390,111 @@ document.addEventListener("DOMContentLoaded", () => {
                   </h4>
                   <div style="display: flex; flex-direction: column; gap: 0.5rem;">
                       ${pointEntries.map(([pts, nums]) => {
-                          const total = (parseFloat(pts) || 0) * nums.length;
-                          return `
+      const total = (parseFloat(pts) || 0) * nums.length;
+      return `
                           <div style="background: rgba(255, 255, 255, 0.05); padding: 0.4rem 0.8rem; border-radius: 6px; border: 1px solid var(--panel-border); display: flex; justify-content: space-between; align-items: center;">
                               <span style="font-size: 0.8rem; color: var(--text-secondary);">${pts}점</span>
                               <span style="font-weight: 600; font-size: 0.85rem;">${nums.join(', ')} <small style="color:#ff6b6b; margin-left:8px;">계 ${total}점</small></span>
                           </div>`;
-                      }).join('')}
+    }).join('')}
                   </div>
               </div>
           </div>`;
 
-      modalBody.innerHTML = studentInfoHtml + summaryHtml + tableHtml;
-      modal.classList.remove('hidden');
+    modalBody.innerHTML = studentInfoHtml + summaryHtml + tableHtml;
+    modal.classList.remove('hidden');
   }
 
   // =========================================================================
 
   function updateStudentDropdown(selectedClass) {
-      if (!mockStudentSelect) return;
-      mockStudentSelect.innerHTML = '<option value="all">전체 학생</option>';
+    if (!mockStudentSelect) return;
+    mockStudentSelect.innerHTML = '<option value="all">전체 학생</option>';
 
-      const mockGradeFilterSel = document.getElementById('mockGradeFilterSelect');
-      const selectedGrade = mockGradeFilterSel ? mockGradeFilterSel.value : 'all';
-      let filteredData = getDataForCurrentMonth();
-      if (selectedGrade !== 'all') filteredData = filteredData.filter(d => String(d.학년) === selectedGrade);
-      if (selectedClass !== 'all') {
-          filteredData = filteredData.filter(d => d.반 === selectedClass);
+    const mockGradeFilterSel = document.getElementById('mockGradeFilterSelect');
+    const selectedGrade = mockGradeFilterSel ? mockGradeFilterSel.value : 'all';
+    let filteredData = getDataForCurrentMonth();
+    if (selectedGrade !== 'all') filteredData = filteredData.filter(d => String(d.학년) === selectedGrade);
+    if (selectedClass !== 'all') {
+      filteredData = filteredData.filter(d => d.반 === selectedClass);
+    }
+
+    // 유니크한 학생 목록 (번호 + 성명 조합)
+    const studentMap = new Map();
+    filteredData.forEach(d => {
+      const key = `${d.번호}_${d.성명}`;
+      if (!studentMap.has(key)) {
+        studentMap.set(key, `${d.번호}번 ${d.성명}`);
       }
-      
-      // 유니크한 학생 목록 (번호 + 성명 조합)
-      const studentMap = new Map();
-      filteredData.forEach(d => {
-          const key = `${d.번호}_${d.성명}`;
-          if (!studentMap.has(key)) {
-              studentMap.set(key, `${d.번호}번 ${d.성명}`);
-          }
-      });
-      
-      const sortedKeys = Array.from(studentMap.keys()).sort((a,b) => {
-          const [numA] = a.split('_').map(Number);
-          const [numB] = b.split('_').map(Number);
-          return numA - numB;
-      });
+    });
 
-      sortedKeys.forEach(key => {
-          const option = document.createElement('option');
-          option.value = key;
-          option.textContent = studentMap.get(key);
-          mockStudentSelect.appendChild(option);
-      });
+    const sortedKeys = Array.from(studentMap.keys()).sort((a, b) => {
+      const [numA] = a.split('_').map(Number);
+      const [numB] = b.split('_').map(Number);
+      return numA - numB;
+    });
+
+    sortedKeys.forEach(key => {
+      const option = document.createElement('option');
+      option.value = key;
+      option.textContent = studentMap.get(key);
+      mockStudentSelect.appendChild(option);
+    });
   }
 
   function renderIndividualReport(filtered) {
-      if (!individualReportGrid) return;
-      individualReportGrid.innerHTML = '';
-      
-      filtered.forEach(d => {
-          const card = document.createElement('div');
-          card.className = 'mock-individual-card';
-          
-          // 오답 그룹화 로직
-          let wrongHtml = '';
-          const rawWrongStr = d.오답문항_정답률;
-          if (!rawWrongStr || rawWrongStr === '알수없음' || rawWrongStr.trim() === '') {
-              wrongHtml = '<div class="card-wrong-list">오답 정보가 없습니다.</div>';
+    if (!individualReportGrid) return;
+    individualReportGrid.innerHTML = '';
+
+    filtered.forEach(d => {
+      const card = document.createElement('div');
+      card.className = 'mock-individual-card';
+
+      // 오답 그룹화 로직
+      let wrongHtml = '';
+      const rawWrongStr = d.오답문항_정답률;
+      if (!rawWrongStr || rawWrongStr === '알수없음' || rawWrongStr.trim() === '') {
+        wrongHtml = '<div class="card-wrong-list">오답 정보가 없습니다.</div>';
+      } else {
+        const groups = {
+          'E': { label: '매우 어려움 (0-20%)', items: [], color: '#ff4d4d' },
+          'D': { label: '어려움 (20-40%)', items: [], color: '#ff8533' },
+          'C': { label: '보통 (40-60%)', items: [], color: '#ffc34d' },
+          'B': { label: '쉬움 (60-80%)', items: [], color: '#a3cf62' },
+          'A': { label: '매우 쉬움 (80-100%)', items: [], color: '#5cb85c' },
+          'ETC': { label: '기타', items: [], color: '#888' }
+        };
+
+        const parts = rawWrongStr.split(',').map(p => p.trim());
+        parts.forEach(p => {
+          const match = p.match(/(\d+)\((.)\)/);
+          if (match) {
+            const num = match[1];
+            const diff = match[2].toUpperCase();
+            if (groups[diff]) groups[diff].items.push(num);
+            else groups['ETC'].items.push(num);
           } else {
-              const groups = {
-                  'E': { label: '매우 어려움 (0-20%)', items: [], color: '#ff4d4d' },
-                  'D': { label: '어려움 (20-40%)', items: [], color: '#ff8533' },
-                  'C': { label: '보통 (40-60%)', items: [], color: '#ffc34d' },
-                  'B': { label: '쉬움 (60-80%)', items: [], color: '#a3cf62' },
-                  'A': { label: '매우 쉬움 (80-100%)', items: [], color: '#5cb85c' },
-                  'ETC': { label: '기타', items: [], color: '#888' }
-              };
-              
-              const parts = rawWrongStr.split(',').map(p => p.trim());
-              parts.forEach(p => {
-                  const match = p.match(/(\d+)\((.)\)/);
-                  if (match) {
-                      const num = match[1];
-                      const diff = match[2].toUpperCase();
-                      if (groups[diff]) groups[diff].items.push(num);
-                      else groups['ETC'].items.push(num);
-                  } else {
-                      groups['ETC'].items.push(p);
-                  }
-              });
-              
-              let hasAny = false;
-              ['E', 'D', 'C', 'B', 'A', 'ETC'].forEach(key => {
-                  const g = groups[key];
-                  if (g.items.length > 0) {
-                      hasAny = true;
-                      wrongHtml += `
+            groups['ETC'].items.push(p);
+          }
+        });
+
+        let hasAny = false;
+        ['E', 'D', 'C', 'B', 'A', 'ETC'].forEach(key => {
+          const g = groups[key];
+          if (g.items.length > 0) {
+            hasAny = true;
+            wrongHtml += `
                           <div class="diff-group">
                               <span class="diff-label" style="background: ${g.color}">${g.label}</span>
                               <span class="diff-items">${g.items.join(', ')}</span>
                           </div>
                       `;
-                  }
-              });
-              if (!hasAny) wrongHtml = '<div class="card-wrong-list">오답 정보가 없습니다.</div>';
           }
-          
-          card.innerHTML = `
+        });
+        if (!hasAny) wrongHtml = '<div class="card-wrong-list">오답 정보가 없습니다.</div>';
+      }
+
+      card.innerHTML = `
               <div class="card-header">
                   <span class="card-subj">${d.과목}</span>
                   <div class="card-grade-circle grade-${d.등급 || 'none'}">${d.등급 || '-'}</div>
@@ -1538,48 +1538,48 @@ document.addEventListener("DOMContentLoaded", () => {
                   </button>
               </div>
           `;
-          // 분석 버튼 이벤트 (closure로 d 캡처)
-          const analyzeBtn = card.querySelector('.mock-sheet-analyze-btn');
-          if (analyzeBtn) {
-              analyzeBtn.addEventListener('click', function() {
-                  analyzeWrongAnswersWithSheet(d, this);
-              });
-          }
-          individualReportGrid.appendChild(card);
-      });
+      // 분석 버튼 이벤트 (closure로 d 캡처)
+      const analyzeBtn = card.querySelector('.mock-sheet-analyze-btn');
+      if (analyzeBtn) {
+        analyzeBtn.addEventListener('click', function () {
+          analyzeWrongAnswersWithSheet(d, this);
+        });
+      }
+      individualReportGrid.appendChild(card);
+    });
   }
 
   function renderFilteredMockData() {
-      if (!mockPreviewBody) return;
-      const mockGradeFilterSel = document.getElementById('mockGradeFilterSelect');
-      const selectedGrade = mockGradeFilterSel ? mockGradeFilterSel.value : 'all';
-      const selectedClass = mockClassSelect ? mockClassSelect.value : 'all';
-      const selectedStudent = mockStudentSelect ? mockStudentSelect.value : 'all';
+    if (!mockPreviewBody) return;
+    const mockGradeFilterSel = document.getElementById('mockGradeFilterSelect');
+    const selectedGrade = mockGradeFilterSel ? mockGradeFilterSel.value : 'all';
+    const selectedClass = mockClassSelect ? mockClassSelect.value : 'all';
+    const selectedStudent = mockStudentSelect ? mockStudentSelect.value : 'all';
 
-      let filtered = getDataForCurrentMonth();
-      if (selectedGrade !== 'all') {
-          filtered = filtered.filter(d => String(d.학년) === selectedGrade);
-      }
-      if (selectedClass !== 'all') {
-          filtered = filtered.filter(d => d.반 === selectedClass);
-      }
-      if (selectedStudent !== 'all') {
-          const [num, name] = selectedStudent.split('_');
-          filtered = filtered.filter(d => d.번호 === num && d.성명 === name);
-      }
+    let filtered = getDataForCurrentMonth();
+    if (selectedGrade !== 'all') {
+      filtered = filtered.filter(d => String(d.학년) === selectedGrade);
+    }
+    if (selectedClass !== 'all') {
+      filtered = filtered.filter(d => d.반 === selectedClass);
+    }
+    if (selectedStudent !== 'all') {
+      const [num, name] = selectedStudent.split('_');
+      filtered = filtered.filter(d => d.번호 === num && d.성명 === name);
+    }
 
-      // 테이블 렌더링 (전체 뷰용)
-      mockPreviewBody.innerHTML = '';
-      
-      // 뷰 전환 로직
-      if (selectedStudent === 'all') {
-          if (mockTableView) mockTableView.classList.remove('hidden');
-          if (mockIndividualView) mockIndividualView.classList.add('hidden');
-          
-          const displayData = filtered.slice(0, 100); 
-          displayData.forEach(row => {
-              const tr = document.createElement('tr');
-              tr.innerHTML = `
+    // 테이블 렌더링 (전체 뷰용)
+    mockPreviewBody.innerHTML = '';
+
+    // 뷰 전환 로직
+    if (selectedStudent === 'all') {
+      if (mockTableView) mockTableView.classList.remove('hidden');
+      if (mockIndividualView) mockIndividualView.classList.add('hidden');
+
+      const displayData = filtered.slice(0, 100);
+      displayData.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
                   <td>${row.학년}</td>
                   <td>${row.반}</td>
                   <td>${row.번호}</td>
@@ -1592,580 +1592,580 @@ document.addEventListener("DOMContentLoaded", () => {
                   <td class="wrong-items" title="${row.오답문항}">${row.오답문항}</td>
                   <td class="wrong-items" title="${row.오답문항_정답률}">${row.오답문항_정답률}</td>
               `;
-              mockPreviewBody.appendChild(tr);
-          });
-      } else {
-          if (mockTableView) mockTableView.classList.add('hidden');
-          if (mockIndividualView) mockIndividualView.classList.remove('hidden');
-          renderIndividualReport(filtered);
-      }
+        mockPreviewBody.appendChild(tr);
+      });
+    } else {
+      if (mockTableView) mockTableView.classList.add('hidden');
+      if (mockIndividualView) mockIndividualView.classList.remove('hidden');
+      renderIndividualReport(filtered);
+    }
 
-      // 요약 카드 표시 로직
-      if (selectedStudent !== 'all' && filtered.length > 0) {
-          const first = filtered[0];
-          if (mockSummaryCard) {
-              mockSummaryCard.classList.remove('hidden');
-              if (summaryStudentName) summaryStudentName.innerText = `${first.성명} 학생 성적 요약`;
-              if (summaryStudentInfo) summaryStudentInfo.innerText = `${first.학년}학년 ${first.반}반 ${first.번호}번`;
-              if (summaryGradeBadges) {
-                  summaryGradeBadges.innerHTML = '';
-                  // 주요 과목 등급 표시 (국어, 수학, 영어, 탐구 최대 2개)
-                  const majorSubjects = ['국어', '수학', '영어'];
-                  filtered.forEach(d => {
-                      const isMajor = majorSubjects.some(m => d.과목.includes(m));
-                      const isTamgu = !isMajor && !d.과목.includes('한국사');
-                      if (isMajor || isTamgu) {
-                        const grade = parseInt(d.등급) || 0;
-                        const badge = document.createElement('div');
-                        badge.className = `mock-summary-badge ${grade > 0 ? 'grade-' + grade : ''}`;
-                        badge.innerHTML = `
+    // 요약 카드 표시 로직
+    if (selectedStudent !== 'all' && filtered.length > 0) {
+      const first = filtered[0];
+      if (mockSummaryCard) {
+        mockSummaryCard.classList.remove('hidden');
+        if (summaryStudentName) summaryStudentName.innerText = `${first.성명} 학생 성적 요약`;
+        if (summaryStudentInfo) summaryStudentInfo.innerText = `${first.학년}학년 ${first.반}반 ${first.번호}번`;
+        if (summaryGradeBadges) {
+          summaryGradeBadges.innerHTML = '';
+          // 주요 과목 등급 표시 (국어, 수학, 영어, 탐구 최대 2개)
+          const majorSubjects = ['국어', '수학', '영어'];
+          filtered.forEach(d => {
+            const isMajor = majorSubjects.some(m => d.과목.includes(m));
+            const isTamgu = !isMajor && !d.과목.includes('한국사');
+            if (isMajor || isTamgu) {
+              const grade = parseInt(d.등급) || 0;
+              const badge = document.createElement('div');
+              badge.className = `mock-summary-badge ${grade > 0 ? 'grade-' + grade : ''}`;
+              badge.innerHTML = `
                             <span class="subj-label">${d.과목}</span>
                             <span class="grade-value">${d.등급 || '-'}</span>
                         `;
-                        summaryGradeBadges.appendChild(badge);
-                      }
-                  });
-              }
-          }
-      } else {
-          if (mockSummaryCard) mockSummaryCard.classList.add('hidden');
+              summaryGradeBadges.appendChild(badge);
+            }
+          });
+        }
       }
+    } else {
+      if (mockSummaryCard) mockSummaryCard.classList.add('hidden');
+    }
 
-      if (filtered.length === 0) {
-          mockPreviewBody.innerHTML = '<tr><td colspan="11" style="text-align:center; padding:2rem; color:var(--text-secondary);">해당하는 데이터가 없습니다.</td></tr>';
-      } else if (filtered.length > 100) {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `<td colspan="11" style="text-align: center; color: var(--text-secondary); font-style: italic; padding: 1rem;">... 외 ${filtered.length - 100}개의 데이터가 더 있습니다 (엑셀 다운로드 추천)</td>`;
-          mockPreviewBody.appendChild(tr);
-      }
+    if (filtered.length === 0) {
+      mockPreviewBody.innerHTML = '<tr><td colspan="11" style="text-align:center; padding:2rem; color:var(--text-secondary);">해당하는 데이터가 없습니다.</td></tr>';
+    } else if (filtered.length > 100) {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td colspan="11" style="text-align: center; color: var(--text-secondary); font-style: italic; padding: 1rem;">... 외 ${filtered.length - 100}개의 데이터가 더 있습니다 (엑셀 다운로드 추천)</td>`;
+      mockPreviewBody.appendChild(tr);
+    }
   }
 
   function parseCSVString(text) {
-      const rows = [];
-      let row = [];
-      let currentVal = '';
-      let inQuotes = false;
-      for (let i = 0; i < text.length; i++) {
-          const char = text[i];
-          if (char === '"') {
-              if (inQuotes && text[i+1] === '"') {
-                  currentVal += '"';
-                  i++;
-              } else {
-                  inQuotes = !inQuotes;
-              }
-          } else if (char === ',' && !inQuotes) {
-              row.push(currentVal);
-              currentVal = '';
-          } else if (char === '\n' && !inQuotes) {
-              row.push(currentVal);
-              rows.push(row);
-              row = [];
-              currentVal = '';
-          } else if (char === '\r') {
-              // Ignore
-          } else {
-              currentVal += char;
-          }
+    const rows = [];
+    let row = [];
+    let currentVal = '';
+    let inQuotes = false;
+    for (let i = 0; i < text.length; i++) {
+      const char = text[i];
+      if (char === '"') {
+        if (inQuotes && text[i + 1] === '"') {
+          currentVal += '"';
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (char === ',' && !inQuotes) {
+        row.push(currentVal);
+        currentVal = '';
+      } else if (char === '\n' && !inQuotes) {
+        row.push(currentVal);
+        rows.push(row);
+        row = [];
+        currentVal = '';
+      } else if (char === '\r') {
+        // Ignore
+      } else {
+        currentVal += char;
       }
-      if (currentVal || row.length > 0) {
-          row.push(currentVal);
-          rows.push(row);
-      }
-      return rows;
+    }
+    if (currentVal || row.length > 0) {
+      row.push(currentVal);
+      rows.push(row);
+    }
+    return rows;
   }
 
 
   function extractMockStudentData(data) {
-      // 1. Chunking (학생별 분할)
-      let studentChunks = [];
-      let currentChunk = [];
-      for (let row of data) {
-          if (!Array.isArray(row)) continue;
-          let rowStr = row.join("").replace(/\s/g, "");
-          if (rowStr.includes("성적통지표") || rowStr.includes("학교명") || (rowStr.includes("학년") && rowStr.includes("반") && rowStr.includes("성명"))) {
-              if (currentChunk.length > 5) studentChunks.push(currentChunk);
-              currentChunk = [row];
-          } else {
-              currentChunk.push(row);
-          }
+    // 1. Chunking (학생별 분할)
+    let studentChunks = [];
+    let currentChunk = [];
+    for (let row of data) {
+      if (!Array.isArray(row)) continue;
+      let rowStr = row.join("").replace(/\s/g, "");
+      if (rowStr.includes("성적통지표") || rowStr.includes("학교명") || (rowStr.includes("학년") && rowStr.includes("반") && rowStr.includes("성명"))) {
+        if (currentChunk.length > 5) studentChunks.push(currentChunk);
+        currentChunk = [row];
+      } else {
+        currentChunk.push(row);
       }
-      if (currentChunk.length > 5) studentChunks.push(currentChunk);
-      if (studentChunks.length === 0 && data.length > 0) studentChunks = [data];
+    }
+    if (currentChunk.length > 5) studentChunks.push(currentChunk);
+    if (studentChunks.length === 0 && data.length > 0) studentChunks = [data];
 
-      let allResults = [];
+    let allResults = [];
 
-      // 2. 블록별 데이터 추출
-      for (let chunk of studentChunks) {
-          let studentInfo = {학년: '', 반: '', 번호: '', 성명: ''};
+    // 2. 블록별 데이터 추출
+    for (let chunk of studentChunks) {
+      let studentInfo = { 학년: '', 반: '', 번호: '', 성명: '' };
 
-          // 학생 기본 정보
-          for (let i = 0; i < Math.min(15, chunk.length); i++) {
-              if (!chunk[i] || !Array.isArray(chunk[i])) continue;
-              let rClean = chunk[i].map(x => String(x).trim()).filter(x => x);
-              if (rClean.length >= 5) {
-                  for (let j = 0; j <= rClean.length - 4; j++) {
-                      if (/^\d+$/.test(rClean[j]) && /^\d+$/.test(rClean[j+1]) && /^\d+$/.test(rClean[j+2])) {
-                          if (!studentInfo.학년) {
-                              studentInfo.학년 = rClean[j];
-                              studentInfo.반 = rClean[j+1];
-                              studentInfo.번호 = rClean[j+2];
-                              studentInfo.성명 = rClean[j+3];
-                          }
-                          break;
-                      }
-                  }
+      // 학생 기본 정보
+      for (let i = 0; i < Math.min(15, chunk.length); i++) {
+        if (!chunk[i] || !Array.isArray(chunk[i])) continue;
+        let rClean = chunk[i].map(x => String(x).trim()).filter(x => x);
+        if (rClean.length >= 5) {
+          for (let j = 0; j <= rClean.length - 4; j++) {
+            if (/^\d+$/.test(rClean[j]) && /^\d+$/.test(rClean[j + 1]) && /^\d+$/.test(rClean[j + 2])) {
+              if (!studentInfo.학년) {
+                studentInfo.학년 = rClean[j];
+                studentInfo.반 = rClean[j + 1];
+                studentInfo.번호 = rClean[j + 2];
+                studentInfo.성명 = rClean[j + 3];
               }
+              break;
+            }
           }
+        }
+      }
 
-          let currentSubjectScores = {};
-          let itemAnalysis = {};
-          let rateAnalysis = {};
+      let currentSubjectScores = {};
+      let itemAnalysis = {};
+      let rateAnalysis = {};
 
-          // 가상 그리드 매핑용 변수
-          let colToQNumMap = {}; // columnIndex -> questionNumber (영역\문항 행에서만 구축)
-          let subjectColToQMap = {}; // subjName -> { colIdx: qNum } (답안 행 등에서 동적으로 보충)
-          let colToSubjMap = []; // 점수 행용 과목 맵
-          let answerSubjMap = []; // 답안 섹션용 과목 맵 (채점결과/정답률 귀속에 사용)
+      // 가상 그리드 매핑용 변수
+      let colToQNumMap = {}; // columnIndex -> questionNumber (영역\문항 행에서만 구축)
+      let subjectColToQMap = {}; // subjName -> { colIdx: qNum } (답안 행 등에서 동적으로 보충)
+      let colToSubjMap = []; // 점수 행용 과목 맵
+      let answerSubjMap = []; // 답안 섹션용 과목 맵 (채점결과/정답률 귀속에 사용)
 
-          for (let i = 0; i < chunk.length; i++) {
-              let row = chunk[i];
-              if (!row || !Array.isArray(row)) continue;
-              let cleanCells = row.map(c => String(c).trim()).filter(c => c);
-              if (cleanCells.length === 0) continue;
+      for (let i = 0; i < chunk.length; i++) {
+        let row = chunk[i];
+        if (!row || !Array.isArray(row)) continue;
+        let cleanCells = row.map(c => String(c).trim()).filter(c => c);
+        if (cleanCells.length === 0) continue;
 
-              let rowStrRaw = row.join("");
-              let rowStrNoSpace = rowStrRaw.replace(/\s/g, "");
+        let rowStrRaw = row.join("");
+        let rowStrNoSpace = rowStrRaw.replace(/\s/g, "");
 
-              // [0] 문항 번호 행 감지: 숫자가 10개 이상, 최댓값 > 5(답안 선택지 1~5 제외), 대부분 순차 증가
-              let numCells = row.map(c => String(c).trim()).filter(c => /^\d+$/.test(c));
-              if (numCells.length >= 10) {
-                  let nums = numCells.map(Number);
-                  const maxNum = Math.max(...nums);
-                  let sequentialCount = 0;
-                  for (let k = 1; k < nums.length; k++) {
-                      if (nums[k] === nums[k-1] + 1) sequentialCount++;
-                  }
-                  // 최댓값이 5 초과(답안 선택지 행 필터)이고, 거의 대부분 순차 증가해야 문항 헤더로 인정
-                  if (maxNum > 5 && sequentialCount >= numCells.length - 3) {
-                      row.forEach((cell, idx) => {
-                          let val = String(cell).trim();
-                          if (/^\d+$/.test(val)) colToQNumMap[idx] = parseInt(val);
-                      });
-                  }
-              }
-
-              // [1] 답안 행에서 과목명 추출 → answerSubjMap 갱신 및 과목별 매핑 처리
-              if (rowStrNoSpace.includes('답안') && !rowStrNoSpace.includes('정답') && !rowStrNoSpace.includes('채점')) {
-                  let firstCellVal = String(row[0] || '').replace(/\s/g, '');
-                  let newAnswerSubj = null;
-                  if (firstCellVal.includes('국어')) {
-                      let m = firstCellVal.match(/\((.*?)\)/);
-                      newAnswerSubj = m ? `국어(${m[1]})` : "국어";
-                  } else if (firstCellVal.includes('수학')) {
-                      let m = firstCellVal.match(/\((.*?)\)/);
-                      newAnswerSubj = m ? `수학(${m[1]})` : "수학";
-                  } else if (firstCellVal.includes('영어')) {
-                      newAnswerSubj = "영어";
-                  } else if (firstCellVal.includes('한국사')) {
-                      newAnswerSubj = "한국사";
-                  }
-                  if (newAnswerSubj) {
-                      answerSubjMap = [{ colIdx: 0, name: newAnswerSubj }];
-
-                      // 수학 과목의 16~30번 주관식/특수 영역 대응: 답안 행에 포함된 문항 번호(16~30)를 동적 매핑
-                      if (newAnswerSubj.includes('수학')) {
-                          if (!subjectColToQMap[newAnswerSubj]) subjectColToQMap[newAnswerSubj] = {};
-                          row.forEach((cell, idx) => {
-                              let val = String(cell).trim();
-                              if (/^\d+$/.test(val)) {
-                                  let num = parseInt(val);
-                                  // 16~30번 번호만 라벨로 인정 (1~5번 등은 선택지 답변일 가능성이 높으므로 제외)
-                                  if (num >= 16 && num <= 30) subjectColToQMap[newAnswerSubj][idx] = num;
-                              }
-                          });
-                      }
-                  }
-              }
-
-              // [2] 과목명 감지 (점수 행 및 탐구 과목 행)
-              if (!/답안|정답|채점결과|정답률/.test(rowStrNoSpace)) {
-                  let badWords = /배점|득점|학급|학교|전국|등급|원점수|표준점수|백분위|영역|문항|성명|번호|학년|반|실시일|학교명|기타참고|오류코드|보충학습|과목|응시자|인원|비율|범위|석차|세부|계산|이해|추론|읽기|듣기|말하기|쓰기|창의|비판|사실|적용|어휘|개념|문제해결/;
-                  let foundSubjsInRow = [];
-                  row.forEach((cell, idx) => {
-                      let val = String(cell).replace(/\s/g, "");
-                      if (!val || val.length < 2) return;
-                      // 숫자 패턴(범위·분수·소수·숫자+괄호) 필터
-                      if (/[~\/]/.test(val) || /^\d/.test(val) || /\d+\.\d+/.test(val) || /\d+\(/.test(val)) return;
-
-                      let subj = null;
-                      if (val.includes('국어')) {
-                          let m = val.match(/\((.*?)\)/);
-                          subj = m ? `국어(${m[1]})` : "국어";
-                      } else if (val.includes('수학')) {
-                          let m = val.match(/\((.*?)\)/);
-                          subj = m ? `수학(${m[1]})` : "수학";
-                      } else if (val.includes('영어')) subj = "영어";
-                      else if (val.includes('한국사')) subj = "한국사";
-                      else {
-                          if (!badWords.test(val) && !/^\d+$/.test(val) && val.length >= 2) {
-                              subj = val.replace(/^(사회|과학|공통|직업)?탐구/g, "");
-                              if (subj.length < 2) subj = null;
-                          }
-                      }
-
-                      if (subj) foundSubjsInRow.push({ colIdx: idx, name: subj });
-                  });
-
-                  if (foundSubjsInRow.length > 0) {
-                      colToSubjMap = foundSubjsInRow.sort((a, b) => a.colIdx - b.colIdx);
-                      // 탐구 과목 행(답안 섹션) 감지: rowStrNoSpace에 '과목' 포함
-                      if (rowStrNoSpace.includes('과목')) {
-                          answerSubjMap = foundSubjsInRow
-                              .filter(s => s.name.length >= 2)
-                              .sort((a, b) => a.colIdx - b.colIdx);
-                      }
-                  }
-              }
-
-              // [A] 성적 수치 추출 (원점수, 표준점수, 백분위, 등급)
-              let maxScoreIdx = row.findIndex(val => String(val).trim() === '100' || String(val).trim() === '50');
-              if (maxScoreIdx !== -1 && !/답안|정답|채점|결과|비율/.test(rowStrNoSpace)) {
-                  let subjName = "";
-                  for (let k = colToSubjMap.length - 1; k >= 0; k--) {
-                      if (colToSubjMap[k].colIdx <= maxScoreIdx) {
-                          subjName = colToSubjMap[k].name;
-                          break;
-                      }
-                  }
-
-                  if (subjName && !currentSubjectScores[subjName]) {
-                      try {
-                          // rawScore 위치 파악: +5 → +4 → +1 순서로 숫자 확인
-                          let rawScoreOffset = 1;
-                          let rawScore = '';
-                          if (/^\d+$/.test(String(row[maxScoreIdx + 5] || '').trim())) {
-                              rawScoreOffset = 5; rawScore = String(row[maxScoreIdx + 5]).trim();
-                          } else if (/^\d+$/.test(String(row[maxScoreIdx + 4] || '').trim())) {
-                              rawScoreOffset = 4; rawScore = String(row[maxScoreIdx + 4]).trim();
-                          } else {
-                              rawScoreOffset = 1; rawScore = String(row[maxScoreIdx + 1] || '').trim();
-                          }
-                          if (!/^\d+$/.test(rawScore)) rawScore = "";
-
-                          let stdScore = "";
-                          let percentile = "";
-                          let grade = "";
-
-                          // rawScore 위치 이후부터 표준점수·백분위·등급 탐색
-                          for (let idx = maxScoreIdx + rawScoreOffset + 1; idx < Math.min(maxScoreIdx + 35, row.length); idx++) {
-                              let val = String(row[idx]).trim();
-                              if (!val) continue;
-
-                              if (!stdScore && /^\d{2,3}$/.test(val) && parseInt(val) <= 200) {
-                                  stdScore = val;
-                              } else if (!percentile && /^\d+\.\d+$/.test(val) && parseFloat(val) <= 100) {
-                                  percentile = val;
-                              } else if (!grade && /^[1-9]$/.test(val)) {
-                                  grade = val;
-                              } else if (!grade) {
-                                  // 영어·한국사: "원점수에 의한 등급 (X)" 패턴에서 등급 추출
-                                  let noSpace = val.replace(/\s/g, '');
-                                  let gm = noSpace.match(/원점수에의한등급\(([1-9])\)/);
-                                  if (gm) grade = gm[1];
-                              }
-                          }
-
-                          if (rawScore) {
-                              currentSubjectScores[subjName] = { 원점수: rawScore, 표준점수: stdScore, 전국백분위: percentile, 등급: grade };
-                          }
-                      } catch(e){}
-                  }
-              }
-
-              // [B] 채점 결과 (O/X) & [C] 정답률 (A-E) 추출
-              let isOx = rowStrNoSpace.includes("채점결과");
-              let isRate = rowStrNoSpace.includes("정답률");
-
-              if (isOx || isRate) {
-                  // 답안 섹션 과목 맵 우선 사용, 없으면 점수 섹션 맵 폴백
-                  let activeSubjMap = answerSubjMap.length > 0 ? answerSubjMap : colToSubjMap;
-
-                  row.forEach((cell, idx) => {
-                      let val = String(cell).trim().toUpperCase();
-                      if (!val) return;
-
-                      let subj = null;
-                      let baseColIdx = -1;
-                      for (let k = activeSubjMap.length - 1; k >= 0; k--) {
-                          if (activeSubjMap[k].colIdx <= idx) {
-                              subj = activeSubjMap[k].name;
-                              baseColIdx = activeSubjMap[k].colIdx;
-                              break;
-                          }
-                      }
-
-                        if (subj) {
-                            let rawQNum = null;
-                            
-                            // [수정] 수학 과목은 헤더 행(colToQNumMap)보다 데이터 행(subjectColToQMap)의 번호 레이블을 우선적으로 신뢰
-                            if (subj.includes('수학')) {
-                                // 현재 위치부터 왼쪽으로 5칸까지 탐색하여 16~30번 레이블을 찾음
-                                for (let offset = 0; offset <= 5; offset++) {
-                                    if (idx - offset < 0) break;
-                                    let dynQ = subjectColToQMap[subj] && subjectColToQMap[subj][idx - offset];
-                                    if (dynQ && dynQ >= 16 && dynQ <= 30) {
-                                        rawQNum = dynQ;
-                                        break;
-                                    }
-                                }
-                                // 16~30번을 못 찾았다면 1~15번은 헤더 매핑 사용
-                                if (!rawQNum) rawQNum = colToQNumMap[idx];
-                            } else {
-                                // 일반 과목은 전역 헤더 매핑 우선
-                                rawQNum = (subjectColToQMap[subj] && subjectColToQMap[subj][idx]) || colToQNumMap[idx];
-                            }
-
-                            if (rawQNum) {
-                                // 탐구 및 선택 과목 대비: 국어/수학/영어/한국사가 아니면 탐구로 간주하여 오프셋 적용
-                                let isCore = /국어를?|수학|영어를?|한국사/.test(subj);
-                                let startQNum = 1;
-                                if (!isCore) {
-                                    for (let k = baseColIdx; k < row.length; k++) {
-                                        if (colToQNumMap[k] && colToQNumMap[k] > 0) { 
-                                            startQNum = colToQNumMap[k]; 
-                                            break; 
-                                        }
-                                    }
-                                }
-                                let finalQNum = rawQNum - (startQNum - 1);
-                                
-                                // 계산된 번호가 유효 범위를 벗어난 경우(음수/0 등) 무시
-                                if (finalQNum <= 0) return;
-
-                                // 탐구 과목 강제 보정: 21~40번 등으로 추출되는 경우 1~20번으로 회귀
-                                if (!isCore && finalQNum > 20) {
-                                    finalQNum = (finalQNum - 1) % 20 + 1;
-                                }
-
-                                // 과목별 문항 수 제한 적용
-                                let maxQ = 50; 
-                                if (subj.includes('수학')) maxQ = 30;
-                                else if (!isCore || subj.includes('한국사')) maxQ = 20;
-                                else if (subj.includes('국어') || subj.includes('영어')) maxQ = 45;
-
-                                if (finalQNum <= maxQ) {
-                                    if (isOx && val === 'X') {
-                                        if (!itemAnalysis[subj]) itemAnalysis[subj] = [];
-                                        if (!itemAnalysis[subj].includes(finalQNum)) {
-                                            itemAnalysis[subj].push(finalQNum);
-                                        }
-                                    } else if (isRate && /^[A-E]$/.test(val)) {
-                                        if (!rateAnalysis[subj]) rateAnalysis[subj] = {};
-                                        rateAnalysis[subj][finalQNum] = val;
-                                    }
-                                }
-                            }
-                        }
-                  });
-              }
+        // [0] 문항 번호 행 감지: 숫자가 10개 이상, 최댓값 > 5(답안 선택지 1~5 제외), 대부분 순차 증가
+        let numCells = row.map(c => String(c).trim()).filter(c => /^\d+$/.test(c));
+        if (numCells.length >= 10) {
+          let nums = numCells.map(Number);
+          const maxNum = Math.max(...nums);
+          let sequentialCount = 0;
+          for (let k = 1; k < nums.length; k++) {
+            if (nums[k] === nums[k - 1] + 1) sequentialCount++;
           }
+          // 최댓값이 5 초과(답안 선택지 행 필터)이고, 거의 대부분 순차 증가해야 문항 헤더로 인정
+          if (maxNum > 5 && sequentialCount >= numCells.length - 3) {
+            row.forEach((cell, idx) => {
+              let val = String(cell).trim();
+              if (/^\d+$/.test(val)) colToQNumMap[idx] = parseInt(val);
+            });
+          }
+        }
 
-          // 최종 조립
-          for (let subj of Object.keys(currentSubjectScores)) {
-              let scoreData = currentSubjectScores[subj];
-              let wrongs = itemAnalysis[subj] || [];
-              let rates = rateAnalysis[subj] || {};
+        // [1] 답안 행에서 과목명 추출 → answerSubjMap 갱신 및 과목별 매핑 처리
+        if (rowStrNoSpace.includes('답안') && !rowStrNoSpace.includes('정답') && !rowStrNoSpace.includes('채점')) {
+          let firstCellVal = String(row[0] || '').replace(/\s/g, '');
+          let newAnswerSubj = null;
+          if (firstCellVal.includes('국어')) {
+            let m = firstCellVal.match(/\((.*?)\)/);
+            newAnswerSubj = m ? `국어(${m[1]})` : "국어";
+          } else if (firstCellVal.includes('수학')) {
+            let m = firstCellVal.match(/\((.*?)\)/);
+            newAnswerSubj = m ? `수학(${m[1]})` : "수학";
+          } else if (firstCellVal.includes('영어')) {
+            newAnswerSubj = "영어";
+          } else if (firstCellVal.includes('한국사')) {
+            newAnswerSubj = "한국사";
+          }
+          if (newAnswerSubj) {
+            answerSubjMap = [{ colIdx: 0, name: newAnswerSubj }];
 
-              let wrongWithRates = wrongs.sort((a,b)=>a-b).map(q => {
-                  let r = rates[q] || "알수없음";
-                  return `${q}(${r})`;
-              }).join(", ");
-
-              allResults.push({
-                  학년: studentInfo.학년,
-                  반: studentInfo.반,
-                  번호: studentInfo.번호,
-                  성명: studentInfo.성명,
-                  과목: subj,
-                  원점수: scoreData.원점수,
-                  표준점수: scoreData.표준점수,
-                  전국백분위: scoreData.전국백분위,
-                  등급: scoreData.등급,
-                  오답문항: wrongs.sort((a,b)=>a-b).join(", "),
-                  오답문항_정답률: wrongWithRates
+            // 수학 과목의 16~30번 주관식/특수 영역 대응: 답안 행에 포함된 문항 번호(16~30)를 동적 매핑
+            if (newAnswerSubj.includes('수학')) {
+              if (!subjectColToQMap[newAnswerSubj]) subjectColToQMap[newAnswerSubj] = {};
+              row.forEach((cell, idx) => {
+                let val = String(cell).trim();
+                if (/^\d+$/.test(val)) {
+                  let num = parseInt(val);
+                  // 16~30번 번호만 라벨로 인정 (1~5번 등은 선택지 답변일 가능성이 높으므로 제외)
+                  if (num >= 16 && num <= 30) subjectColToQMap[newAnswerSubj][idx] = num;
+                }
               });
+            }
           }
+        }
+
+        // [2] 과목명 감지 (점수 행 및 탐구 과목 행)
+        if (!/답안|정답|채점결과|정답률/.test(rowStrNoSpace)) {
+          let badWords = /배점|득점|학급|학교|전국|등급|원점수|표준점수|백분위|영역|문항|성명|번호|학년|반|실시일|학교명|기타참고|오류코드|보충학습|과목|응시자|인원|비율|범위|석차|세부|계산|이해|추론|읽기|듣기|말하기|쓰기|창의|비판|사실|적용|어휘|개념|문제해결/;
+          let foundSubjsInRow = [];
+          row.forEach((cell, idx) => {
+            let val = String(cell).replace(/\s/g, "");
+            if (!val || val.length < 2) return;
+            // 숫자 패턴(범위·분수·소수·숫자+괄호) 필터
+            if (/[~\/]/.test(val) || /^\d/.test(val) || /\d+\.\d+/.test(val) || /\d+\(/.test(val)) return;
+
+            let subj = null;
+            if (val.includes('국어')) {
+              let m = val.match(/\((.*?)\)/);
+              subj = m ? `국어(${m[1]})` : "국어";
+            } else if (val.includes('수학')) {
+              let m = val.match(/\((.*?)\)/);
+              subj = m ? `수학(${m[1]})` : "수학";
+            } else if (val.includes('영어')) subj = "영어";
+            else if (val.includes('한국사')) subj = "한국사";
+            else {
+              if (!badWords.test(val) && !/^\d+$/.test(val) && val.length >= 2) {
+                subj = val.replace(/^(사회|과학|공통|직업)?탐구/g, "");
+                if (subj.length < 2) subj = null;
+              }
+            }
+
+            if (subj) foundSubjsInRow.push({ colIdx: idx, name: subj });
+          });
+
+          if (foundSubjsInRow.length > 0) {
+            colToSubjMap = foundSubjsInRow.sort((a, b) => a.colIdx - b.colIdx);
+            // 탐구 과목 행(답안 섹션) 감지: rowStrNoSpace에 '과목' 포함
+            if (rowStrNoSpace.includes('과목')) {
+              answerSubjMap = foundSubjsInRow
+                .filter(s => s.name.length >= 2)
+                .sort((a, b) => a.colIdx - b.colIdx);
+            }
+          }
+        }
+
+        // [A] 성적 수치 추출 (원점수, 표준점수, 백분위, 등급)
+        let maxScoreIdx = row.findIndex(val => String(val).trim() === '100' || String(val).trim() === '50');
+        if (maxScoreIdx !== -1 && !/답안|정답|채점|결과|비율/.test(rowStrNoSpace)) {
+          let subjName = "";
+          for (let k = colToSubjMap.length - 1; k >= 0; k--) {
+            if (colToSubjMap[k].colIdx <= maxScoreIdx) {
+              subjName = colToSubjMap[k].name;
+              break;
+            }
+          }
+
+          if (subjName && !currentSubjectScores[subjName]) {
+            try {
+              // rawScore 위치 파악: +5 → +4 → +1 순서로 숫자 확인
+              let rawScoreOffset = 1;
+              let rawScore = '';
+              if (/^\d+$/.test(String(row[maxScoreIdx + 5] || '').trim())) {
+                rawScoreOffset = 5; rawScore = String(row[maxScoreIdx + 5]).trim();
+              } else if (/^\d+$/.test(String(row[maxScoreIdx + 4] || '').trim())) {
+                rawScoreOffset = 4; rawScore = String(row[maxScoreIdx + 4]).trim();
+              } else {
+                rawScoreOffset = 1; rawScore = String(row[maxScoreIdx + 1] || '').trim();
+              }
+              if (!/^\d+$/.test(rawScore)) rawScore = "";
+
+              let stdScore = "";
+              let percentile = "";
+              let grade = "";
+
+              // rawScore 위치 이후부터 표준점수·백분위·등급 탐색
+              for (let idx = maxScoreIdx + rawScoreOffset + 1; idx < Math.min(maxScoreIdx + 35, row.length); idx++) {
+                let val = String(row[idx]).trim();
+                if (!val) continue;
+
+                if (!stdScore && /^\d{2,3}$/.test(val) && parseInt(val) <= 200) {
+                  stdScore = val;
+                } else if (!percentile && /^\d+\.\d+$/.test(val) && parseFloat(val) <= 100) {
+                  percentile = val;
+                } else if (!grade && /^[1-9]$/.test(val)) {
+                  grade = val;
+                } else if (!grade) {
+                  // 영어·한국사: "원점수에 의한 등급 (X)" 패턴에서 등급 추출
+                  let noSpace = val.replace(/\s/g, '');
+                  let gm = noSpace.match(/원점수에의한등급\(([1-9])\)/);
+                  if (gm) grade = gm[1];
+                }
+              }
+
+              if (rawScore) {
+                currentSubjectScores[subjName] = { 원점수: rawScore, 표준점수: stdScore, 전국백분위: percentile, 등급: grade };
+              }
+            } catch (e) { }
+          }
+        }
+
+        // [B] 채점 결과 (O/X) & [C] 정답률 (A-E) 추출
+        let isOx = rowStrNoSpace.includes("채점결과");
+        let isRate = rowStrNoSpace.includes("정답률");
+
+        if (isOx || isRate) {
+          // 답안 섹션 과목 맵 우선 사용, 없으면 점수 섹션 맵 폴백
+          let activeSubjMap = answerSubjMap.length > 0 ? answerSubjMap : colToSubjMap;
+
+          row.forEach((cell, idx) => {
+            let val = String(cell).trim().toUpperCase();
+            if (!val) return;
+
+            let subj = null;
+            let baseColIdx = -1;
+            for (let k = activeSubjMap.length - 1; k >= 0; k--) {
+              if (activeSubjMap[k].colIdx <= idx) {
+                subj = activeSubjMap[k].name;
+                baseColIdx = activeSubjMap[k].colIdx;
+                break;
+              }
+            }
+
+            if (subj) {
+              let rawQNum = null;
+
+              // [수정] 수학 과목은 헤더 행(colToQNumMap)보다 데이터 행(subjectColToQMap)의 번호 레이블을 우선적으로 신뢰
+              if (subj.includes('수학')) {
+                // 현재 위치부터 왼쪽으로 5칸까지 탐색하여 16~30번 레이블을 찾음
+                for (let offset = 0; offset <= 5; offset++) {
+                  if (idx - offset < 0) break;
+                  let dynQ = subjectColToQMap[subj] && subjectColToQMap[subj][idx - offset];
+                  if (dynQ && dynQ >= 16 && dynQ <= 30) {
+                    rawQNum = dynQ;
+                    break;
+                  }
+                }
+                // 16~30번을 못 찾았다면 1~15번은 헤더 매핑 사용
+                if (!rawQNum) rawQNum = colToQNumMap[idx];
+              } else {
+                // 일반 과목은 전역 헤더 매핑 우선
+                rawQNum = (subjectColToQMap[subj] && subjectColToQMap[subj][idx]) || colToQNumMap[idx];
+              }
+
+              if (rawQNum) {
+                // 탐구 및 선택 과목 대비: 국어/수학/영어/한국사가 아니면 탐구로 간주하여 오프셋 적용
+                let isCore = /국어를?|수학|영어를?|한국사/.test(subj);
+                let startQNum = 1;
+                if (!isCore) {
+                  for (let k = baseColIdx; k < row.length; k++) {
+                    if (colToQNumMap[k] && colToQNumMap[k] > 0) {
+                      startQNum = colToQNumMap[k];
+                      break;
+                    }
+                  }
+                }
+                let finalQNum = rawQNum - (startQNum - 1);
+
+                // 계산된 번호가 유효 범위를 벗어난 경우(음수/0 등) 무시
+                if (finalQNum <= 0) return;
+
+                // 탐구 과목 강제 보정: 21~40번 등으로 추출되는 경우 1~20번으로 회귀
+                if (!isCore && finalQNum > 20) {
+                  finalQNum = (finalQNum - 1) % 20 + 1;
+                }
+
+                // 과목별 문항 수 제한 적용
+                let maxQ = 50;
+                if (subj.includes('수학')) maxQ = 30;
+                else if (!isCore || subj.includes('한국사')) maxQ = 20;
+                else if (subj.includes('국어') || subj.includes('영어')) maxQ = 45;
+
+                if (finalQNum <= maxQ) {
+                  if (isOx && val === 'X') {
+                    if (!itemAnalysis[subj]) itemAnalysis[subj] = [];
+                    if (!itemAnalysis[subj].includes(finalQNum)) {
+                      itemAnalysis[subj].push(finalQNum);
+                    }
+                  } else if (isRate && /^[A-E]$/.test(val)) {
+                    if (!rateAnalysis[subj]) rateAnalysis[subj] = {};
+                    rateAnalysis[subj][finalQNum] = val;
+                  }
+                }
+              }
+            }
+          });
+        }
       }
 
-      return allResults;
+      // 최종 조립
+      for (let subj of Object.keys(currentSubjectScores)) {
+        let scoreData = currentSubjectScores[subj];
+        let wrongs = itemAnalysis[subj] || [];
+        let rates = rateAnalysis[subj] || {};
+
+        let wrongWithRates = wrongs.sort((a, b) => a - b).map(q => {
+          let r = rates[q] || "알수없음";
+          return `${q}(${r})`;
+        }).join(", ");
+
+        allResults.push({
+          학년: studentInfo.학년,
+          반: studentInfo.반,
+          번호: studentInfo.번호,
+          성명: studentInfo.성명,
+          과목: subj,
+          원점수: scoreData.원점수,
+          표준점수: scoreData.표준점수,
+          전국백분위: scoreData.전국백분위,
+          등급: scoreData.등급,
+          오답문항: wrongs.sort((a, b) => a - b).join(", "),
+          오답문항_정답률: wrongWithRates
+        });
+      }
+    }
+
+    return allResults;
   }
 
   function showMockResults() {
-      if (!mockResultText || !mockPreviewBody || !mockResultArea) return;
-      const allData = getDataForCurrentMonth();
-      const curData = mockDataByMonth[dataKey()] || [];
-      mockResultText.innerText = `${currentMockMonth}월 총 ${allData.length}개의 과목 데이터 (${currentMockGrade}학년 업로드: ${curData.length}건)`;
+    if (!mockResultText || !mockPreviewBody || !mockResultArea) return;
+    const allData = getDataForCurrentMonth();
+    const curData = mockDataByMonth[dataKey()] || [];
+    mockResultText.innerText = `${currentMockMonth}월 총 ${allData.length}개의 과목 데이터 (${currentMockGrade}학년 업로드: ${curData.length}건)`;
 
-      // 학년 드롭다운 초기화
-      const mockGradeFilterSel = document.getElementById('mockGradeFilterSelect');
-      if (mockGradeFilterSel) {
-          const grades = [...new Set(allData.map(d => String(d.학년)).filter(Boolean))].sort();
-          mockGradeFilterSel.innerHTML = '<option value="all">전체 학년</option>';
-          grades.forEach(g => {
-              const option = document.createElement('option');
-              option.value = g; option.textContent = `${g}학년`;
-              mockGradeFilterSel.appendChild(option);
-          });
-          mockGradeFilterSel.value = 'all';
-      }
+    // 학년 드롭다운 초기화
+    const mockGradeFilterSel = document.getElementById('mockGradeFilterSelect');
+    if (mockGradeFilterSel) {
+      const grades = [...new Set(allData.map(d => String(d.학년)).filter(Boolean))].sort();
+      mockGradeFilterSel.innerHTML = '<option value="all">전체 학년</option>';
+      grades.forEach(g => {
+        const option = document.createElement('option');
+        option.value = g; option.textContent = `${g}학년`;
+        mockGradeFilterSel.appendChild(option);
+      });
+      mockGradeFilterSel.value = 'all';
+    }
 
-      // 반 드롭다운 초기화
-      if (mockClassSelect) {
-          const classes = [...new Set(allData.map(d => d.반))].sort((a,b) => Number(a) - Number(b));
-          mockClassSelect.innerHTML = '<option value="all">전체 반</option>';
-          classes.forEach(cls => {
-              const option = document.createElement('option');
-              option.value = cls;
-              option.textContent = `${cls}반`;
-              mockClassSelect.appendChild(option);
-          });
-          mockClassSelect.value = 'all';
-      }
+    // 반 드롭다운 초기화
+    if (mockClassSelect) {
+      const classes = [...new Set(allData.map(d => d.반))].sort((a, b) => Number(a) - Number(b));
+      mockClassSelect.innerHTML = '<option value="all">전체 반</option>';
+      classes.forEach(cls => {
+        const option = document.createElement('option');
+        option.value = cls;
+        option.textContent = `${cls}반`;
+        mockClassSelect.appendChild(option);
+      });
+      mockClassSelect.value = 'all';
+    }
 
-      updateStudentDropdown('all');
-      renderFilteredMockData();
-      mockResultArea.classList.remove('hidden');
+    updateStudentDropdown('all');
+    renderFilteredMockData();
+    mockResultArea.classList.remove('hidden');
   }
 
   function exportMockToCSV() {
-      const data = getDataForCurrentMonth();
-      if (data.length === 0) return;
-      const headers = ["학년", "반", "번호", "성명", "과목", "등급", "원점수", "표준점수", "전국백분위", "오답문항", "오답문항_정답률"];
-      let csvContent = "\uFEFF" + headers.join(",") + "\n";
-      data.forEach(row => {
-          let rowArr = headers.map(h => {
-              let val = String(row[h] || "").replace(/[\r\n]+/g, ' ').trim();
-              if (val.includes(",") || val.includes('"')) {
-                  val = `"${val.replace(/"/g, '""')}"`;
-              }
-              return val;
-          });
-          csvContent += rowArr.join(",") + "\n";
+    const data = getDataForCurrentMonth();
+    if (data.length === 0) return;
+    const headers = ["학년", "반", "번호", "성명", "과목", "등급", "원점수", "표준점수", "전국백분위", "오답문항", "오답문항_정답률"];
+    let csvContent = "\uFEFF" + headers.join(",") + "\n";
+    data.forEach(row => {
+      let rowArr = headers.map(h => {
+        let val = String(row[h] || "").replace(/[\r\n]+/g, ' ').trim();
+        if (val.includes(",") || val.includes('"')) {
+          val = `"${val.replace(/"/g, '""')}"`;
+        }
+        return val;
       });
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.setAttribute("href", url);
-      link.setAttribute("download", `모의고사_분석결과_${currentMockMonth}월_${currentMockMonth}월.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      csvContent += rowArr.join(",") + "\n";
+    });
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `모의고사_분석결과_${currentMockMonth}월_${currentMockMonth}월.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 
   async function printMockIndividualReport() {
-      const selectedStudent = mockStudentSelect ? mockStudentSelect.value : 'all';
-      if (selectedStudent === 'all') {
-          alert("학생을 먼저 선택해주세요.");
-          return;
-      }
-      
-      const [num, name] = selectedStudent.split('_');
-      const allData = getDataForCurrentMonth();
-      const studentData = allData.filter(d => d.번호 === num && d.성명 === name);
-      
-      if (studentData.length === 0) {
-          alert("해당 학생의 데이터가 없습니다.");
-          return;
-      }
+    const selectedStudent = mockStudentSelect ? mockStudentSelect.value : 'all';
+    if (selectedStudent === 'all') {
+      alert("학생을 먼저 선택해주세요.");
+      return;
+    }
 
-      const btn = document.getElementById('mockPrintReportBtn');
-      const originalHtml = btn ? btn.innerHTML : '';
-      if (btn) {
-          btn.disabled = true;
-          btn.innerHTML = '<span>⏳</span> 데이터를 불러오는 중...';
-      }
-      
-      try {
-          const first = studentData[0];
-          const gasUrl = getMockGasUrl(first.학년, currentMockMonth);
-          
-          let subjectsHtml = '';
-          
-          for (const d of studentData) {
-              let wrongHtml = '';
-              let detailedTableHtml = '';
-              
-              const rawWrongStr = d.오답문항_정답률;
-              // 리포트 생성 단계에서도 중복을 철저히 제거 (Set 활용)
-              const wrongItems = Array.from(new Set(
-                  (d.오답문항 || '').split(',')
-                  .map(n => parseInt(n.trim()))
-                  .filter(n => !isNaN(n) && n > 0)
-              )).sort((a, b) => a - b);
+    const [num, name] = selectedStudent.split('_');
+    const allData = getDataForCurrentMonth();
+    const studentData = allData.filter(d => d.번호 === num && d.성명 === name);
 
-              // 1. 기본 정답률별 요약
-              if (!rawWrongStr || rawWrongStr === '알수없음' || rawWrongStr.trim() === '') {
-                  wrongHtml = '<p style="color:#888; font-size:0.9rem;">오답 정보가 없습니다.</p>';
-              } else {
-                  const groups = {
-                      'E': { label: '매우 어려움 (0-20%)', items: [], color: '#ff4d4d' },
-                      'D': { label: '어려움 (20-40%)', items: [], color: '#ff8533' },
-                      'C': { label: '보통 (40-60%)', items: [], color: '#ffc34d' },
-                      'B': { label: '쉬움 (60-80%)', items: [], color: '#a3cf62' },
-                      'A': { label: '매우 쉬움 (80-100%)', items: [], color: '#5cb85c' },
-                      'ETC': { label: '기타', items: [], color: '#888' }
-                  };
-                  
-                  const parts = rawWrongStr.split(',').map(p => p.trim());
-                  parts.forEach(p => {
-                      const match = p.match(/(\d+)\((.)\)/);
-                      if (match) {
-                          const qNum = match[1];
-                          const diff = match[2].toUpperCase();
-                          if (groups[diff]) groups[diff].items.push(qNum);
-                          else groups['ETC'].items.push(qNum);
-                      } else {
-                          groups['ETC'].items.push(p);
-                      }
-                  });
-                  
-                  ['E', 'D', 'C', 'B', 'A', 'ETC'].forEach(key => {
-                      const g = groups[key];
-                      if (g.items.length > 0) {
-                          wrongHtml += `
+    if (studentData.length === 0) {
+      alert("해당 학생의 데이터가 없습니다.");
+      return;
+    }
+
+    const btn = document.getElementById('mockPrintReportBtn');
+    const originalHtml = btn ? btn.innerHTML : '';
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<span>⏳</span> 데이터를 불러오는 중...';
+    }
+
+    try {
+      const first = studentData[0];
+      const gasUrl = getMockGasUrl(first.학년, currentMockMonth);
+
+      let subjectsHtml = '';
+
+      for (const d of studentData) {
+        let wrongHtml = '';
+        let detailedTableHtml = '';
+
+        const rawWrongStr = d.오답문항_정답률;
+        // 리포트 생성 단계에서도 중복을 철저히 제거 (Set 활용)
+        const wrongItems = Array.from(new Set(
+          (d.오답문항 || '').split(',')
+            .map(n => parseInt(n.trim()))
+            .filter(n => !isNaN(n) && n > 0)
+        )).sort((a, b) => a - b);
+
+        // 1. 기본 정답률별 요약
+        if (!rawWrongStr || rawWrongStr === '알수없음' || rawWrongStr.trim() === '') {
+          wrongHtml = '<p style="color:#888; font-size:0.9rem;">오답 정보가 없습니다.</p>';
+        } else {
+          const groups = {
+            'E': { label: '매우 어려움 (0-20%)', items: [], color: '#ff4d4d' },
+            'D': { label: '어려움 (20-40%)', items: [], color: '#ff8533' },
+            'C': { label: '보통 (40-60%)', items: [], color: '#ffc34d' },
+            'B': { label: '쉬움 (60-80%)', items: [], color: '#a3cf62' },
+            'A': { label: '매우 쉬움 (80-100%)', items: [], color: '#5cb85c' },
+            'ETC': { label: '기타', items: [], color: '#888' }
+          };
+
+          const parts = rawWrongStr.split(',').map(p => p.trim());
+          parts.forEach(p => {
+            const match = p.match(/(\d+)\((.)\)/);
+            if (match) {
+              const qNum = match[1];
+              const diff = match[2].toUpperCase();
+              if (groups[diff]) groups[diff].items.push(qNum);
+              else groups['ETC'].items.push(qNum);
+            } else {
+              groups['ETC'].items.push(p);
+            }
+          });
+
+          ['E', 'D', 'C', 'B', 'A', 'ETC'].forEach(key => {
+            const g = groups[key];
+            if (g.items.length > 0) {
+              wrongHtml += `
                               <div style="margin-bottom:0.4rem; display:flex; align-items:center; gap:0.5rem;">
                                   <span style="display:inline-block; padding:2px 8px; border-radius:4px; background:${g.color}; color:#fff; font-size:0.75rem; font-weight:bold; min-width:110px; text-align:center;">${g.label}</span>
                                   <span style="font-size:0.85rem; color:#333;">${g.items.join(', ')}</span>
                               </div>
                           `;
-                      }
-                  });
-              }
+            }
+          });
+        }
 
-              // 2. 스프레드시트 상세 분석 (GAS 연동 시)
-              if (gasUrl && wrongItems.length > 0) {
-                  try {
-                      // 시트 목록 확인 및 매칭
-                      if (mockSheetNames.length === 0) await connectToGoogleSheet();
-                      const matchedSheet = matchSubjectToSheet(d.과목);
-                      
-                      if (matchedSheet) {
-                          const sheetRows = await fetchSubjectSheetData(matchedSheet);
-                          const parsed = parseSheetData(sheetRows);
-                          
-                          if (parsed) {
-                              // 대분류별 그룹화
-                              const catMap = {};
-                              wrongItems.forEach(qNum => {
-                                  const q = parsed.questions[qNum];
-                                  const cat = (q && q.대분류) ? q.대분류 : '미분류';
-                                  if (!catMap[cat]) catMap[cat] = [];
-                                  catMap[cat].push(qNum);
-                              });
-                              const catEntries = Object.entries(catMap).sort((a,b) => b[1].length - a[1].length);
+        // 2. 스프레드시트 상세 분석 (GAS 연동 시)
+        if (gasUrl && wrongItems.length > 0) {
+          try {
+            // 시트 목록 확인 및 매칭
+            if (mockSheetNames.length === 0) await connectToGoogleSheet();
+            const matchedSheet = matchSubjectToSheet(d.과목);
 
-                              const categorySummaryHtml = `
+            if (matchedSheet) {
+              const sheetRows = await fetchSubjectSheetData(matchedSheet);
+              const parsed = parseSheetData(sheetRows);
+
+              if (parsed) {
+                // 대분류별 그룹화
+                const catMap = {};
+                wrongItems.forEach(qNum => {
+                  const q = parsed.questions[qNum];
+                  const cat = (q && q.대분류) ? q.대분류 : '미분류';
+                  if (!catMap[cat]) catMap[cat] = [];
+                  catMap[cat].push(qNum);
+                });
+                const catEntries = Object.entries(catMap).sort((a, b) => b[1].length - a[1].length);
+
+                const categorySummaryHtml = `
                                   <div style="margin-top:1.2rem; margin-bottom:1.5rem; break-inside: avoid;">
                                       <div style="font-size:0.9rem; font-weight:bold; color:#725e9c; margin-bottom:0.6rem; display:flex; align-items:center; gap:0.4rem;">
                                           <span>📊</span> 대분류별 오답 문항 요약
@@ -2181,7 +2181,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                   </div>
                               `;
 
-                              detailedTableHtml = categorySummaryHtml + `
+                detailedTableHtml = categorySummaryHtml + `
                                   <div style="margin-top:1.5rem;">
                                       <div style="font-size:0.9rem; font-weight:bold; color:#3c3fa0; margin-bottom:0.6rem; display:flex; align-items:center; gap:0.4rem;">
                                           <span>📋</span> 문항별 상세 오답 분석
@@ -2197,13 +2197,13 @@ document.addEventListener("DOMContentLoaded", () => {
                                           </thead>
                                           <tbody>
                                               ${wrongItems.map(qNum => {
-                                                  const q = parsed.questions[qNum] || { 번호: qNum, 정답:'-', 영역:'-', 성취기준:'-', 대분류:'-', 소분류:'-', 제재:'-', 평가요소:'-', 특이사항:'-' };
-                                                  
-                                                  // 컬럼 통합 (중복 제거 포함)
-                                                  const minorInfo = [...new Set([q.소분류, q.제재].filter(v => v && v !== '-'))].join(' / ') || '-';
-                                                  const evalInfo = [...new Set([q.성취기준, q.평가요소, q.특이사항].filter(v => v && v !== '-'))].join(' / ') || '-';
+                  const q = parsed.questions[qNum] || { 번호: qNum, 정답: '-', 영역: '-', 성취기준: '-', 대분류: '-', 소분류: '-', 제재: '-', 평가요소: '-', 특이사항: '-' };
 
-                                                  return `
+                  // 컬럼 통합 (중복 제거 포함)
+                  const minorInfo = [...new Set([q.소분류, q.제재].filter(v => v && v !== '-'))].join(' / ') || '-';
+                  const evalInfo = [...new Set([q.성취기준, q.평가요소, q.특이사항].filter(v => v && v !== '-'))].join(' / ') || '-';
+
+                  return `
                                                       <tr>
                                                           <td style="padding:8px; border:1px solid #ddd; text-align:center; font-weight:bold;">${qNum}</td>
                                                           <td style="padding:8px; border:1px solid #ddd; text-align:center;">${q.대분류 || '-'}</td>
@@ -2213,20 +2213,20 @@ document.addEventListener("DOMContentLoaded", () => {
                                                           </td>
                                                       </tr>
                                                   `;
-                                              }).join('')}
+                }).join('')}
                                           </tbody>
                                       </table>
                                   </div>
                               `;
-                          }
-                      }
-                  } catch (e) {
-                      console.warn(`${d.과목} 상세 분석 로드 실패:`, e);
-                      detailedTableHtml = `<p style="font-size:0.8rem; color:#888; margin-top:10px;">(상세 분석 데이터를 불러올 수 없습니다: ${matchedSheet || '매칭 실패'})</p>`;
-                  }
               }
+            }
+          } catch (e) {
+            console.warn(`${d.과목} 상세 분석 로드 실패:`, e);
+            detailedTableHtml = `<p style="font-size:0.8rem; color:#888; margin-top:10px;">(상세 분석 데이터를 불러올 수 없습니다: ${matchedSheet || '매칭 실패'})</p>`;
+          }
+        }
 
-              subjectsHtml += `
+        subjectsHtml += `
                 <div style="border: 1px solid #ddd; border-radius:10px; padding:1.2rem; margin-bottom:2rem; break-inside: avoid; background:#fff;">
                     <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #3c3fa0; padding-bottom:0.5rem; margin-bottom:1rem;">
                         <span style="font-size:1.2rem; font-weight:bold; color:#3c3fa0;">${d.과목}</span>
@@ -2252,10 +2252,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     ${detailedTableHtml}
                 </div>
               `;
-          }
+      }
 
-          const printWin = window.open("", "_blank", "width=900,height=900");
-          printWin.document.write(`<!DOCTYPE html><html lang="ko"><head>
+      const printWin = window.open("", "_blank", "width=900,height=900");
+      printWin.document.write(`<!DOCTYPE html><html lang="ko"><head>
           <meta charset="UTF-8">
           <title>${currentMockMonth}월 모의고사 개별 리포트 - ${first.성명}</title>
           <style>
@@ -2281,7 +2281,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <div class="container">
             <div class="header">
               <h1>📊 ${currentMockMonth}월 모의고사 성적 분석 리포트</h1>
-              <div style="color:#666; font-size:0.85rem;">발행일: ${new Date().toLocaleDateString('ko-KR', {year:'numeric', month:'long', day:'numeric'})}</div>
+              <div style="color:#666; font-size:0.85rem;">발행일: ${new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
             </div>
             
             <div class="student-info">
@@ -2304,27 +2304,27 @@ document.addEventListener("DOMContentLoaded", () => {
             };
           </script>
         </body></html>`);
-          printWin.document.close();
-      } catch (err) {
-          console.error('리포트 생성 오류:', err);
-          alert('리포트 생성 중 오류가 발생했습니다: ' + err.message);
-      } finally {
-          if (btn) {
-              btn.disabled = false;
-              btn.innerHTML = originalHtml;
-          }
+      printWin.document.close();
+    } catch (err) {
+      console.error('리포트 생성 오류:', err);
+      alert('리포트 생성 중 오류가 발생했습니다: ' + err.message);
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
       }
+    }
   }
 
 
   // --- CSAT Grid Initialization and Render function ---
   let csatGridInitialized = false;
-  window.initCsatChart = function() { // kept name for compatibility with tab switch
+  window.initCsatChart = function () { // kept name for compatibility with tab switch
     if (csatGridInitialized) return;
     if (typeof csatData === 'undefined') return;
-    
+
     csatGridInitialized = true;
-    
+
     // Create global tooltip if not exists
     if (!document.getElementById("csat-tooltip")) {
       const tt = document.createElement("div");
@@ -2338,22 +2338,22 @@ document.addEventListener("DOMContentLoaded", () => {
     csatData.forEach(item => {
       const region = item.지역 ? item.지역.trim() : "미표기";
       regionSet.add(region);
-      if(item.전형) typeSet.add(item.전형.trim());
-      if(item.등급합) sumSet.add(item.등급합);
-      if(item.과목수) countSet.add(item.과목수);
+      if (item.전형) typeSet.add(item.전형.trim());
+      if (item.등급합) sumSet.add(item.등급합);
+      if (item.과목수) countSet.add(item.과목수);
     });
-    
+
     const filterRegion = document.getElementById("csat-filter-region");
     const filterType = document.getElementById("csat-filter-type");
     const filterSubject = document.getElementById("csat-filter-subject");
     const filterGradeMin = document.getElementById("csat-filter-grade-min");
     const filterGradeMax = document.getElementById("csat-filter-grade-max");
-    
+
     if (filterRegion) [...regionSet].sort().forEach(val => filterRegion.add(new Option(val, val)));
     if (filterType) [...typeSet].sort().forEach(val => filterType.add(new Option(val, val)));
     if (filterSubject) [...countSet].sort().forEach(val => filterSubject.add(new Option(val + "과목", val)));
     if (filterGradeMin && filterGradeMax) {
-      [...sumSet].sort((a,b)=>a-b).forEach(val => {
+      [...sumSet].sort((a, b) => a - b).forEach(val => {
         filterGradeMin.add(new Option(val + "합", val));
         filterGradeMax.add(new Option(val + "합", val));
       });
@@ -2361,18 +2361,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Event listeners for filters
     const render = () => renderCsatGrid();
-    if(filterRegion) filterRegion.addEventListener("change", render);
-    if(filterType) filterType.addEventListener("change", render);
-    if(filterSubject) filterSubject.addEventListener("change", render);
-    if(filterGradeMin) filterGradeMin.addEventListener("change", render);
-    if(filterGradeMax) filterGradeMax.addEventListener("change", render);
+    if (filterRegion) filterRegion.addEventListener("change", render);
+    if (filterType) filterType.addEventListener("change", render);
+    if (filterSubject) filterSubject.addEventListener("change", render);
+    if (filterGradeMin) filterGradeMin.addEventListener("change", render);
+    if (filterGradeMax) filterGradeMax.addEventListener("change", render);
 
     render();
   };
 
   function renderCsatGrid() {
     const container = document.getElementById("csatGridContainer");
-    if(!container || typeof csatData === 'undefined') return;
+    if (!container || typeof csatData === 'undefined') return;
 
     const rFilter = document.getElementById("csat-filter-region")?.value || 'all';
     const tFilter = document.getElementById("csat-filter-type")?.value || 'all';
@@ -2381,25 +2381,25 @@ document.addEventListener("DOMContentLoaded", () => {
     const gMaxFilter = document.getElementById("csat-filter-grade-max")?.value || 'all';
 
     const filtered = csatData.filter(item => {
-      if(rFilter !== 'all') {
+      if (rFilter !== 'all') {
         const itemRegion = item.지역 ? item.지역.trim() : "미표기";
-        if(itemRegion !== rFilter) return false;
+        if (itemRegion !== rFilter) return false;
       }
-      if(tFilter !== 'all') {
+      if (tFilter !== 'all') {
         const itemType = item.전형 ? item.전형.trim() : "미표기";
-        if(itemType !== tFilter) return false;
+        if (itemType !== tFilter) return false;
       }
-      if(sFilter !== 'all' && String(item.과목수) !== sFilter) return false;
-      
+      if (sFilter !== 'all' && String(item.과목수) !== sFilter) return false;
+
       const grade = parseInt(item.등급합);
-      if(gMinFilter !== 'all' && grade < parseInt(gMinFilter)) return false;
-      if(gMaxFilter !== 'all' && grade > parseInt(gMaxFilter)) return false;
-      
+      if (gMinFilter !== 'all' && grade < parseInt(gMinFilter)) return false;
+      if (gMaxFilter !== 'all' && grade > parseInt(gMaxFilter)) return false;
+
       return true;
     });
 
     let html = '<div class="csat-matrix" style="grid-template-columns: 80px repeat(14, minmax(60px, 1fr));">';
-    
+
     // Header Row: Empty top-left cell, then columns 1 to 14
     html += '<div class="matrix-header" style="background:transparent; border:none;"></div>';
     for (let x = 1; x <= 14; x++) {
@@ -2464,7 +2464,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let pfStudents = [];
   let students = [];
   let pfDetails = { grades: [], subjects: [], creatives: [], behaviors: [] };
-  
+
   if (pfResultsUpload) {
     pfResultsUpload.addEventListener("change", (e) => {
       const file = e.target.files[0];
@@ -2481,28 +2481,28 @@ document.addEventListener("DOMContentLoaded", () => {
             const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1 });
             console.log("[courseExcelUpload] Sheet:", sheetName, "Rows:", rows.slice(0, 5));
             let hIdx = -1;
-            for(let i=0; i<Math.min(rows.length, 30); i++) {
+            for (let i = 0; i < Math.min(rows.length, 30); i++) {
               const rs = (rows[i] || []).join("");
-              if(rs.includes("성명") || rs.includes("이름") || rs.includes("수험번호")) { hIdx = i; break; }
+              if (rs.includes("성명") || rs.includes("이름") || rs.includes("수험번호")) { hIdx = i; break; }
             }
-            
-            if(hIdx !== -1) {
+
+            if (hIdx !== -1) {
               const h = rows[hIdx];
               const nCol = h.findIndex(c => c && (String(c).includes("성명") || String(c).includes("이름") || String(c).includes("\ud559\uc0dd\uba85") || String(c).includes("\uc218\ud5d8\uc0dd\uba85")));
               const uCol = h.findIndex(c => c && (String(c).includes("\ub300\ud559\uad50") || String(c).includes("\ub300\ud559")));
               const dCol = h.findIndex(c => c && (String(c).includes("\ubaa8\uc9d1\ub2e8\uc704") || String(c).includes("\ud559\uacfc") || String(c).includes("\ud559\ubd80") || String(c).includes("\uc804\uacf5") || String(c).includes("\uc9c0\uc6d0\ud559\uacfc")));
               const rCol = h.findIndex(c => {
-                if(!c) return false;
+                if (!c) return false;
                 const s = String(c).replace(/\s+/g, "");
                 return s.includes("\ucd5c\uc885\ub2e8\uacc4") || s.includes("\ud569\uaca9\uc5ec\ubd80") || s.includes("\uacb0\uacfc") || s.includes("\ud569\ubd88") || s.includes("\ud310\uc815") || s.includes("\uc0c1\ud0dc");
               });
               const tCol = h.findIndex(c => {
-                if(!c) return false;
+                if (!c) return false;
                 const s = String(c).replace(/\s+/g, "");
                 return s.includes("\uc804\ud615\uba85") || s.includes("\uc804\ud615\uc720\ud615") || s.includes("\uc804\ud615\uc885\ub958") || s.includes("\uc804\ud615\uad6c\ubd84") || s.includes("\uc804\ud615");
               });
-              
-               // 일반등급 컬럼 찾기 (띄어쓰기, 괄호 형태 다양하게 매칭)
+
+              // 일반등급 컬럼 찾기 (띄어쓰기, 괄호 형태 다양하게 매칭)
               const gCol5 = h.findIndex(c => {
                 if (!c) return false;
                 const s = String(c).replace(/\s+/g, "");
@@ -2513,42 +2513,42 @@ document.addEventListener("DOMContentLoaded", () => {
                 const s = String(c).replace(/\s+/g, "");
                 return s.includes("일반등급") && !s.includes("5등급") && !s.includes("(5)");
               });
-              
+
               // 인덱스 기반 폴백 (최종단계는 보통 하단/옆에 위치)
               let finalRCol = rCol !== -1 ? rCol : 22; // 23번째 열 폴백
               let finalTCol = tCol !== -1 ? tCol : 8;  // 9번째 열 폴백
               let finalGCol = gCol !== -1 ? gCol : 17; // 18번째 열 폴백
               let finalGCol5 = gCol5 !== -1 ? gCol5 : 18; // 19번째 열 폴백
-              
+
               console.log(`[PF] 컬럼 탐지: gCol(일반등급)=${gCol}(값:${h[gCol]}), gCol5(5등급)=${gCol5}(값:${h[gCol5]}), finalGCol=${finalGCol}, finalGCol5=${finalGCol5}`);
-              
+
               console.log(`\uc2dc\ud2b8(${sheetName}) \ud5e4\ub354 \ubc1c\uacb0:`, h, "RCol:", finalRCol, "TCol:", finalTCol);
 
-              for(let i=hIdx+1; i<rows.length; i++){
+              for (let i = hIdx + 1; i < rows.length; i++) {
                 const row = rows[i];
                 if (!row || row.length === 0) continue;
-                const name = nCol !== -1 ? String(row[nCol]||"").trim() : "";
-                if(!name || name === "성명" || name === "이름") continue;
-                
-                const univ = uCol !== -1 ? String(row[uCol]||"").trim() : "";
-                const dept = dCol !== -1 ? String(row[dCol]||"").trim() : "";
-                const admType = finalTCol !== -1 ? String(row[finalTCol]||"").trim() : "";
-                
+                const name = nCol !== -1 ? String(row[nCol] || "").trim() : "";
+                if (!name || name === "성명" || name === "이름") continue;
+
+                const univ = uCol !== -1 ? String(row[uCol] || "").trim() : "";
+                const dept = dCol !== -1 ? String(row[dCol] || "").trim() : "";
+                const admType = finalTCol !== -1 ? String(row[finalTCol] || "").trim() : "";
+
                 // 학생부위주(종합) 필터 - 종합, 학종, 서류 등 포함
                 const isComprehensive = admType.includes("종합") || admType.includes("\uc885\ud569") || admType.includes("\ud559\uc885") || admType.includes("\uc11c\ub958") || admType.includes("학종") || admType.includes("서류");
-                if (!isComprehensive && admType !== "") continue; 
-                
-                let raw = finalRCol !== -1 ? String(row[finalRCol]||"").replace(/\s+/g,"") : "";
+                if (!isComprehensive && admType !== "") continue;
+
+                let raw = finalRCol !== -1 ? String(row[finalRCol] || "").replace(/\s+/g, "") : "";
                 let res = raw || "\ud655\uc778\ubd88\uac00"; // '확인불가'로 수정
-                
+
                 if (raw.includes("\ubd88\ud569\uaca9") || raw.includes("\ud0c8\ub77d") || raw.includes("\ubd88\ud569")) res = "\ubd88\ud569\uaca9";
                 else if (raw.includes("\ucd31\uc6d0") || raw.includes("\udd94\ud569") || raw.includes("\uc608\ube44")) res = "\ucd31\uc6d0\ud569\uaca9";
                 else if (raw.includes("\ucd5c\ucd08") || raw.includes("\ud569\uaca9")) res = "\ud569\uaca9";
-                
-                let genGrade = finalGCol !== -1 ? String(row[finalGCol]||"").trim() : "-";
-                let genGrade5 = finalGCol5 !== -1 && finalGCol5 !== undefined ? String(row[finalGCol5]||"").trim() : "-";
+
+                let genGrade = finalGCol !== -1 ? String(row[finalGCol] || "").trim() : "-";
+                let genGrade5 = finalGCol5 !== -1 && finalGCol5 !== undefined ? String(row[finalGCol5] || "").trim() : "-";
                 let failReason = ""; // 불합격 사유 (현재 미사용)
-                
+
                 pfStudents.push({ name, univ, dept, result: res, type: admType, genGrade, genGrade5, failReason });
                 const opt = document.createElement("option");
                 opt.value = pfStudents.length - 1;
@@ -2560,7 +2560,7 @@ document.addEventListener("DOMContentLoaded", () => {
           console.log("\ucd94\ucd9c\ub41c \ud559\uc0dd \uc218:", pfStudents.length);
           localStorage.setItem("pfStudentsData", JSON.stringify(pfStudents));
           await StorageManager.save("pfStudents", pfStudents);
-        } catch(err) { console.error(err); }
+        } catch (err) { console.error(err); }
       };
       reader.readAsArrayBuffer(file);
     });
@@ -3361,7 +3361,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function initMajorSearch() {
     const searchInput = document.getElementById('major-search');
     const resultsPanel = document.getElementById('major-search-results');
-    
+
     if (!searchInput || !resultsPanel) return;
 
     const allMajors = [];
@@ -3381,8 +3381,8 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      const results = allMajors.filter(item => 
-        item.major.toLowerCase().includes(query) || 
+      const results = allMajors.filter(item =>
+        item.major.toLowerCase().includes(query) ||
         item.univ.toLowerCase().includes(query)
       ).sort((a, b) => {
         const aMajor = a.major.toLowerCase();
@@ -3533,20 +3533,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (globalCourseJson) extractCourseData(globalCourseJson, targetName);
         if (globalBatchJsons.length > 0) extractBatchData(globalBatchJsons, targetName);
-        
+
         // 엑셀(수시진학관리)에서 추출된 '일반등급' 연동
         if (pfStudents.length > 0) {
-            const matched = pfStudents.find(s => s.name === targetName);
-            if (matched) {
-                let displayGrades = [];
-                if (matched.genGrade && matched.genGrade !== "-") displayGrades.push(matched.genGrade);
-                if (matched.genGrade5 && matched.genGrade5 !== "-") displayGrades.push(matched.genGrade5 + "(5등급)");
-                
-                if (displayGrades.length > 0 && averageGradeInput) {
-                    averageGradeInput.value = displayGrades.join(" / ");
-                    console.log(`[Sync] Found genGrade for ${targetName}: ${averageGradeInput.value}`);
-                }
+          const matched = pfStudents.find(s => s.name === targetName);
+          if (matched) {
+            let displayGrades = [];
+            if (matched.genGrade && matched.genGrade !== "-") displayGrades.push(matched.genGrade);
+            if (matched.genGrade5 && matched.genGrade5 !== "-") displayGrades.push(matched.genGrade5 + "(5등급)");
+
+            if (displayGrades.length > 0 && averageGradeInput) {
+              averageGradeInput.value = displayGrades.join(" / ");
+              console.log(`[Sync] Found genGrade for ${targetName}: ${averageGradeInput.value}`);
             }
+          }
         }
       }
     });
@@ -3569,15 +3569,15 @@ document.addEventListener("DOMContentLoaded", () => {
           globalCourseJson = allRows;
           await StorageManager.save("globalCourseJson", globalCourseJson);
           const targetName = nameInput ? nameInput.value.trim() : "";
-          if (targetName) { 
-            extractCourseData(globalCourseJson, targetName); 
-          } else { 
-            alert("이수과목 파일이 불러와졌습니다. 먼저 학생을 선택하시면 이수과목이 자동 추출됩니다."); 
+          if (targetName) {
+            extractCourseData(globalCourseJson, targetName);
+          } else {
+            alert("이수과목 파일이 불러와졌습니다. 먼저 학생을 선택하시면 이수과목이 자동 추출됩니다.");
           }
           saveState();
-        } catch (error) { 
-          console.error("Course file read error:", error); 
-          alert("이수과목 파일 읽는 중 오류 발생:\n" + error.message + "\n\n파일 형식이 올바른지 확인해주세요."); 
+        } catch (error) {
+          console.error("Course file read error:", error);
+          alert("이수과목 파일 읽는 중 오류 발생:\n" + error.message + "\n\n파일 형식이 올바른지 확인해주세요.");
         }
       };
       reader.readAsArrayBuffer(file);
@@ -3615,17 +3615,17 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!cell) continue;
       if (gradeYearCol === -1 && (cell === "학년" || cell.includes("학년"))) gradeYearCol = j;
       if (termCol === -1 && (cell === "학기" || cell.includes("학기"))) termCol = j;
-      
+
       //과목 컬럼: '과목', '교과목', '과목명' 등 포함
       if (subjectCol === -1 && (cell.includes("과목") || cell.includes("교과목"))) subjectCol = j;
       else if (subjectCol2 === -1 && (cell.includes("교과") || cell.includes("과목군") || cell.includes("교과군"))) subjectCol2 = j;
-      
+
       //단위수 컬럼: '단위', '단위수', '이수단위' 등
       if (creditCol === -1 && (cell.includes("단위") || cell.includes("단위수"))) creditCol = j;
-      
+
       //등급 컬럼: '등급', '석차등급', '성적' 등
       if (gradeCol === -1 && (cell.includes("등급") || cell.includes("석차등급") || cell === "성적")) gradeCol = j;
-      
+
       //성취도 컬럼
       if (achieveCol === -1 && cell.includes("성취도")) achieveCol = j;
     }
@@ -3695,7 +3695,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (extractedCourses.length > 0) {
       if (coursesInput) {
-        coursesInput.value = courseDetails.map(c => 
+        coursesInput.value = courseDetails.map(c =>
           c.type === 'grade' ? `${c.subject}(${c.credit}단위): ${c.grade}등급` : `${c.subject}(${c.credit}단위): ${c.grade}`
         ).join(", ");
       }
@@ -3958,7 +3958,7 @@ document.addEventListener("DOMContentLoaded", () => {
           const area = areaCol !== -1 ? String(row[areaCol] || "").trim() : "";
           const detail = String(row[detailCol] || "").trim();
           if (!detail || detail.length <= 2) continue;
-          
+
           if (area.includes("자율")) ag["자율"].push(detail);
           else if (area.includes("동아리")) ag["동아리"].push(detail);
           else if (area.includes("봉사")) ag["봉사"].push(detail);
@@ -4000,7 +4000,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
     }
-    
+
     // Update individual tab triggers
     updateTriggerState("ind-trigger-subject", !!(subjectInput && subjectInput.value));
     updateTriggerState("ind-trigger-creative", !!(creativeInput && creativeInput.value));
@@ -4142,16 +4142,16 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("pf-student-univ").value = s.univ;
       document.getElementById("pf-student-dept").value = s.dept;
       document.getElementById("pf-student-result").value = s.result;
-      
+
       const genGradeInput = document.getElementById("pf-student-general-grade");
       if (genGradeInput) genGradeInput.value = s.genGrade || "-";
       const genGrade5Input = document.getElementById("pf-student-general-grade5");
       if (genGrade5Input) genGrade5Input.value = s.genGrade5 || "-";
       console.log("[PF] 학생 선택:", s.name, "| genGrade:", s.genGrade, "| genGrade5:", s.genGrade5);
-      
+
       const detailsDiv = document.getElementById("pf-student-details");
       if (detailsDiv) detailsDiv.style.display = "block";
-      
+
       const detailIds = ["pf-detail-grades", "pf-detail-subject", "pf-detail-career", "pf-detail-arts", "pf-detail-creative", "pf-detail-behavior"];
       detailIds.forEach(id => {
         const el = document.getElementById(id);
@@ -4160,7 +4160,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const pfTableContainer = document.getElementById("pf-course-table-container");
       if (pfTableContainer) pfTableContainer.innerHTML = "";
-      
+
       updatePfStudentDetails(s.name);
     });
   }
@@ -4190,7 +4190,7 @@ document.addEventListener("DOMContentLoaded", () => {
               const s = pfStudents[pfStudentSelect.value];
               if (s) updatePfStudentDetails(s.name);
             }
-          } catch(err) { console.error(err); }
+          } catch (err) { console.error(err); }
         };
         reader.readAsArrayBuffer(file);
       });
@@ -4252,18 +4252,18 @@ document.addEventListener("DOMContentLoaded", () => {
         const sub = getVal(r, ["과목명", "교과목명", "과목"]);
         const grdRaw = getVal(r, ["석차등급(수강자수)", "성취도(수강자수)", "등급", "성취도", "석차등급"]);
         const creditRaw = getVal(r, ["단위수", "이수단위", "단위"]);
-        
+
         // Extract only the part before '(' if it exists, e.g., '2' from '2(118)'
         const grd = String(grdRaw).split('(')[0].trim() || "-";
         const credit = parseFloat(String(creditRaw).match(/\d+(\.\d+)?/)?.[0] || "0") || 1;
-        
+
         // Determine type for badge
         const isGrade = /^[1-9]$/.test(grd);
-        pfCourseDetails.push({ 
-          subject: sub || "과목미상", 
-          grade: grd, 
-          credit: credit, 
-          type: isGrade ? 'grade' : 'achieve' 
+        pfCourseDetails.push({
+          subject: sub || "과목미상",
+          grade: grd,
+          credit: credit,
+          type: isGrade ? 'grade' : 'achieve'
         });
 
         return `${sub || "과목미상"}: ${grd}`;
@@ -4359,7 +4359,7 @@ document.addEventListener("DOMContentLoaded", () => {
           }
           if (!detail) {
             const vals = Object.values(r).filter(v => typeof v === 'string');
-            vals.sort((a,b) => b.length - a.length);
+            vals.sort((a, b) => b.length - a.length);
             if (vals.length > 0 && vals[0].length > 20) detail = vals[0];
           }
           if (detail) {
@@ -4391,8 +4391,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // \ub300\ud559\ubcc4 \ud3c9\uac00 \uae30\uc900 (\uac00\uc774\ub4dc\ubd81 \uae30\ubc18)
   const universityEvalCriteria = {
-      "\uc11c\uc6b8\ub300\ud559\uad50": {
-        factors: `
+    "\uc11c\uc6b8\ub300\ud559\uad50": {
+      factors: `
 [\uc11c\uc6b8\ub300\ud559\uad50 2026\ud559\ub144\ub3c4 \ud559\uc0dd\ubd80\uc885\ud569\uc804\ud615 \ud3c9\uac00 \uae30\uc900 \u2014 \uac00\uc774\ub4dc\ubd81 \ubc18\uc601]
 
 \u25a0 \ud575\uc2ec \ud3c9\uac00 \uc694\uc18c 3\uac00\uc9c0 (\ube44\uc728 \ubbf8\uc9c0\uc815 \u2014 \uc815\uc131\uc801 \uc885\ud569\ud3c9\uac00)
@@ -4410,15 +4410,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
 \u25a0 \uc804\ud615\ubcc4 \ube44\uc728: \uc9c0\uc5ed\uade0\ud615(\uc11c\ub95870%+\uba74\uc81130%) / \uc77c\ubc18(\uc11c\ub95850%+\uba74\uc811\u00b7\uad6c\uc22050%)
 `,
-        competencies: {
-          academic: "\ud559\uc5c5\uc5ed\ub7c9(\uad50\uacfc \uc131\ucde8\ub3c4 \uc815\uc131\uc801 \ud574\uc11d\u00b7\uc218\uac15\uc778\uc6d0\u00b7\uc131\uc801 \ucd94\uc774) + \ud559\uc5c5\ud0dc\ub3c4(\uc790\uae30\uc8fc\ub3c4\ud559\uc2b5\u00b7\ud0d0\uad6c\uc758\uc9c0\u00b7\ub3c5\uc11c\uc5ed\ub7c9)",
-          career: "\uc9c4\ub85c\uc5ed\ub7c9(\uc804\uacf5\uad00\ub828 \uacfc\ubaa9 \uc774\uc218\u00b7\uc131\ucde8\ub3c4\u00b7\uc138\ud2b9 \ub0b4 \uc9c4\ub85c \ud0d0\uc0c9\u00b7\ub3c4\uc804\uc801 \uacfc\ubaa9 \uc120\ud0dd)",
-          community: "\ud559\uc5c5 \uc678 \uc18c\uc591(\ud488\uc131\u00b7\ub9ac\ub354\uc2ed\u00b7\ud611\uc5c5\u00b7\ucc45\uc784\uac10\u00b7\uc131\uc2e4\uc131\u00b7\ucd9c\uacb0\u00b7\ubd09\uc0ac\ud65c\ub3d9\u00b7\ud589\ub3d9\ud2b9\uc131)"
-        },
-        weights: { academic: 0.34, career: 0.33, community: 0.33 } // \uc815\uc131\ud3c9\uac00 (\uade0\ub4f1)
+      competencies: {
+        academic: "\ud559\uc5c5\uc5ed\ub7c9(\uad50\uacfc \uc131\ucde8\ub3c4 \uc815\uc131\uc801 \ud574\uc11d\u00b7\uc218\uac15\uc778\uc6d0\u00b7\uc131\uc801 \ucd94\uc774) + \ud559\uc5c5\ud0dc\ub3c4(\uc790\uae30\uc8fc\ub3c4\ud559\uc2b5\u00b7\ud0d0\uad6c\uc758\uc9c0\u00b7\ub3c5\uc11c\uc5ed\ub7c9)",
+        career: "\uc9c4\ub85c\uc5ed\ub7c9(\uc804\uacf5\uad00\ub828 \uacfc\ubaa9 \uc774\uc218\u00b7\uc131\ucde8\ub3c4\u00b7\uc138\ud2b9 \ub0b4 \uc9c4\ub85c \ud0d0\uc0c9\u00b7\ub3c4\uc804\uc801 \uacfc\ubaa9 \uc120\ud0dd)",
+        community: "\ud559\uc5c5 \uc678 \uc18c\uc591(\ud488\uc131\u00b7\ub9ac\ub354\uc2ed\u00b7\ud611\uc5c5\u00b7\ucc45\uc784\uac10\u00b7\uc131\uc2e4\uc131\u00b7\ucd9c\uacb0\u00b7\ubd09\uc0ac\ud65c\ub3d9\u00b7\ud589\ub3d9\ud2b9\uc131)"
       },
-      "\uc5f0\uc138\ub300\ud559\uad50": {
-        factors: `
+      weights: { academic: 0.34, career: 0.33, community: 0.33 } // \uc815\uc131\ud3c9\uac00 (\uade0\ub4f1)
+    },
+    "\uc5f0\uc138\ub300\ud559\uad50": {
+      factors: `
 [\uc5f0\uc138\ub300\ud559\uad50 2026\ud559\ub144\ub3c4 \ud559\uc0dd\ubd80\uc885\ud569\uc804\ud615 \uc11c\ub958\ud3c9\uac00 \uae30\uc900]
 
 \u25a0 \ubc18\uc601 \ube44\uc728: \uc885\ud569\ud3c9\uac00 \u2160(70%) = \ud559\uc5c5\uc5ed\ub7c9+\uc9c4\ub85c\uc5ed\ub7c9 / \uc885\ud569\ud3c9\uac00 \u2161(30%) = \uacf5\ub3d9\uccb4\uc5ed\ub7c9
@@ -4430,15 +4430,15 @@ document.addEventListener("DOMContentLoaded", () => {
 \u25a0 \uacc4\uc5f4\ubcc4 \uad8c\uc7a5 \uacfc\ubaa9: \uc218\ud559/\ucef4\ud4e8\ud130(\ubbf8\uc801\ubd84\u00b7\uae30\ud558\u00b7AI\uc218\ud559), \ubb3c\ub9ac/\uae30\uacc4(\ubb3c\ub9ac\u2160\u00b7\u2161\u00b7\ud654\ud559), \uc0dd\uba85/\uc758\uc57d(\ud654\ud559\u00b7\uc0dd\uba85\uacfc\ud559\u2160\u00b7\u2161), \uacbd\uc601/\uacbd\uc81c(\ud1b5\uacc4\u00b7\uc218\ud559), \uc778\ubb38/\uc0ac\ud68c(\ub3c5\uc11c\u00b7\ub17c\ub9ac\u00b7\ud1a0\ub860)
 \u25a0 \ud3c9\uac00 \uc8fc\uc548\uc810: \uc815\uc131\ud3c9\uac00, \ub2e4\uac01\uc801 \uc801\uc6a9, \uc77c\uad00\uc131\u00b7\uc9c4\uc815\uc131, \uace0\uad50 \ud658\uacbd \ub0b4 \ub178\ub825
 `,
-        competencies: {
-          academic: "\ud559\uc5c5\uc5ed\ub7c9(\uc131\uc801 \ubcc0\ud654 \ucd94\uc774\u00b7\uc804\uacf5\uad00\ub828 \uc131\ucde8\u00b7\ud559\uc5c5\ud0dc\ub3c4\u00b7\ud0d0\uad6c\ub825) \u2014 \uc885\ud569\ud3c9\uac00 \u2160(70%)",
-          career: "\uc9c4\ub85c\uc5ed\ub7c9(\uc804\uacf5\uad00\ub828 \uad50\uacfc \uc704\uacc4\uc801 \uc774\uc218\u00b7\uc131\ucde8\ub3c4\u00b7\uc9c4\ub85c\ud0d0\uc0c9\ud65c\ub3d9) \u2014 \uc885\ud569\ud3c9\uac00 \u2160(70%)",
-          community: "\uacf5\ub3d9\uccb4\uc5ed\ub7c9(\ud611\uc5c5\u00b7\uc18c\ud1b5\u00b7\ub098\ub214\u00b7\ubc30\ub824\u00b7\uc131\uc2e4\uc131\u00b7\ub9ac\ub354\uc2ed) \u2014 \uc885\ud569\ud3c9\uac00 \u2161(30%)"
-        },
-        weights: { academic: 0.35, career: 0.35, community: 0.30 } // 70(\ud559+\uc9c4) / 30(\uacf5)
+      competencies: {
+        academic: "\ud559\uc5c5\uc5ed\ub7c9(\uc131\uc801 \ubcc0\ud654 \ucd94\uc774\u00b7\uc804\uacf5\uad00\ub828 \uc131\ucde8\u00b7\ud559\uc5c5\ud0dc\ub3c4\u00b7\ud0d0\uad6c\ub825) \u2014 \uc885\ud569\ud3c9\uac00 \u2160(70%)",
+        career: "\uc9c4\ub85c\uc5ed\ub7c9(\uc804\uacf5\uad00\ub828 \uad50\uacfc \uc704\uacc4\uc801 \uc774\uc218\u00b7\uc131\ucde8\ub3c4\u00b7\uc9c4\ub85c\ud0d0\uc0c9\ud65c\ub3d9) \u2014 \uc885\ud569\ud3c9\uac00 \u2160(70%)",
+        community: "\uacf5\ub3d9\uccb4\uc5ed\ub7c9(\ud611\uc5c5\u00b7\uc18c\ud1b5\u00b7\ub098\ub214\u00b7\ubc30\ub824\u00b7\uc131\uc2e4\uc131\u00b7\ub9ac\ub354\uc2ed) \u2014 \uc885\ud569\ud3c9\uac00 \u2161(30%)"
       },
-      "\uace0\ub824\ub300\ud559\uad50": {
-        factors: `
+      weights: { academic: 0.35, career: 0.35, community: 0.30 } // 70(\ud559+\uc9c4) / 30(\uacf5)
+    },
+    "\uace0\ub824\ub300\ud559\uad50": {
+      factors: `
 [\uace0\ub824\ub300\ud559\uad50 2026\ud559\ub144\ub3c4 \uc218\uc2dc \ud559\uc0dd\ubd80\uc885\ud569\uc804\ud615 \ud3c9\uac00 \uae30\uc900]
 
 \u25a0 \uc804\ud615\ubcc4 \uc120\ubc1c: \ud559\uc5c5\uc6b0\uc218\uc804\ud615(\uc11c\ub958100%\u00b7\uc218\ub2a5\ucd5c\uc800\u6709) / \uacc4\uc5f4\uc801\ud569\uc804\ud615(\uc11c\ub958100%(5\ubc30)\u2192\uc11c\ub95850%+\uba74\uc81150%\u00b7\uc218\ub2a5\ucd5c\uc800\u7121)
@@ -4451,15 +4451,15 @@ document.addEventListener("DOMContentLoaded", () => {
 \u25a0 \uad8c\uc7a5\uc774\uc218\uacfc\ubaa9: \ucef4\ud4e8\ud130(\uae30\ud558\u00b7\ubbf8\uc801\ubd84), \uc0dd\uba85/\uc2dd\ud488/\ud654\uacf5(\ud654\ud559\u00b7\uc0dd\uba85\uacfc\ud559\u2160\u00b7\u2161), \uacbd\uc601(\ubbf8\uc801\ubd84\u00b7\ud655\ub960\ud1b5\uacc4\u00b7\uacbd\uc81c), \uc815\uce58\uc678\uad50(\uc815\uce58\uc640\ubc95\u00b7\uacbd\uc81c\u00b7\uc0ac\ud68c\ubb38\ud654)
 \u25a0 \ud3c9\uac00 \uc8fc\uc548\uc810: \uc815\uc131\uc801 \uc885\ud569\ud3c9\uac00, \uacc4\uc5f4 \uc801\ud569\uc131, \uacfc\ubaa9 \uc120\ud0dd\u00b7\uc774\uc218 \uacfc\uc815, \ub2e4\uac01\uc801 \uc885\ud569\ud3c9\uac00
 `,
-        competencies: {
-          academic: "\ud559\uc5c5\uc5ed\ub7c9(\ud559\uc5c5\uc131\ucde8\ub3c4\u00b7\ud559\uc5c5\ud0dc\ub3c4\u00b7\ud0d0\uad6c\ub825) \u2014 \ud559\uc5c5\uc6b0\uc218 50%/\uacc4\uc5f4\uc801\ud569 40%",
-          career: "\uc790\uae30\uacc4\ubc1c\uc5ed\ub7c9(\uacc4\uc5f4\uad00\ub828\ud0d0\uc0c9\u00b7\uc804\uacf5\uad00\ub828\uc774\uc218\u00b7\uc9c4\ub85c\ud0d0\uc0c9\uacbd\ud5d8) \u2014 \ud559\uc5c5\uc6b0\uc218 30%/\uacc4\uc5f4\uc801\ud569 40%",
-          community: "\uacf5\ub3d9\uccb4\uc5ed\ub7c9(\ud611\uc5c5\u00b7\uc18c\ud1b5\u00b7\ub098\ub214\u00b7\ubc30\ub824\u00b7\uc131\uc2e4\uc131\u00b7\ub9ac\ub354\uc2ed) \u2014 \uacf5\ud1b5 20%"
-        },
-        weights: { academic: 0.50, career: 0.30, community: 0.20 } // \ud559\uc5c5\uc6b0\uc218 \uae30\uc900
+      competencies: {
+        academic: "\ud559\uc5c5\uc5ed\ub7c9(\ud559\uc5c5\uc131\ucde8\ub3c4\u00b7\ud559\uc5c5\ud0dc\ub3c4\u00b7\ud0d0\uad6c\ub825) \u2014 \ud559\uc5c5\uc6b0\uc218 50%/\uacc4\uc5f4\uc801\ud569 40%",
+        career: "\uc790\uae30\uacc4\ubc1c\uc5ed\ub7c9(\uacc4\uc5f4\uad00\ub828\ud0d0\uc0c9\u00b7\uc804\uacf5\uad00\ub828\uc774\uc218\u00b7\uc9c4\ub85c\ud0d0\uc0c9\uacbd\ud5d8) \u2014 \ud559\uc5c5\uc6b0\uc218 30%/\uacc4\uc5f4\uc801\ud569 40%",
+        community: "\uacf5\ub3d9\uccb4\uc5ed\ub7c9(\ud611\uc5c5\u00b7\uc18c\ud1b5\u00b7\ub098\ub214\u00b7\ubc30\ub824\u00b7\uc131\uc2e4\uc131\u00b7\ub9ac\ub354\uc2ed) \u2014 \uacf5\ud1b5 20%"
       },
-      "\uc11c\uac15\ub300\ud559\uad50": {
-        factors: `
+      weights: { academic: 0.50, career: 0.30, community: 0.20 } // \ud559\uc5c5\uc6b0\uc218 \uae30\uc900
+    },
+    "\uc11c\uac15\ub300\ud559\uad50": {
+      factors: `
 [\uc11c\uac15\ub300\ud559\uad50 2026\ud559\ub144\ub3c4 \ud559\uc0dd\ubd80\uc885\ud569\uc804\ud615 \uc11c\ub958\ud3c9\uac00 \uae30\uc900]
 
 \u25a0 \uc804\ud615: \uc11c\ub958 100% / \uba74\uc811 \uc5c6\uc74c / \uc218\ub2a5\ucd5c\uc800 \uc5c6\uc74c / 1000\uc810 \ub9cc\uc810 \uc815\uc131\ud3c9\uac00
@@ -4474,15 +4474,15 @@ document.addEventListener("DOMContentLoaded", () => {
 \u25a0 \uad8c\uc7a5\uacfc\ubaa9: \ubaa8\uc9d1\ub2e8\uc704\ubcc4 \uac15\uc81c \uc9c0\uc815 \uc5c6\uc74c \u2014 \uc8fc\ub3c4\uc801 \uacfc\ubaa9 \uc120\ud0dd\u00b7\uc2ec\ud654 \ud559\uc2b5 \uacfc\uc815 \uc790\uccb4\ub97c \ud3c9\uac00
 \u25a0 \ud3c9\uac00 \uc8fc\uc548\uc810: \uacfc\uc815 \uc911\uc2ec, \uc815\uc131\uc801 \uc885\ud569\ud3c9\uac00, \uc131\uc7a5\uac00\ub2a5\uc131 \uac15\uc870 (\ud559\uc5c540%+\uc131\uc7a530%=70% \ud575\uc2ec)
 `,
-        competencies: {
-          academic: "\ud559\uc5c5\uc5ed\ub7c9(\ud559\uc5c5\uc131\ucde8\ub3c4\u00b7\ud0d0\uad6c\ub2a5\ub825\u00b7\uc735\ud569\ub2a5\ub825) \u2014 40%",
-          career: "\uc131\uc7a5\uac00\ub2a5\uc131(\uc790\uae30\uc8fc\ub3c4\uc131\u00b7\uad50\uacfc\uc774\uc218\uacfc\uc815\u00b7\uacbd\ud5d8\uac1c\ubc29\uc131\u00b7\ubaa9\ud45c\uc9c0\uc18d\uc131) + \ucc3d\uc758\uc801\ubb38\uc81c\ud574\uacb0\ub825 \u2014 \ud569\uc0b0 40%",
-          community: "\uacf5\ub3d9\uccb4\uc5ed\ub7c9(\ub9ac\ub354\uc2ec\u00b7\uc18c\ud1b5\u00b7\ud611\uc5c5\u00b7\uaddc\uce59\uc900\uc218\u00b7\ub098\ub214\u00b7\ubc30\ub824) \u2014 20%"
-        },
-        weights: { academic: 0.40, career: 0.40, community: 0.20 }
+      competencies: {
+        academic: "\ud559\uc5c5\uc5ed\ub7c9(\ud559\uc5c5\uc131\ucde8\ub3c4\u00b7\ud0d0\uad6c\ub2a5\ub825\u00b7\uc735\ud569\ub2a5\ub825) \u2014 40%",
+        career: "\uc131\uc7a5\uac00\ub2a5\uc131(\uc790\uae30\uc8fc\ub3c4\uc131\u00b7\uad50\uacfc\uc774\uc218\uacfc\uc815\u00b7\uacbd\ud5d8\uac1c\ubc29\uc131\u00b7\ubaa9\ud45c\uc9c0\uc18d\uc131) + \ucc3d\uc758\uc801\ubb38\uc81c\ud574\uacb0\ub825 \u2014 \ud569\uc0b0 40%",
+        community: "\uacf5\ub3d9\uccb4\uc5ed\ub7c9(\ub9ac\ub354\uc2ec\u00b7\uc18c\ud1b5\u00b7\ud611\uc5c5\u00b7\uaddc\uce59\uc900\uc218\u00b7\ub098\ub214\u00b7\ubc30\ub824) \u2014 20%"
       },
-      "\ud55c\uc591\ub300\ud559\uad50": {
-        factors: `
+      weights: { academic: 0.40, career: 0.40, community: 0.20 }
+    },
+    "\ud55c\uc591\ub300\ud559\uad50": {
+      factors: `
 [\ud55c\uc591\ub300\ud559\uad50 2026\ud559\ub144\ub3c4 \ud559\uc0dd\ubd80\uc885\ud569\uc804\ud615 \ud3c9\uac00 \uae30\uc900 \u2014 \uac00\uc774\ub4dc\ubd81 \ubc18\uc601]
 
 \u25a0 \uc804\ud615\ubcc4 \uc120\ubc1c
@@ -4506,15 +4506,15 @@ document.addEventListener("DOMContentLoaded", () => {
    2. \uacc4\uc5f4\uc801\ud569\uc131: \uc804\uacf5\uc774 \uc544\ub2cc \uacc4\uc5f4 \ucc28\uc6d0\uc758 \uc900\ube44\ub3c4 \uc911\uc2dc
    3. \uc131\uc7a5 \uacfc\uc815\u00b7\ud0dc\ub3c4: \uc131\ucde8 \uc218\uc900\ubcf4\ub2e4 \uc9c0\uc801 \uc131\uc7a5 \ucd94\uc774\uc640 \ud559\uc5c5 \ud0dc\ub3c4
 `,
-        competencies: {
-          academic: "\uae30\ucd08\ud559\uc5c5\uc5ed\ub7c9(\ud559\uc5c5\uc131\ucde8\ub3c4\u00b7\uc131\uc801 \ucd94\uc774\u00b7\uad50\uacfc\uc774\uc218\uc0c1\ud669) + \uc2ec\uce35\ud559\uc5c5\uc5ed\ub7c9(\ube44\ud310\uc801\u00b7\ucc3d\uc758\uc801 \uc0ac\uace0\u00b7\ud0d0\uad6c\ub2a5\ub825) \u2014 \ud6a1\ub2e8\ubc1c\uad74\ud3c9\uac00",
-          career: "\uc9c4\ub85c\ud0d0\uad6c\uc5ed\ub7c9(\uacc4\uc5f4\uc801\ud569\uc131\u00b7\uc790\uae30\uc8fc\ub3c4 \uc9c4\ub85c\ud0d0\uc0c9\u00b7\uacc4\uc5f4\uad00\ub828 \uad50\uacfc\uc774\uc218\uacfc\uc815) \u2014 \uc804\uacf5\uc774 \uc544\ub2cc \uacc4\uc5f4 \ucc28\uc6d0 \ud3c9\uac00",
-          community: "\uacf5\ub3d9\uccb4\uc5ed\ub7c9(\uc18c\ud1b5\u00b7\ud611\uc5c5\u00b7\ub098\ub214\u00b7\ubc30\ub824\u00b7\ub9ac\ub354\uc2ed\u00b7\uc131\uc7a5\uc7a0\uc7ac\ub825) \u2014 \uc9c1\ud568 \ubd88\ubb38"
-        },
-        weights: { academic: 0.40, career: 0.40, community: 0.20 } // \uc815\uc131\ud3c9\uac00 \uae30\ubc18 \ucd94\uc815\uce58
+      competencies: {
+        academic: "\uae30\ucd08\ud559\uc5c5\uc5ed\ub7c9(\ud559\uc5c5\uc131\ucde8\ub3c4\u00b7\uc131\uc801 \ucd94\uc774\u00b7\uad50\uacfc\uc774\uc218\uc0c1\ud669) + \uc2ec\uce35\ud559\uc5c5\uc5ed\ub7c9(\ube44\ud310\uc801\u00b7\ucc3d\uc758\uc801 \uc0ac\uace0\u00b7\ud0d0\uad6c\ub2a5\ub825) \u2014 \ud6a1\ub2e8\ubc1c\uad74\ud3c9\uac00",
+        career: "\uc9c4\ub85c\ud0d0\uad6c\uc5ed\ub7c9(\uacc4\uc5f4\uc801\ud569\uc131\u00b7\uc790\uae30\uc8fc\ub3c4 \uc9c4\ub85c\ud0d0\uc0c9\u00b7\uacc4\uc5f4\uad00\ub828 \uad50\uacfc\uc774\uc218\uacfc\uc815) \u2014 \uc804\uacf5\uc774 \uc544\ub2cc \uacc4\uc5f4 \ucc28\uc6d0 \ud3c9\uac00",
+        community: "\uacf5\ub3d9\uccb4\uc5ed\ub7c9(\uc18c\ud1b5\u00b7\ud611\uc5c5\u00b7\ub098\ub214\u00b7\ubc30\ub824\u00b7\ub9ac\ub354\uc2ed\u00b7\uc131\uc7a5\uc7a0\uc7ac\ub825) \u2014 \uc9c1\ud568 \ubd88\ubb38"
       },
-      "\uc911\uc559\ub300\ud559\uad50": {
-        factors: `
+      weights: { academic: 0.40, career: 0.40, community: 0.20 } // \uc815\uc131\ud3c9\uac00 \uae30\ubc18 \ucd94\uc815\uce58
+    },
+    "\uc911\uc559\ub300\ud559\uad50": {
+      factors: `
 [\uc911\uc559\ub300\ud559\uad50 2026\ud559\ub144\ub3c4 \ud559\uc0dd\ubd80\uc885\ud569\uc804\ud615 \ud3c9\uac00 \uae30\uc900 \u2014 \uac00\uc774\ub4dc\ubd81 \ubc18\uc601]
 
 \u25a0 \uc804\ud615 \uc885\ub958 \ubc0f \uc120\ubc1c \ubc29\uc2dd (\uc218\ub2a5\ucd5c\uc800 \uc5c6\uc74c \u2014 \uacf5\ud1b5)
@@ -4559,15 +4559,15 @@ document.addEventListener("DOMContentLoaded", () => {
    3. \uc218\ub2a5\ucd5c\uc800 \uc5c6\uc74c: \ud559\uc0dd\ubd80\uc758 '\uc9c8\uc801 \uad00\ub9ac'\uac00 \ud575\uc2ec, \ud2b9\ud788 \ud0d0\uad6c\ud615\uc740 \uc804\uacf5 \ud0d0\uad6c \uae4a\uc774 \uc99d\uba85\uc774 \ud544\uc218
    4. \ud559\ud3ed \ubc18\uc601: 2026\ud559\ub144\ub3c4\ubd80\ud130 \ud559\uad50\ud3ed\ub825 \uae30\uc7ac \uc0ac\ud56d\uc774 \ud3c9\uac00\uc5d0 \ubd88\uc774\uc775
 `,
-        competencies: {
-          academic: "\ud559\uc5c5\uc5ed\ub7c9(\ud559\uc5c5\uc131\ucde8\ub3c4\u00b7\ud559\uc5c5\ud0dc\ub3c4\u00b7\ud0d0\uad6c\ub825) \u2014 CAU\uc735\ud569\ud615 50%/CAU\ud0d0\uad6c\ud615 40%. \ud0d0\uad6c\ub825: \uc218\uc5c5 \uc911 \uad81\uae08\uc99d\uc744 \uc790\ubc1c\uc801\uc73c\ub85c \ud655\uc7a5\u00b7\uc2ec\ud654\ud55c \uacfc\uc815\uc744 \ub9e4\uc6b0 \ub192\uc774 \ud3c9\uac00",
-          career: "\uc9c4\ub85c\uc5ed\ub7c9(\uc804\uacf5\uad00\ub828\uad50\uacfc \uc131\ucde8\ub3c4\u00b7\uc774\uc218\ub178\ub825\u00b7\uc9c4\ub85c\ud0d0\uc0c9) \u2014 CAU\uc735\ud569\ud615 30%/CAU\ud0d0\uad6c\ud615 50%. \ud0d0\uad6c\ud615\uc5d0\uc11c \ud2b9\uc815 \ubd84\uc57c \uc2ec\uce35 \ud0d0\uad6c \uacbd\ud5d8\uc744 \uac00\uc7a5 \uc911\uc2dc",
-          community: "\uacf5\ub3d9\uccb4\uc5ed\ub7c9(\ud611\uc5c5\u00b7\uc18c\ud1b5\u00b7\ubc30\ub824\u00b7\uaddc\uce59\uc900\uc218\u00b7\ub9ac\ub354\uc2ed) \u2014 CAU\uc735\ud569\ud615 20%/CAU\ud0d0\uad6c\ud615 10%"
-        },
-        weights: { academic: 0.45, career: 0.40, community: 0.15 } // \ud3c9\uade0\uc801 \ucc38\uace0\uce58\ub85c \ubcd1\ud569 \ud45c\uae30
+      competencies: {
+        academic: "\ud559\uc5c5\uc5ed\ub7c9(\ud559\uc5c5\uc131\ucde8\ub3c4\u00b7\ud559\uc5c5\ud0dc\ub3c4\u00b7\ud0d0\uad6c\ub825) \u2014 CAU\uc735\ud569\ud615 50%/CAU\ud0d0\uad6c\ud615 40%. \ud0d0\uad6c\ub825: \uc218\uc5c5 \uc911 \uad81\uae08\uc99d\uc744 \uc790\ubc1c\uc801\uc73c\ub85c \ud655\uc7a5\u00b7\uc2ec\ud654\ud55c \uacfc\uc815\uc744 \ub9e4\uc6b0 \ub192\uc774 \ud3c9\uac00",
+        career: "\uc9c4\ub85c\uc5ed\ub7c9(\uc804\uacf5\uad00\ub828\uad50\uacfc \uc131\ucde8\ub3c4\u00b7\uc774\uc218\ub178\ub825\u00b7\uc9c4\ub85c\ud0d0\uc0c9) \u2014 CAU\uc735\ud569\ud615 30%/CAU\ud0d0\uad6c\ud615 50%. \ud0d0\uad6c\ud615\uc5d0\uc11c \ud2b9\uc815 \ubd84\uc57c \uc2ec\uce35 \ud0d0\uad6c \uacbd\ud5d8\uc744 \uac00\uc7a5 \uc911\uc2dc",
+        community: "\uacf5\ub3d9\uccb4\uc5ed\ub7c9(\ud611\uc5c5\u00b7\uc18c\ud1b5\u00b7\ubc30\ub824\u00b7\uaddc\uce59\uc900\uc218\u00b7\ub9ac\ub354\uc2ed) \u2014 CAU\uc735\ud569\ud615 20%/CAU\ud0d0\uad6c\ud615 10%"
       },
-      "\uacbd\ud76c\ub300\ud559\uad50": {
-        factors: `
+      weights: { academic: 0.45, career: 0.40, community: 0.15 } // \ud3c9\uade0\uc801 \ucc38\uace0\uce58\ub85c \ubcd1\ud569 \ud45c\uae30
+    },
+    "\uacbd\ud76c\ub300\ud559\uad50": {
+      factors: `
 [\uacbd\ud76c\ub300\ud559\uad50 2026\ud559\ub144\ub3c4 \ud559\uc0dd\ubd80\uc885\ud569\uc804\ud615 \ud3c9\uac00 \uae30\uc900]
 
 \u25a0 \uc804\ud615 \uc720\ud615 \ubc0f \uc120\ubc1c \ubc29\uc2dd
@@ -4626,15 +4626,15 @@ document.addEventListener("DOMContentLoaded", () => {
    5. \uacfc\ubaa9 \uc120\ud0dd \uc804\ub7b5: \ud575\uc2ec\uacfc\ubaa9 \uc774\uc218 \uc5ec\ubd80\uac00 \uc9c4\ub85c\uc5ed\ub7c9 \uc810\uc218\uc5d0 \uc9c1\uc811\uc801\uc778 \uc601\ud5a5\uc744 \ubbf8\uce68
    6. \uad50\uacfc\uc885\ud569\ud3c9\uac00(\uc9c0\uc5ed\uade0\ud615): \uc138\ud2b9\uc758 \uc9c8\uc801 \ub0b4\uc6a9\uc774 \uc131\uc801 \uadf8 \uc790\uccb4\ub9cc\ud07c \uc911\uc694
 `,
-        competencies: {
-          academic: "\ud559\uc5c5\uc5ed\ub7c9(\ud559\uc5c5\uc131\ucde8\ub3c4\u00b7\ud559\uc5c5\ud0dc\ub3c4\u00b7\ud0d0\uad6c\ub825) \u2014 40%. \ud0c1\uc6d4\uc131 \uae30\uc900: \uc218\uc5c5 \ub0b4 \uc9c0\uc801 \ud638\uae30\uc2ec\uc744 \uc790\uae30\uc8fc\ub3c4\ub85c \uc2ec\ud654\u00b7\ud655\uc7a5\ud55c \ud0d0\uad6c \uacfc\uc815('\ub3d9\uae30-\uacfc\uc815-\uacb0\uacfc-\uc131\uc7a5')\uacfc \uc138\ud2b9\uc758 \uc9c8\uc801 \uae4a\uc774",
-          career: "\uc9c4\ub85c\uc5ed\ub7c9(\uc804\uacf5\uad00\ub828 \ud575\uc2ec\u00b7\uad8c\uc7a5\uacfc\ubaa9 \uc774\uc218 \uc5ec\ubd80\u00b7\uad50\uacfc \uc131\ucde8\ub3c4\u00b7\uc9c4\ub85c\ud0d0\uc0c9 \uc77c\uad00\uc131\uacfc \uc9c4\uc815\uc131) \u2014 40%. \uc9c0\uc6d0 \ud559\uacfc\uc758 \ud575\uc2ec\uacfc\ubaa9 \uc774\uc218\uac00 \uc9c4\ub85c\uc5ed\ub7c9 \uc810\uc218\uc5d0 \uacb0\uc815\uc801 \uc601\ud5a5",
-          community: "\uacf5\ub3d9\uccb4\uc5ed\ub7c9(\ud611\uc5c5\u00b7\uc18c\ud1b5\u00b7\ub098\ub214\u00b7\ubc30\ub824\u00b7\uc131\uc2e4\uc131\u00b7\uaddc\uce59\uc900\uc218\u00b7\ub9ac\ub354\uc2ed) \u2014 20%. \uba74\uc811(\uc778\uc131 50%+\uc804\uacf5\uc801\ud569\uc131 50%): \uac00\uce58\uad00\u00b7\uc758\uc0ac\uc18c\ud1b5\u00b7\uc804\uacf5 \uc774\ud574 \ubc0f \ub17c\ub9ac\uc801 \uc0ac\uace0\ub825 \ud3c9\uac00"
-        },
-        weights: { academic: 0.40, career: 0.40, community: 0.20 }
+      competencies: {
+        academic: "\ud559\uc5c5\uc5ed\ub7c9(\ud559\uc5c5\uc131\ucde8\ub3c4\u00b7\ud559\uc5c5\ud0dc\ub3c4\u00b7\ud0d0\uad6c\ub825) \u2014 40%. \ud0c1\uc6d4\uc131 \uae30\uc900: \uc218\uc5c5 \ub0b4 \uc9c0\uc801 \ud638\uae30\uc2ec\uc744 \uc790\uae30\uc8fc\ub3c4\ub85c \uc2ec\ud654\u00b7\ud655\uc7a5\ud55c \ud0d0\uad6c \uacfc\uc815('\ub3d9\uae30-\uacfc\uc815-\uacb0\uacfc-\uc131\uc7a5')\uacfc \uc138\ud2b9\uc758 \uc9c8\uc801 \uae4a\uc774",
+        career: "\uc9c4\ub85c\uc5ed\ub7c9(\uc804\uacf5\uad00\ub828 \ud575\uc2ec\u00b7\uad8c\uc7a5\uacfc\ubaa9 \uc774\uc218 \uc5ec\ubd80\u00b7\uad50\uacfc \uc131\ucde8\ub3c4\u00b7\uc9c4\ub85c\ud0d0\uc0c9 \uc77c\uad00\uc131\uacfc \uc9c4\uc815\uc131) \u2014 40%. \uc9c0\uc6d0 \ud559\uacfc\uc758 \ud575\uc2ec\uacfc\ubaa9 \uc774\uc218\uac00 \uc9c4\ub85c\uc5ed\ub7c9 \uc810\uc218\uc5d0 \uacb0\uc815\uc801 \uc601\ud5a5",
+        community: "\uacf5\ub3d9\uccb4\uc5ed\ub7c9(\ud611\uc5c5\u00b7\uc18c\ud1b5\u00b7\ub098\ub214\u00b7\ubc30\ub824\u00b7\uc131\uc2e4\uc131\u00b7\uaddc\uce59\uc900\uc218\u00b7\ub9ac\ub354\uc2ed) \u2014 20%. \uba74\uc811(\uc778\uc131 50%+\uc804\uacf5\uc801\ud569\uc131 50%): \uac00\uce58\uad00\u00b7\uc758\uc0ac\uc18c\ud1b5\u00b7\uc804\uacf5 \uc774\ud574 \ubc0f \ub17c\ub9ac\uc801 \uc0ac\uace0\ub825 \ud3c9\uac00"
       },
-      "\ud55c\uad6d\uc678\uad6d\uc5b4\ub300\ud559\uad50": {
-        factors: `
+      weights: { academic: 0.40, career: 0.40, community: 0.20 }
+    },
+    "\ud55c\uad6d\uc678\uad6d\uc5b4\ub300\ud559\uad50": {
+      factors: `
 [\ud55c\uad6d\uc678\uad6d\uc5b4\ub300\ud559\uad50 2026\ud559\ub144\ub3c4 \ud559\uc0dd\ubd80\uc885\ud569\uc804\ud615 \ud3c9\uac00 \uae30\uc900 \u2014 \uac00\uc774\ub4dc\ubd81(\uba74\uc811\ud615\u00b7\uc11c\ub958\ud615) \ubc18\uc601]
 
 \u25a0 \uc804\ud615\ubcc4 \uc120\ubc1c \ubc29\uc2dd
@@ -4697,15 +4697,15 @@ document.addEventListener("DOMContentLoaded", () => {
    5. \uc218\ub2a5\ucd5c\uc800 \uc5c6\uc74c: \ud559\uc0dd\ubd80 \ucf58\ud150\uce20\uc758 \uc9c8\uc801 \uad00\ub9ac\uac00 \uc804\ub7b5\uc758 \uc804\ubd80
    6. \uacf5\ub3d9\uccb4\uc5ed\ub7c9: \ube44\uc728\uc740 20%\uc774\uc9c0\ub9cc \ub9ac\ub354\uc2ed \uacbd\ud5d8\uc774 \uba74\uc811\uc5d0\uc11c \uad6c\uccb4\uc801\uc778 \uc9c8\ubb38 \uc18c\uc7ac\ub85c \ud65c\uc6a9\ub428
 `,
-        competencies: {
-          academic: "\ud559\uc5c5\uc5ed\ub7c9(\ud559\uc5c5\uc131\ucde8\ub3c4\u00b7\ud559\uc5c5\ud0dc\ub3c4\u00b7\ud0d0\uad6c\ub825) \u2014 \uba74\uc811\ud615 30%/\uc11c\ub958\ud615 50%. \ud0c1\uc6d4\uc131: \uad50\uacfc \uac04 \uc9c0\uc2dd \uc804\uc774, \uc790\uae30\uc8fc\ub3c4 \uc2ec\ud654 \ud0d0\uad6c \uacfc\uc815\uc774 \ud575\uc2ec \ud3c9\uac00 \uc9c0\ud45c",
-          career: "\uc9c4\ub85c\uc5ed\ub7c9(\uc804\uacf5\uad00\ub828 \uad50\uacfc \uc774\uc218 \ub178\ub825\u00b7\uc131\ucde8\ub3c4\u00b7\uc9c4\ub85c\ud0d0\uc0c9 \ud65c\ub3d9\uacbd\ud5d8) \u2014 \uba74\uc811\ud615 50%/\uc11c\ub958\ud615 30%. \uc678\uad6d\uc5b4\u00b7AI\u00b7\uad6d\uc81c\ud1b5\uc0c1 \ubd84\uc57c\uc5d0 \ub300\ud55c \uc77c\uad00\ub41c \uad00\uc2ec\uacfc \ud0d0\uad6c \uc9c4\uc815\uc131\uc774 \uacb0\uc815\uc801",
-          community: "\uacf5\ub3d9\uccb4\uc5ed\ub7c9(\ud611\uc5c5\u00b7\uc18c\ud1b5\u00b7\ub098\ub214\u00b7\ubc30\ub824\u00b7\uc131\uc2e4\uc131\u00b7\ub9ac\ub354\uc2ed) \u2014 \uacf5\ud1b5 20%. \uba74\uc811(\ud559\uc5c540%+\uc9c4\ub85c40%+\uacf5\ub3d9\uccb420%): \ud55c\uad6d\uc5b4 \uac1c\ubcc4 \ub9de\ucda4 \uc9c8\ubb38\uc73c\ub85c \uc11c\ub958 \uc9c4\uc704\u00b7\ub17c\ub9ac\u00b7\uc18c\ud1b5 \ub2a5\ub825 \ud655\uc778"
-        },
-        weights: { academic: 0.30, career: 0.50, community: 0.20 } // \uba74\uc811\ud615 \uae30\uc900
+      competencies: {
+        academic: "\ud559\uc5c5\uc5ed\ub7c9(\ud559\uc5c5\uc131\ucde8\ub3c4\u00b7\ud559\uc5c5\ud0dc\ub3c4\u00b7\ud0d0\uad6c\ub825) \u2014 \uba74\uc811\ud615 30%/\uc11c\ub958\ud615 50%. \ud0c1\uc6d4\uc131: \uad50\uacfc \uac04 \uc9c0\uc2dd \uc804\uc774, \uc790\uae30\uc8fc\ub3c4 \uc2ec\ud654 \ud0d0\uad6c \uacfc\uc815\uc774 \ud575\uc2ec \ud3c9\uac00 \uc9c0\ud45c",
+        career: "\uc9c4\ub85c\uc5ed\ub7c9(\uc804\uacf5\uad00\ub828 \uad50\uacfc \uc774\uc218 \ub178\ub825\u00b7\uc131\ucde8\ub3c4\u00b7\uc9c4\ub85c\ud0d0\uc0c9 \ud65c\ub3d9\uacbd\ud5d8) \u2014 \uba74\uc811\ud615 50%/\uc11c\ub958\ud615 30%. \uc678\uad6d\uc5b4\u00b7AI\u00b7\uad6d\uc81c\ud1b5\uc0c1 \ubd84\uc57c\uc5d0 \ub300\ud55c \uc77c\uad00\ub41c \uad00\uc2ec\uacfc \ud0d0\uad6c \uc9c4\uc815\uc131\uc774 \uacb0\uc815\uc801",
+        community: "\uacf5\ub3d9\uccb4\uc5ed\ub7c9(\ud611\uc5c5\u00b7\uc18c\ud1b5\u00b7\ub098\ub214\u00b7\ubc30\ub824\u00b7\uc131\uc2e4\uc131\u00b7\ub9ac\ub354\uc2ed) \u2014 \uacf5\ud1b5 20%. \uba74\uc811(\ud559\uc5c540%+\uc9c4\ub85c40%+\uacf5\ub3d9\uccb420%): \ud55c\uad6d\uc5b4 \uac1c\ubcc4 \ub9de\ucda4 \uc9c8\ubb38\uc73c\ub85c \uc11c\ub958 \uc9c4\uc704\u00b7\ub17c\ub9ac\u00b7\uc18c\ud1b5 \ub2a5\ub825 \ud655\uc778"
       },
-      "\uc11c\uc6b8\uc2dc\ub9bd\ub300\ud559\uad50": {
-        factors: `
+      weights: { academic: 0.30, career: 0.50, community: 0.20 } // \uba74\uc811\ud615 \uae30\uc900
+    },
+    "\uc11c\uc6b8\uc2dc\ub9bd\ub300\ud559\uad50": {
+      factors: `
 [\uc11c\uc6b8\uc2dc\ub9bd\ub300\ud559\uad50 2026\ud559\ub144\ub3c4 \ud559\uc0dd\ubd80\uc885\ud569\uc804\ud615 \ud3c9\uac00 \uae30\uc900 \u2014 \uac00\uc774\ub4dc\ubd81 \ubc18\uc601]
 
 \u25a0 \uc804\ud615 \uc720\ud615 \ubc0f \uc120\ubc1c \ubc29\uc2dd
@@ -4767,15 +4767,15 @@ document.addEventListener("DOMContentLoaded", () => {
    5. \uc11c\ub958\ud615(\uacbd\uc601\ud559\ubd80 \ub4f1): \uc218\ub2a5 \ucd5c\uc800 \ucda9\uc871\uc774 \uc804\uc81c \uc870\uac74 + \uc7a0\uc7ac\uc5ed\ub7c9(50%) \uc9d1\uc911 \uad00\ub9ac \ud544\uc694
    6. \uc131\uc801 \ucd94\uc774: \ub2e8\uc21c \ub4f1\uae09\ubcf4\ub2e4 3\ub144\uac04 \uc0c1\uc2b9\uc138\uc640 \uc804\uacf5 \uad00\ub828 \uad50\uacfc \uc131\ucde8\ub3c4\ub97c \uc911\uc2dc
 `,
-        competencies: {
-          academic: "\ud559\uc5c5\uc5ed\ub7c9(\uace0\uad50 \uae30\ucd08 \ud559\uc5c5\ub2a5\ub825\u00b7\uc804\uacf5 \uae30\ucd08\uc18c\uc591) \u2014 \uba74\uc811\ud615 35%/\uc11c\ub958\ud615 30%. 3\ub144 \uc131\uc801 \ucd94\uc774\u00b7\uc6d0\uc810\uc218\u00b7\uc774\uc218\uc790 \uc218\u00b7\uc804\uacf5 \uad00\ub828 \uad50\uacfc \uc774\uc218 \ud604\ud669\uc744 \uc815\uc131\uc801\uc73c\ub85c \uc885\ud569 \ud574\uc11d",
-          career: "\uc7a0\uc7ac\uc5ed\ub7c9(\ub2e4\ud559\uc81c\uc801 \uc804\uacf5\uc218\ud559 \uc5f4\uc758\u00b7\ud1b5\ud569\uc801 \ubb38\uc81c\ud574\uacb0 \uc5ed\ub7c9) \u2014 \uba74\uc811\ud615 40%/\uc11c\ub958\ud615 50%. \ud559\uacfc\ubcc4 \uc778\uc7ac\uc0c1 \ubd80\ud569 \ud0d0\uad6c \ud65c\ub3d9 2~3\uac00\uc9c0, \uae4a\uc774 \uc788\ub294 \ub2e8\uc77c \uc8fc\uc81c \uc2ec\ud654 \ud0d0\uad6c\uac00 \ud0c1\uc6d4\uc131 \uae30\uc900",
-          community: "\uc0ac\ud68c\uc5ed\ub7c9(\uacf5\ub3d9\uccb4\u00b7\uc2dc\ubbfc\uc724\ub9ac\uc758\uc2dd\u00b7\ud611\ub3d9\ud559\uc2b5\ub2a5\ub825\u00b7\ub9ac\ub354\uc2ed\u00b7\ubc30\ub824) \u2014 \uba74\uc811\ud615 25%/\uc11c\ub958\ud615 20%. \ud615\uc2dd\uc801 \ubd09\uc0ac\ubcf4\ub2e4 \uacf5\ub3d9\uccb4 \ub0b4 \uae0d\uc815\uc801 \uc601\ud5a5\ub825\uacfc \uc8fc\ub3c4\uc801 \ud611\uc5c5 \uacbd\ud5d8 \uc911\uc2dc"
-        },
-        weights: { academic: 0.35, career: 0.40, community: 0.25 } // \uba74\uc811\ud615 \uae30\uc900
+      competencies: {
+        academic: "\ud559\uc5c5\uc5ed\ub7c9(\uace0\uad50 \uae30\ucd08 \ud559\uc5c5\ub2a5\ub825\u00b7\uc804\uacf5 \uae30\ucd08\uc18c\uc591) \u2014 \uba74\uc811\ud615 35%/\uc11c\ub958\ud615 30%. 3\ub144 \uc131\uc801 \ucd94\uc774\u00b7\uc6d0\uc810\uc218\u00b7\uc774\uc218\uc790 \uc218\u00b7\uc804\uacf5 \uad00\ub828 \uad50\uacfc \uc774\uc218 \ud604\ud669\uc744 \uc815\uc131\uc801\uc73c\ub85c \uc885\ud569 \ud574\uc11d",
+        career: "\uc7a0\uc7ac\uc5ed\ub7c9(\ub2e4\ud559\uc81c\uc801 \uc804\uacf5\uc218\ud559 \uc5f4\uc758\u00b7\ud1b5\ud569\uc801 \ubb38\uc81c\ud574\uacb0 \uc5ed\ub7c9) \u2014 \uba74\uc811\ud615 40%/\uc11c\ub958\ud615 50%. \ud559\uacfc\ubcc4 \uc778\uc7ac\uc0c1 \ubd80\ud569 \ud0d0\uad6c \ud65c\ub3d9 2~3\uac00\uc9c0, \uae4a\uc774 \uc788\ub294 \ub2e8\uc77c \uc8fc\uc81c \uc2ec\ud654 \ud0d0\uad6c\uac00 \ud0c1\uc6d4\uc131 \uae30\uc900",
+        community: "\uc0ac\ud68c\uc5ed\ub7c9(\uacf5\ub3d9\uccb4\u00b7\uc2dc\ubbfc\uc724\ub9ac\uc758\uc2dd\u00b7\ud611\ub3d9\ud559\uc2b5\ub2a5\ub825\u00b7\ub9ac\ub354\uc2ed\u00b7\ubc30\ub824) \u2014 \uba74\uc811\ud615 25%/\uc11c\ub958\ud615 20%. \ud615\uc2dd\uc801 \ubd09\uc0ac\ubcf4\ub2e4 \uacf5\ub3d9\uccb4 \ub0b4 \uae0d\uc815\uc801 \uc601\ud5a5\ub825\uacfc \uc8fc\ub3c4\uc801 \ud611\uc5c5 \uacbd\ud5d8 \uc911\uc2dc"
       },
-      "서울과학기술대학교": {
-        factors: `
+      weights: { academic: 0.35, career: 0.40, community: 0.25 } // \uba74\uc811\ud615 \uae30\uc900
+    },
+    "서울과학기술대학교": {
+      factors: `
 [서울과학기술대학교 2026학년도 학생부종합전형 평가 기준]
 
 ■ 서류평가 방법 및 절차
@@ -4800,15 +4800,15 @@ document.addEventListener("DOMContentLoaded", () => {
 - 바이오메디컬학과(신설): 생명과학/화학 등 기초 과학 충실도, 의학적 문제/신약개발에 대한 학문적 호기심, 다학제적 소통 능력
 - 자유전공학부(ST자유전공 등): 전공의 벽을 넘나드는 융합적 사고, 기초 학문을 폭넓게 수용할 수 있는 학업적 유연성
 `,
-        competencies: {
-          academic: "학업역량 (35%): 전반적 학업성취도 및 발전 정도, 자발적 학업 태도, 지적 호기심 기반의 문제해결 및 탐구력",
-          career: "진로역량 (45%): 전공(계열) 관련 교과 이수 노력 및 성취 수준, 진로 탐색 과정에서의 활동/경험의 질과 계열적합성",
-          community: "공동체역량 (20%): 협업/소통능력, 나눔/배려 태도, 성실성/규칙준수(출결), 리더십 및 구성원 상호작용 내 주도성"
-        },
-        weights: { academic: 0.35, career: 0.45, community: 0.20 }
+      competencies: {
+        academic: "학업역량 (35%): 전반적 학업성취도 및 발전 정도, 자발적 학업 태도, 지적 호기심 기반의 문제해결 및 탐구력",
+        career: "진로역량 (45%): 전공(계열) 관련 교과 이수 노력 및 성취 수준, 진로 탐색 과정에서의 활동/경험의 질과 계열적합성",
+        community: "공동체역량 (20%): 협업/소통능력, 나눔/배려 태도, 성실성/규칙준수(출결), 리더십 및 구성원 상호작용 내 주도성"
       },
-      "건국대학교": {
-        factors: `
+      weights: { academic: 0.35, career: 0.45, community: 0.20 }
+    },
+    "건국대학교": {
+      factors: `
 [\uac74\uad6d\ub300\ud559\uad50 2026\ud559\ub144\ub3c4 \ud559\uc0dd\ubd80\uc885\ud569\uc804\ud615 \ud3c9\uac00 \uae30\uc900 \u2014 \uac00\uc774\ub4dc\ubd81(KU\uc790\uae30\ucd94\ucc9c) \ubc18\uc601]
 
 \u25a0 \uc804\ud615 \uc720\ud615 \ubc0f \uc120\ubc1c \ubc29\uc2dd
@@ -4869,15 +4869,15 @@ document.addEventListener("DOMContentLoaded", () => {
    5. \uc9c4\ub85c\uc5ed\ub7c9 \uc704\uacc4 \uc774\uc218: \uc9c0\uc6d0 \ud559\uacfc \uad00\ub828 \uad50\uacfc\uc758 \ub2e8\uacc4\uc801\u00b7\uc704\uacc4\uc801 \uc120\ud0dd\u00b7\uc774\uc218\uac00 \ud3c9\uac00\uc5d0 \uc720\ub9ac
    6. \uacf5\ub3d9\uccb4\uc5ed\ub7c9\uc740 '\uc5d0\ud53c\uc18c\ub4dc'\ub85c \ud3c9\uac00: \ud615\uc2dd\uc801 \ud65c\ub3d9\ubcf4\ub2e4 \uad6c\uccb4\uc801 \uc2a4\ud1a0\ub9ac\uac00 \uc788\ub294 \ud611\ub825 \uacbd\ud5d8 \ud544\uc218
 `,
-        competencies: {
-          academic: "\ud559\uc5c5\uc5ed\ub7c9(\ud559\uc5c5\uc131\ucde8\ub3c4\u00b7\ud559\uc5c5\ud0dc\ub3c4\u00b7\ud0d0\uad6c\ub825) \u2014 \ud559\uacfc\ubd80 30%/\uc790\uc720\uc804\uacf5 20%. \uc138\ud2b9\uc5d0 \uc9c0\uc801 \ud638\uae30\uc2ec\uacfc \ud0d0\uad6c \uacfc\uc815\uc774 \uad6c\uccb4\uc801\uc73c\ub85c \uae30\uc7ac\ub41c \uc815\ub3c4\uac00 \ud575\uc2ec",
-          career: "\uc9c4\ub85c\uc5ed\ub7c9(\uc804\uacf5\uad00\ub828 \uad50\uacfc \uc774\uc218 \ub178\ub825\u00b7\uc131\ucde8\ub3c4\u00b7\uc9c4\ub85c\ud0d0\uc0c9\uacbd\ud5d8) \u2014 \ud559\uacfc\ubd80 40%. \uc9c0\uc6d0 \ud559\uacfc \uad00\ub828 \uc704\uacc4\uc801 \uad50\uacfc \uc774\uc218\uc640 \uc9c4\uc815\uc131 \uc788\ub294 \ud0d0\uc0c9 \uacfc\uc815\uc774 \uacb0\uc815\uc801 / KU\uc790\uc720\uc804\uacf5: \uc131\uc7a5\uc5ed\ub7c9(\uc790\uae30\uc8fc\ub3c4\uc131\u00b7\ucc3d\uc758\uc801 \ubb38\uc81c\ud574\uacb0\u00b7\uacbd\ud5d8 \ub2e4\uc591\uc131) \u2014 50%",
-          community: "\uacf5\ub3d9\uccb4\uc5ed\ub7c9(\ud611\uc5c5\u00b7\uc18c\ud1b5\u00b7\ub098\ub214\u00b7\ubc30\ub824\u00b7\uc131\uc2e4\uc131\u00b7\ub9ac\ub354\uc2ed) \u2014 \uacf5\ud1b5 30%. \ud615\uc2dd\uc801 \ubd09\uc0ac\ubcf4\ub2e4 \uc2e4\uc81c \uacf5\ub3d9\uccb4 \ub0b4 \uae0d\uc815\uc801 \ubcc0\ud654 \uc774\ub048 \uad6c\uccb4\uc801 \uc5d0\ud53c\uc18c\ub4dc \uc911\uc2dc"
-        },
-        weights: { academic: 0.30, career: 0.40, community: 0.30 } // \uc77c\ubc18 \ud559\uacfc\ubd80 \uae30\uc900
+      competencies: {
+        academic: "\ud559\uc5c5\uc5ed\ub7c9(\ud559\uc5c5\uc131\ucde8\ub3c4\u00b7\ud559\uc5c5\ud0dc\ub3c4\u00b7\ud0d0\uad6c\ub825) \u2014 \ud559\uacfc\ubd80 30%/\uc790\uc720\uc804\uacf5 20%. \uc138\ud2b9\uc5d0 \uc9c0\uc801 \ud638\uae30\uc2ec\uacfc \ud0d0\uad6c \uacfc\uc815\uc774 \uad6c\uccb4\uc801\uc73c\ub85c \uae30\uc7ac\ub41c \uc815\ub3c4\uac00 \ud575\uc2ec",
+        career: "\uc9c4\ub85c\uc5ed\ub7c9(\uc804\uacf5\uad00\ub828 \uad50\uacfc \uc774\uc218 \ub178\ub825\u00b7\uc131\ucde8\ub3c4\u00b7\uc9c4\ub85c\ud0d0\uc0c9\uacbd\ud5d8) \u2014 \ud559\uacfc\ubd80 40%. \uc9c0\uc6d0 \ud559\uacfc \uad00\ub828 \uc704\uacc4\uc801 \uad50\uacfc \uc774\uc218\uc640 \uc9c4\uc815\uc131 \uc788\ub294 \ud0d0\uc0c9 \uacfc\uc815\uc774 \uacb0\uc815\uc801 / KU\uc790\uc720\uc804\uacf5: \uc131\uc7a5\uc5ed\ub7c9(\uc790\uae30\uc8fc\ub3c4\uc131\u00b7\ucc3d\uc758\uc801 \ubb38\uc81c\ud574\uacb0\u00b7\uacbd\ud5d8 \ub2e4\uc591\uc131) \u2014 50%",
+        community: "\uacf5\ub3d9\uccb4\uc5ed\ub7c9(\ud611\uc5c5\u00b7\uc18c\ud1b5\u00b7\ub098\ub214\u00b7\ubc30\ub824\u00b7\uc131\uc2e4\uc131\u00b7\ub9ac\ub354\uc2ed) \u2014 \uacf5\ud1b5 30%. \ud615\uc2dd\uc801 \ubd09\uc0ac\ubcf4\ub2e4 \uc2e4\uc81c \uacf5\ub3d9\uccb4 \ub0b4 \uae0d\uc815\uc801 \ubcc0\ud654 \uc774\ub048 \uad6c\uccb4\uc801 \uc5d0\ud53c\uc18c\ub4dc \uc911\uc2dc"
       },
-      "\ub3d9\uad6d\ub300\ud559\uad50": {
-        factors: `
+      weights: { academic: 0.30, career: 0.40, community: 0.30 } // \uc77c\ubc18 \ud559\uacfc\ubd80 \uae30\uc900
+    },
+    "\ub3d9\uad6d\ub300\ud559\uad50": {
+      factors: `
 [\ub3d9\uad6d\ub300\ud559\uad50 2027\ud559\ub144\ub3c4 \ud559\uc0dd\ubd80\uc885\ud569\uc804\ud615 \ud3c9\uac00 \uae30\uc900 \u2014 \uac00\uc774\ub4dc\ubd81(Do Dream \uc804\ud615) \ubc18\uc601]
 
 \u25a0 \uc804\ud615 \uc720\ud615 \ubc0f \uc120\ubc1c \ubc29\uc2dd
@@ -4941,15 +4941,15 @@ document.addEventListener("DOMContentLoaded", () => {
    5. \uc138\ud2b9 \uc911\uc2ec \ud3c9\uac00: \uc678\ubd80 \ud65c\ub3d9\ubcf4\ub2e4 '\uc218\uc5c5 \uc2dc\uac04 \ub0b4 \ud0d0\uad6c'\uac00 \ub3d9\uad6d\ub300 \ud3c9\uac00\uc758 \ud575\uc2ec \ud310\ub2e8 \uadfc\uac70
    6. \uc790\uc5f0\u00b7\uacf5\ud559\uacc4\uc5f4: \ubbf8\uc801\ubd84\u00b7\uae30\ud558 \uc774\uc218\uac00 \uc804\uacf5\uc218\ud559\uc5ed\ub7c9 \ud3c9\uac00\uc5d0 \uacb0\uc815\uc801 \uc601\ud5a5
 `,
-        competencies: {
-          academic: "\ud559\uc5c5\uc5ed\ub7c9(\uae30\ucd08\ud559\uc5c5\uc5ed\ub7c9\u00b7\ud559\uc2b5\uc8fc\ub3c4\uc131) \u2014 Do Dream 25%/\ud559\uad50\uc7a5\ucd94\ucc9c 50%. \uc138\ud2b9\uc5d0 \ub4dc\ub7ec\ub098\ub294 \uc9c0\uc801 \ud638\uae30\uc2ec \ud574\uacb0 \ud0d0\uad6c \uacfc\uc815, 3\ub144 \uc131\ucde8\ub3c4 \ucd94\uc774 \uc815\uc131 \ud3c9\uac00",
-          career: "\uc804\uacf5\uc801\ud569\uc131(\uc804\uacf5\uc218\ud559\uc5ed\ub7c9 30%+\uc804\uacf5\uad00\uc2ec\ub3c4\u00b7\uc9c4\ub85c\ud0d0\uc0c9\ub178\ub825 25%) \u2014 Do Dream 55%. \uc804\uacf5 \ud575\uc2ec \uacfc\ubaa9 \uc774\uc218\u00b7\uc131\ucde8\ub3c4\uc640 \uc138\ud2b9\uc758 \uc804\uacf5 \uad00\ub828 \uc2ec\ud654 \ud0d0\uad6c\uac00 \ud569\uaca9\uc758 \ud575\uc2ec \uacb0\uc815 \uc694\uc18c",
-          community: "\uc778\uc131 \ubc0f \uc0ac\ud68c\uc131(\uc5ed\ud560\uc8fc\ub3c4\uc131 10%+\ud611\uc5c5\uc18c\ud1b5 10%) \u2014 Do Dream 20%. \uba74\uc811 \uc778\uc131 30%: '\uacc4\uae30-\uacfc\uc815-\uacb0\uacfc-\uc131\uc7a5' \uc5f0\uacb0\uc131 \uc2ec\uce35 \uc9c8\ubb38, \uad6c\uccb4\uc801 \u4e3b\u5c0e \uacbd\ud5d8 \uc911\uc2dc"
-        },
-        weights: { academic: 0.25, career: 0.55, community: 0.20 } // Do Dream \uc804\ud615 \uae30\uc900
+      competencies: {
+        academic: "\ud559\uc5c5\uc5ed\ub7c9(\uae30\ucd08\ud559\uc5c5\uc5ed\ub7c9\u00b7\ud559\uc2b5\uc8fc\ub3c4\uc131) \u2014 Do Dream 25%/\ud559\uad50\uc7a5\ucd94\ucc9c 50%. \uc138\ud2b9\uc5d0 \ub4dc\ub7ec\ub098\ub294 \uc9c0\uc801 \ud638\uae30\uc2ec \ud574\uacb0 \ud0d0\uad6c \uacfc\uc815, 3\ub144 \uc131\ucde8\ub3c4 \ucd94\uc774 \uc815\uc131 \ud3c9\uac00",
+        career: "\uc804\uacf5\uc801\ud569\uc131(\uc804\uacf5\uc218\ud559\uc5ed\ub7c9 30%+\uc804\uacf5\uad00\uc2ec\ub3c4\u00b7\uc9c4\ub85c\ud0d0\uc0c9\ub178\ub825 25%) \u2014 Do Dream 55%. \uc804\uacf5 \ud575\uc2ec \uacfc\ubaa9 \uc774\uc218\u00b7\uc131\ucde8\ub3c4\uc640 \uc138\ud2b9\uc758 \uc804\uacf5 \uad00\ub828 \uc2ec\ud654 \ud0d0\uad6c\uac00 \ud569\uaca9\uc758 \ud575\uc2ec \uacb0\uc815 \uc694\uc18c",
+        community: "\uc778\uc131 \ubc0f \uc0ac\ud68c\uc131(\uc5ed\ud560\uc8fc\ub3c4\uc131 10%+\ud611\uc5c5\uc18c\ud1b5 10%) \u2014 Do Dream 20%. \uba74\uc811 \uc778\uc131 30%: '\uacc4\uae30-\uacfc\uc815-\uacb0\uacfc-\uc131\uc7a5' \uc5f0\uacb0\uc131 \uc2ec\uce35 \uc9c8\ubb38, \uad6c\uccb4\uc801 \u4e3b\u5c0e \uacbd\ud5d8 \uc911\uc2dc"
       },
-      "\ud64d\uc775\ub300\ud559\uad50": {
-        factors: `
+      weights: { academic: 0.25, career: 0.55, community: 0.20 } // Do Dream \uc804\ud615 \uae30\uc900
+    },
+    "\ud64d\uc775\ub300\ud559\uad50": {
+      factors: `
 [\ud64d\uc775\ub300\ud559\uad50 2026\ud559\ub144\ub3c4 \ud559\uc0dd\ubd80\uc885\ud569\uc804\ud615 \ud3c9\uac00 \uae30\uc900 \u2014 \uac00\uc774\ub4dc\ubd81 \ubc18\uc601]
 
 \u25a0 \uc804\ud615 \uc720\ud615 \ubc0f \uc120\ubc1c \ubc29\uc2dd
@@ -5010,15 +5010,15 @@ document.addEventListener("DOMContentLoaded", () => {
    4. \uc9c4\ub85c\uc5ed\ub7c9\uc758 \uc77c\uad00\uc131: 1~3\ud559\ub144 \uc804\ubc18\uc5d0 \uac78\uce5c \uc804\uacf5 \uad00\uc2ec\uc758 \ud750\ub984\uacfc \ub9e5\ub77d\uc774 \ud575\uc2ec \ud310\ub2e8 \uae30\uc900
    5. \uc11c\ub958 100% \uc804\ud615(\uc778\ubb38\u00b7\uc790\uc5f0): \uc138\ud2b9\u00b7\ucc3d\uccb4\u00b7\ud589\ud2b9\uc758 \uc804\uacf5 \uc5f0\uacc4 \ud0d0\uad6c \uae30\ub85d\uc774 \ud569\uaca9\uc758 \uc804\ubd80
 `,
-        competencies: {
-          academic: "\ud559\uc5c5\uc5ed\ub7c9(\uae30\ucd08\ud559\uc5c5\uc131\ucde8\ub3c4\u00b7\ud559\uc5c5\ud0dc\ub3c4\u00b7\ud0d0\uad6c\ub825) \u2014 40%. \uad50\uacfc \uc131\uc801\ubcf4\ub2e4 \uc218\uc5c5 \ub0b4 \uc9c0\uc801 \ud638\uae30\uc2ec\uc744 \uc2ec\ud654 \ud0d0\uad6c\ub85c \uc5f0\uacb0\ud55c \uacfc\uc815, 1~3\ud559\ub144 \uc5f0\uacc4\uc131 \uc788\ub294 \ub9e5\ub77d \ud655\uc778",
-          career: "\uc9c4\ub85c\uc5ed\ub7c9(\uc804\uacf5\uad00\ub828 \uad50\uacfc \uc774\uc218 \ub178\ub825\u00b7\uc131\ucde8\ub3c4\u00b7\uc9c4\ub85c\ud0d0\uc0c9\ud65c\ub3d9\uacfc \uacbd\ud5d8) \u2014 40%. \uc804\uacf5\uc5d0 \ub300\ud55c 1~3\ud559\ub144 \uad00\uc2ec \uc2ec\ud654 \ud750\ub984\uc758 \ub9e5\ub77d\uacfc \uc77c\uad00\uc131\uc774 \ud0c1\uc6d4\uc131 \ud575\uc2ec \ud310\ub2e8 \uae30\uc900",
-          community: "\uacf5\ub3d9\uccb4\uc5ed\ub7c9(\ud611\uc5c5\u00b7\uc18c\ud1b5\u00b7\ub098\ub214\u00b7\ubc30\ub824\u00b7\uc131\uc2e4\uc131\u00b7\ub9ac\ub354\uc2ed) \u2014 20%. \ubbf8\uc220\uacc4\uc5f4: \ubbf8\uc220\uc6b0\uc218\uc790 \uba74\uc811 60%(\ucc3d\uc758\uc131\u00b7\uc870\ud615\ub2a5\ub825\u00b7\ubbf8\uc220\ud65c\ub3d9\ubcf4\uace0\uc11c \uc9c4\uc2e4\uc131) \u2014 \uc2e4\uc9c8 \ub2f9\ub77d \uc88c\uc6b0"
-        },
-        weights: { academic: 0.40, career: 0.40, community: 0.20 }
+      competencies: {
+        academic: "\ud559\uc5c5\uc5ed\ub7c9(\uae30\ucd08\ud559\uc5c5\uc131\ucde8\ub3c4\u00b7\ud559\uc5c5\ud0dc\ub3c4\u00b7\ud0d0\uad6c\ub825) \u2014 40%. \uad50\uacfc \uc131\uc801\ubcf4\ub2e4 \uc218\uc5c5 \ub0b4 \uc9c0\uc801 \ud638\uae30\uc2ec\uc744 \uc2ec\ud654 \ud0d0\uad6c\ub85c \uc5f0\uacb0\ud55c \uacfc\uc815, 1~3\ud559\ub144 \uc5f0\uacc4\uc131 \uc788\ub294 \ub9e5\ub77d \ud655\uc778",
+        career: "\uc9c4\ub85c\uc5ed\ub7c9(\uc804\uacf5\uad00\ub828 \uad50\uacfc \uc774\uc218 \ub178\ub825\u00b7\uc131\ucde8\ub3c4\u00b7\uc9c4\ub85c\ud0d0\uc0c9\ud65c\ub3d9\uacfc \uacbd\ud5d8) \u2014 40%. \uc804\uacf5\uc5d0 \ub300\ud55c 1~3\ud559\ub144 \uad00\uc2ec \uc2ec\ud654 \ud750\ub984\uc758 \ub9e5\ub77d\uacfc \uc77c\uad00\uc131\uc774 \ud0c1\uc6d4\uc131 \ud575\uc2ec \ud310\ub2e8 \uae30\uc900",
+        community: "\uacf5\ub3d9\uccb4\uc5ed\ub7c9(\ud611\uc5c5\u00b7\uc18c\ud1b5\u00b7\ub098\ub214\u00b7\ubc30\ub824\u00b7\uc131\uc2e4\uc131\u00b7\ub9ac\ub354\uc2ed) \u2014 20%. \ubbf8\uc220\uacc4\uc5f4: \ubbf8\uc220\uc6b0\uc218\uc790 \uba74\uc811 60%(\ucc3d\uc758\uc131\u00b7\uc870\ud615\ub2a5\ub825\u00b7\ubbf8\uc220\ud65c\ub3d9\ubcf4\uace0\uc11c \uc9c4\uc2e4\uc131) \u2014 \uc2e4\uc9c8 \ub2f9\ub77d \uc88c\uc6b0"
       },
-      "\uc131\uade0\uad00\ub300\ud559\uad50": {
-        factors: `
+      weights: { academic: 0.40, career: 0.40, community: 0.20 }
+    },
+    "\uc131\uade0\uad00\ub300\ud559\uad50": {
+      factors: `
 [\uc131\uade0\uad00\ub300\ud559\uad50 2025\ud559\ub144\ub3c4 \ud559\uc0dd\ubd80\uc885\ud569\uc804\ud615 \ud3c9\uac00 \uae30\uc900 \u2014 \uac00\uc774\ub4dc\ubd81 \ubc18\uc601]
 
 \u25a0 \ubc18\uc601 \uc804\ud615: \uc735\ud569\ud615(\uad6c \uacc4\uc5f4\ubaa8\uc9d1), \ud0d0\uad6c\ud615(\uad6c \ud559\uacfc\ubaa8\uc9d1), \uacfc\ud559\uc778\uc7ac\uc804\ud615 \ub4f1
@@ -5037,15 +5037,15 @@ document.addEventListener("DOMContentLoaded", () => {
    3. \uad50\uacfc \uc774\uc218 \ucda9\uc2e4\ub3c4: \uc804\uacf5(\uacc4\uc5f4) \uad00\ub828 \uacfc\ubaa9\uc758 \uc8fc\ub3c4\uc801 \uc120\ud0dd\uacfc \uc774\uc218 \ub178\ub825
    4. \uc778\uacf5\uc9c0\ub2a5/\ucca8\ub2e8\ubd84\uc57c: \uc218\ud559 \ubc0f \uacfc\ud559 \uad50\uacfc \uc5ed\ub7c9\uacfc \ud0d0\uad6c \uacbd\ud5d8\uc758 \uc5f0\uacc4\uc131 \uac15\uc870
 `,
-        competencies: {
-          academic: "\ud559\uc5c5\uc5ed\ub7c9(\ud559\uc5c5\uc131\ucde8\ub3c4\u00b7\ubc1c\uc804\uc815\ub3c4\u00b7\ud559\uc5c5\ud0dc\ub3c4) \u2014 40%",
-          career: "\ud0d0\uad6c\uc5ed\ub7c9(\uc804\uacf5\uad00\ub828 \ud0d0\uad6c\ub825\u00b7\uad50\uacfc\uc774\uc218\ud604\ud669\u00b7\uacfc\ubaa9\uc131\ucde8\ub3c4) \u2014 40%",
-          community: "\uc7a0\uc7ac\uc5ed\ub7c9(\uc790\uae30\uc8fc\ub3c4\uc131\u00b7\uacf5\ub3d9\uccb4\uc5ed\ub7c9\u00b7\ubc1c\uc804\uac00\ub2a5\uc131) \u2014 20%"
-        },
-        weights: { academic: 0.40, career: 0.40, community: 0.20 }
+      competencies: {
+        academic: "\ud559\uc5c5\uc5ed\ub7c9(\ud559\uc5c5\uc131\ucde8\ub3c4\u00b7\ubc1c\uc804\uc815\ub3c4\u00b7\ud559\uc5c5\ud0dc\ub3c4) \u2014 40%",
+        career: "\ud0d0\uad6c\uc5ed\ub7c9(\uc804\uacf5\uad00\ub828 \ud0d0\uad6c\ub825\u00b7\uad50\uacfc\uc774\uc218\ud604\ud669\u00b7\uacfc\ubaa9\uc131\ucde8\ub3c4) \u2014 40%",
+        community: "\uc7a0\uc7ac\uc5ed\ub7c9(\uc790\uae30\uc8fc\ub3c4\uc131\u00b7\uacf5\ub3d9\uccb4\uc5ed\ub7c9\u00b7\ubc1c\uc804\uac00\ub2a5\uc131) \u2014 20%"
       },
-      "\uad6d\ubbfc\ub300\ud559\uad50": {
-        factors: `
+      weights: { academic: 0.40, career: 0.40, community: 0.20 }
+    },
+    "\uad6d\ubbfc\ub300\ud559\uad50": {
+      factors: `
 [\uad6d\ubbfc\ub300\ud559\uad50 2026\ud559\ub144\ub3c4 \ud559\uc0dd\ubd80\uc885\ud569\uc804\ud615 \ud3c9\uac00 \uae30\uc900 \u2014 \uac00\uc774\ub4dc\ubd81 \ubc18\uc601]
 
 \u25a0 \ubc18\uc601 \uc804\ud615: \uad6d\ubbfc\ud504\ub7f0\ud2f0\uc5b4\uc804\ud615, \ud559\uad50\uc0dd\ud65c\uc6b0\uc218\uc790\uc804\ud615 \ub4f1
@@ -5067,15 +5067,15 @@ document.addEventListener("DOMContentLoaded", () => {
    2. \ud0d0\uad6c\uc758 \uc9c0\uc18d\uc131: \ud559\uad50 \uc218\uc5c5 \ub0b4 \ub2a5\ub3d9\uc801 \ud0d0\uad6c \uacfc\uc815 \ubc0f \uc9c0\uc18d\uc801\uc778 \ud65c\ub3d9 \uc591\uc0c1
    3. \uba74\uc811 \uc9c4\uc704 \ud655\uc778 (8\ub300 \uc9c8\ubb38): \uc544\uc774\uc2a4\ube0c\ub808\uc774\ud0b9, \uc2e4\uc0ac\ub840 \ud655\uc778, \uacfc\ubaa9 \uc120\ud0dd \uc774\uc720, \uc5f0\uad6c \ubc29\ubc95 \uc774\ud574\ub3c4, \uc5ed\ud560/\ubc30\uc6c0, \uc5ed\ub7c9, \uc9c0\uc2dd \ud68d\ub4dd, \ud0d0\uad6c\ub825 \uac80\uc99d
 `,
-        competencies: {
-          academic: "\uc804\uacf5\uc801\ud569\uc131(\uc804\uacf5\uad00\ub828 \uc131\ucde8\ub3c4\u00b7\uc774\uc218\ub178\ub825\u00b7\ud559\uc5c5\ub2a5\ub825) \u2014 55%",
-          career: "\uc790\uae30\uc8fc\ub3c4\uc131 \ubc0f \ub3c4\uc804\uc815\uc2e0(\ud0d0\uad6c\ub825\u00b7\ubc1c\uc804\uac00\ub2a5\uc131) \u2014 25%",
-          community: "\uc778\uc131(\uacf5\ub3d9\uccb4\uc758\uc2dd\u00b7\ud611\ub3d9\ub2a5\ub825\u00b7\uc131\uc2e4\uc131) \u2014 20%"
-        },
-        weights: { academic: 0.55, career: 0.25, community: 0.20 }
+      competencies: {
+        academic: "\uc804\uacf5\uc801\ud569\uc131(\uc804\uacf5\uad00\ub828 \uc131\ucde8\ub3c4\u00b7\uc774\uc218\ub178\ub825\u00b7\ud559\uc5c5\ub2a5\ub825) \u2014 55%",
+        career: "\uc790\uae30\uc8fc\ub3c4\uc131 \ubc0f \ub3c4\uc804\uc815\uc2e0(\ud0d0\uad6c\ub825\u00b7\ubc1c\uc804\uac00\ub2a5\uc131) \u2014 25%",
+        community: "\uc778\uc131(\uacf5\ub3d9\uccb4\uc758\uc2dd\u00b7\ud611\ub3d9\ub2a5\ub825\u00b7\uc131\uc2e4\uc131) \u2014 20%"
       },
-      "\uc22d\uc2e4\ub300\ud559\uad50": {
-        factors: `
+      weights: { academic: 0.55, career: 0.25, community: 0.20 }
+    },
+    "\uc22d\uc2e4\ub300\ud559\uad50": {
+      factors: `
 [\uc22d\uc2e4\ub300\ud559\uad50 2026\ud559\ub144\ub3c4 \ud559\uc0dd\ubd80\uc885\ud569\uc804\ud615 \ud3c9\uac00 \uae30\uc900 \u2014 \uac00\uc774\ub4dc\ubd81 \ubc18\uc601]
 
 \u25a0 \ubc18\uc601 \uc804\ud615: SSU\ubbf8\ub798\uc778\uc7ac\uc804\ud615, SW\uc6b0\uc218\uc790\uc804\ud615 \ub4f1
@@ -5102,15 +5102,15 @@ document.addEventListener("DOMContentLoaded", () => {
    2. \uc9c4\ub85c \uc5f0\uacc4\uc131: \uc9c0\uc6d0 \ud559\uacfc \uad00\ub828 \uacfc\ubaa9\uc758 \uc8fc\ub3c4\uc801 \ud559\uc2b5 \uacfc\uc815\uacfc \uc131\ucde8 \uc911\uc2dc
    3. \uc22d\uc2e4 \uc778\uc7ac\uc0c1: \uae30\ub3c5\uad50 \uc815\uc2e0\uc5d0 \uae30\ubc18\ud55c \ud611\ub825\uc801 \uc18c\ud1b5\uacfc \uc131\uc2e4\ud55c \ud0dc\ub3c4 \uac15\uc870
 `,
-        competencies: {
-          academic: "\ud559\uc5c5\uc5ed\ub7c9(\ud559\uc5c5\uc131\ucde8\ub3c4\u00b7\ud0dc\ub3c4\u00b7\uc9c0\uc801\ud638\uae30\uc2ec) \u2014 20%",
-          career: "\uc9c4\ub85c\uc5ed\ub7c9(\uc804\uacf5\uad00\ub828 \uc131\ucde8\ub3c4\u00b7\ud0d0\uc0c9\ud65c\ub3d9\u00b7\ubaa9\ud45c\uc758\uc2dd) \u2014 50%",
-          community: "\uacf5\ub3d9\uccb4\uc5ed\ub7c9(\uc778\uc131\u00b7\ud611\uc5c5\u00b7\ub9ac\ub354\uc2ed\u00b7\uc22d\uc2e4\uc815\uc2e0) \u2014 30%"
-        },
-        weights: { academic: 0.20, career: 0.50, community: 0.30 }
+      competencies: {
+        academic: "\ud559\uc5c5\uc5ed\ub7c9(\ud559\uc5c5\uc131\ucde8\ub3c4\u00b7\ud0dc\ub3c4\u00b7\uc9c0\uc801\ud638\uae30\uc2ec) \u2014 20%",
+        career: "\uc9c4\ub85c\uc5ed\ub7c9(\uc804\uacf5\uad00\ub828 \uc131\ucde8\ub3c4\u00b7\ud0d0\uc0c9\ud65c\ub3d9\u00b7\ubaa9\ud45c\uc758\uc2dd) \u2014 50%",
+        community: "\uacf5\ub3d9\uccb4\uc5ed\ub7c9(\uc778\uc131\u00b7\ud611\uc5c5\u00b7\ub9ac\ub354\uc2ed\u00b7\uc22d\uc2e4\uc815\uc2e0) \u2014 30%"
       },
-      "\uc138\uc885\ub300\ud559\uad50": {
-        factors: `
+      weights: { academic: 0.20, career: 0.50, community: 0.30 }
+    },
+    "\uc138\uc885\ub300\ud559\uad50": {
+      factors: `
 [\uc138\uc885\ub300\ud559\uad50 2026\ud559\ub144\ub3c4 \ud559\uc0dd\ubd80\uc885\ud569\uc804\ud615 \ud3c9\uac00 \uae30\uc900 \u2014 \uac00\uc774\ub4dc\ubd81 \ubc18\uc601]
 
 \u25a0 \ubc18\uc601 \uc804\ud615: \uc138\uc885\ucc3d\uc758\uc778\uc7ac\uc804\ud615(\uba74\uc811\ud615/\uc11c\ub958\ud615) \ub4f1
@@ -5131,15 +5131,15 @@ document.addEventListener("DOMContentLoaded", () => {
    3. \uacf5\uacfc/\uc790\uc5f0\uacfc\ud559: \uae30\ucd08 \uacfc\ud559 \ubc0f \uc218\ud559 \uc5ed\ub7c9, \uc2e4\ud5d8 \ubc0f \ud0d0\uad6c \ud65c\ub3d9\uc758 \uae4a\uc774\uc640 \uc9c0\uc18d\uc131
    4. \uad6d\ubc29/\uc0ac\uc774\ubc84\ubcf4\uc548: \ud22c\ucca0\ud55c \uad6d\uac00\uad00\uacfc \ucc45\uc784\uac10, \ubcf4\uc548 \ubc0f \uc2dc\uc2a4\ud15c \uad6c\ucd95\uc5d0 \ub300\ud55c \uc9c4\uc2e4\uc131
 `,
-        competencies: {
-          academic: "\ud559\uc5c5\uc5ed\ub7c9(\uc131\ucde8\ub3c4\u00b7\ud0dc\ub3c4\u00b7\ud0d0\uad6c\ub825) \u2014 25%",
-          career: "\uc9c4\ub85c\uc5ed\ub7c9(\uc804\uacf5\uad00\ub828 \uc774\uc218\ub178\ub825\u00b7\uc131\ucde8\ub3c4\u00b7\ud0d0\uc0c9\uacbd\ud5d8) \u2014 45%",
-          community: "\ucc3d\uc758\uc735\ud569/\uacf5\ub3d9\uccb4\uc5ed\ub7c9(\ubb38\uc81c\ud574\uacb0\u00b7\ub9ac\ub354\uc2ed\u00b7\ub098\ub214\u00b7\ubc30\ub824) \u2014 30%"
-        },
-        weights: { academic: 0.25, career: 0.45, community: 0.30 }
+      competencies: {
+        academic: "\ud559\uc5c5\uc5ed\ub7c9(\uc131\ucde8\ub3c4\u00b7\ud0dc\ub3c4\u00b7\ud0d0\uad6c\ub825) \u2014 25%",
+        career: "\uc9c4\ub85c\uc5ed\ub7c9(\uc804\uacf5\uad00\ub828 \uc774\uc218\ub178\ub825\u00b7\uc131\ucde8\ub3c4\u00b7\ud0d0\uc0c9\uacbd\ud5d8) \u2014 45%",
+        community: "\ucc3d\uc758\uc735\ud569/\uacf5\ub3d9\uccb4\uc5ed\ub7c9(\ubb38\uc81c\ud574\uacb0\u00b7\ub9ac\ub354\uc2ed\u00b7\ub098\ub214\u00b7\ubc30\ub824) \u2014 30%"
       },
-      "\ub2e8\uad6d\ub300\ud559\uad50": {
-        factors: `
+      weights: { academic: 0.25, career: 0.45, community: 0.30 }
+    },
+    "\ub2e8\uad6d\ub300\ud559\uad50": {
+      factors: `
 [\ub2e8\uad6d\ub300\ud559\uad50 2026\ud559\ub144\ub3c4 \ud559\uc0dd\ubd80\uc885\ud569\uc804\ud615 \ud3c9\uac00 \uae30\uc900 \u2014 \uac00\uc774\ub4dc\ubd81 \ubc18\uc601]
 
 \u25a0 \ubc18\uc601 \uc804\ud615: DKU\uc778\uc7ac\uc804\ud615(\uc11c\ub958\ud615/\uba74\uc811\ud615), SW\uc778\uc7ac\uc804\ud615 \ub4f1
@@ -5162,15 +5162,15 @@ document.addEventListener("DOMContentLoaded", () => {
    4. \uc0ac\ubc94\ub300\ud559: \ud574\ub2f9 \uad50\uacfc\uc5d0 \ub300\ud55c \uae4a\uc774 \uc788\ub294 \uc774\ud574, \uad50\uc721\uc790\ub85c\uc11c\uc758 \uc790\uc9c8 \ubc0f \uc18c\ud1b5/\uacf5\uac10 \ub2a5\ub825
    5. \uc778\ubb38/\uc0ac\ud68c/\uacbd\uc601: \ube44\ud310\uc801 \uc0ac\uace0, \ud14d\uc2a4\ud2b8 \ubd84\uc11d \ub2a5\ub825, \uc0ac\ud68c \ud604\uc0c1\uc5d0 \ub300\ud55c \ud1b5\ucc30 \ubc0f \uc9c4\ucde8\uc801 \uc9c4\ub85c\uc758\uc9c0
 `,
-        competencies: {
-          academic: "\ud559\uc5c5\uc5ed\ub7c9(\ud559\uc5c5\uc131\ucde8\ub3c4\u00b7\ud0d0\uad6c\ub825) \u2014 45%",
-          career: "\uc9c4\ub85c\uc5ed\ub7c9(\uc9c4\ub85c\ud0d0\uc0c9\ud65c\ub3d9\u00b7\uacbd\ud5a5\u00b7\uc9c4\ub85c\uc758\uc9c0) \u2014 35%",
-          community: "\uacf5\ub3d9\uccb4\uc5ed\ub7c9(\ub3c4\ub355\uc131\u00b7\uc131\uc2e4\uc131\u00b7\ud611\uc5c5\u00b7\uc18c\ud1b5) \u2014 20%"
-        },
-        weights: { academic: 0.45, career: 0.35, community: 0.20 }
+      competencies: {
+        academic: "\ud559\uc5c5\uc5ed\ub7c9(\ud559\uc5c5\uc131\ucde8\ub3c4\u00b7\ud0d0\uad6c\ub825) \u2014 45%",
+        career: "\uc9c4\ub85c\uc5ed\ub7c9(\uc9c4\ub85c\ud0d0\uc0c9\ud65c\ub3d9\u00b7\uacbd\ud5a5\u00b7\uc9c4\ub85c\uc758\uc9c0) \u2014 35%",
+        community: "\uacf5\ub3d9\uccb4\uc5ed\ub7c9(\ub3c4\ub355\uc131\u00b7\uc131\uc2e4\uc131\u00b7\ud611\uc5c5\u00b7\uc18c\ud1b5) \u2014 20%"
       },
-      "\uc804\ubd81\ub300\ud559\uad50": {
-        factors: `
+      weights: { academic: 0.45, career: 0.35, community: 0.20 }
+    },
+    "\uc804\ubd81\ub300\ud559\uad50": {
+      factors: `
 [\uc804\ubd81\ub300\ud559\uad50 2026\ud559\ub144\ub3c4 \ud559\uc0dd\ubd80\uc885\ud569\uc804\ud615 \uc11c\ub958\ud3c9\uac00 \uae30\uc900]
 
 \u25a0 \ud3c9\uac00 \ubc29\ubc95
@@ -5213,15 +5213,15 @@ document.addEventListener("DOMContentLoaded", () => {
    - \uc608\uc220\ub300\ud559: \ud559\uc0dd\ubd80 \uad50\uacfc \ud3c9\uac00 \uc2dc \uad6d\uc5b4, \uc601\uc5b4, \ud55c\uad6d\uc0ac \ubc0f \ud574\ub2f9 \uc804\uacf5 \uc2e4\uae30\uad50\uacfc(\uccb4\uc721, \ubbf8\uc220, \uc74c\uc545) \ubc18\uc601
    \u203b \uc804\ubd81\ub300\ub294 \ud559\uacfc\ubcc4 \uc138\uc138\ud55c \uc778\uc7ac\uc0c1\ubcf4\ub2e4 \uc704 '\uc804\uacf5\ucc38\uace0\uad50\uacfc'\uc758 \uc774\uc218 \uc5ec\ubd80, \ud559\uc5c5 \uc131\ucde8\ub3c4, \ud0d0\uad6c \ud65c\ub3d9 \uc2e4\uc801\uc744 \uc9c4\ub85c\uc5ed\ub7c9 \ud3c9\uac00\uc758 \ud575\uc2ec \uc8fc\uc548\uc810\uc73c\ub85c \uac15\ub825\ud558\uac8c \ubc18\uc601\ud568.
 `,
-        competencies: {
-          academic: "\ud559\uc5c5\uc5ed\ub7c9(\ud559\uc5c5\uc131\ucde8\ub3c4\u00b7\ud559\uc5c5\ud0dc\ub3c4\u00b7\ud0d0\uad6c\ub825) \u2014 40%",
-          career: "\uc9c4\ub85c\uc5ed\ub7c9(\uacc4\uc5f4 \uad00\ub828\uad50\uacfc \uc774\uc218 \ub178\ub825\u00b7\uacc4\uc5f4 \uad00\ub828\uad50\uacfc \uc131\ucde8\ub3c4\u00b7\uc9c4\ub85c\ud0d0\uc0c9 \ud65c\ub3d9\uacfc \uacbd\ud5d8) \u2014 40%",
-          community: "\uacf5\ub3d9\uccb4 \uc5ed\ub7c9(\ud611\uc5c5\uacfc \uc18c\ud1b5\ub2a5\ub825\u00b7\ub098\ub214\uacfc \ubc30\ub824\u00b7\uc131\uc2e4\uc131\uacfc \uaddc\uce59\uc900\uc218\u00b7\ub9ac\ub354\uc2ed) \u2014 20%"
-        },
-        weights: { academic: 0.40, career: 0.40, community: 0.20 }
+      competencies: {
+        academic: "\ud559\uc5c5\uc5ed\ub7c9(\ud559\uc5c5\uc131\ucde8\ub3c4\u00b7\ud559\uc5c5\ud0dc\ub3c4\u00b7\ud0d0\uad6c\ub825) \u2014 40%",
+        career: "\uc9c4\ub85c\uc5ed\ub7c9(\uacc4\uc5f4 \uad00\ub828\uad50\uacfc \uc774\uc218 \ub178\ub825\u00b7\uacc4\uc5f4 \uad00\ub828\uad50\uacfc \uc131\ucde8\ub3c4\u00b7\uc9c4\ub85c\ud0d0\uc0c9 \ud65c\ub3d9\uacfc \uacbd\ud5d8) \u2014 40%",
+        community: "\uacf5\ub3d9\uccb4 \uc5ed\ub7c9(\ud611\uc5c5\uacfc \uc18c\ud1b5\ub2a5\ub825\u00b7\ub098\ub214\uacfc \ubc30\ub824\u00b7\uc131\uc2e4\uc131\uacfc \uaddc\uce59\uc900\uc218\u00b7\ub9ac\ub354\uc2ed) \u2014 20%"
       },
-      "\uc804\ub0a8\ub300\ud559\uad50": {
-        factors: `
+      weights: { academic: 0.40, career: 0.40, community: 0.20 }
+    },
+    "\uc804\ub0a8\ub300\ud559\uad50": {
+      factors: `
 [\uc804\ub0a8\ub300\ud559\uad50 2026\ud559\ub144\ub3c4 \ud559\uc0dd\ubd80\uc885\ud569\uc804\ud615 \uc11c\ub958\ud3c9\uac00 \uae30\uc900]
 
 \u25a0 \uc804\ub0a8\ub300\ud559\uad50 \uc11c\ub958\ud3c9\uac00 \uc694\uc18c \ubc0f \uc8fc\uc548\uc810
@@ -5273,15 +5273,15 @@ document.addEventListener("DOMContentLoaded", () => {
    
    \u203b \uc804\ub0a8\ub300\ub294 \ud559\uacfc\ubcc4 \uac70\ucc3d\ud55c \uc778\uc7ac\uc0c1\ubcf4\ub2e4 \uc704 \uba85\uc2dc\ub41c '\uad00\ub828 \uad50\uacfc'\uc758 \uc774\uc218 \uc5ec\ubd80\uc640 \uc131\ucde8 \uc218\uc900\uc744 \uc9c4\ub85c\uc5ed\ub7c9(40%)\uc758 \ud575\uc2ec \uc8fc\uc548\uc810\uc73c\ub85c \ub9e4\uc6b0 \uac15\ub825\ud558\uac8c \ubc18\uc601\ud568.
 `,
-        competencies: {
-          academic: "\ud559\uc5c5\uc5ed\ub7c9(\ud559\uc2b5 \ud0dc\ub3c4\u00b7\ud559\uc5c5 \uc218\ud589 \ub2a5\ub825\u00b7\ud638\uae30\uc2ec \ud574\uacb0\u00b7\uc131\ucde8\ub3c4) \u2014 30%",
-          career: "\uc9c4\ub85c\uc5ed\ub7c9(\uad00\ub828 \uad50\uacfc \uc790\ubc1c\uc801 \uc774\uc218 \ub178\ub825 \ubc0f \uc131\ucde8 \uc218\uc900\u00b7\uc9c4\ub85c \ud0d0\uc0c9 \ud65c\ub3d9) \u2014 40%",
-          community: "\uacf5\ub3d9\uccb4\uc5ed\ub7c9(\uc131\uc2e4\uc131\u00b7\uaddc\uce59 \uc900\uc218\u00b7\ud611\uc5c5\u00b7\ub9ac\ub354\uc2ed\u00b7\ub098\ub214\u00b7\ubc30\ub824) \u2014 30%"
-        },
-        weights: { academic: 0.30, career: 0.40, community: 0.30 }
+      competencies: {
+        academic: "\ud559\uc5c5\uc5ed\ub7c9(\ud559\uc2b5 \ud0dc\ub3c4\u00b7\ud559\uc5c5 \uc218\ud589 \ub2a5\ub825\u00b7\ud638\uae30\uc2ec \ud574\uacb0\u00b7\uc131\ucde8\ub3c4) \u2014 30%",
+        career: "\uc9c4\ub85c\uc5ed\ub7c9(\uad00\ub828 \uad50\uacfc \uc790\ubc1c\uc801 \uc774\uc218 \ub178\ub825 \ubc0f \uc131\ucde8 \uc218\uc900\u00b7\uc9c4\ub85c \ud0d0\uc0c9 \ud65c\ub3d9) \u2014 40%",
+        community: "\uacf5\ub3d9\uccb4\uc5ed\ub7c9(\uc131\uc2e4\uc131\u00b7\uaddc\uce59 \uc900\uc218\u00b7\ud611\uc5c5\u00b7\ub9ac\ub354\uc2ed\u00b7\ub098\ub214\u00b7\ubc30\ub824) \u2014 30%"
       },
-      "\ucda9\ub0a8\ub300\ud559\uad50": {
-        factors: `
+      weights: { academic: 0.30, career: 0.40, community: 0.30 }
+    },
+    "\ucda9\ub0a8\ub300\ud559\uad50": {
+      factors: `
 [\ucda9\ub0a8\ub300\ud559\uad50 2026\ud559\ub144\ub3c4 \ud559\uc0dd\ubd80\uc885\ud569\uc804\ud615 \ud3c9\uac00 \uae30\uc900 \ud575\uc2ec (\uac00\uc774\ub4dc\ubd81/\ubaa8\uc9d1\uc694\uac15 \ubc18\uc601)]
 
 \u25a0 \ucda9\ub0a8\ub300\ud559\uad50 \uc11c\ub958 \ubc0f \uba74\uc811\ud3c9\uac00 \ubc29\uc2dd\uacfc \ud575\uc2ec \uc5ed\ub7c9 \ube44\uc728
@@ -5328,15 +5328,15 @@ document.addEventListener("DOMContentLoaded", () => {
    [\uc608\uc220/\ud2b9\uc218 \uc735\ud569\ud559\ubd80]
    - \uc735\ud569/\uc548\ubcf4/\ud2b9\uc218 \ub4f1: \ud559\uc81c \uac04 \ud1b5\ud569 \ud638\uae30\uc2ec(\ubb38\uc774\uacfc \uacbd\uacc4 \ud0c8\ud53c), \uc790\uae30\uc8fc\ub3c4\uc801 \ubb34\uc804\uacf5 \uc9c4\ub85c \uac1c\ucc99\uc9c0\ud5a5\uc131. \uad6d\uac00/\uae00\ub85c\ubc8c \uc774\uc288 \ud638\uae30\uc2ec \ubc0f \uccb4\ub825/\uc0ac\uba85\uac10
 `,
-        competencies: {
-          academic: "\ud559\uc5c5\uc801 \uc5ed\ub7c9_\uc131\ucde8(\uc804\uccb4/\uc804\uacf5 \uad00\ub828 \uad50\uacfc \uc774\uc218 \ub178\ub825 \ubc0f \uc131\ucde8, \ud559\uc2b5 \ud0dc\ub3c4 \ucda9\uc2e4\uc131) \u2014 \ud1b5\ud569 75.5% \uc911 \ubd84\ud560",
-          career: "\ud559\uc5c5\uc801 \uc5ed\ub7c9_\ud0d0\uad6c(\uc9c4\ub85c \ud0d0\uc0c9 \uc9c0\uc18d\uc131, \uc9c4\ucde8\uc801 \ud559\uc5c5 \uc758\uc9c0, \ub17c\ub9ac\uc801\uc774\uace0 \uc885\ud569\uc801 \uc0ac\uace0) \u2014 \ud1b5\ud569 75.5% \uc911 \ubd84\ud560",
-          community: "\uc0ac\ud68c\uc801 \uc5ed\ub7c9(\uc131\uc2e4\uc131, \uaddc\uce59 \uc900\uc218, \ud611\uc5c5/\uc18c\ud1b5, \uc774\ud0c0\uc801 \ub098\ub214/\ubc30\ub824) \u2014 24.5%"
-        },
-        weights: { academic: 0.40, career: 0.355, community: 0.245 }
+      competencies: {
+        academic: "\ud559\uc5c5\uc801 \uc5ed\ub7c9_\uc131\ucde8(\uc804\uccb4/\uc804\uacf5 \uad00\ub828 \uad50\uacfc \uc774\uc218 \ub178\ub825 \ubc0f \uc131\ucde8, \ud559\uc2b5 \ud0dc\ub3c4 \ucda9\uc2e4\uc131) \u2014 \ud1b5\ud569 75.5% \uc911 \ubd84\ud560",
+        career: "\ud559\uc5c5\uc801 \uc5ed\ub7c9_\ud0d0\uad6c(\uc9c4\ub85c \ud0d0\uc0c9 \uc9c0\uc18d\uc131, \uc9c4\ucde8\uc801 \ud559\uc5c5 \uc758\uc9c0, \ub17c\ub9ac\uc801\uc774\uace0 \uc885\ud569\uc801 \uc0ac\uace0) \u2014 \ud1b5\ud569 75.5% \uc911 \ubd84\ud560",
+        community: "\uc0ac\ud68c\uc801 \uc5ed\ub7c9(\uc131\uc2e4\uc131, \uaddc\uce59 \uc900\uc218, \ud611\uc5c5/\uc18c\ud1b5, \uc774\ud0c0\uc801 \ub098\ub214/\ubc30\ub824) \u2014 24.5%"
       },
-      "\ucda9\ubd81\ub300\ud559\uad50": {
-        factors: `
+      weights: { academic: 0.40, career: 0.355, community: 0.245 }
+    },
+    "\ucda9\ubd81\ub300\ud559\uad50": {
+      factors: `
 [\ucda9\ubd81\ub300\ud559\uad50 2026\ud559\ub144\ub3c4 \ud559\uc0dd\ubd80\uc885\ud569\uc804\ud615 \uc11c\ub958\ud3c9\uac00 \uae30\uc900 \ubc0f \ud559\uacfc\ubcc4 \ud3c9\uac00 \uc8fc\uc548\uc810 (\ubaa8\uc9d1\uc694\uac15 \ubc0f \uac00\uc774\ub4dc\ubd81 \ubc18\uc601)]
 
 \u25a0 \ucda9\ubd81\ub300\ud559\uad50 \ud559\uc0dd\ubd80\uc885\ud569\uc804\ud615 \uc11c\ub958\ud3c9\uac00 \uc885\ud569 \uc548\ub0b4
@@ -5411,15 +5411,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
 \u203b \uc885\ud569: \uac00\uc7a5 \uc911\uc694\ud788 \uc5ec\uae30\ub294 \uac74 \uc9c0\uc6d0\ud559\uacfc \uad00\ub828 \ud575\uc2ec \uad50\uacfc\uc758 \ub2e8\uc21c \uc131\ucde8\ub3c4 \ubfd0\ub9cc \uc544\ub2c8\ub77c, 3\ub144\uac04 \uc2a4\uc2a4\ub85c \uc5bc\ub9c8\ub098 \uadf8 \uacc4\uc5f4\uc758 \uacfc\ubaa9\uc744 \uc8fc\ub3c4\uc801\uc73c\ub85c \uc218\uac15\ud558\uace0 \ub178\ub825\ud588\ub294\uc9c0\uc758 \uc11c\uc0ac\uc785\ub2c8\ub2e4. (61\uc810 \ubc18\uc601)
 `,
-        competencies: {
-          academic: "\ud559\uc5c5\uc801 \uc5ed\ub7c9 \u2014 \ubc30\uc810 61\uc810(\uc57d 76%). \uc804\uccb4\uad50\uacfc \ud559\uc5c5\uc131\ucde8, \uc9c0\uc815 \ucc38\uace0 \uad50\uacfc \uc774\uc218\ub178\ub825 \ubc0f \uc555\ub3c4\uc801 \uc131\ucde8\ub3c4(\u2605\uac00\uc7a5 \uc911\uc694), \uc9c0\uc801 \ud638\uae30\uc2ec.",
-          career: "\uc9c4\ub85c \ud0d0\uc0c9 \uc5ed\ub7c9 (\ud559\uc5c5\uc5ed\ub7c9\uc5d0 \ud3ec\ud568 \ud3c9\uac00) \u2014 \uc804\uacf5\uad00\ub828 \uad50\uacfc \ud559\uc5c5 \uc18d \ub2a5\ub3d9\uc801 \uc9c4\ub85c \ud0d0\uc0c9 \uacbd\ud5d8\uc5d0 \ud2b9\ud654\ud558\uc5ec \ud3c9\uac00.",
-          community: "\uc0ac\ud68c\uc801 \uc5ed\ub7c9 \u2014 \ubc30\uc810 19\uc810(\uc57d 24%). \ub098\ub214, \ubc30\ub824, \uc131\uc2e4\uc131, \uaddc\uce59\uc900\uc218, \ud611\uc5c5, \uc18c\ud1b5. \ud559\ud3ed\uae30\uc7ac \ub4f1 \uc704\ubc18 \uc2dc \ud569\uaca9 \uce58\uba85\ud0c0."
-        },
-        weights: { academic: 0.50, career: 0.26, community: 0.24 }
+      competencies: {
+        academic: "\ud559\uc5c5\uc801 \uc5ed\ub7c9 \u2014 \ubc30\uc810 61\uc810(\uc57d 76%). \uc804\uccb4\uad50\uacfc \ud559\uc5c5\uc131\ucde8, \uc9c0\uc815 \ucc38\uace0 \uad50\uacfc \uc774\uc218\ub178\ub825 \ubc0f \uc555\ub3c4\uc801 \uc131\ucde8\ub3c4(\u2605\uac00\uc7a5 \uc911\uc694), \uc9c0\uc801 \ud638\uae30\uc2ec.",
+        career: "\uc9c4\ub85c \ud0d0\uc0c9 \uc5ed\ub7c9 (\ud559\uc5c5\uc5ed\ub7c9\uc5d0 \ud3ec\ud568 \ud3c9\uac00) \u2014 \uc804\uacf5\uad00\ub828 \uad50\uacfc \ud559\uc5c5 \uc18d \ub2a5\ub3d9\uc801 \uc9c4\ub85c \ud0d0\uc0c9 \uacbd\ud5d8\uc5d0 \ud2b9\ud654\ud558\uc5ec \ud3c9\uac00.",
+        community: "\uc0ac\ud68c\uc801 \uc5ed\ub7c9 \u2014 \ubc30\uc810 19\uc810(\uc57d 24%). \ub098\ub214, \ubc30\ub824, \uc131\uc2e4\uc131, \uaddc\uce59\uc900\uc218, \ud611\uc5c5, \uc18c\ud1b5. \ud559\ud3ed\uae30\uc7ac \ub4f1 \uc704\ubc18 \uc2dc \ud569\uaca9 \uce58\uba85\ud0c0."
       },
-      "\uacbd\ubd81\ub300\ud559\uad50": {
-        factors: `
+      weights: { academic: 0.50, career: 0.26, community: 0.24 }
+    },
+    "\uacbd\ubd81\ub300\ud559\uad50": {
+      factors: `
 [\uacbd\ubd81\ub300\ud559\uad50 2026\ud559\ub144\ub3c4 \ud559\uc0dd\ubd80\uc885\ud569\uc804\ud615 \uc11c\ub958\ud3c9\uac00 \uae30\uc900 \ubc0f \ud559\uacfc\ubcc4 \ud3c9\uac00 \uc8fc\uc548\uc810]
 
 \u25a0 \uc11c\ub958\ud3c9\uac00 \uae30\ubcf8 \ubc29\ubc95 \ubc0f \uae30\uc900
@@ -5506,15 +5506,15 @@ document.addEventListener("DOMContentLoaded", () => {
 \ud83d\udca1 \uc11c\ub958\ud3c9\uac00 \uc900\ube44 \ud301 (\uacb0\ub860)
 \uc9c0\uc6d0 \uc2dc \uac00\uc7a5 \uc911\uc694\ud55c \uac83\uc740 \u2018\ubcf8\uc778\uc774 \uc9c0\uc6d0\ud558\ub294 \ud559\uacfc\uc5d0 \uc9c0\uc815\ub41c \uc804\uacf5 \uad00\ub828 \uad50\uacfc(\uc608: \uacf5\ub300=\uc218/\uacfc, \uc601\ubb38\uacfc=\uc601, \uacbd\uc601=\uc218/\uc601)\u2019\ub97c \ud559\uad50\uc0dd\ud65c \uc911\uc5d0 \uc5bc\ub9c8\ub098 \uc8fc\ub3c4\uc801\uc73c\ub85c, \uae4a\uc774 \uc788\uac8c \uacf5\ubd80(\uc2ec\ud654\uacfc\ubaa9 \uc774\uc218 \ub4f1)\ud588\ub294\uac00\uc785\ub2c8\ub2e4. \ud3c9\uac00\uc704\uc6d0\uc740 \ud559\uc0dd\ubd80\uc758 \uc138\ubd80\ub2a5\ub825 \ubc0f \ud2b9\uae30\uc0ac\ud56d(\uc138\ud2b9)\uc744 \ud1b5\ud574 \ud574\ub2f9 \ud575\uc2ec \uacfc\ubaa9\uc5d0 \ub300\ud55c \ud559\uc0dd\uc758 \ud638\uae30\uc2ec, \ud0d0\uad6c \uc5ed\ub7c9, \ud559\uc5c5 \uc131\ucde8\ub3c4\ub97c \ucd5c\uc6b0\uc120\uc73c\ub85c \uac80\uc99d\ud569\ub2c8\ub2e4.
 `,
-        competencies: {
-          academic: "\ud559\uc5c5\uc5ed\ub7c9 (\uc720\ud615 A 30% / \uc720\ud615 B 45%) - \uc885\ud569 \ud559\uc5c5\uc131\ucde8\ub3c4 \ucd94\uc774, \uc804\uacf5 \uad00\ub828 \uad50\uacfc \uc131\ucde8, \uc218\uc5c5 \uc18d \uc790\uae30\uc8fc\ub3c4\uc801 \ud0d0\uad6c \ub178\ub825",
-          career: "\uc9c4\ub85c\uc5ed\ub7c9 (\uc720\ud615 A 50% / \uc720\ud615 B 35%) - \uc804\uacf5 \uad00\ub828 \uc9c0\uc815 \uad50\uacfc \uc801\uadf9 \uc774\uc218(\uc2ec\ud654 \ud3ec\ud568), \uc9c4\ub85c \ud0d0\uad6c \uacfc\uc815, \uc9c0\uc2dd \ud655\uc7a5\uc758 \ud3ed",
-          community: "\uacf5\ub3d9\uccb4\uc5ed\ub7c9 (\uacf5\ud1b5 20%) - \ud611\uc5c5\u00b7\uc18c\ud1b5\u00b7\uc5ed\ud560 \uc218\ud589\uc758 \ucc45\uc784\uac10\u00b7\ub098\ub214 \ubc30\ub824 \uc2e4\ucc9c \ub4f1 \uc815\uc131\ud3c9\uac00"
-        },
-        weights: { academic: 0.38, career: 0.42, community: 0.20 }
+      competencies: {
+        academic: "\ud559\uc5c5\uc5ed\ub7c9 (\uc720\ud615 A 30% / \uc720\ud615 B 45%) - \uc885\ud569 \ud559\uc5c5\uc131\ucde8\ub3c4 \ucd94\uc774, \uc804\uacf5 \uad00\ub828 \uad50\uacfc \uc131\ucde8, \uc218\uc5c5 \uc18d \uc790\uae30\uc8fc\ub3c4\uc801 \ud0d0\uad6c \ub178\ub825",
+        career: "\uc9c4\ub85c\uc5ed\ub7c9 (\uc720\ud615 A 50% / \uc720\ud615 B 35%) - \uc804\uacf5 \uad00\ub828 \uc9c0\uc815 \uad50\uacfc \uc801\uadf9 \uc774\uc218(\uc2ec\ud654 \ud3ec\ud568), \uc9c4\ub85c \ud0d0\uad6c \uacfc\uc815, \uc9c0\uc2dd \ud655\uc7a5\uc758 \ud3ed",
+        community: "\uacf5\ub3d9\uccb4\uc5ed\ub7c9 (\uacf5\ud1b5 20%) - \ud611\uc5c5\u00b7\uc18c\ud1b5\u00b7\uc5ed\ud560 \uc218\ud589\uc758 \ucc45\uc784\uac10\u00b7\ub098\ub214 \ubc30\ub824 \uc2e4\ucc9c \ub4f1 \uc815\uc131\ud3c9\uac00"
       },
-      "\ubd80\uc0b0\ub300\ud559\uad50": {
-        factors: `
+      weights: { academic: 0.38, career: 0.42, community: 0.20 }
+    },
+    "\ubd80\uc0b0\ub300\ud559\uad50": {
+      factors: `
 [\ubd80\uc0b0\ub300\ud559\uad50 2026\ud559\ub144\ub3c4 \ud559\uc0dd\ubd80\uc885\ud569\uc804\ud615 \uc11c\ub958\ud3c9\uac00 \uae30\uc900 \ubc0f \uc138\ubd80 \uc8fc\uc548\uc810]
 
 \u25a0 \uc11c\ub958\ud3c9\uac00 \uc885\ud569 \uc548\ub0b4 \ubc0f \ud3c9\uac00 \uc808\ucc28
@@ -5590,15 +5590,15 @@ document.addEventListener("DOMContentLoaded", () => {
 \ud83d\udca1 \uc11c\ub958\ud3c9\uac00 \uacb0\ub860 \ubc0f \uae30\uc7ac \uae08\uc9c0(0\uc810) \uc720\uc758\uc0ac\ud56d
 \uac00\uc7a5 \ud569\ubd88\uc5d0 \ud070 \uc601\ud5a5\uc744 \ubbf8\uce58\ub294 \uac83\uc740 \ubaa8\uc9d1\ub2e8\uc704\ubcc4 **'(\ud575\uc2ec) \uad8c\uc7a5\uacfc\ubaa9'** \uc774\uc218 \ubc0f \uad50\uacfc \uc138\ud2b9\uc744 \ud1b5\ud55c \uc2ec\uce35 \ud0d0\uad6c \uc5ec\ubd80\uc785\ub2c8\ub2e4. \ucd94\uac00\ub85c \uc790\uc18c\uc11c\uac00 \ud3d0\uc9c0\ub418\uc5c8\uc73c\ubbc0\ub85c, \ud559\uc0dd\ubd80 \ub0b4 \ubd80\ubaa8 \uc9c1\uc5c5, \uc678\ubd80 \uacf5\uc778\uc5b4\ud559\uc131\uc801/\uc218\uc0c1\uc2e4\uc801\uc774 \uae30\uc7ac\ub420 \uc2dc 0\uc810(\ub610\ub294 \ubd88\ud569\uaca9) \ucc98\ub9ac\ub41c\ub2e4\ub294 \uc810\uc744 \uc8fc\uc758\ud574\uc11c \uac78\ub7ec\ub0b4\uc57c \ud569\ub2c8\ub2e4. \ud559\uad50\ud3ed\ub825 \uae30\uc7ac \uc0ac\ud56d \uc5ed\uc2dc \uac15\ub825\ud55c \uac10\uc810 \uc694\uc778\uc785\ub2c8\ub2e4.
 `,
-        competencies: {
-          academic: "\ud559\uc5c5\uc5ed\ub7c9 (40%) - \ud559\uc5c5\uc900\ube44\ub3c4 \ubc0f \ud559\uc5c5\uc8fc\ub3c4\uc131: \uc804\ubc18\uc801 \uc8fc\uc694 \uad50\uacfc \ud559\uc5c5\uc131\ucde8, \uc8fc\ub3c4\uc801\uc778 \ud559\uc5c5 \ud0dc\ub3c4 \ud655\uc778",
-          career: "\ud0d0\uad6c\uc5ed\ub7c9 (40%) - \uc790\uae30\uc8fc\ub3c4\uc131 \ubc0f \uc131\uc7a5\uac00\ub2a5\uc131: **'\ud575\uc2ec \uad8c\uc7a5\uacfc\ubaa9'** \uc758\ub3c4\uc801 \uc774\uc218 \uc5ec\ubd80, \uc9c4\ub85c \uad00\ub828 \uc2ec\uce35 \ud0d0\uad6c \uc804\uac1c",
-          community: "\uc0ac\ud68c\uc5ed\ub7c9 (20%) - \uc0ac\ud68c\uc131 \ubc0f \uc778\uc131: \ub9ac\ub354\uc2ed, \uc18c\ud1b5, \ud611\ub825, \ud559\ud3ed \uc5ec\ubd80 \uc815\uc131 \uacb0\uc810 \ub4f1 \ubc18\uc601"
-        },
-        weights: { academic: 0.40, career: 0.40, community: 0.20 }
+      competencies: {
+        academic: "\ud559\uc5c5\uc5ed\ub7c9 (40%) - \ud559\uc5c5\uc900\ube44\ub3c4 \ubc0f \ud559\uc5c5\uc8fc\ub3c4\uc131: \uc804\ubc18\uc801 \uc8fc\uc694 \uad50\uacfc \ud559\uc5c5\uc131\ucde8, \uc8fc\ub3c4\uc801\uc778 \ud559\uc5c5 \ud0dc\ub3c4 \ud655\uc778",
+        career: "\ud0d0\uad6c\uc5ed\ub7c9 (40%) - \uc790\uae30\uc8fc\ub3c4\uc131 \ubc0f \uc131\uc7a5\uac00\ub2a5\uc131: **'\ud575\uc2ec \uad8c\uc7a5\uacfc\ubaa9'** \uc758\ub3c4\uc801 \uc774\uc218 \uc5ec\ubd80, \uc9c4\ub85c \uad00\ub828 \uc2ec\uce35 \ud0d0\uad6c \uc804\uac1c",
+        community: "\uc0ac\ud68c\uc5ed\ub7c9 (20%) - \uc0ac\ud68c\uc131 \ubc0f \uc778\uc131: \ub9ac\ub354\uc2ed, \uc18c\ud1b5, \ud611\ub825, \ud559\ud3ed \uc5ec\ubd80 \uc815\uc131 \uacb0\uc810 \ub4f1 \ubc18\uc601"
       },
-      "\uc778\ud558\ub300\ud559\uad50": {
-        factors: `
+      weights: { academic: 0.40, career: 0.40, community: 0.20 }
+    },
+    "\uc778\ud558\ub300\ud559\uad50": {
+      factors: `
 [\uc778\ud558\ub300\ud559\uad50 2026\ud559\ub144\ub3c4 \ud559\uc0dd\ubd80\uc885\ud569\uc804\ud615 \uc11c\ub958\ud3c9\uac00 \uae30\uc900 \ubc0f \ud559\uad50/\uc804\ud615\ubcc4 \ud3c9\uac00 \uc8fc\uc548\uc810]
 
 \u25a0 \uc11c\ub958\ud3c9\uac00 \uc885\ud569 \uc548\ub0b4 \ubc0f \ud3c9\uac00 \uc808\ucc28
@@ -5639,15 +5639,15 @@ document.addEventListener("DOMContentLoaded", () => {
 \ud83d\udca1 \uc11c\ub958\ud3c9\uac00 \uacb0\ub860 \ud301:
 \uc9c0\uc6d0\uc790\uc758 \uc9c0\uc801 \uc5ed\ub7c9 \uac1c\ubc1c \ubc0f \ucd94\uac00 \uc870\uc0ac\u00b7\ub3c5\uc11c \ub4f1 \uc804\uacf5 \uc9c0\ud5a5\uc801 \ud655\uc7a5 \ud0d0\uad6c\uac00 \uc138\ud2b9\uc5d0\uc11c \ud655\uc5f0\ud788 \ube5b\ub098\uba70 \uc18c\uc218 \uc778\uc6d0 \uacfc\ubaa9\uc5d0 \uacfc\uac10\ud788 \ub3c4\uc804\ud588\ub2e4\uba74 '\uba74\uc811\ud615(\uc9c4\ub85c\ud0d0\uad6c\uc5ed\ub7c9 50%)' \ucd94\ucc9c \uc804\ub7b5\uc744, \ube44\uad00\ub828 \uacfc\ubaa9\uc744 \ud3ec\ud568\ud55c \ubaa8\ub4e0 \uad50\uacfc \ud559\uc5c5 \uc131\ucde8\uc758 \uc555\ub3c4\uc801 \uc131\uc2e4\ub3c4\uc640 \uafb8\uc900\ud568\uc774 \ubcf4\uc778\ub2e4\uba74 '\uc11c\ub958\ud615(\uae30\ucd08\ud559\uc5c5\uc5ed\ub7c9 50%)' \ucd94\ucc9c \uc804\ub7b5\uc744 \uc81c\uc2dc\ud558\uc2ed\uc2dc\uc624. \ub354\ubd88\uc5b4 \ud559\ud3ed \uc870\uce58\uc0ac\ud56d \uae30\uc7ac \uc5ec\ubd80\ub97c \ubc18\ub4dc\uc2dc \ud544\ud130\ub9c1\ud558\uc5ec \uac10\uc810(\ubd80\uc801\uaca9) \uc0ac\ud56d\uc73c\ub85c \uacbd\uace0\ud574\uc57c \ud569\ub2c8\ub2e4.
 `,
-        competencies: {
-          academic: "\uae30\ucd08\ud559\uc5c5\uc5ed\ub7c9 (\uc11c\ub958\ud615 50% / \uba74\uc811\ud615 30%) - \uc6d0\uc810\uc218/\uc218\uac15\uc778\uc6d0 \uc0c1\ud669 \uace0\ub824\ud55c \uc815\uc131\uc801 \uc804\uccb4 \uad50\uacfc \uc131\ucde8\ub3c4, \ube44\uc8fc\ub825 \uad50\uacfc\ub97c \ud3ec\ud568\ud55c \ubaa8\ub4e0 \uc218\uc5c5\uc758 \ub2a5\ub3d9\uc801/\uc131\uc2e4\ud55c \ucc38\uc5ec\ub3c4 \uac80\uc99d",
-          career: "\uc9c4\ub85c\ud0d0\uad6c\uc5ed\ub7c9 (\uc11c\ub958\ud615 30% / \uba74\uc811\ud615 50%) - \ud76c\ub9dd \uc9c4\ub85c \uc9c0\uc815 \uacfc\ubaa9 \uacfc\uac10\ud55c \ub3c4\uc804 \uc758\uc2dd(\uc18c\uc218\uac15\uc88c \uc774\uc218), \uc735\ud569 \ub3c5\uc11c \ubc0f \ucd94\uac00 \uc2ec\ud654 \uc870\uc0ac\ub97c \ud1b5\ud55c \uc9c0\uc801 \ud0d0\uad6c \uacfc\uc815 \uc131\uc7a5\uc131",
-          community: "\uacf5\ub3d9\uccb4\uc5ed\ub7c9 (\uacf5\ud1b5 20%) - \uac70\ucc3d\ud55c \ub9ac\ub354\uc2ed\ubcf4\ub2e4\ub294 \uc77c\uc0c1\uc5d0\uc11c\uc758 \uc18c\ubc15\ud55c \uc2e4\ucc9c\uc801 \ubc30\ub824, \uccad\uc18c/\ud559\uc2b5 \uacf5\uc720 \ub4f1 \uc774\ud0c0\uc801 \ud611\uc5c5, \uc131\uc2e4, \ud559\ud3ed \uc5ec\ubd80 \uc815\uc131\uc801 \uac15\ub825 \uc81c\uc7ac \ubc18\uc601"
-        },
-        weights: { academic: 0.40, career: 0.40, community: 0.20 } // \uba74\uc811/\uc11c\ub958 \ub450 \uae30\uc900\uc758 \ud3c9\uade0\uce58 \uc815\ub3c4\uc758 \uac00\uc911\uce58\ub85c AI\uac00 \uade0\ud615\uc788\uac8c \ud3c9\uac00\ud558\ub3c4\ub85d \uc720\ub3c4
+      competencies: {
+        academic: "\uae30\ucd08\ud559\uc5c5\uc5ed\ub7c9 (\uc11c\ub958\ud615 50% / \uba74\uc811\ud615 30%) - \uc6d0\uc810\uc218/\uc218\uac15\uc778\uc6d0 \uc0c1\ud669 \uace0\ub824\ud55c \uc815\uc131\uc801 \uc804\uccb4 \uad50\uacfc \uc131\ucde8\ub3c4, \ube44\uc8fc\ub825 \uad50\uacfc\ub97c \ud3ec\ud568\ud55c \ubaa8\ub4e0 \uc218\uc5c5\uc758 \ub2a5\ub3d9\uc801/\uc131\uc2e4\ud55c \ucc38\uc5ec\ub3c4 \uac80\uc99d",
+        career: "\uc9c4\ub85c\ud0d0\uad6c\uc5ed\ub7c9 (\uc11c\ub958\ud615 30% / \uba74\uc811\ud615 50%) - \ud76c\ub9dd \uc9c4\ub85c \uc9c0\uc815 \uacfc\ubaa9 \uacfc\uac10\ud55c \ub3c4\uc804 \uc758\uc2dd(\uc18c\uc218\uac15\uc88c \uc774\uc218), \uc735\ud569 \ub3c5\uc11c \ubc0f \ucd94\uac00 \uc2ec\ud654 \uc870\uc0ac\ub97c \ud1b5\ud55c \uc9c0\uc801 \ud0d0\uad6c \uacfc\uc815 \uc131\uc7a5\uc131",
+        community: "\uacf5\ub3d9\uccb4\uc5ed\ub7c9 (\uacf5\ud1b5 20%) - \uac70\ucc3d\ud55c \ub9ac\ub354\uc2ed\ubcf4\ub2e4\ub294 \uc77c\uc0c1\uc5d0\uc11c\uc758 \uc18c\ubc15\ud55c \uc2e4\ucc9c\uc801 \ubc30\ub824, \uccad\uc18c/\ud559\uc2b5 \uacf5\uc720 \ub4f1 \uc774\ud0c0\uc801 \ud611\uc5c5, \uc131\uc2e4, \ud559\ud3ed \uc5ec\ubd80 \uc815\uc131\uc801 \uac15\ub825 \uc81c\uc7ac \ubc18\uc601"
       },
-      "\uc544\uc8fc\ub300\ud559\uad50": {
-        factors: `
+      weights: { academic: 0.40, career: 0.40, community: 0.20 } // \uba74\uc811/\uc11c\ub958 \ub450 \uae30\uc900\uc758 \ud3c9\uade0\uce58 \uc815\ub3c4\uc758 \uac00\uc911\uce58\ub85c AI\uac00 \uade0\ud615\uc788\uac8c \ud3c9\uac00\ud558\ub3c4\ub85d \uc720\ub3c4
+    },
+    "\uc544\uc8fc\ub300\ud559\uad50": {
+      factors: `
 [\uc544\uc8fc\ub300\ud559\uad50 2026\ud559\ub144\ub3c4 \ud559\uc0dd\ubd80\uc885\ud569\uc804\ud615 \uc11c\ub958\ud3c9\uac00 \uae30\uc900 \ubc0f \uc804\ud615/\ud559\uacfc\ubcc4 \ud3c9\uac00 \uc8fc\uc548\uc810]
 
 \u25a0 \uc11c\ub958\ud3c9\uac00 \uc885\ud569 \uc548\ub0b4 \ubc0f \ubc29\ubc95
@@ -5693,15 +5693,15 @@ document.addEventListener("DOMContentLoaded", () => {
 \ud83d\udca1 \uc11c\ub958\ud3c9\uac00 \uacb0\ub860 \ud301:
 \uc9c0\uc6d0\uc790\uc758 \ud559\uc0dd\ubd80\uac00 \ubaa8\ub4e0 \uc601\uc5ed\uc5d0 \ub450\ub8e8 \uc131\uc2e4\ud558\uace0 \uc804\uacfc\ubaa9 \uc131\ucde8\ub3c4\uac00 \uace0\ub974\uba74 '\uc720\ud615 A(ACE\uc804\ud615)'\uc5d0, \uc778\uc131/\ube44\uad50\uacfc \ube44\uc911\uc774 \ub0ae\ub354\ub77c\ub3c4 \uc218\ud559/\uacfc\ud559 \ub4f1 \uc804\uacf5 \uad00\ub828 \uc9c0\uc801 \ud0d0\uad6c\uc640 \uc2ec\ud654 \uad50\uacfc \ub3c4\uc804\uc774 \uc555\ub3c4\uc801\uc774\uba74 '\uc720\ud615 B(\ucca8\ub2e8\uc735\ud569\uc778\uc7ac)'\uc5d0 \uc720\ub9ac\ud558\ub2e4\uace0 \uc9c4\ub2e8\ud574 \uc8fc\uc2ed\uc2dc\uc624. \ub354\ubd88\uc5b4 \ud559\ud3ed \uc870\uce58\uc0ac\ud56d\uc740 \ud569\ubd88\uc744 \ub4a4\uc9d1\uc744 \uc0ac\uc548\uc774\ubbc0\ub85c \uaf3c\uaf3c\ud788 \uc810\uac80\ud558\uc2ed\uc2dc\uc624.
 `,
-        competencies: {
-          academic: "\ud559\uc5c5\uc5ed\ub7c9 (ACE\uc804\ud615 37% / \ucca8\ub2e8 40%) - \uad50\uacfc \uc804\ubc18 \uc131\ucde8\ub3c4, \uc790\uae30\uc8fc\ub3c4\uc801 \ud559\uc2b5 \uacc4\ud68d/\uc2e4\ud589\ub825, \uc9c0\uc801 \ud638\uae30\uc2ec\uc5d0 \uae30\ubc18\ud55c \uc801\uadf9\uc801 \uc218\uc5c5 \ud0dc\ub3c4",
-          career: "\uc9c4\ub85c\uc5ed\ub7c9 (ACE\uc804\ud615 35% / \ucca8\ub2e8 45%) - \uc9c0\uc6d0 \uc804\uacf5 \uad00\ub828 \uad50\uacfc \uc801\uadf9 \uc774\uc218, \ub3d9\uc544\ub9ac/\uc9c4\ub85c\uc640 \uc138\ud2b9\uc758 \uc720\uae30\uc801 \uc5f0\uacc4\ub97c \ud1b5\ud55c \ubaa9\ud45c \uc131\uc7a5",
-          community: "\uacf5\ub3d9\uccb4\uc5ed\ub7c9 (ACE\uc804\ud615 28% / \ucca8\ub2e8 15%) - \ub9ac\ub354\uc2ed, \uc18c\ud1b5, \ub098\ub214\uc758 \uc2e4\ucc9c\uc801 \uc131\uc2e4\ud568 \ubc0f \uad50\ub0b4 \uaddc\uc815 \uc900\uc218 (\ud559\ud3ed \uac15\ub825 \uac10\uc810 \ubc18\uc601)"
-        },
-        weights: { academic: 0.38, career: 0.40, community: 0.22 }
+      competencies: {
+        academic: "\ud559\uc5c5\uc5ed\ub7c9 (ACE\uc804\ud615 37% / \ucca8\ub2e8 40%) - \uad50\uacfc \uc804\ubc18 \uc131\ucde8\ub3c4, \uc790\uae30\uc8fc\ub3c4\uc801 \ud559\uc2b5 \uacc4\ud68d/\uc2e4\ud589\ub825, \uc9c0\uc801 \ud638\uae30\uc2ec\uc5d0 \uae30\ubc18\ud55c \uc801\uadf9\uc801 \uc218\uc5c5 \ud0dc\ub3c4",
+        career: "\uc9c4\ub85c\uc5ed\ub7c9 (ACE\uc804\ud615 35% / \ucca8\ub2e8 45%) - \uc9c0\uc6d0 \uc804\uacf5 \uad00\ub828 \uad50\uacfc \uc801\uadf9 \uc774\uc218, \ub3d9\uc544\ub9ac/\uc9c4\ub85c\uc640 \uc138\ud2b9\uc758 \uc720\uae30\uc801 \uc5f0\uacc4\ub97c \ud1b5\ud55c \ubaa9\ud45c \uc131\uc7a5",
+        community: "\uacf5\ub3d9\uccb4\uc5ed\ub7c9 (ACE\uc804\ud615 28% / \ucca8\ub2e8 15%) - \ub9ac\ub354\uc2ed, \uc18c\ud1b5, \ub098\ub214\uc758 \uc2e4\ucc9c\uc801 \uc131\uc2e4\ud568 \ubc0f \uad50\ub0b4 \uaddc\uc815 \uc900\uc218 (\ud559\ud3ed \uac15\ub825 \uac10\uc810 \ubc18\uc601)"
       },
-      "\uc778\ucc9c\ub300\ud559\uad50": {
-        factors: `
+      weights: { academic: 0.38, career: 0.40, community: 0.22 }
+    },
+    "\uc778\ucc9c\ub300\ud559\uad50": {
+      factors: `
 [\uc778\ucc9c\ub300\ud559\uad50 2026\ud559\ub144\ub3c4 \ud559\uc0dd\ubd80\uc885\ud569\uc804\ud615 \uc11c\ub958\ud3c9\uac00 \uae30\uc900 \ubc0f \ud559\uacfc\ubcc4 \ud3c9\uac00 \uc8fc\uc548\uc810]
 
 \u25a0 \uc11c\ub958\ud3c9\uac00 \uc885\ud569 \uc548\ub0b4 \ubc0f \uacf5\ud1b5 \ud3c9\uac00 \ubc29\uc2dd
@@ -5737,15 +5737,15 @@ document.addEventListener("DOMContentLoaded", () => {
 \ud83d\udca1 \uc11c\ub958\ud3c9\uac00 \uacb0\ub860 \ud301:
 \uc778\ucc9c\ub300\ud559\uad50\ub294 '\uc218\uac15\uc790 \uc218\uac00 \uc801\uc740 \uc2ec\ud654 \uacfc\ubaa9\uc5d0 \uae30\uaebc\uc774 \ub3c4\uc804\ud558\uc5ec \uc77c\uc2dc\uc801 \uc131\uc801 \ud558\ub77d\uc744 \uacaa\uc740 \uc6a9\uae30'\ub97c \ub9e4\uc6b0 \uae0d\uc815\uc801\uc73c\ub85c \uc0ac\uba70, \ud65c\ub3d9 \uc911 \ub098\ud0c0\ub09c \uc2e4\ud328/\uac08\ub4f1\uc744 \ub300\uc548\uc73c\ub85c \uadf9\ubcf5\ud558\ub294 **'\ubc1c\uc804\uc5ed\ub7c9'**\uc774 \uba85\ud655\ud560 \ub54c \ucd5c\uace0 \ud3c9\uac00\ub97c \ubd80\uc5ec\ud569\ub2c8\ub2e4. \ub610\ud55c \ud559\uad50\ud3ed\ub825 \ubc0f \ubbf8\ubc18\uc601 \uae30\uc7ac \uc11c\ub958 \uc9c0\uce68\uc740 AI\uac00 \uc989\uc2dc \uc790\ub3d9 \ud544\ud130\ub9c1\ud558\uc5ec \uac10\uc810 \uc0ac\uc548\uc73c\ub85c \uc9c0\uc801\ud558\uc2ed\uc2dc\uc624.
 `,
-        competencies: {
-          academic: "\ud559\uc5c5\uc5ed\ub7c9 (30%) - \uae30\uacc4\uc801 \ub4f1\uae09 \uc218\uce58\ud654 \ubc30\uc81c(\uc6d0\uc810\uc218\u00b7\uc218\uac15\uc790\uc218 \uace0\ub824 \ub9e5\ub77d \ud3c9\uac00), \uc18c\uc218 \uc218\uac15 \uc2ec\ud654\uacfc\ubaa9 \uacfc\uac10\ud55c \ub3c4\uc804\uacfc \ub2a5\ub3d9\uc801 \ud0d0\uad6c",
-          career: "\uc9c4\ub85c\uc5ed\ub7c9 (30%) - \ubcf4\uc5ec\uc8fc\uae30\uc2dd \ud65c\ub3d9 \ubc30\uc81c(\uc138\ud2b9/\ucc3d\uccb4 \uc5f0\uacc4\ud615 \uc9c4\ub85c \ud0d0\uc0c9 \uacfc\uc815 \ucd94\uc801), \uc9c4\ub85c \ubcc0\uacbd \uc2dc \ub178\ub825\uc758 \ud0c0\ub2f9\uc131\uacfc \ub048\uae30 \uc874\uc911",
-          community: "\uacf5\ub3d9\uccb4\uc5ed\ub7c9 (20%) + \ubc1c\uc804\uc5ed\ub7c9 (20%) - \uc77c\uc0c1\uc801 \uc18c\ubc15\ud55c \ubc30\ub824/\ucc45\uc784\uac10/\ucd9c\uacb0(20%) \ubc0f \ubf08\uc544\ud508 \uc2e4\ud328/\ub09c\uc81c\ub97c \ub51b\uace0 \ub300\uc548\uc744 \ucc3d\uc758\uc801\uc73c\ub85c \ub3c4\ucd9c\ud574 \ub0b8 \uadf9\uac15\uc758 \ubb38\uc81c\ud574\uacb0\ub825(20%)"
-        },
-        weights: { academic: 0.30, career: 0.30, community: 0.40 } // \ubc1c\uc804\uc5ed\ub7c9 \uc911\uc2ec\uc758 \ud3c9\uac00 \ubc38\ub7f0\uc2a4 \ud569\uc0b0
+      competencies: {
+        academic: "\ud559\uc5c5\uc5ed\ub7c9 (30%) - \uae30\uacc4\uc801 \ub4f1\uae09 \uc218\uce58\ud654 \ubc30\uc81c(\uc6d0\uc810\uc218\u00b7\uc218\uac15\uc790\uc218 \uace0\ub824 \ub9e5\ub77d \ud3c9\uac00), \uc18c\uc218 \uc218\uac15 \uc2ec\ud654\uacfc\ubaa9 \uacfc\uac10\ud55c \ub3c4\uc804\uacfc \ub2a5\ub3d9\uc801 \ud0d0\uad6c",
+        career: "\uc9c4\ub85c\uc5ed\ub7c9 (30%) - \ubcf4\uc5ec\uc8fc\uae30\uc2dd \ud65c\ub3d9 \ubc30\uc81c(\uc138\ud2b9/\ucc3d\uccb4 \uc5f0\uacc4\ud615 \uc9c4\ub85c \ud0d0\uc0c9 \uacfc\uc815 \ucd94\uc801), \uc9c4\ub85c \ubcc0\uacbd \uc2dc \ub178\ub825\uc758 \ud0c0\ub2f9\uc131\uacfc \ub048\uae30 \uc874\uc911",
+        community: "\uacf5\ub3d9\uccb4\uc5ed\ub7c9 (20%) + \ubc1c\uc804\uc5ed\ub7c9 (20%) - \uc77c\uc0c1\uc801 \uc18c\ubc15\ud55c \ubc30\ub824/\ucc45\uc784\uac10/\ucd9c\uacb0(20%) \ubc0f \ubf08\uc544\ud508 \uc2e4\ud328/\ub09c\uc81c\ub97c \ub51b\uace0 \ub300\uc548\uc744 \ucc3d\uc758\uc801\uc73c\ub85c \ub3c4\ucd9c\ud574 \ub0b8 \uadf9\uac15\uc758 \ubb38\uc81c\ud574\uacb0\ub825(20%)"
       },
-      "\uac00\ud1a8\ub9ad\ub300\ud559\uad50": {
-        factors: `
+      weights: { academic: 0.30, career: 0.30, community: 0.40 } // \ubc1c\uc804\uc5ed\ub7c9 \uc911\uc2ec\uc758 \ud3c9\uac00 \ubc38\ub7f0\uc2a4 \ud569\uc0b0
+    },
+    "\uac00\ud1a8\ub9ad\ub300\ud559\uad50": {
+      factors: `
 [\uac00\ud1a8\ub9ad\ub300\ud559\uad50 2026\ud559\ub144\ub3c4 \ud559\uc0dd\ubd80\uc885\ud569\uc804\ud615 \uc11c\ub958\ud3c9\uac00 \uae30\uc900 \ubc0f \ud559\uacfc\ubcc4 \ud3c9\uac00 \uc8fc\uc548\uc810]
 
 \u25a0 \uc11c\ub958\uc885\ud569\ud3c9\uac00 \ubc29\ubc95 \ubc0f \uc720\uc758\uc0ac\ud56d
@@ -5779,15 +5779,15 @@ document.addEventListener("DOMContentLoaded", () => {
 \ud83d\udca1 \uc11c\ub958\ud3c9\uac00 \uacb0\ub860 \ud301:
 \uac00\ud1a8\ub9ad\ub300\ud559\uad50 \ud3c9\uac00\ub294 '\ub3c4\uc804'(\uc18c\uc778\uc218/\uacf5\ub3d9\uad50\uc721\uacfc\uc815 \uc218\uac15)\uacfc '\uade0\ud615'(\uc720\ub09c\ud788 \uc18c\ud640\ud55c \uc608\uccb4\ub2a5 \ub4f1 \ube44\uc8fc\uc694 \uacfc\ubaa9 \uc720\ubb34 \uac10\uc810)\uc774 \uc544\uc8fc \uc911\uc694\ud569\ub2c8\ub2e4. \uc9c0\uc6d0 \ud559\uacfc \uc815\ubcf4\uc5d0 \uba85\uc2dc\ub41c \ud544\uc218 \uc218\ud559/\uacfc\ud559/\uc0ac\ud68c/\uc5b4\ud559 \uad50\uacfc \uc704\uacc4\ub97c \uc8fc\ub3c4\uc801\uc73c\ub85c \ucc3e\uc544 \ub4e3\uace0, \ud559\uad50\ud3ed\ub825\uc774\ub098 \ubd80\uc815\uc801 \ucd9c\uacb0(\uac74\ud559 \uc774\ub150 \ubc18\ud568)\uc774 \uc5c6\ub294\uc9c0\ub97c \ucd5c\uc6b0\uc120\uc73c\ub85c \uc2a4\uce94\ud558\uc5ec \uacb0\ub860\uc744 \ub0b4\uc8fc\uc2ed\uc2dc\uc624.
 `,
-        competencies: {
-          academic: "\ud559\uc5c5\uc5ed\ub7c9 (40%) - \uc18c\ud640\ud55c \uacfc\ubaa9 \uc720\ubd80 \uc810\uac80(\uce58\uba85\ud0c0), \ud559\uc5c5 \ud3b8\uc2dd \uc5c6\ub294 \uace0\ub978 \uc131\ucde8\uc640 \uad00\ub828 \uc11c\uc801 \ud0d0\ub3c5 \ub4f1 \uc8fc\ub3c4\uc801 \ud0d0\uad6c \uc758\uc9c0",
-          career: "\uc9c4\ub85c\uc5ed\ub7c9 (40%) - \ud559\uacfc \uad8c\uc7a5 \uacfc\ubaa9 \uc704\uacc4 \uc774\uc218 \uc900\uc218 \uc5ec\ubd80, \uc18c\uc778\uc218/\uacf5\ub3d9\uad50\uc721 \ub4f1 \uc5b4\ub824\uc6b4 \uc9c4\ub85c \uad50\uacfc\uc5d0 \ub300\ud55c \uc8fc\ub3c4\uc801 \ucd94\uac00 \uc218\uac15 \ub178\ub825(\uac15\ub825 \uac00\uc810)",
-          community: "\uacf5\ub3d9\uccb4\uc5ed\ub7c9 (20%) - \uc774\ud0c0\uc801 \uc9c0\uc2dd \uba58\ud1a0\ub9c1, \uc0dd\uba85\uc874\uc911 \uc724\ub9ac\ubfd0 \uc544\ub2c8\ub77c \ucd9c\uacb0 \ubc0f \ube44\uc8fc\uc694\uacfc\ubaa9 \uc131\uc2e4 \uc774\uc218 \ub4f1 '\uac00\ud1a8\ub9ad \uc724\ub9ac\uc5d0 \ubd80\ud569\ud558\ub294 \uae30\ucd08 \uc131\uc2e4\uc131'"
-        },
-        weights: { academic: 0.40, career: 0.40, community: 0.20 }
+      competencies: {
+        academic: "\ud559\uc5c5\uc5ed\ub7c9 (40%) - \uc18c\ud640\ud55c \uacfc\ubaa9 \uc720\ubd80 \uc810\uac80(\uce58\uba85\ud0c0), \ud559\uc5c5 \ud3b8\uc2dd \uc5c6\ub294 \uace0\ub978 \uc131\ucde8\uc640 \uad00\ub828 \uc11c\uc801 \ud0d0\ub3c5 \ub4f1 \uc8fc\ub3c4\uc801 \ud0d0\uad6c \uc758\uc9c0",
+        career: "\uc9c4\ub85c\uc5ed\ub7c9 (40%) - \ud559\uacfc \uad8c\uc7a5 \uacfc\ubaa9 \uc704\uacc4 \uc774\uc218 \uc900\uc218 \uc5ec\ubd80, \uc18c\uc778\uc218/\uacf5\ub3d9\uad50\uc721 \ub4f1 \uc5b4\ub824\uc6b4 \uc9c4\ub85c \uad50\uacfc\uc5d0 \ub300\ud55c \uc8fc\ub3c4\uc801 \ucd94\uac00 \uc218\uac15 \ub178\ub825(\uac15\ub825 \uac00\uc810)",
+        community: "\uacf5\ub3d9\uccb4\uc5ed\ub7c9 (20%) - \uc774\ud0c0\uc801 \uc9c0\uc2dd \uba58\ud1a0\ub9c1, \uc0dd\uba85\uc874\uc911 \uc724\ub9ac\ubfd0 \uc544\ub2c8\ub77c \ucd9c\uacb0 \ubc0f \ube44\uc8fc\uc694\uacfc\ubaa9 \uc131\uc2e4 \uc774\uc218 \ub4f1 '\uac00\ud1a8\ub9ad \uc724\ub9ac\uc5d0 \ubd80\ud569\ud558\ub294 \uae30\ucd08 \uc131\uc2e4\uc131'"
       },
-      "\uad11\uc6b4\ub300\ud559\uad50": {
-        factors: `
+      weights: { academic: 0.40, career: 0.40, community: 0.20 }
+    },
+    "\uad11\uc6b4\ub300\ud559\uad50": {
+      factors: `
 [\uad11\uc6b4\ub300\ud559\uad50 2026\ud559\ub144\ub3c4 \ud559\uc0dd\ubd80\uc885\ud569\uc804\ud615 \uc11c\ub958\ud3c9\uac00 \uae30\uc900 \ubc0f \ud559\uacfc\ubcc4 \ud3c9\uac00 \uc8fc\uc548\uc810]
 
 \u25a0 \uc11c\ub958\ud3c9\uac00 \uc885\ud569 \uc548\ub0b4 \ubc0f \ubc29\ubc95
@@ -5828,15 +5828,15 @@ document.addEventListener("DOMContentLoaded", () => {
 \ud83d\udca1 \uc11c\ub958\ud3c9\uac00 \uacb0\ub860 \ud301:
 \uad11\uc6b4\ub300\ud559\uad50 \ud559\uc0dd\ubd80\uc885\ud569\uc758 \ud575\uc2ec\uc740 '\uc5b4\ub824\uc6b4 \ud658\uacbd(\uc18c\uc778\uc218/\uacf5\ub3d9\uad50\uc721) \uc18d\uc5d0\uc11c\ub3c4 \ud754\ub4e4\ub9bc \uc5c6\uc774 \uacf5\ub3d9\uccb4 \ub048\uae30\ub97c \ubc1c\ud718\ud558\uc5ec \uc804\uacf5 \uacfc\ubaa9\uc744 \uac1c\ucc99\ud574 \ub0b8 \uc131\uc2e4\uc131'\uc785\ub2c8\ub2e4. \uc804\uacf5\uc744 \uc704\ud574 \uc18c\uc778\uc218/\uc2ec\ud654 \uad50\uacfc\ub97c \ub3c4\uc804\uc801\uc73c\ub85c \uc218\uac15\ud55c \uc774\ub825\uc774 \uc788\ub2e4\uba74 \uc9c4\ub85c\uc5ed\ub7c9(\ucd5c\ub300 50%)\uc758 \ucd5c\uace0\uc810\uc73c\ub85c \ucc44\uc810\ud558\uace0, \ube44\uc8fc\uc694 \uacfc\ubaa9(\uc608\uccb4\ub2a5) \ubc29\uce58 \ud754\uc801, \ud559\ud3ed, \uc5b4\ub824\uc6b4 \uc0c1\ud669\uc5d0\uc11c\uc758 \ud68c\ud53c/\ubb34\ub2e8 \uacb0\uc11d\uc774 \ub098\ud0c0\ub09c\ub2e4\uba74 \uce58\uba85\ud0c0\ub85c \uc9c0\uc801\ud558\uc2ed\uc2dc\uc624.
 `,
-        competencies: {
-          academic: "\ud559\uc5c5\uc5ed\ub7c9 (35%) - \ud0c0 \uc9c0\uc6d0\uc790 \ub300\ube44 \uc131\ucde8\ub3c4 \ubc0f \ub2e8\uc21c \uc9c0\uc2dd\uc744 \ub118\uc740 \uc218\uc5c5 \uc911 \ub048\uc9c8\uae34 \uc9c0\uc801 \ud638\uae30\uc2ec\uacfc \uc131\uc2e4\ud55c \ucc38\uc5ec \ud0dc\ub3c4",
-          career: "\uc9c4\ub85c\uc5ed\ub7c9 (45%) - [\uad11\uc6b4\ub300 \ud575\uc2ec \uc7a3\ub300] \uc218\ub3d9\uc801 \uc774\uc218 \ubc30\uc81c, \uacf5\ub3d9\uad50\uc721/\uc18c\uc778\uc218\uacfc\ubaa9 \ub4f1 '\uc704\uacc4\uc5d0 \ub9de\ucdb0 \uc8fc\ub3c4\uc801\uc73c\ub85c \uae30\ud68d\ud55c \uacfc\ubaa9 \uc124\uacc4' \ubc0f \uc2ec\ud654 \uc131\ucde8",
-          community: "\uc778\uc131 (20%) - \uc774\ud0c0\uc801 \uc870\ud654, \ud2b9\ud788 '\uc5b4\ub824\uc6b4 \uc0c1\ud669\uc5d0\uc11c\ub3c4 \ud754\ub4e4\ub9ac\uc9c0 \uc54a\ub294 \ub048\uae30\uc640 \ucc45\uc784\uac10(\uc778\uc131)' \ubc0f \ube44\uc8fc\uc694\uacfc\ubaa9\uacfc \ucd9c\uacb0 \uc131\uc2e4\uc131"
-        },
-        weights: { academic: 0.35, career: 0.45, community: 0.20 } // \uc11c\ub958\ud615 \ube44\uc728 \ud3c9\uade0\uce58\ub85c \ud1b5\ud569 \uc138\ud305
+      competencies: {
+        academic: "\ud559\uc5c5\uc5ed\ub7c9 (35%) - \ud0c0 \uc9c0\uc6d0\uc790 \ub300\ube44 \uc131\ucde8\ub3c4 \ubc0f \ub2e8\uc21c \uc9c0\uc2dd\uc744 \ub118\uc740 \uc218\uc5c5 \uc911 \ub048\uc9c8\uae34 \uc9c0\uc801 \ud638\uae30\uc2ec\uacfc \uc131\uc2e4\ud55c \ucc38\uc5ec \ud0dc\ub3c4",
+        career: "\uc9c4\ub85c\uc5ed\ub7c9 (45%) - [\uad11\uc6b4\ub300 \ud575\uc2ec \uc7a3\ub300] \uc218\ub3d9\uc801 \uc774\uc218 \ubc30\uc81c, \uacf5\ub3d9\uad50\uc721/\uc18c\uc778\uc218\uacfc\ubaa9 \ub4f1 '\uc704\uacc4\uc5d0 \ub9de\ucdb0 \uc8fc\ub3c4\uc801\uc73c\ub85c \uae30\ud68d\ud55c \uacfc\ubaa9 \uc124\uacc4' \ubc0f \uc2ec\ud654 \uc131\ucde8",
+        community: "\uc778\uc131 (20%) - \uc774\ud0c0\uc801 \uc870\ud654, \ud2b9\ud788 '\uc5b4\ub824\uc6b4 \uc0c1\ud669\uc5d0\uc11c\ub3c4 \ud754\ub4e4\ub9ac\uc9c0 \uc54a\ub294 \ub048\uae30\uc640 \ucc45\uc784\uac10(\uc778\uc131)' \ubc0f \ube44\uc8fc\uc694\uacfc\ubaa9\uacfc \ucd9c\uacb0 \uc131\uc2e4\uc131"
       },
-      "\uacbd\uae30\ub300\ud559\uad50": {
-        factors: `
+      weights: { academic: 0.35, career: 0.45, community: 0.20 } // \uc11c\ub958\ud615 \ube44\uc728 \ud3c9\uade0\uce58\ub85c \ud1b5\ud569 \uc138\ud305
+    },
+    "\uacbd\uae30\ub300\ud559\uad50": {
+      factors: `
 [\uacbd\uae30\ub300\ud559\uad50 2026\ud559\ub144\ub3c4 \ud559\uc0dd\ubd80\uc885\ud569\uc804\ud615 \uc11c\ub958\ud3c9\uac00 \uae30\uc900 \ubc0f \ud559\uacfc\ubcc4 \ud3c9\uac00 \uc8fc\uc548\uc810]
 
 \u25a0 \uc11c\ub958\ud3c9\uac00 \uc885\ud569 \uc548\ub0b4 \ubc0f \ubc29\ubc95
@@ -5880,15 +5880,15 @@ SW\uc6b0\uc218(AI\ucef4\uacf5): \ud559\uc5c5\ud0d0\uad6c\uc5ed\ub7c9 60%(\ud559\
 \ud83d\udca1 \uc11c\ub958\ud3c9\uac00 \uacb0\ub860 \ud301:
 \uacbd\uae30\ub300\ud559\uad50 \ud569\uaca9\uc758 \ub2f9\ub77d\uc740 '\uacc4\uc5f4\uc801\ud569\uc131'\uc774 \uc88c\uc6b0\ud569\ub2c8\ub2e4. AI\ucef4\ud4e8\ud130\uacf5\ud559\uc758 \ud504\ub85c\uadf8\ub798\ubc0d/\uae30\ud558, \uacf5\ud559\uae30\ubc18\uc758 \uacfc\ud559\u2161 \uacfc\ubaa9, \uc0ac\ud68c\uacfc\ud559\uc758 '\uc0ac\ud68c\ubb38\uc81c \ud0d0\uad6c' \ub4f1 \ud559\uacfc\uac00 \ub69c\ub837\ud558\uac8c \uc120\ud638\ud558\ub294 \uad50\uacfc\ub97c \uc8fc\ub3c4\uc801\uc73c\ub85c \uc774\uc218\ud588\ub294\uc9c0 \uac00\uc7a5 \uba3c\uc800 \uc2a4\uce94\ud558\uc2ed\uc2dc\uc624. \ub354\ubd88\uc5b4 \uc9c0\uc2dd\uc744 \ub2e8\uc21c \uc554\uae30\ud55c \uac83\uc744 \ub118\uc5b4 \uc2e4\uc0dd\ud65c\uc758 \uc624\ub958 \ud574\uacb0, \uc735\ud569(\uc608: \uacbd\uc601+AI), \ucea0\ud398\uc778(\ubbf8\uc220+\uc0ac\ud68c) \ub4f1\uc5d0 \uc811\ubaa9\ud55c \uad6c\uccb4\uc801 \uacb0\uacfc\ubb3c\uc774 \ubcf4\uc778\ub2e4\uba74 \uc774\ub97c \ucd5c\uace0\uc810\uc73c\ub85c \uc815\uc131\ud3c9\uac00\ud574\uc57c \ud569\ub2c8\ub2e4.
 `,
-        competencies: {
-          academic: "\ud559\uc5c5\ud0d0\uad6c\uc5ed\ub7c9 (60%) - \uc131\ucde8\uc218\uc900(25~30%): \uc6d0\uc810\uc218 \ub9e5\ub77d \uace0\ub824/\uc735\ud569\uc801 \uc0ac\uace0\ub825, \uacc4\uc5f4\uc801\ud569\uc131(30~35%): \uc804\uacf5/\uacfc\ubaa9 \ubbf8\uac1c\uc124\uc774\uc5b4\ub3c4 \uc77c\ubc18/\ube44\uad50\uacfc\ub97c \ud1b5\ud574 \uc6b0\ud68c \ud0d0\uad6c\ud55c \uc9c8\uc801 \uae4a\uc774",
-          career: "\uc790\uae30\uac1c\ubc1c\uc5ed\ub7c9 (20%) - \uc790\uae30\uc8fc\ub3c4\uc131: \ub2a5\ub3d9\uc801 \ucc38\uc5ec\ubfd0\ub9cc \uc544\ub2c8\ub77c \uc2a4\uc2a4\ub85c \ubb38\uc81c\ub97c \uc124\uc815\ud558\uace0 \ud574\uacb0\ud574 \ub098\uac00\ub294 '\uacfc\uc815'\uc5d0\uc11c\uc758 \ud655\uc2e4\ud55c \uc8fc\ub3c4\uc131 \ubc1c\ud604",
-          community: "\uacf5\ub3d9\uccb4\uc5ed\ub7c9 (20%) - \ub2e8\uc21c \ubc18\uc7a5 \uac10\ud22c\uac00 \uc544\ub2cc \uc194\uc120\uc218\ubc94\uacfc \ud611\ub825\uc801 \uc18c\ud1b5 \uc2e4\ucc9c, (\ud559\ud3ed 4~9\ud638\ub294 \uc989\uc2dc \ud0c8\ub77d \ucc98\ub9ac \ubc0f \uc9c4\ub85c\ubcc0\uacbd \ud0c0\ub2f9\uc131 \uae0d\uc815 \uac80\ud1a0)"
-        },
-        weights: { academic: 0.60, career: 0.20, community: 0.20 } // (\ud559\uc5c5\ud0d0\uad6c 60 / \uc790\uae30\uac1c\ubc1c 20 / \uacf5\ub3d9\uccb4 20) \ud1b5\ud569
+      competencies: {
+        academic: "\ud559\uc5c5\ud0d0\uad6c\uc5ed\ub7c9 (60%) - \uc131\ucde8\uc218\uc900(25~30%): \uc6d0\uc810\uc218 \ub9e5\ub77d \uace0\ub824/\uc735\ud569\uc801 \uc0ac\uace0\ub825, \uacc4\uc5f4\uc801\ud569\uc131(30~35%): \uc804\uacf5/\uacfc\ubaa9 \ubbf8\uac1c\uc124\uc774\uc5b4\ub3c4 \uc77c\ubc18/\ube44\uad50\uacfc\ub97c \ud1b5\ud574 \uc6b0\ud68c \ud0d0\uad6c\ud55c \uc9c8\uc801 \uae4a\uc774",
+        career: "\uc790\uae30\uac1c\ubc1c\uc5ed\ub7c9 (20%) - \uc790\uae30\uc8fc\ub3c4\uc131: \ub2a5\ub3d9\uc801 \ucc38\uc5ec\ubfd0\ub9cc \uc544\ub2c8\ub77c \uc2a4\uc2a4\ub85c \ubb38\uc81c\ub97c \uc124\uc815\ud558\uace0 \ud574\uacb0\ud574 \ub098\uac00\ub294 '\uacfc\uc815'\uc5d0\uc11c\uc758 \ud655\uc2e4\ud55c \uc8fc\ub3c4\uc131 \ubc1c\ud604",
+        community: "\uacf5\ub3d9\uccb4\uc5ed\ub7c9 (20%) - \ub2e8\uc21c \ubc18\uc7a5 \uac10\ud22c\uac00 \uc544\ub2cc \uc194\uc120\uc218\ubc94\uacfc \ud611\ub825\uc801 \uc18c\ud1b5 \uc2e4\ucc9c, (\ud559\ud3ed 4~9\ud638\ub294 \uc989\uc2dc \ud0c8\ub77d \ucc98\ub9ac \ubc0f \uc9c4\ub85c\ubcc0\uacbd \ud0c0\ub2f9\uc131 \uae0d\uc815 \uac80\ud1a0)"
       },
-      "\uac00\ucc9c\ub300\ud559\uad50": {
-        factors: `
+      weights: { academic: 0.60, career: 0.20, community: 0.20 } // (\ud559\uc5c5\ud0d0\uad6c 60 / \uc790\uae30\uac1c\ubc1c 20 / \uacf5\ub3d9\uccb4 20) \ud1b5\ud569
+    },
+    "\uac00\ucc9c\ub300\ud559\uad50": {
+      factors: `
 [\uac00\ucc9c\ub300\ud559\uad50 2027\ud559\ub144\ub3c4 \ud559\uc0dd\ubd80\uc885\ud569\uc804\ud615 \uc11c\ub958\ud3c9\uac00 \uae30\uc900 \ubc0f \ud559\uacfc\ubcc4 \ud3c9\uac00 \uc8fc\uc548\uc810]
 
 \u25a0 \uc11c\ub958\ud3c9\uac00 \uc885\ud569 \uc548\ub0b4 \ubc0f \ubc29\ubc95
@@ -5931,15 +5931,15 @@ SW\uc6b0\uc218(AI\ucef4\uacf5): \ud559\uc5c5\ud0d0\uad6c\uc5ed\ub7c9 60%(\ud559\
 \ud83d\udca1 \uc11c\ub958\ud3c9\uac00 \uacb0\ub860 \ud301 \ubc0f \uc720\uc758\uc0ac\ud56d:
 \uac00\ucc9c\ub300 \ud559\uc0dd\ubd80\uc885\ud569\uc758 \uc2ec\uc7a5\ubd80\ub294 **'\uacbd\ud5d8(\ud504\ub85c\uc81d\ud2b8) \uc911\uc2ec\uc758 \ub2a5\ub3d9\uc131(\uc9c4\ud559\uc758\uc9c0 40%)'**\uacfc **'\ud300\uc6cc\ud06c/\uc131\uc2e4\uc131(\uc778\uc131 40%)'**\uc785\ub2c8\ub2e4. \uc9c4\ub85c \ubcc0\uacbd\uc774 \uc788\ub354\ub77c\ub3c4 \uadf8 \uacfc\uc815\uc774 \ub2a5\ub3d9\uc801\uc774\uc5c8\ub2e4\uba74 \uac10\uc810\ud558\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4. \uadf8\ub7ec\ub098 **\ud559\uad50\ud3ed\ub825 1~9\ud638 \uae30\uc7ac \uc0ac\ud56d\uc740 \uc815\uc131\ud3c9\uac00 \uc2dc \uc804\uccb4 \uacfc\uc815\uc5d0 \uac78\uce5c \uac15\ub825\ud55c \ubd88\uc774\uc775(\uac10\uc810) \ub300\uc0c1**\uc774\ubbc0\ub85c \ubc1c\uacac \uc989\uc2dc \uce58\uba85\ud0c0\ub85c \uc9c0\uc801\ud558\uc2ed\uc2dc\uc624.
 `,
-        competencies: {
-          academic: "\ud559\uc5c5\uc5ed\ub7c9 (20%) - \uc131\uc801 \uc218\uce58\ubfd0 \uc544\ub2c8\ub77c, \uc790\uc2e0\uc758 \ubd80\uc871\ud55c \uc810\uc744 \ub048\uc9c8\uae30\uac8c \ubcf4\uc644\ud558\ub294 \uad50\uacfc \ucc38\uc5ec \ud0dc\ub3c4 \uae30\ubc18 \uc131\uc7a5 \uada4\uc801",
-          career: "\uc9c4\ud559\uc758\uc9c0 \ubc0f \uae30\ucd08\uc5ed\ub7c9 (40%) - \uc9c0\uc6d0 \uc804\uacf5\uc5d0 \ub300\ud55c \uc790\ubc1c\uc801 \uc9c0\uc801 \ud638\uae30\uc2ec, \uc544\uc774\ub514\uc5b4\ub97c \uc2e4\ucc9c\uc801 '\uacbd\ud5d8'\uc73c\ub85c \uad6c\ud604\ud574 \ubcf8 \uc8fc\ub3c4\uc131",
-          community: "\uc778\uc131 (40%) - \uc555\ub3c4\uc801 \uace0\ubc30\uc810. \ud559\uc5c5/\ub3d9\uc544\ub9ac\uc5d0\uc11c \ud0c0\uc778\uc744 \ubc30\ub824\ud558\uace0 \ud654\ud569\ud558\ub294 \uc778\uc131, \ucca0\uc800\ud55c \uc131\uc2e4\uc131, (\ud559\ud3ed 1~9\ud638\ub294 \uba85\ubc31\ud55c \uce58\uba85\uc801 \ubd88\uc774\uc775)"
-        },
-        weights: { academic: 0.20, career: 0.40, community: 0.40 } // \uac00\ucc9c\ub300\ub9cc\uc758 20-40-40 \ub3c5\uc790 \uc138\ud305
+      competencies: {
+        academic: "\ud559\uc5c5\uc5ed\ub7c9 (20%) - \uc131\uc801 \uc218\uce58\ubfd0 \uc544\ub2c8\ub77c, \uc790\uc2e0\uc758 \ubd80\uc871\ud55c \uc810\uc744 \ub048\uc9c8\uae30\uac8c \ubcf4\uc644\ud558\ub294 \uad50\uacfc \ucc38\uc5ec \ud0dc\ub3c4 \uae30\ubc18 \uc131\uc7a5 \uada4\uc801",
+        career: "\uc9c4\ud559\uc758\uc9c0 \ubc0f \uae30\ucd08\uc5ed\ub7c9 (40%) - \uc9c0\uc6d0 \uc804\uacf5\uc5d0 \ub300\ud55c \uc790\ubc1c\uc801 \uc9c0\uc801 \ud638\uae30\uc2ec, \uc544\uc774\ub514\uc5b4\ub97c \uc2e4\ucc9c\uc801 '\uacbd\ud5d8'\uc73c\ub85c \uad6c\ud604\ud574 \ubcf8 \uc8fc\ub3c4\uc131",
+        community: "\uc778\uc131 (40%) - \uc555\ub3c4\uc801 \uace0\ubc30\uc810. \ud559\uc5c5/\ub3d9\uc544\ub9ac\uc5d0\uc11c \ud0c0\uc778\uc744 \ubc30\ub824\ud558\uace0 \ud654\ud569\ud558\ub294 \uc778\uc131, \ucca0\uc800\ud55c \uc131\uc2e4\uc131, (\ud559\ud3ed 1~9\ud638\ub294 \uba85\ubc31\ud55c \uce58\uba85\uc801 \ubd88\uc774\uc775)"
       },
-      "서강대학교": {
-        factors: `【서강대학교 2026 입시 평가기준】
+      weights: { academic: 0.20, career: 0.40, community: 0.40 } // \uac00\ucc9c\ub300\ub9cc\uc758 20-40-40 \ub3c5\uc790 \uc138\ud305
+    },
+    "서강대학교": {
+      factors: `【서강대학교 2026 입시 평가기준】
 
 【평가 철학 및 특징】
 서강대학교는 "경계 없는 다전공제도"를 기반으로 특정 학과와의 직접적 연관성보다는 '지원자의 성장가능성'을 가장 핵심적인 평가 주안점으로 삼습니다.
@@ -5998,15 +5998,15 @@ SW\uc6b0\uc218(AI\ucef4\uacf5): \ud559\uc5c5\ud0d0\uad6c\uc5ed\ub7c9 60%(\ud559\
 - 지나친 자기소개서 미사여구나 과장: 감점 대상  
 - 학교폭력 등 품행 관련 기재사항: 별도의 강한 감점
 `,
-        competencies: {
-          academic: "학업역량 (50%) - 기초 교과 충실도와 심화 학습 태도. 수학/과학/국어의 성취도뿐 아니라, 선택과목으로 자신의 관심분야를 심화 학습한 흔적 평가",
-          career: "성장가능성 (30%) ★ 가장 중요 - 특정 학과와의 직접 연관성 없이도, 자기주도적이고 깊이 있게 한 분야를 탐구한 경험. 실패 극복, 아이디어 구현, 융합적 사고 역량",
-          community: "공동체역량 (20%) - 팀 활동에서의 협력, 타인 배려, 책임감. 서강대는 '경계 없는 다전공' 철학에 따라 다양성과 포용성을 높게 평가"
-        },
-        weights: { academic: 0.50, career: 0.30, community: 0.20 }
+      competencies: {
+        academic: "학업역량 (50%) - 기초 교과 충실도와 심화 학습 태도. 수학/과학/국어의 성취도뿐 아니라, 선택과목으로 자신의 관심분야를 심화 학습한 흔적 평가",
+        career: "성장가능성 (30%) ★ 가장 중요 - 특정 학과와의 직접 연관성 없이도, 자기주도적이고 깊이 있게 한 분야를 탐구한 경험. 실패 극복, 아이디어 구현, 융합적 사고 역량",
+        community: "공동체역량 (20%) - 팀 활동에서의 협력, 타인 배려, 책임감. 서강대는 '경계 없는 다전공' 철학에 따라 다양성과 포용성을 높게 평가"
       },
-      "성균관대학교": {
-        factors: `【성균관대학교 2026 학생부종합전형 평가기준】
+      weights: { academic: 0.50, career: 0.30, community: 0.20 }
+    },
+    "성균관대학교": {
+      factors: `【성균관대학교 2026 학생부종합전형 평가기준】
 
 【광역 모집 및 학과 구성】
 성균관대학교는 1학년 때 계열 단위로 기초 학문을 이수한 뒤 2학년 진급 시 세부 학과로 진입하는 '광역 모집'과, 입학 시부터 전공이 확정되는 '학과 모집(전공예약)'을 병행합니다.
@@ -6119,15 +6119,15 @@ SW\uc6b0\uc218(AI\ucef4\uacf5): \ud559\uc5c5\ud0d0\uad6c\uc5ed\ub7c9 60%(\ud559\
 • 세특에서 단순 활동 나열 지양 → 탐구 동기·과정·발전이 반드시 드러나야 함
 • 모집단위별 지정된 필수 이수과목 없음 → 고교 현황 내 최선을 다한 준비 과정 자체를 평가
 `,
-        competencies: {
-          academic: "학업역량 (40%) — 학업성취도·학업우수성, 일반/진로선택과목 이수 및 성취수준, 학년·학기별 성적 안정성, 성적 추이 및 학업의지, 학업활동 참여 자세. 단순 등급이 아닌 학업 태도와 충실성을 종합 평가",
-          career: "탐구역량 (40%) ★ 핵심 — 전공/계열 적합성 평가 없음. 어떤 분야든 자기만의 관심사를 지속적·주도적으로 탐구한 과정이 핵심. 관심 분야 집중력·지적 호기심, 진로 탐색 열정, 활동의 발전성·유의미성, 도전적 선택과목 이수와 세특 질적 깊이",
-          community: "잠재역량 (20%) — 자기주도적 리더 자질과 발전가능성. 주도적 참여·진취적 리더십·창의적 문제해결·역경 극복 의지, 세계시민의식·이타성, 협업·소통·성실성·규칙준수. 직책보다 실질적 기여와 공동체의식 중시"
-        },
-        weights: { academic: 0.40, career: 0.40, community: 0.20 }
+      competencies: {
+        academic: "학업역량 (40%) — 학업성취도·학업우수성, 일반/진로선택과목 이수 및 성취수준, 학년·학기별 성적 안정성, 성적 추이 및 학업의지, 학업활동 참여 자세. 단순 등급이 아닌 학업 태도와 충실성을 종합 평가",
+        career: "탐구역량 (40%) ★ 핵심 — 전공/계열 적합성 평가 없음. 어떤 분야든 자기만의 관심사를 지속적·주도적으로 탐구한 과정이 핵심. 관심 분야 집중력·지적 호기심, 진로 탐색 열정, 활동의 발전성·유의미성, 도전적 선택과목 이수와 세특 질적 깊이",
+        community: "잠재역량 (20%) — 자기주도적 리더 자질과 발전가능성. 주도적 참여·진취적 리더십·창의적 문제해결·역경 극복 의지, 세계시민의식·이타성, 협업·소통·성실성·규칙준수. 직책보다 실질적 기여와 공동체의식 중시"
       },
-            "한양대학교": {
-        factors: `【한양대학교 2026 학생부종합전형 평가기준】
+      weights: { academic: 0.40, career: 0.40, community: 0.20 }
+    },
+    "한양대학교": {
+      factors: `【한양대학교 2026 학생부종합전형 평가기준】
 
 【개설 학과(모집단위) 총정리】
 
@@ -6276,15 +6276,15 @@ SW\uc6b0\uc218(AI\ucef4\uacf5): \ud559\uc5c5\ud0d0\uad6c\uc5ed\ub7c9 60%(\ud559\
 4. 공동체역량: 직책이 없어도 실질적 기여와 책임감 드러내기
 5. 학년별 성장 스토리: 1학년 기초 → 2학년 심화 → 3학년 응용의 일관된 발전 과정
 `,
-        competencies: {
-          academic: "기초학업역량 (35%) - 고교 교육과정 충실 이수, 과목 선택 능력, 성실한 학업 태도. '정량의 정성화': 등급뿐 아니라 이수 단위, 성장률, 세특의 학업 참여 태도 종합 평가",
-          career: "심층학업역량 (40%) ★ 가장 중요 - 비판적·창의적 사고력. '왜?'라는 질문, 논리적 탐구 과정, 새로운 상황에 지식 적용 능력. 세부능력 및 특기사항의 사고 깊이와 발전 과정이 핵심. 계열(전공이 아닌) 기본 역량 입증. + 진로탐구역량(15%): 계열적합성 중심, 활동의 진정성과 깊이",
-          community: "공동체역량 (10%) - 실질적 협력 경험, 직책 유무보다 책임감과 긍정적 기여, 타인 존중과 성찰 능력. 횡단평가: 여러 교사 기록을 연결하여 학생의 진정한 역량 입체적 평가"
-        },
-        weights: { academic: 0.35, career: 0.55, community: 0.10 }
+      competencies: {
+        academic: "기초학업역량 (35%) - 고교 교육과정 충실 이수, 과목 선택 능력, 성실한 학업 태도. '정량의 정성화': 등급뿐 아니라 이수 단위, 성장률, 세특의 학업 참여 태도 종합 평가",
+        career: "심층학업역량 (40%) ★ 가장 중요 - 비판적·창의적 사고력. '왜?'라는 질문, 논리적 탐구 과정, 새로운 상황에 지식 적용 능력. 세부능력 및 특기사항의 사고 깊이와 발전 과정이 핵심. 계열(전공이 아닌) 기본 역량 입증. + 진로탐구역량(15%): 계열적합성 중심, 활동의 진정성과 깊이",
+        community: "공동체역량 (10%) - 실질적 협력 경험, 직책 유무보다 책임감과 긍정적 기여, 타인 존중과 성찰 능력. 횡단평가: 여러 교사 기록을 연결하여 학생의 진정한 역량 입체적 평가"
       },
-      "중앙대학교": {
-        factors: `【중앙대학교 2026 학생부종합전형 평가기준】
+      weights: { academic: 0.35, career: 0.55, community: 0.10 }
+    },
+    "중앙대학교": {
+      factors: `【중앙대학교 2026 학생부종합전형 평가기준】
 
 【개설 학과(모집단위) 총정리】
 
@@ -6444,15 +6444,15 @@ SW\uc6b0\uc218(AI\ucef4\uacf5): \ud559\uc5c5\ud0d0\uad6c\uc5ed\ub7c9 60%(\ud559\
 • 무단 결석, 지각, 조퇴 등 성실성 관련 기록은 공동체역량에서 감점
 • 세부능력 및 특기사항: 단순 활동 나열보다 **사고 과정과 배움의 깊이** 최우선
 `,
-        competencies: {
-          academic: "학업역량 - 원점수·성취도·이수인원·과목위계 등을 복합적으로 고려한 질적 평가. 탐구심과 지적 호기심, 기초교과 안정성, 학년별 성적 추이",
-          career: "진로역량 ★ 트랙별로 다름 - 융합형: 다양한 경험을 통한 진로 확장의 광범위 / 탐구형: 깊이 있는 심화 탐구, 전공 교과 이수 충실도와 세부능력의 질적 우수성 최우선",
-          community: "공동체역량 - 실질적 협력과 기여, 직책 유무보다 책임감과 문제해결 능력, 학교 규칙 준수와 성실성 (결석/지각 기록), 리더십 경험"
-        },
-        weights: { academic: 0.33, career: 0.44, community: 0.23 }
+      competencies: {
+        academic: "학업역량 - 원점수·성취도·이수인원·과목위계 등을 복합적으로 고려한 질적 평가. 탐구심과 지적 호기심, 기초교과 안정성, 학년별 성적 추이",
+        career: "진로역량 ★ 트랙별로 다름 - 융합형: 다양한 경험을 통한 진로 확장의 광범위 / 탐구형: 깊이 있는 심화 탐구, 전공 교과 이수 충실도와 세부능력의 질적 우수성 최우선",
+        community: "공동체역량 - 실질적 협력과 기여, 직책 유무보다 책임감과 문제해결 능력, 학교 규칙 준수와 성실성 (결석/지각 기록), 리더십 경험"
       },
-      "한국교원대학교": {
-        factors: `
+      weights: { academic: 0.33, career: 0.44, community: 0.23 }
+    },
+    "한국교원대학교": {
+      factors: `
 ■ 한국교원대학교 2026학년도 학생부종합전형 서류평가 주안점
 1. 전공적합성: 지원 학과 관련 교과의 성취 수준, 학업 발전 정도, 전공에 대한 이해도와 흥미, 자발적 탐구 및 경험.
 2. 교직 적합성 및 잠재력: 교직에 대한 적극적인 관심, 교원양성을 위한 노력(봉사, 멘토링 등), 리더십 및 주도성.
@@ -6463,14 +6463,14 @@ SW\uc6b0\uc218(AI\ucef4\uacf5): \ud559\uc5c5\ud0d0\uad6c\uc5ed\ub7c9 60%(\ud559\
 - 수능 가산점 기준을 고려할 때, 수능 미적분/기하 및 지원 전공과 일치하는 과학탐구 과목의 이수와 탐구 역량을 매우 중요하게 평가함.
 - 수학 및 과학 심화 과목의 충실한 이수 여부를 학업역량과 전공적합성 평가에 적극 반영함.
 `,
-        weights: { academic: 0.3, career: 0.4, community: 0.3 },
-        competencies: {
-          academic: "학업역량: 교과 성취도, 발전 정도, 자기주도적 학습 태도",
-          career: "전공 및 교직적합성: 학과 관련 교과 역량, 교직 관심도, 봉사 및 멘토링 경험",
-          community: "교직 인성: 나눔과 배려, 공감 및 의사소통 능력"
-        }
+      weights: { academic: 0.3, career: 0.4, community: 0.3 },
+      competencies: {
+        academic: "학업역량: 교과 성취도, 발전 정도, 자기주도적 학습 태도",
+        career: "전공 및 교직적합성: 학과 관련 교과 역량, 교직 관심도, 봉사 및 멘토링 경험",
+        community: "교직 인성: 나눔과 배려, 공감 및 의사소통 능력"
       }
-    };
+    }
+  };
 
   async function fetchWithRetry(url, options, maxRetries = 3) {
     let retries = 0;
@@ -6482,7 +6482,7 @@ SW\uc6b0\uc218(AI\ucef4\uacf5): \ud559\uc5c5\ud0d0\uad6c\uc5ed\ub7c9 60%(\ud559\
         const response = await fetch(url, { ...options, signal: controller.signal });
         clearTimeout(id);
         if (response.ok) return response;
-        
+
         // 503(서버 과부하) 또는 429(할당량 초과)는 재시도 대상
         if ((response.status === 503 || response.status === 429) && retries < maxRetries) {
           retries++;
@@ -6833,9 +6833,9 @@ overallEvaluation 필드는 아래 형식을 반드시 따르십시오:
     const { factors, competencies, weights } = criteria;
 
     // ── 반영 비율 바 ──
-    const wAca  = Math.round((weights.academic  || 0) * 100);
-    const wCar  = Math.round((weights.career    || 0) * 100);
-    const wCom  = Math.round((weights.community || 0) * 100);
+    const wAca = Math.round((weights.academic || 0) * 100);
+    const wCar = Math.round((weights.career || 0) * 100);
+    const wCom = Math.round((weights.community || 0) * 100);
 
     // ── factors 텍스트를 HTML로 변환 (색상 하이라이트) ──
     // HTML 태그 내부(style 속성 등)를 건드리지 않고 텍스트 노드에만 정규식 적용
@@ -6880,12 +6880,18 @@ overallEvaluation 필드는 아래 형식을 반드시 따르십시오:
       `display:inline-block;padding:2px 10px;border-radius:12px;font-size:0.82rem;font-weight:700;color:${color};background:${bg};margin-right:4px;margin-bottom:4px;`;
 
     const compRows = [
-      { label: "학업역량", pct: wAca,  desc: competencies.academic,
-        badge: badgeStyle("#fff","rgba(97,179,255,0.35)"), icon:"📚" },
-      { label: "진로역량", pct: wCar,  desc: competencies.career,
-        badge: badgeStyle("#fff","rgba(150,214,176,0.35)"), icon:"🎯" },
-      { label: "공동체역량", pct: wCom, desc: competencies.community,
-        badge: badgeStyle("#fff","rgba(240,180,41,0.30)"), icon:"🤝" },
+      {
+        label: "학업역량", pct: wAca, desc: competencies.academic,
+        badge: badgeStyle("#fff", "rgba(97,179,255,0.35)"), icon: "📚"
+      },
+      {
+        label: "진로역량", pct: wCar, desc: competencies.career,
+        badge: badgeStyle("#fff", "rgba(150,214,176,0.35)"), icon: "🎯"
+      },
+      {
+        label: "공동체역량", pct: wCom, desc: competencies.community,
+        badge: badgeStyle("#fff", "rgba(240,180,41,0.30)"), icon: "🤝"
+      },
     ];
 
     const compHtml = compRows.map(r => `
@@ -7105,7 +7111,7 @@ overallEvaluation 필드는 아래 형식을 반드시 따르십시오:
     }
   }
 
-  window.downloadPDF = function() {
+  window.downloadPDF = function () {
     if (!lastReportData) {
       alert("먼저 AI 분석을 완료해주세요.");
       return;
@@ -7250,13 +7256,13 @@ overallEvaluation 필드는 아래 형식을 반드시 따르십시오:
   // 세특 분석 탭 — 계층적 과목 선택 드롭다운 (교육과정 > 계열 > 선택 > 과목)
   // =========================================================
   const stUniversitySelect = document.getElementById("st-university");
-  const stCategorySelect   = document.getElementById("st-category");
-  const stMajorSelect      = document.getElementById("st-major");
-  
+  const stCategorySelect = document.getElementById("st-category");
+  const stMajorSelect = document.getElementById("st-major");
+
   const stCurriculumSelect = document.getElementById("st-curriculum");
   const stSubCategorySelect = document.getElementById("st-subject-category");
-  const stSelectionSelect  = document.getElementById("st-selection");
-  const stSubjectSelect    = document.getElementById("st-subject-name");
+  const stSelectionSelect = document.getElementById("st-selection");
+  const stSubjectSelect = document.getElementById("st-subject-name");
 
   const subjectHierarchy = {
     "2015 개정": {
@@ -7356,9 +7362,9 @@ overallEvaluation 필드는 아래 형식을 반드시 따르십시오:
     stCurriculumSelect.addEventListener("change", () => {
       const cur = stCurriculumSelect.value;
       stSubCategorySelect.innerHTML = "<option value=''>계열 선택</option>";
-      stSelectionSelect.innerHTML   = "<option value=''>선택 구분 선택</option>";
-      stSubjectSelect.innerHTML     = "<option value=''>과목 선택</option>";
-      
+      stSelectionSelect.innerHTML = "<option value=''>선택 구분 선택</option>";
+      stSubjectSelect.innerHTML = "<option value=''>과목 선택</option>";
+
       if (!cur) return;
       Object.keys(subjectHierarchy[cur]).forEach(cat => {
         const opt = document.createElement("option");
@@ -7372,8 +7378,8 @@ overallEvaluation 필드는 아래 형식을 반드시 따르십시오:
       const cur = stCurriculumSelect.value;
       const cat = stSubCategorySelect.value;
       stSelectionSelect.innerHTML = "<option value=''>선택 구분 선택</option>";
-      stSubjectSelect.innerHTML   = "<option value=''>과목 선택</option>";
-      
+      stSubjectSelect.innerHTML = "<option value=''>과목 선택</option>";
+
       if (!cur || !cat) return;
       Object.keys(subjectHierarchy[cur][cat]).forEach(sel => {
         const opt = document.createElement("option");
@@ -7388,7 +7394,7 @@ overallEvaluation 필드는 아래 형식을 반드시 따르십시오:
       const cat = stSubCategorySelect.value;
       const sel = stSelectionSelect.value;
       stSubjectSelect.innerHTML = "<option value=''>과목 선택</option>";
-      
+
       if (!cur || !cat || !sel) return;
       subjectHierarchy[cur][cat][sel].forEach(sub => {
         const opt = document.createElement("option");
@@ -7407,9 +7413,9 @@ overallEvaluation 필드는 아래 형식을 반드시 따르십시오:
 
     stUniversitySelect.addEventListener("change", () => {
       const uni = stUniversitySelect.value;
-      const ud  = universityData[uni];
+      const ud = universityData[uni];
       stCategorySelect.innerHTML = "<option value='' disabled selected>계열을 선택하세요</option>";
-      stMajorSelect.innerHTML    = "<option value='' disabled selected>학과를 선택하세요</option>";
+      stMajorSelect.innerHTML = "<option value='' disabled selected>학과를 선택하세요</option>";
       if (!ud) return;
       const cats = Object.keys(ud);
       if (cats.length === 1 && cats[0] === "\uac1c\uc124\ud559\uacfc") {
@@ -7434,7 +7440,7 @@ overallEvaluation 필드는 아래 형식을 반드시 따르십시오:
     stCategorySelect.addEventListener("change", () => {
       const uni = stUniversitySelect.value;
       const cat = stCategorySelect.value;
-      const ud  = universityData[uni];
+      const ud = universityData[uni];
       stMajorSelect.innerHTML = "<option value='' disabled selected>\ud559\uacfc\ub97c \uc120\ud0dd\ud558\uc138\uc694</option>";
       if (!ud || !ud[cat]) return;
       ud[cat].forEach(m => {
@@ -7449,29 +7455,29 @@ overallEvaluation 필드는 아래 형식을 반드시 따르십시오:
   // 대학별 학생부종합전형 특성 맵
   // =========================================================
   const univSetechProfile = {
-    "서울대학교":   "서울대는 학업적 탁월성(성취도 추이), 자기주도적 탐구 역량(호기심/심화탐구), 전공 관련 과목 이수 노력(위계 준수)을 매우 중시합니다. 2015 개정 교육과정의 '학업역량'과 '진로역량'의 최고 수준 증명이 핵심입니다.",
-    "\uc5f0\uc138\ub300\ud559\uad50":   "\uc5f0\uc138\ub300\ub294 \ud559\uc5c5\uc5ed\ub7c9\uacfc \ud568\uaed8 \uacf5\ub3d9\uccb4 \uae30\uc5ec, \uc778\uc131\uc744 \uade0\ud615 \uc788\uac8c \ud3c9\uac00\ud569\ub2c8\ub2e4. \ud611\ub825 \uacbd\ud5d8\u00b7\uc0ac\ud68c\uc801 \uad00\uc2ec\uc774 \ub4dc\ub7ec\ub098\ub294 \uc138\ud2b9\uc774 \uc720\ub9ac\ud569\ub2c8\ub2e4.",
-    "고려대학교":   "고려대는 자기주도적 학습 능력과 전공 관련 탐구의 깊이, 공동체 내에서의 역할을 중시합니다. 학업역량(탐구력)과 진로역량(전공교과 성취도)의 유기적 결합을 매섭게 평가합니다.",
-    "\ud55c\uc591\ub300\ud559\uad50":   "\ud55c\uc591\ub300(\ud559\uc0dd\ubd80\uc885\ud569)\ub294 \ud559\uc0dd\uc774 \uc2a4\uc2a4\ub85c \ubb38\uc81c\ub97c \ubc1c\uacac\ud558\uace0 \ud574\uacb0\ud558\ub294 \uacfc\uc815, \uc804\uacf5 \uad00\ub828 \ud65c\ub3d9\uc758 \uad6c\uccb4\uc131\uc744 \ubd05\ub2c8\ub2e4.",
-    "\uc11c\uac15\ub300\ud559\uad50":   "\uc11c\uac15\ub300\ub294 \ud559\ubb38\uc801 \uae4a\uc774\uc640 \ub17c\ub9ac\uc801 \uc0ac\uace0\ub97c \uac15\uc870\ud569\ub2c8\ub2e4. \uac1c\ub150 \uc774\ud574\ub97c \ub118\uc5b4 \ub3c5\ucc3d\uc801 \uc2dc\uac01\uc774 \ub4dc\ub7ec\ub098\uc57c \ud569\ub2c8\ub2e4.",
+    "서울대학교": "서울대는 학업적 탁월성(성취도 추이), 자기주도적 탐구 역량(호기심/심화탐구), 전공 관련 과목 이수 노력(위계 준수)을 매우 중시합니다. 2015 개정 교육과정의 '학업역량'과 '진로역량'의 최고 수준 증명이 핵심입니다.",
+    "\uc5f0\uc138\ub300\ud559\uad50": "\uc5f0\uc138\ub300\ub294 \ud559\uc5c5\uc5ed\ub7c9\uacfc \ud568\uaed8 \uacf5\ub3d9\uccb4 \uae30\uc5ec, \uc778\uc131\uc744 \uade0\ud615 \uc788\uac8c \ud3c9\uac00\ud569\ub2c8\ub2e4. \ud611\ub825 \uacbd\ud5d8\u00b7\uc0ac\ud68c\uc801 \uad00\uc2ec\uc774 \ub4dc\ub7ec\ub098\ub294 \uc138\ud2b9\uc774 \uc720\ub9ac\ud569\ub2c8\ub2e4.",
+    "고려대학교": "고려대는 자기주도적 학습 능력과 전공 관련 탐구의 깊이, 공동체 내에서의 역할을 중시합니다. 학업역량(탐구력)과 진로역량(전공교과 성취도)의 유기적 결합을 매섭게 평가합니다.",
+    "\ud55c\uc591\ub300\ud559\uad50": "\ud55c\uc591\ub300(\ud559\uc0dd\ubd80\uc885\ud569)\ub294 \ud559\uc0dd\uc774 \uc2a4\uc2a4\ub85c \ubb38\uc81c\ub97c \ubc1c\uacac\ud558\uace0 \ud574\uacb0\ud558\ub294 \uacfc\uc815, \uc804\uacf5 \uad00\ub828 \ud65c\ub3d9\uc758 \uad6c\uccb4\uc131\uc744 \ubd05\ub2c8\ub2e4.",
+    "\uc11c\uac15\ub300\ud559\uad50": "\uc11c\uac15\ub300\ub294 \ud559\ubb38\uc801 \uae4a\uc774\uc640 \ub17c\ub9ac\uc801 \uc0ac\uace0\ub97c \uac15\uc870\ud569\ub2c8\ub2e4. \uac1c\ub150 \uc774\ud574\ub97c \ub118\uc5b4 \ub3c5\ucc3d\uc801 \uc2dc\uac01\uc774 \ub4dc\ub7ec\ub098\uc57c \ud569\ub2c8\ub2e4.",
     "\uc131\uade0\uad00\ub300\ud559\uad50": "\uc131\uade0\uad00\ub300\ub294 \uc778\uc758\uc608\uc9c0 \uc778\uc131 \uc694\uc18c\uc640 \ud559\uc5c5\u00b7\uc9c4\ub85c \uc5ed\ub7c9\uc744 \ud1b5\ud569 \ud3c9\uac00\ud569\ub2c8\ub2e4.",
-    "\uc911\uc559\ub300\ud559\uad50":   "\uc911\uc559\ub300\ub294 \uc804\uacf5 \ud0d0\uc0c9 \uad6c\uccb4\uc131\uc558 \ud559\uc5c5 \uc131\uc2e4\uc131, \uc0ac\ud68c\uc801 \ucc45\uc784\uac10\uc744 \ubd05\ub2c8\ub2e4.",
-    "\uacbd\ud76c\ub300\ud559\uad50":   "\uacbd\ud76c\ub300\ub294 \ubb38\ud654\u00b7\ud3c9\ud654 \uac00\uce58\uc640 \uc5f0\uacc4\ud55c \uc735\ud569\uc801 \uc0ac\uace0, \uc9c4\ub85c \ud0d0\uc0c9 \ub178\ub825\uc744 \uc911\uc2dc\ud569\ub2c8\ub2e4.",
+    "\uc911\uc559\ub300\ud559\uad50": "\uc911\uc559\ub300\ub294 \uc804\uacf5 \ud0d0\uc0c9 \uad6c\uccb4\uc131\uc558 \ud559\uc5c5 \uc131\uc2e4\uc131, \uc0ac\ud68c\uc801 \ucc45\uc784\uac10\uc744 \ubd05\ub2c8\ub2e4.",
+    "\uacbd\ud76c\ub300\ud559\uad50": "\uacbd\ud76c\ub300\ub294 \ubb38\ud654\u00b7\ud3c9\ud654 \uac00\uce58\uc640 \uc5f0\uacc4\ud55c \uc735\ud569\uc801 \uc0ac\uace0, \uc9c4\ub85c \ud0d0\uc0c9 \ub178\ub825\uc744 \uc911\uc2dc\ud569\ub2c8\ub2e4.",
     "\ud55c\uad6d\uc678\uad6d\uc5b4\ub300\ud559\uad50": "\ud55c\uad6d\uc678\ub300\ub294 \uc5b8\uc5b4\uc801 \uac10\uc218\uc131\u00b7\uae00\ub85c\ubc8c \uc5ed\ub7c9\uacfc \uc778\ubb38\ud559\uc801 \ud1b5\ucc30\uc774 \ub4dc\ub7ec\ub098\ub294 \uc138\ud2b9\uc774 \uc720\ub9ac\ud569\ub2c8\ub2e4.",
-    "\ubd80\uc0b0\ub300\ud559\uad50":   "\ubd80\uc0b0\ub300\ub294 \uc804\uacf5 \uc801\ud569\uc131, \ud559\uc5c5 \uc131\uc2e4\uc131, \uacf5\ub3d9\uccb4\u00b7\ub098\ub204\uc74c \ud65c\ub3d9\uc744 \uade0\ud615 \uc788\uac8c \ubd05\ub2c8\ub2e4.",
-    "\uacbd\ubd81\ub300\ud559\uad50":   "\uacbd\ubd81\ub300\ub294 \uc804\uacf5 \uad00\ub828 \ud0d0\uad6c \uacbd\ud5d8\uacfc \ud559\uc5c5 \uc6b0\uc218\uc131, \uc9c0\uc5ed\uc0ac\ud68c \uae30\uc5ec \uc758\uc9c0\ub97c \uc911\uc2dc\ud569\ub2c8\ub2e4.",
-    "\uc804\ub0a8\ub300\ud559\uad50":   "\uc804\ub0a8\ub300\ub294 \ud559\uc5c5 \uc5ed\ub7c9\uacfc \ud568\uaed8 \ubd09\uc0ac\u00b7\uacf5\ub3d9\uccb4 \uc758\uc2dd, \uc804\uacf5 \ud0d0\uad6c \ub178\ub825\uc744 \ubd05\ub2c8\ub2e4.",
-    "\ucda9\ub0a8\ub300\ud559\uad590":   "\ucda9\ub0a8\ub300\ub294 \ud559\uc5c5 \uc5f4\uc815, \uc804\uacf5 \uad00\ub828 \uacbd\ud5d8\uc758 \uad6c\uccb4\uc131, \uacf5\ub3d9\uccb4 \uc5ed\ub7c9\uc744 \ud3c9\uac00\ud569\ub2c8\ub2e4.",
-    "\ucda9\ubd81\ub300\ud559\uad50":   "\ucda9\ubd81\ub300\ub294 \ud559\uc5c5 \uc131\uc2e4\uc131, \ud0d0\uad6c \ud65c\ub3d9\uc758 \uc790\uae30\uc8fc\ub3c4\uc131, \uc9c4\ub85c \ubaa9\ud45c\uc758 \uba85\ud655\uc131\uc744 \ubd05\ub2c8\ub2e4.",
-    "\uac74\uad6d\ub300\ud559\uad50":   "\uac74\uad6d\ub300\ub294 \uc804\uacf5 \uad00\ub828 \ucc3d\uc758\uc801 \ud0d0\uad6c, \ubb38\uc81c\ud574\uacb0\ub2a5\ub825, \ud611\ub825\uc744 \uc911\uc2dc\ud569\ub2c8\ub2e4.",
-    "\ub3d9\uad6d\ub300\ud559\uad50":   "\ub3d9\uad6d\ub300\ub294 \uc778\uc131\u00b7\uc790\uae30\uc131\ucc30\uacfc \ud568\uaed8 \uc804\uacf5 \ud0d0\uad6c \ud65c\ub3d9\uc758 \uad6c\uccb4\uc131\uc744 \ubd05\ub2c8\ub2e4.",
-    "\ud64d\uc775\ub300\ud559\uad50":   "\ud64d\uc775\ub300\ub294 \ucc3d\uc758\uc131\u00b7\uc608\uc220\uc801 \uac10\uc218\uc131(\uc608\uccb4\ub2a5)\uacfc \ud559\uc5c5 \uc5ed\ub7c9\uc744 \ud568\uaed8 \ubd05\ub2c8\ub2e4.",
-    "\uc544\uc8fc\ub300\ud559\uad50":   "\uc544\uc8fc\ub300\ub294 \ub17c\ub9ac\uc801 \uc0ac\uace0\u00b7\ubb38\uc81c\ud574\uacb0\ub2a5\ub825\uacfc \uc804\uacf5 \uc801\ud569\uc131\uc744 \uc911\uc2dc\ud569\ub2c8\ub2e4.",
-    "\uc778\ud558\ub300\ud559\uad50":   "\uc778\ud558\ub300\ub294 \uc218\ud559\u00b7\uacfc\ud559 \uad50\uacfc \ud0d0\uad6c \uae4a\uc774\uc640 \ucc3d\uc758\uc801 \ub3c4\uc804\uc744 \ubd05\ub2c8\ub2e4.",
+    "\ubd80\uc0b0\ub300\ud559\uad50": "\ubd80\uc0b0\ub300\ub294 \uc804\uacf5 \uc801\ud569\uc131, \ud559\uc5c5 \uc131\uc2e4\uc131, \uacf5\ub3d9\uccb4\u00b7\ub098\ub204\uc74c \ud65c\ub3d9\uc744 \uade0\ud615 \uc788\uac8c \ubd05\ub2c8\ub2e4.",
+    "\uacbd\ubd81\ub300\ud559\uad50": "\uacbd\ubd81\ub300\ub294 \uc804\uacf5 \uad00\ub828 \ud0d0\uad6c \uacbd\ud5d8\uacfc \ud559\uc5c5 \uc6b0\uc218\uc131, \uc9c0\uc5ed\uc0ac\ud68c \uae30\uc5ec \uc758\uc9c0\ub97c \uc911\uc2dc\ud569\ub2c8\ub2e4.",
+    "\uc804\ub0a8\ub300\ud559\uad50": "\uc804\ub0a8\ub300\ub294 \ud559\uc5c5 \uc5ed\ub7c9\uacfc \ud568\uaed8 \ubd09\uc0ac\u00b7\uacf5\ub3d9\uccb4 \uc758\uc2dd, \uc804\uacf5 \ud0d0\uad6c \ub178\ub825\uc744 \ubd05\ub2c8\ub2e4.",
+    "\ucda9\ub0a8\ub300\ud559\uad590": "\ucda9\ub0a8\ub300\ub294 \ud559\uc5c5 \uc5f4\uc815, \uc804\uacf5 \uad00\ub828 \uacbd\ud5d8\uc758 \uad6c\uccb4\uc131, \uacf5\ub3d9\uccb4 \uc5ed\ub7c9\uc744 \ud3c9\uac00\ud569\ub2c8\ub2e4.",
+    "\ucda9\ubd81\ub300\ud559\uad50": "\ucda9\ubd81\ub300\ub294 \ud559\uc5c5 \uc131\uc2e4\uc131, \ud0d0\uad6c \ud65c\ub3d9\uc758 \uc790\uae30\uc8fc\ub3c4\uc131, \uc9c4\ub85c \ubaa9\ud45c\uc758 \uba85\ud655\uc131\uc744 \ubd05\ub2c8\ub2e4.",
+    "\uac74\uad6d\ub300\ud559\uad50": "\uac74\uad6d\ub300\ub294 \uc804\uacf5 \uad00\ub828 \ucc3d\uc758\uc801 \ud0d0\uad6c, \ubb38\uc81c\ud574\uacb0\ub2a5\ub825, \ud611\ub825\uc744 \uc911\uc2dc\ud569\ub2c8\ub2e4.",
+    "\ub3d9\uad6d\ub300\ud559\uad50": "\ub3d9\uad6d\ub300\ub294 \uc778\uc131\u00b7\uc790\uae30\uc131\ucc30\uacfc \ud568\uaed8 \uc804\uacf5 \ud0d0\uad6c \ud65c\ub3d9\uc758 \uad6c\uccb4\uc131\uc744 \ubd05\ub2c8\ub2e4.",
+    "\ud64d\uc775\ub300\ud559\uad50": "\ud64d\uc775\ub300\ub294 \ucc3d\uc758\uc131\u00b7\uc608\uc220\uc801 \uac10\uc218\uc131(\uc608\uccb4\ub2a5)\uacfc \ud559\uc5c5 \uc5ed\ub7c9\uc744 \ud568\uaed8 \ubd05\ub2c8\ub2e4.",
+    "\uc544\uc8fc\ub300\ud559\uad50": "\uc544\uc8fc\ub300\ub294 \ub17c\ub9ac\uc801 \uc0ac\uace0\u00b7\ubb38\uc81c\ud574\uacb0\ub2a5\ub825\uacfc \uc804\uacf5 \uc801\ud569\uc131\uc744 \uc911\uc2dc\ud569\ub2c8\ub2e4.",
+    "\uc778\ud558\ub300\ud559\uad50": "\uc778\ud558\ub300\ub294 \uc218\ud559\u00b7\uacfc\ud559 \uad50\uacfc \ud0d0\uad6c \uae4a\uc774\uc640 \ucc3d\uc758\uc801 \ub3c4\uc804\uc744 \ubd05\ub2c8\ub2e4.",
     "\uc11c\uc6b8\uc2dc\ub9bd\ub300\ud559\uad50": "\uc11c\uc6b8\uc2dc\ub9bd\ub300\ub294 \uc9c0\uc5ed\uc0ac\ud68c \uc5f0\uacc4\uc131\u00b7\uacf5\uacf5 \uac00\uce58 \uc778\uc2dd\uacfc \ud559\uc5c5 \uc5ed\ub7c9\uc744 \ubd05\ub2c8\ub2e4.",
-    "\uc778\ucc9c\ub300\ud559\uad50":   "\uc778\ucc9c\ub300\ub294 \uc804\uacf5 \ud0d0\uad6c \ub3d9\uae30\uc758 \uc9c4\uc815\uc131, \ud559\uc5c5 \uc131\uc2e4\uc131, \ud611\ub825 \uacbd\ud5d8\uc744 \ubd05\ub2c8\ub2e4.",
-    "\uad11\uc6b4\ub300\ud559\uad50":   "\uad11\uc6b4\ub300\ub294 \uc804\uc790\u00b7\uc18c\ud504\ud2b8\uc6e8\uc5b4 \uc911\uc2ec\uc73c\ub85c \uc804\uacf5 \ud0d0\uad6c\uc640 \uc218\ud559\u00b7\uacfc\ud559 \uc2e4\ub825\uc744 \uc911\uc2dc\ud569\ub2c8\ub2e4.",
-    "\uacbd\uae30\ub300\ud559\uad50":   "\uacbd\uae30\ub300\ub294 \uc804\uacf5 \uad00\ub828 \uacbd\ud5d8\uc758 \uad6c\uccb4\uc131\uacfc \uc790\uae30\uc8fc\ub3c4\uc801 \ud0d0\uad6c\ub97c \ubd05\ub2c8\ub2e4.",
+    "\uc778\ucc9c\ub300\ud559\uad50": "\uc778\ucc9c\ub300\ub294 \uc804\uacf5 \ud0d0\uad6c \ub3d9\uae30\uc758 \uc9c4\uc815\uc131, \ud559\uc5c5 \uc131\uc2e4\uc131, \ud611\ub825 \uacbd\ud5d8\uc744 \ubd05\ub2c8\ub2e4.",
+    "\uad11\uc6b4\ub300\ud559\uad50": "\uad11\uc6b4\ub300\ub294 \uc804\uc790\u00b7\uc18c\ud504\ud2b8\uc6e8\uc5b4 \uc911\uc2ec\uc73c\ub85c \uc804\uacf5 \ud0d0\uad6c\uc640 \uc218\ud559\u00b7\uacfc\ud559 \uc2e4\ub825\uc744 \uc911\uc2dc\ud569\ub2c8\ub2e4.",
+    "\uacbd\uae30\ub300\ud559\uad50": "\uacbd\uae30\ub300\ub294 \uc804\uacf5 \uad00\ub828 \uacbd\ud5d8\uc758 \uad6c\uccb4\uc131\uacfc \uc790\uae30\uc8fc\ub3c4\uc801 \ud0d0\uad6c\ub97c \ubd05\ub2c8\ub2e4.",
     "서울과학기술대학교": "서울과기대는 '계열적합성'을 최우선으로 하며, 바이오메디컬은 기초과학 융합역량을, 자유전공은 학업적 유연성과 융합적 사고를 중점 평가합니다. 과정 중심의 자기주도적 성장이 세특에 구체적으로 드러나야 합니다.",
     "가톨릭대학교": "가톨릭대는 인성·봉사 정신과 전공 탐구 노력, 공동체 역량을 균형 있게 봅니다.",
     "한국교원대학교": "교직 적합성과 전공적합성을 핵심으로 봅니다. 예비 교사로서의 인성과 지원 전공 분야의 기초 학업 역량, 특히 교직 관련 활동(멘토링, 봉사 등)에서의 주도성을 중점 평가합니다."
@@ -7492,7 +7498,7 @@ overallEvaluation 필드는 아래 형식을 반드시 따르십시오:
     const univProfile = uniCriteria ? uniCriteria.factors : (univSetechProfile[fd.university] || "학생부종합전형의 일반적 기준(학업역량·진로역량·공동체역량)에 따라 평가합니다.");
     const weights = uniCriteria?.weights || defaultWeights;
     const comps = uniCriteria?.competencies || defaultCompetencies;
-    
+
     // 계산된 만점
     const maxAca = Math.round(weights.academic * 100);
     const maxCar = Math.round(weights.career * 100);
@@ -7532,8 +7538,8 @@ ${fd.content}
 
     const body = {
       contents: [{ role: "user", parts: [{ text: prompt }] }],
-      generationConfig: { 
-        temperature: 0.35, 
+      generationConfig: {
+        temperature: 0.35,
         maxOutputTokens: 32768,
         responseMimeType: "application/json",
         responseSchema: {
@@ -7568,7 +7574,7 @@ ${fd.content}
     for (const model of modelsToTry) {
       attemptCount++;
       const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${fd.apiKey}`;
-      
+
       try {
         const controller = new AbortController();
         // 60초 타임아웃 
@@ -7580,7 +7586,7 @@ ${fd.content}
           body: JSON.stringify(body),
           signal: controller.signal
         });
-        
+
         clearTimeout(timeoutId);
 
         if (!res.ok) {
@@ -7588,23 +7594,23 @@ ${fd.content}
           const msg = errBody?.error?.message || res.statusText;
           throw new Error(`API Error (${model}): ` + msg);
         }
-        
+
         const data = await res.json();
         const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
         if (text) return text;
         throw new Error(`Empty response from ${model}`);
-        
+
       } catch (err) {
         lastErr = err;
         console.warn(`[Fallback] Model ${model} failed or timed out:`, err.name === 'AbortError' ? 'Timeout' : err.message);
-        
+
         if (attemptCount < modelsToTry.length) {
           // 다음 모델 시도 전 1.5초 대기
           await new Promise(r => setTimeout(r, 1500));
         }
       }
     }
-    
+
     throw lastErr || new Error("모든 AI 모델 호출에 실패했거나 시간이 초과되었습니다.");
   }
 
@@ -7615,23 +7621,23 @@ ${fd.content}
     const dash = document.getElementById("st-dashboard");
     if (!dash) return;
 
-    document.getElementById("st-totalScore").textContent    = data.totalScore    ?? "-";
+    document.getElementById("st-totalScore").textContent = data.totalScore ?? "-";
     document.getElementById("st-academicScore").textContent = data.academicScore ?? "-";
-    document.getElementById("st-careerScore").textContent   = data.careerScore   ?? "-";
-    document.getElementById("st-communityScore").textContent= data.communityScore?? "-";
+    document.getElementById("st-careerScore").textContent = data.careerScore ?? "-";
+    document.getElementById("st-communityScore").textContent = data.communityScore ?? "-";
 
     const scoreEl = document.getElementById("st-totalScore");
     const score = parseInt(data.totalScore) || 0;
     scoreEl.style.color = score >= 80 ? "#4ade80" : score >= 60 ? "#facc15" : "#f87171";
 
     document.getElementById("st-scoreJustification").innerHTML = marked.parse(data.scoreJustification || "");
-    document.getElementById("st-strengths").innerHTML          = marked.parse(data.strengths           || "");
-    document.getElementById("st-improvements").innerHTML       = marked.parse(data.improvements        || "");
-    document.getElementById("st-rewrite").innerHTML            = marked.parse(data.rewriteSuggestion   || "");
+    document.getElementById("st-strengths").innerHTML = marked.parse(data.strengths || "");
+    document.getElementById("st-improvements").innerHTML = marked.parse(data.improvements || "");
+    document.getElementById("st-rewrite").innerHTML = marked.parse(data.rewriteSuggestion || "");
 
     const modalMap = {
-      "st-btnAca": { title: "\ud559\uc5c5\uc5ed\ub7c9",   score: data.academicScore,  note: "40\uc810 \ub9cc\uc810" },
-      "st-btnCar": { title: "\uc9c4\ub85c\uc5ed\ub7c9",   score: data.careerScore,    note: "40\uc810 \ub9cc\uc810" },
+      "st-btnAca": { title: "\ud559\uc5c5\uc5ed\ub7c9", score: data.academicScore, note: "40\uc810 \ub9cc\uc810" },
+      "st-btnCar": { title: "\uc9c4\ub85c\uc5ed\ub7c9", score: data.careerScore, note: "40\uc810 \ub9cc\uc810" },
       "st-btnCom": { title: "\uacf5\ub3d9\uccb4\uc5ed\ub7c9", score: data.communityScore, note: "20\uc810 \ub9cc\uc810" }
     };
     Object.entries(modalMap).forEach(([btnId, info]) => {
@@ -7668,28 +7674,28 @@ ${fd.content}
   // =========================================================
   // 세특 분석 — 폼 제출 처리
   // =========================================================
-  const setechForm     = document.getElementById("setechForm");
-  const stAnalyzeBtn   = document.getElementById("st-analyzeBtn");
-  const stEmptyState   = document.getElementById("st-emptyState");
+  const setechForm = document.getElementById("setechForm");
+  const stAnalyzeBtn = document.getElementById("st-analyzeBtn");
+  const stEmptyState = document.getElementById("st-emptyState");
   const stLoadingState = document.getElementById("st-loadingState");
-  const stDashboardEl  = document.getElementById("st-dashboard");
+  const stDashboardEl = document.getElementById("st-dashboard");
 
   if (setechForm) {
-    setechForm.addEventListener("submit", async function(e) {
+    setechForm.addEventListener("submit", async function (e) {
       e.preventDefault();
 
       const fd = {
-        apiKey:      document.getElementById("st-api-key").value.trim(),
-        university:  stUniversitySelect ? stUniversitySelect.value : "",
-        category:    stCategorySelect   ? stCategorySelect.value   : "",
-        major:       stMajorSelect      ? stMajorSelect.value      : "",
+        apiKey: document.getElementById("st-api-key").value.trim(),
+        university: stUniversitySelect ? stUniversitySelect.value : "",
+        category: stCategorySelect ? stCategorySelect.value : "",
+        major: stMajorSelect ? stMajorSelect.value : "",
         subjectName: document.getElementById("st-subject-name").value.trim(),
-        content:     document.getElementById("st-content").value.trim()
+        content: document.getElementById("st-content").value.trim()
       };
 
-      if (!fd.apiKey)                  { alert("API \ud0a4\ub97c \uc785\ub825\ud558\uc138\uc694."); return; }
+      if (!fd.apiKey) { alert("API \ud0a4\ub97c \uc785\ub825\ud558\uc138\uc694."); return; }
       if (!fd.university || !fd.major) { alert("\ub300\ud559\uacfc \ud559\uacfc\ub97c \uc120\ud0dd\ud558\uc138\uc694."); return; }
-      if (!fd.content)                 { alert("\uc138\ud2b9 \ub0b4\uc6a9\uc744 \uc785\ub825\ud558\uc138\uc694."); return; }
+      if (!fd.content) { alert("\uc138\ud2b9 \ub0b4\uc6a9\uc744 \uc785\ub825\ud558\uc138\uc694."); return; }
 
       stEmptyState.classList.add("hidden");
       stDashboardEl.classList.add("hidden");
@@ -7708,8 +7714,8 @@ ${fd.content}
           const errPosMatch = parseErr.message.match(/position (\d+)/);
           let errContext = "";
           if (errPosMatch && errPosMatch[1]) {
-             const pos = parseInt(errPosMatch[1]);
-             errContext = "\n에러 발생 부분: " + raw.substring(Math.max(0, pos - 30), pos + 30);
+            const pos = parseInt(errPosMatch[1]);
+            errContext = "\n에러 발생 부분: " + raw.substring(Math.max(0, pos - 30), pos + 30);
           }
           throw new Error("AI 응답 파싱 실패 (" + parseErr.message + ").\n" + errContext + "\n\n(원문 앞 600자: " + raw.substring(0, 600) + ")");
         }
@@ -7734,37 +7740,37 @@ ${fd.content}
     let total = parseInt(localStorage.getItem('site_visits_total') || '12054');
     let today = parseInt(localStorage.getItem('site_visits_today') || '342');
     let lastVisit = localStorage.getItem('site_last_visit');
-    
+
     const now = new Date().toDateString();
     if (lastVisit !== now) {
       today = Math.floor(Math.random() * 50) + 100; // random new day start
       localStorage.setItem('site_last_visit', now);
     }
-    
+
     total += 1;
     today += 1;
     localStorage.setItem('site_visits_total', total);
     localStorage.setItem('site_visits_today', today);
-    
+
     const totalEl = document.getElementById('stat-total');
     const todayEl = document.getElementById('stat-today');
     const onlineEl = document.getElementById('stat-online');
 
     if (totalEl) totalEl.innerText = total.toLocaleString() + '명';
     if (todayEl) todayEl.innerText = today.toLocaleString() + '명';
-    
+
     // Simulate active online users fluttering
     let online = Math.floor(Math.random() * 15) + 5;
     if (onlineEl) {
       onlineEl.innerText = `${online}명`;
       setInterval(() => {
-        const diff = Math.floor(Math.random() * 3) - 1; 
+        const diff = Math.floor(Math.random() * 3) - 1;
         online = Math.max(1, online + diff);
         onlineEl.innerText = `${online}명`;
       }, 3000);
     }
   }
-  
+
   setTimeout(initVisitorStats, 500);
 
   // =========================================================
@@ -7779,10 +7785,10 @@ ${fd.content}
   if (ivUnivSelect && typeof universityData !== "undefined") {
     // 면접 특화 데이터 보유 대학 목록 (옵션 생성 전 선언)
     const ivUnivDataList = [
-      "가천대학교","서울시립대학교","숭실대학교","한국외국어대학교","세종대학교",
-      "건국대학교","중앙대학교","경희대학교","서울과학기술대학교","서강대학교",
-      "성균관대학교","한양대학교","한국교원대학교","광운대학교","동국대학교",
-      "인하대학교","아주대학교","단국대학교","부산대학교","인천대학교","가톨릭대학교","서울대학교","국민대학교"
+      "가천대학교", "서울시립대학교", "숭실대학교", "한국외국어대학교", "세종대학교",
+      "건국대학교", "중앙대학교", "경희대학교", "서울과학기술대학교", "서강대학교",
+      "성균관대학교", "한양대학교", "한국교원대학교", "광운대학교", "동국대학교",
+      "인하대학교", "아주대학교", "단국대학교", "부산대학교", "인천대학교", "가톨릭대학교", "서울대학교", "국민대학교"
     ];
 
     // Populate University Dropdown (✅/⚪ 마커 포함)
@@ -7812,14 +7818,14 @@ ${fd.content}
       }
 
       if (!ud) return;
-      
+
       const cats = Object.keys(ud);
       if (cats.length === 1 && cats[0] === "개설학과") {
         const o = document.createElement("option");
         o.value = "개설학과"; o.textContent = "전체";
         ivCategorySelect.appendChild(o);
         ivCategorySelect.value = "개설학과";
-        
+
         ud["개설학과"].forEach(m => {
           const mo = document.createElement("option");
           mo.value = m; mo.textContent = m;
@@ -7873,18 +7879,18 @@ ${fd.content}
   }
 
   if (ivForm) {
-    ivForm.addEventListener("submit", async function(e) {
+    ivForm.addEventListener("submit", async function (e) {
       e.preventDefault();
-      
+
       const apiKey = document.getElementById("iv-api-key")?.value?.trim() || document.getElementById("api-key")?.value?.trim();
       const studentIdx = ivStudentSelect?.value;
       const targetUniv = ivUnivSelect?.value;
       const targetCat = ivCategorySelect?.value;
       const targetMajor = ivMajorSelect?.value;
-      
+
       if (!apiKey) { alert("API 키를 먼저 입력해주세요 (개인 분석 탭 상단)."); return; }
       if (!studentIdx || !targetUniv || !targetMajor) { alert("학생과 목표 학과를 모두 선택해주세요."); return; }
-      
+
       // Load selected student data
       let studentRecordText = "";
       try {
@@ -7897,8 +7903,8 @@ ${fd.content}
 창체활동(진로등): ${parsed.career}
 행동특성 및 종합의견: ${parsed.arts}`;
         }
-      } catch (err) {}
-      
+      } catch (err) { }
+
       if (!studentRecordText || studentRecordText.includes("undefined")) {
         // Fallback to currently selected in DOM if same student
         const domStudentIdx = document.getElementById("student-select")?.value;
@@ -7907,8 +7913,8 @@ ${fd.content}
 창체: ${document.getElementById("creative-activities")?.value || ""}
 행특: ${document.getElementById("behavioral-records")?.value || ""}`;
         } else {
-           alert("해당 학생의 생활기록부 데이터를 찾을 수 없습니다. 개인 분석 탭에서 학생을 선택하고 생기부를 확인해주세요.");
-           return;
+          alert("해당 학생의 생활기록부 데이터를 찾을 수 없습니다. 개인 분석 탭에서 학생을 선택하고 생기부를 확인해주세요.");
+          return;
         }
       }
 
@@ -8050,7 +8056,7 @@ ${fd.content}
 - 각 문항 제목(h3) 바로 아래에 반드시 다음 형식으로 면접 평가 기준을 명시하세요:
   - **📌 평가 항목**: [진학의지/인성/학업역량] | **질문 의도**: [이 질문으로 확인하고자 하는 바를 한 문장으로 간략히]
 ` :
-        targetUniv === "서울시립대학교" ? `
+          targetUniv === "서울시립대학교" ? `
 
 [서울시립대학교 면접 특이사항 - 필수 반영]
 서울시립대학교는 다음과 같은 고유한 면접 구조를 가집니다. 아래 기준을 10개 문항 전체에 반드시 반영하세요.
@@ -8065,7 +8071,7 @@ ${fd.content}
   - **📌 평가 항목**: [잠재역량/학업역량/사회역량] | **질문 의도**: [이 질문으로 확인하고자 하는 바를 한 문장으로 간략히]
 - 단순 사실 나열이 아닌 심층 꼬리 질문(사회적 적용, 비교 분석, 해결방안 제시)을 반드시 포함할 것
 ` :
-        targetUniv === "숭실대학교" ? `
+            targetUniv === "숭실대학교" ? `
 
 [숭실대학교 면접 특이사항 - 필수 반영]
 숭실대학교는 다음과 같은 고유한 면접 구조를 가집니다. 아래 기준을 10개 문항 전체에 반드시 반영하세요.
@@ -8079,7 +8085,7 @@ ${fd.content}
   - **📌 평가 항목**: [전공적합성/인성.잠재력] | **질문 의도**: [이 질문으로 확인하고자 하는 바를 한 문장으로 간략히]
 - 강도 높은 집요한 탐침 질문(원리/공식/개념 설명 요구)을 반드시 포함할 것
 ` :
-        targetUniv === "한국외국어대학교" ? `
+              targetUniv === "한국외국어대학교" ? `
 
 [한국외국어대학교 면접 특이사항 - 필수 반영]
 한국외국어대학교는 다음과 같은 고유한 면접 구조를 가집니다. 아래 기준을 10개 문항 전체에 반드시 반영하세요.
@@ -8094,7 +8100,7 @@ ${fd.content}
   - **📌 평가 항목**: [학업역량/진로역량/공동체역량] | **질문 의도**: [이 질문으로 확인하고자 하는 바를 한 문장으로 간략히]
 - 단순 사실 확인보다 '지적 호기심 확장'과 '자기주도적 탐구'를 증명할 수 있는 심화 질문을 설계할 것
 ` :
-        targetUniv === "세종대학교" ? `
+                targetUniv === "세종대학교" ? `
 
 [세종대학교 면접 특이사항 - 필수 반영]
 세종대학교는 다음과 같은 고유한 면접 구조를 가집니다. 아래 기준을 10개 문항 전체에 반드시 반영하세요.
@@ -8108,7 +8114,7 @@ ${fd.content}
   - **📌 평가 항목**: [진로역량/창의융합역량/공동체역량] | **질문 의도**: [이 질문으로 확인하고자 하는 바를 한 문장으로 간략히]
 - 탐구 활동의 본질적 의미를 증명해야 하며, 지원 학과에 대한 통찰력을 묻는 심화 질문을 설계할 것
 ` :
-        targetUniv === "건국대학교" ? `
+                  targetUniv === "건국대학교" ? `
 
 [건국대학교 면접 특이사항 - 필수 반영]
 건국대학교는 다음과 같은 고유한 면접 구조를 가집니다. 아래 기준을 10개 문항 전체에 반드시 반영하세요.
@@ -8123,7 +8129,7 @@ ${fd.content}
   - **📌 평가 항목**: [진로역량/학업역량/공동체역량] | **질문 의도**: [이 질문으로 확인하고자 하는 바를 한 문장으로 간략히]
 - 서류(생기부)에 기록된 활동의 구체적인 과정과 그 속에 담긴 원리를 꼼꼼하게 확인하는 질문들을 설계할 것
 ` :
-        targetUniv === "중앙대학교" ? `
+                    targetUniv === "중앙대학교" ? `
 
 [중앙대학교 면접 특이사항 - 필수 반영]
 중앙대학교는 다음과 같은 고유한 면접 구조를 가집니다. 아래 기준을 10개 문항 전체에 반드시 반영하세요.
@@ -8138,7 +8144,7 @@ ${fd.content}
   - **📌 평가 항목**: [학업준비도/전공적합성/의사소통.인성] | **질문 의도**: [이 질문으로 확인하고자 하는 바를 한 문장으로 간략히]
 - 단순 '느낀 점' 위주의 답변을 유도하지 말고, 탐구의 논리적 완결성을 검증하는 질문을 설계할 것
 ` :
-        targetUniv === "경희대학교" ? `
+                      targetUniv === "경희대학교" ? `
 
 [경희대학교 면접 특이사항 - 필수 반영]
 경희대학교는 다음과 같은 고유한 면접 구조를 가집니다. 아래 기준을 10개 문항 전체에 반드시 반영하세요.
@@ -8152,7 +8158,7 @@ ${fd.content}
   - **📌 평가 항목**: [인성/전공적합성] | **질문 의도**: [이 질문으로 확인하고자 하는 바를 한 문장으로 간략히]
 - 단순 활동 확인을 넘어 지원자의 답변에서 파생되는 심화 꼬리 질문을 설계하여 논리적 사고력을 유도할 것
 ` :
-        targetUniv === "서울과학기술대학교" ? `
+                        targetUniv === "서울과학기술대학교" ? `
 
 [서울과학기술대학교 면접 특이사항 - 필수 반영]
 서울과학기술대학교는 다음과 같은 고유한 면접 구조를 가집니다. 아래 기준을 10개 문항 전체에 반드시 반영하세요.
@@ -8167,7 +8173,7 @@ ${fd.content}
   - **📌 평가 항목**: [진로역량/학업역량/공동체역량] | **질문 의도**: [이 질문으로 확인하고자 하는 바를 한 문장으로 간략히]
 - 자연계열 지원자: 학생부 활동과 연계된 교과 지식의 원리를 숙지하고 있는지 확인하는 심화 질문을 반드시 포함할 것
 ` :
-        targetUniv === "성균관대학교" ? `
+                          targetUniv === "성균관대학교" ? `
 
 [성균관대학교 면접 특이사항 - 필수 반영]
 성균관대학교는 다음과 같은 고유한 면접 구조를 가집니다. 아래 기준을 10개 문항 전체에 반드시 반영하세요.
@@ -8180,7 +8186,7 @@ ${fd.content}
 - 각 문항 제목(h3) 바로 아래에 반드시 다음 형식으로 면접 평가 기준을 명시하세요:
   - **📌 평가 항목**: [탐구역량/학업역량/잠재역량] | **질문 의도**: [이 질문으로 확인하고자 하는 바를 한 문장으로 간략히]
 ` :
-        targetUniv === "한양대학교" ? `
+                            targetUniv === "한양대학교" ? `
 
 [한양대학교 면접 특이사항 - 필수 반영]
 한양대학교는 다음과 같은 고유한 면접 구조를 가집니다. 아래 기준을 10개 문항 전체에 반드시 반영하세요.
@@ -8193,7 +8199,7 @@ ${fd.content}
 - 각 문항 제목(h3) 바로 아래에 반드시 다음 형식으로 면접 평가 기준을 명시하세요:
   - **📌 평가 항목**: [심층학업역량/기초학업역량/진로탐구.공동체] | **질문 의도**: [이 질문으로 확인하고자 하는 바를 한 문장으로 간략히]
 ` :
-        targetUniv === "한국교원대학교" ? `
+                              targetUniv === "한국교원대학교" ? `
 
 [한국교원대학교 면접 특이사항 - 필수 반영]
 한국교원대학교는 다음과 같은 고유한 면접 구조를 가집니다. 아래 기준을 10개 문항 전체에 반드시 반영하세요.
@@ -8206,7 +8212,7 @@ ${fd.content}
 - 각 문항 제목(h3) 바로 아래에 반드시 다음 형식으로 면접 평가 기준을 명시하세요:
   - **📌 평가 항목**: [교직적합성/학업역량/교직인성] | **질문 의도**: [이 질문으로 확인하고자 하는 바를 한 문장으로 간략히]
 ` :
-        targetUniv === "광운대학교" ? `
+                                targetUniv === "광운대학교" ? `
 
 [광운대학교 면접 특이사항 - 필수 반영]
 광운대학교(광운참빛인재전형 등)는 최근 면접의 실질 영향력이 매우 커졌습니다(반영 비율 40%). 아래 기준을 10개 문항 전체에 반드시 반영하세요.
@@ -8219,7 +8225,7 @@ ${fd.content}
 - 각 문항 제목(h3) 바로 아래에 반드시 다음 형식으로 면접 평가 기준을 명시하세요:
   - **📌 평가 항목**: [발전가능성/종합사고력/인성] | **질문 의도**: [이 질문으로 확인하고자 하는 바를 한 문장으로 간략히]
 ` :
-        targetUniv === "동국대학교" ? `
+                                  targetUniv === "동국대학교" ? `
 
 [동국대학교 면접 특이사항 - 필수 반영]
 동국대학교 도드림(DoDream) 전형은 전공적합성이 매우 중요합니다(실질 영향력 40% 이상). 아래 기준을 10개 문항 전체에 반드시 반영하세요.
@@ -8233,7 +8239,7 @@ ${fd.content}
 - 각 문항 제목(h3) 바로 아래에 반드시 다음 형식으로 면접 평가 기준을 명시하세요:
   - **📌 평가 항목**: [전공적합성/발전가능성/전형취지적합성/인성및사회성] | **질문 의도**: [이 질문으로 확인하고자 하는 바를 한 문장으로 간략히]
 ` :
-        targetUniv === "인하대학교" ? `
+                                    targetUniv === "인하대학교" ? `
 
 [인하대학교 면접 특이사항 - 필수 반영]
 인하대학교는 '학업을 중심으로 한 진로 탐구 역량'을 집중 평가하는 면접입니다. 아래 기준을 10개 문항 전체에 반드시 반영하세요.
@@ -8258,7 +8264,7 @@ ${fd.content}
 - 각 문항 제목(h3) 바로 아래에 반드시 다음 형식으로 면접 평가 기준을 명시하세요:
   - **📌 평가 항목**: [진로탐구역량/기초학업역량/의사소통.공동체역량] | **질문 의도**: [이 질문으로 확인하고자 하는 바를 한 문장으로 간략히]
 ` :
-        targetUniv === "아주대학교" ? `
+                                      targetUniv === "아주대학교" ? `
 
 [아주대학교 면접 특이사항 - 필수 반영]
 아주대학교는 학생부에 기재된 활동의 진위를 검증하는 '서류 신뢰도'를 압도적으로 중시하는 면접입니다. 아래 기준을 10개 문항 전체에 반드시 반영하세요.
@@ -8788,7 +8794,7 @@ ${univPromptSupplement}
       try {
         const modelsToTry = ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.5-flash-lite"];
         let resultText = "";
-        
+
         for (const model of modelsToTry) {
           try {
             const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
@@ -8805,11 +8811,11 @@ ${univPromptSupplement}
               resultText = data.candidates?.[0]?.content?.parts?.[0]?.text;
               if (resultText) break;
             }
-          } catch(e) { console.warn(model + " retry..."); }
+          } catch (e) { console.warn(model + " retry..."); }
         }
-        
+
         if (!resultText) throw new Error("AI 응답을 가져오지 못했습니다 (API 문제이거나 시간 초과).");
-        
+
         // Inject Gachon guide banner at the top if Gachon is selected
         let guideBannerHtml = "";
         if (targetUniv === "가천대학교") {
@@ -9238,9 +9244,9 @@ ${univPromptSupplement}
             </div>
           </div>`;
         }
-        
+
         ivMarkdownResult.innerHTML = guideBannerHtml + (typeof marked !== 'undefined' ? marked.parse(resultText) : resultText);
-        
+
         // Post-process: Style Overall Analysis Opinion
         ivMarkdownResult.querySelectorAll('h2').forEach(h2 => {
           if (h2.textContent.includes('종합 분석 의견')) {
@@ -9298,7 +9304,7 @@ ${univPromptSupplement}
             flex-wrap: wrap;
             box-shadow: none;
           `;
-          
+
           h3.innerHTML = `
             <span style="
               background: var(--accent-gradient); 
@@ -9315,7 +9321,7 @@ ${univPromptSupplement}
           // Find and extract the yellow question box (created by marked.js)
           let nextDiv = h3.nextElementSibling;
           let questionBoxFound = false;
-          
+
           if (nextDiv && nextDiv.style && nextDiv.style.background && (nextDiv.style.background.includes('#fffac9') || nextDiv.style.background.includes('fffac9'))) {
             questionBoxFound = true;
             nextDiv.style.cssText = `
@@ -9352,7 +9358,7 @@ ${univPromptSupplement}
             items.forEach(li => {
               const liHtml = li.innerHTML || '';
               const liText = li.textContent || '';
-              
+
               // Evaluation item with 📌
               if (liText.includes('📌')) {
                 const evalSection = document.createElement('div');
@@ -9361,12 +9367,12 @@ ${univPromptSupplement}
                   flex-direction: column;
                   gap: 0.5rem;
                 `;
-                
+
                 // Extract content between 📌 and parse by |
                 const content = liHtml.replace('📌', '').trim();
                 const parts = content.split('|');
                 let evalHtml = '<div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">';
-                
+
                 parts.forEach((part, idx) => {
                   const cleanPart = part.replace(/<[^>]*>/g, '').trim();
                   if (cleanPart) {
@@ -9386,7 +9392,7 @@ ${univPromptSupplement}
                   }
                 });
                 evalHtml += '</div>';
-                
+
                 evalSection.innerHTML = `
                   <div style="
                     font-size: 0.95rem;
@@ -9411,11 +9417,11 @@ ${univPromptSupplement}
                   padding: 1rem 1.25rem;
                   border-radius: 6px;
                 `;
-                
+
                 // Extract quoted text and context
                 const quotedMatch = liHtml.match(/"([^"]*)"/);
                 let sourceContent = liHtml.replace('📄', '').replace(/^.*?문항 출처/, '').trim();
-                
+
                 sourceSection.innerHTML = `
                   <div style="
                     font-size: 0.95rem;
@@ -9444,9 +9450,9 @@ ${univPromptSupplement}
                   padding: 1rem 1.25rem;
                   border-radius: 6px;
                 `;
-                
+
                 let answerContent = liHtml.replace('✅', '').replace(/^.*?모범답안/, '').trim();
-                
+
                 answerSection.innerHTML = `
                   <div style="
                     font-size: 0.95rem;
@@ -9481,12 +9487,12 @@ ${univPromptSupplement}
   }
 
   // ----- 가천대 면접 가이드 모달 및 PDF 인쇄 -----
-  window.showGachonGuideModal = function() {
+  window.showGachonGuideModal = function () {
     const modalTitle = document.getElementById("modalTitle");
     const modalBody = document.getElementById("modalBody");
     const modalOverlay = document.getElementById("analysisModal");
     if (!modalTitle || !modalBody || !modalOverlay) return;
-    
+
     modalTitle.innerText = "가천대학교 면접 가이드";
     // Get gachonGuideContent from the already-rendered banner's sibling
     const bannerEl = document.getElementById("iv-gachon-guide-banner");
@@ -9539,7 +9545,7 @@ ${univPromptSupplement}
     modalOverlay.classList.remove("hidden");
   };
 
-  window.printGachonGuide = function() {
+  window.printGachonGuide = function () {
     const printWin = window.open("", "_blank", "width=900,height=700");
     printWin.document.write(`<!DOCTYPE html><html lang="ko"><head>
       <meta charset="UTF-8">
@@ -9593,7 +9599,7 @@ ${univPromptSupplement}
   };
 
   // ----- 서울시립대 면접 가이드 모달 및 PDF 인쇄 -----
-  window.showSeoulGuideModal = function() {
+  window.showSeoulGuideModal = function () {
     const modalTitle = document.getElementById("modalTitle");
     const modalBody = document.getElementById("modalBody");
     const modalOverlay = document.getElementById("analysisModal");
@@ -9640,7 +9646,7 @@ ${univPromptSupplement}
     modalOverlay.classList.remove("hidden");
   };
 
-  window.printSeoulGuide = function() {
+  window.printSeoulGuide = function () {
     const printWin = window.open("", "_blank", "width=900,height=700");
     printWin.document.write(`<!DOCTYPE html><html lang="ko"><head>
       <meta charset="UTF-8">
@@ -9690,7 +9696,7 @@ ${univPromptSupplement}
   };
 
   // ----- 숭실대 면접 가이드 모달 및 PDF 인쇄 -----
-  window.showSoongsilGuideModal = function() {
+  window.showSoongsilGuideModal = function () {
     const modalTitle = document.getElementById("modalTitle");
     const modalBody = document.getElementById("modalBody");
     const modalOverlay = document.getElementById("analysisModal");
@@ -9738,7 +9744,7 @@ ${univPromptSupplement}
     modalOverlay.classList.remove("hidden");
   };
 
-  window.printSoongsilGuide = function() {
+  window.printSoongsilGuide = function () {
     const printWin = window.open("", "_blank", "width=900,height=700");
     printWin.document.write(`<!DOCTYPE html><html lang="ko"><head>
       <meta charset="UTF-8">
@@ -9785,7 +9791,7 @@ ${univPromptSupplement}
   };
 
   // ----- 한국외대 면접 가이드 모달 및 PDF 인쇄 -----
-  window.showHufsGuideModal = function() {
+  window.showHufsGuideModal = function () {
     const modalTitle = document.getElementById("modalTitle");
     const modalBody = document.getElementById("modalBody");
     const modalOverlay = document.getElementById("analysisModal");
@@ -9828,7 +9834,7 @@ ${univPromptSupplement}
     modalOverlay.classList.remove("hidden");
   };
 
-  window.printHufsGuide = function() {
+  window.printHufsGuide = function () {
     const printWin = window.open("", "_blank", "width=900,height=700");
     printWin.document.write(`<!DOCTYPE html><html lang="ko"><head>
       <meta charset="UTF-8">
@@ -9874,7 +9880,7 @@ ${univPromptSupplement}
   };
 
   // ----- 세종대 면접 가이드 모달 및 PDF 인쇄 -----
-  window.showSejongGuideModal = function() {
+  window.showSejongGuideModal = function () {
     const modalTitle = document.getElementById("modalTitle");
     const modalBody = document.getElementById("modalBody");
     const modalOverlay = document.getElementById("analysisModal");
@@ -9923,7 +9929,7 @@ ${univPromptSupplement}
     modalOverlay.classList.remove("hidden");
   };
 
-  window.printSejongGuide = function() {
+  window.printSejongGuide = function () {
     const printWin = window.open("", "_blank", "width=900,height=700");
     printWin.document.write(`<!DOCTYPE html><html lang="ko"><head>
       <meta charset="UTF-8">
@@ -9968,7 +9974,7 @@ ${univPromptSupplement}
   };
 
   // ----- 건국대 면접 가이드 모달 및 PDF 인쇄 -----
-  window.showKonkukGuideModal = function() {
+  window.showKonkukGuideModal = function () {
     const modalTitle = document.getElementById("modalTitle");
     const modalBody = document.getElementById("modalBody");
     const modalOverlay = document.getElementById("analysisModal");
@@ -10014,7 +10020,7 @@ ${univPromptSupplement}
     modalOverlay.classList.remove("hidden");
   };
 
-  window.printKonkukGuide = function() {
+  window.printKonkukGuide = function () {
     const printWin = window.open("", "_blank", "width=900,height=700");
     printWin.document.write(`<!DOCTYPE html><html lang="ko"><head>
       <meta charset="UTF-8">
@@ -10060,7 +10066,7 @@ ${univPromptSupplement}
   };
 
   // ----- 중앙대 면접 가이드 모달 및 PDF 인쇄 -----
-  window.showCauGuideModal = function() {
+  window.showCauGuideModal = function () {
     const modalTitle = document.getElementById("modalTitle");
     const modalBody = document.getElementById("modalBody");
     const modalOverlay = document.getElementById("analysisModal");
@@ -10105,7 +10111,7 @@ ${univPromptSupplement}
     modalOverlay.classList.remove("hidden");
   };
 
-  window.printCauGuide = function() {
+  window.printCauGuide = function () {
     const printWin = window.open("", "_blank", "width=900,height=700");
     printWin.document.write(`<!DOCTYPE html><html lang="ko"><head>
       <meta charset="UTF-8">
@@ -10150,7 +10156,7 @@ ${univPromptSupplement}
   };
 
   // ----- 경희대 면접 가이드 모달 및 PDF 인쇄 -----
-  window.showKhuGuideModal = function() {
+  window.showKhuGuideModal = function () {
     const modalTitle = document.getElementById("modalTitle");
     const modalBody = document.getElementById("modalBody");
     const modalOverlay = document.getElementById("analysisModal");
@@ -10195,7 +10201,7 @@ ${univPromptSupplement}
     modalOverlay.classList.remove("hidden");
   };
 
-  window.printKhuGuide = function() {
+  window.printKhuGuide = function () {
     const printWin = window.open("", "_blank", "width=900,height=700");
     printWin.document.write(`<!DOCTYPE html><html lang="ko"><head>
       <meta charset="UTF-8">
@@ -10239,7 +10245,7 @@ ${univPromptSupplement}
   };
 
   // ----- 서울과학기술대 면접 가이드 모달 및 PDF 인쇄 -----
-  window.showSeoulTechGuideModal = function() {
+  window.showSeoulTechGuideModal = function () {
     const modalTitle = document.getElementById("modalTitle");
     const modalBody = document.getElementById("modalBody");
     const modalOverlay = document.getElementById("analysisModal");
@@ -10284,7 +10290,7 @@ ${univPromptSupplement}
     modalOverlay.classList.remove("hidden");
   };
 
-  window.printSeoulTechGuide = function() {
+  window.printSeoulTechGuide = function () {
     const printWin = window.open("", "_blank", "width=900,height=700");
     printWin.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>서울과학기술대학교 면접 가이드</title><style>body{font-family:'Malgun Gothic',sans-serif;padding:2rem;line-height:1.8;}h1{color:#37474f;border-bottom:3px solid #37474f;}h2{color:#263238;margin-top:1.5rem;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;padding:10px;text-align:left;}th{background:#f8f9fa;}</style></head><body><h1>🎓 서울과학기술대학교 면접 가이드</h1><h2>1. 평가 비중 (40:35:25)</h2><table><tr><th>진로역량</th><th>학업역량</th><th>공동체역량</th></tr><tr><td>40%</td><td>35%</td><td>25%</td></tr></table><h2>2. 핵심 포인트</h2><p>과기대는 <strong>성적 공개 면접</strong>입니다. 활동의 결과보다 <strong>'동기(Why)'</strong>와 <strong>'적용 원리(Logic)'</strong>를 논리적으로 설명하는 것이 중요합니다.</p></body></html>`);
     printWin.document.close();
@@ -10292,7 +10298,7 @@ ${univPromptSupplement}
     setTimeout(() => { printWin.print(); }, 500);
   };
 
-  window.showGachonGuideModal = function() {
+  window.showGachonGuideModal = function () {
     const modalTitle = document.getElementById("modalTitle");
     const modalBody = document.getElementById("modalBody");
     const modalOverlay = document.getElementById("analysisModal");
@@ -10316,7 +10322,7 @@ ${univPromptSupplement}
     modalOverlay.classList.remove("hidden");
   };
 
-  window.printGachonGuide = function() {
+  window.printGachonGuide = function () {
     const printWin = window.open("", "_blank", "width=900,height=700");
     printWin.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>가천대학교 면접 가이드</title><style>body{font-family:'Malgun Gothic',sans-serif;padding:2rem;line-height:1.8;}h1{color:#1a237e;border-bottom:3px solid #1a237e;}h2{color:#004a98;margin-top:1.5rem;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;padding:10px;text-align:left;}th{background:#f8f9fa;}</style></head><body><h1>🎓 가천대학교 면접 가이드</h1><h2>1. 평가 비중 (40:40:20)</h2><table><tr><th>인성</th><th>진학의지</th><th>학업역량</th></tr><tr><td>40%</td><td>40%</td><td>20%</td></tr></table><h2>2. 핵심 포인트</h2><p>가천대는 <strong>인성</strong>과 <strong>진학의지</strong>의 비중이 매우 높습니다. 학교 활동에 주도적으로 참여한 경험과 전공을 향한 열정을 적극적으로 표현하세요.</p></body></html>`);
     printWin.document.close();
@@ -10324,7 +10330,7 @@ ${univPromptSupplement}
     setTimeout(() => { printWin.print(); }, 500);
   };
 
-  window.showSeoulGuideModal = function() {
+  window.showSeoulGuideModal = function () {
     const modalTitle = document.getElementById("modalTitle");
     const modalBody = document.getElementById("modalBody");
     const modalOverlay = document.getElementById("analysisModal");
@@ -10348,7 +10354,7 @@ ${univPromptSupplement}
     modalOverlay.classList.remove("hidden");
   };
 
-  window.printSeoulGuide = function() {
+  window.printSeoulGuide = function () {
     const printWin = window.open("", "_blank", "width=900,height=700");
     printWin.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>서울시립대학교 면접 가이드</title><style>body{font-family:'Malgun Gothic',sans-serif;padding:2rem;line-height:1.8;}h1{color:#002f6c;border-bottom:3px solid #002f6c;}h2{color:#01579b;margin-top:1.5rem;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;padding:10px;text-align:left;}th{background:#f8f9fa;}</style></head><body><h1>🎓 서울시립대학교 면접 가이드</h1><h2>1. 평가 비중 (40:35:25)</h2><table><tr><th>잠재역량</th><th>학업역량</th><th>사회역량</th></tr><tr><td>40%</td><td>35%</td><td>25%</td></tr></table><h2>2. 핵심 포인트</h2><p>시립대는 <strong>활동의 연계성</strong>과 <strong>개념 이해</strong>를 중시합니다. 꼬리 질문에 대비하여 탐구 주제와 관련된 교과 지식을 완벽히 정리하세요.</p></body></html>`);
     printWin.document.close();
@@ -10356,7 +10362,7 @@ ${univPromptSupplement}
     setTimeout(() => { printWin.print(); }, 500);
   };
 
-  window.showSogangGuideModal = function() {
+  window.showSogangGuideModal = function () {
     const modalTitle = document.getElementById("modalTitle");
     const modalBody = document.getElementById("modalBody");
     const modalOverlay = document.getElementById("analysisModal");
@@ -10380,7 +10386,7 @@ ${univPromptSupplement}
     modalOverlay.classList.remove("hidden");
   };
 
-  window.printSogangGuide = function() {
+  window.printSogangGuide = function () {
     const printWin = window.open("", "_blank", "width=900,height=700");
     printWin.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>서강대학교 면접 가이드</title><style>body{font-family:'Malgun Gothic',sans-serif;padding:2rem;line-height:1.8;}h1{color:#901319;border-bottom:3px solid #901319;}h2{color:#b71c1c;margin-top:1.5rem;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;padding:10px;text-align:left;}th{background:#f8f9fa;}</style></head><body><h1>🎓 서강대학교 면접 가이드</h1><h2>1. 평가 비중 (50:30:20)</h2><table><tr><th>학업역량</th><th>성장가능성</th><th>공동체역량</th></tr><tr><td>50%</td><td>30%</td><td>20%</td></tr></table><h2>2. 핵심 포인트</h2><p>서강대는 <strong>다전공제도</strong>를 기반으로 융합적 인재를 선호합니다. 활동의 결과보다 <strong>성장 과정</strong>과 <strong>실패를 통한 깨달음</strong>을 어필하세요.</p></body></html>`);
     printWin.document.close();
@@ -10388,7 +10394,7 @@ ${univPromptSupplement}
     setTimeout(() => { printWin.print(); }, 500);
   };
 
-  window.showSkkuGuideModal = function() {
+  window.showSkkuGuideModal = function () {
     const modalTitle = document.getElementById("modalTitle");
     const modalBody = document.getElementById("modalBody");
     const modalOverlay = document.getElementById("analysisModal");
@@ -10412,7 +10418,7 @@ ${univPromptSupplement}
     modalOverlay.classList.remove("hidden");
   };
 
-  window.printSkkuGuide = function() {
+  window.printSkkuGuide = function () {
     const printWin = window.open("", "_blank", "width=900,height=700");
     printWin.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>성균관대학교 면접 가이드</title><style>body{font-family:'Malgun Gothic',sans-serif;padding:2rem;line-height:1.8;}h1{color:#004424;border-bottom:3px solid #004424;}h2{color:#1b5e20;margin-top:1.5rem;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;padding:10px;text-align:left;}th{background:#f8f9fa;}</style></head><body><h1>🎓 성균관대학교 면접 가이드</h1><h2>1. 평가 비중 (40:40:20)</h2><table><tr><th>탐구역량</th><th>학업역량</th><th>잠재역량</th></tr><tr><td>40%</td><td>40%</td><td>20%</td></tr></table><h2>2. 핵심 포인트</h2><p>성균관대는 <strong>'탐구의 확장성'</strong>을 가장 중요하게 봅니다. 꼬리 질문에 대비하여 탐구 내용의 본질과 원리를 명확히 답변하세요.</p></body></html>`);
     printWin.document.close();
@@ -10420,7 +10426,7 @@ ${univPromptSupplement}
     setTimeout(() => { printWin.print(); }, 500);
   };
 
-  window.showHanyangGuideModal = function() {
+  window.showHanyangGuideModal = function () {
     const modalTitle = document.getElementById("modalTitle");
     const modalBody = document.getElementById("modalBody");
     const modalOverlay = document.getElementById("analysisModal");
@@ -10445,7 +10451,7 @@ ${univPromptSupplement}
     modalOverlay.classList.remove("hidden");
   };
 
-  window.printHanyangGuide = function() {
+  window.printHanyangGuide = function () {
     const printWin = window.open("", "_blank", "width=900,height=700");
     printWin.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>한양대학교 면접 가이드</title><style>body{font-family:'Malgun Gothic',sans-serif;padding:2rem;line-height:1.8;}h1{color:#002366;border-bottom:3px solid #002366;}h2{color:#0d47a1;margin-top:1.5rem;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;padding:10px;text-align:left;}th{background:#f8f9fa;}</style></head><body><h1>🎓 한양대학교 면접 가이드</h1><h2>1. 평가 항목</h2><p>심층학업(40%), 기초학업(35%), 진로탐구(15%), 공동체(10%)</p><h2>2. 핵심 포인트</h2><p>한양대는 <strong>비판적 사고</strong>를 중시합니다. 답변 시 '결과'보다는 자신의 <strong>'논리적 근거'</strong>와 <strong>'창의적 대안'</strong>을 포함하세요.</p></body></html>`);
     printWin.document.close();
@@ -10453,7 +10459,7 @@ ${univPromptSupplement}
     setTimeout(() => { printWin.print(); }, 500);
   };
 
-  window.showKnueGuideModal = function() {
+  window.showKnueGuideModal = function () {
     const modalTitle = document.getElementById("modalTitle");
     const modalBody = document.getElementById("modalBody");
     const modalOverlay = document.getElementById("analysisModal");
@@ -10477,7 +10483,7 @@ ${univPromptSupplement}
     modalOverlay.classList.remove("hidden");
   };
 
-  window.printKnueGuide = function() {
+  window.printKnueGuide = function () {
     const printWin = window.open("", "_blank", "width=900,height=700");
     printWin.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>한국교원대학교 면접 가이드</title><style>body{font-family:'Malgun Gothic',sans-serif;padding:2rem;line-height:1.8;}h1{color:#1b5e20;border-bottom:3px solid #1b5e20;}h2{color:#2e7d32;margin-top:1.5rem;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;padding:10px;text-align:left;}th{background:#f8f9fa;}</style></head><body><h1>🎓 한국교원대학교 면접 가이드</h1><h2>1. 평가 비중 (40:30:30)</h2><p>교직적합성(40%), 학업역량(30%), 교직인성(30%)</p><h2>2. 핵심 포인트</h2><p>단순 지식 전달자가 아닌 <strong>학생과 공감하고 소통하는 교사의 자질</strong>을 보여주세요. 멘토링이나 봉사 경험을 구체적으로 답변하세요.</p></body></html>`);
     printWin.document.close();
@@ -10485,7 +10491,7 @@ ${univPromptSupplement}
     setTimeout(() => { printWin.print(); }, 500);
   };
 
-  window.showKwangwoonGuideModal = function() {
+  window.showKwangwoonGuideModal = function () {
     const modalTitle = document.getElementById("modalTitle");
     const modalBody = document.getElementById("modalBody");
     const modalOverlay = document.getElementById("analysisModal");
@@ -10519,7 +10525,7 @@ ${univPromptSupplement}
     modalOverlay.classList.remove("hidden");
   };
 
-  window.printKwangwoonGuide = function() {
+  window.printKwangwoonGuide = function () {
     const printWin = window.open("", "_blank", "width=900,height=700");
     printWin.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>광운대학교 면접 가이드</title><style>body{font-family:'Malgun Gothic',sans-serif;padding:2rem;line-height:1.8;}h1{color:#b71c1c;border-bottom:3px solid #b71c1c;}h2{color:#d32f2f;margin-top:1.5rem;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;padding:10px;text-align:left;}th{background:#fff5f5;}</style></head><body><h1>🎓 광운대학교 면접 가이드</h1><h2>1. 평가 항목 및 비중</h2><p>발전가능성(45%), 종합사고력(30%), 인성(25%)</p><h2>2. 주요 특징</h2><p>면접 비중이 40%로 확대되었습니다. 면접관에게 <strong>성적이 공개</strong>되므로, 활동의 결과뿐만 아니라 <strong>'이유'</strong>와 <strong>'과정'</strong>을 논리적으로 설명하는 연습이 필수적입니다.</p></body></html>`);
     printWin.document.close();
@@ -10527,7 +10533,7 @@ ${univPromptSupplement}
     setTimeout(() => { printWin.print(); }, 500);
   };
 
-  window.showDonggukGuideModal = function() {
+  window.showDonggukGuideModal = function () {
     const modalTitle = document.getElementById("modalTitle");
     const modalBody = document.getElementById("modalBody");
     const modalOverlay = document.getElementById("analysisModal");
@@ -10562,7 +10568,7 @@ ${univPromptSupplement}
     modalOverlay.classList.remove("hidden");
   };
 
-  window.printDonggukGuide = function() {
+  window.printDonggukGuide = function () {
     const printWin = window.open("", "_blank", "width=900,height=700");
     printWin.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>동국대학교 면접 가이드</title><style>body{font-family:'Malgun Gothic',sans-serif;padding:2rem;line-height:1.8;}h1{color:#bf360c;border-bottom:3px solid #bf360c;}h2{color:#e65100;margin-top:1.5rem;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;padding:10px;text-align:left;}th{background:#fff3e0;}</style></head><body><h1>🎓 동국대학교 면접 가이드 (DoDream)</h1><h2>1. 평가 항목 및 비중</h2><p>전공적합성(30%), 발전가능성(30%), 전형취지적합성(20%), 인성 및 사회성(20%)</p><h2>2. 주요 포인트</h2><p>면접의 실질 영향력이 매우 높습니다(인문 40%, 자연 46%). <strong>'출결'</strong>을 비롯한 학교 생활의 성실성과 <strong>'지원 학과에 대한 심화 이해'</strong>를 답변에 반드시 녹여내세요.</p></body></html>`);
     printWin.document.close();
@@ -10573,7 +10579,7 @@ ${univPromptSupplement}
   // =========================================================
   // Word 다운로드 기능
   // =========================================================
-  window.exportToPdf = function(elementId) {
+  window.exportToPdf = function (elementId) {
     const el = document.getElementById(elementId);
     if (!el || !el.innerHTML || el.innerHTML.trim() === "") {
       alert("다운로드할 결과 내용이 없습니다. 먼저 AI 분석을 완료해주세요.");
@@ -10644,23 +10650,30 @@ ${univPromptSupplement}
 7. **모의고사 문항 분석:** 모의고사 성적표를 토대로 학생의 오답 문항을 추출해 문항별 학습 가이드 제공을 위한 기초 자료를 제공합니다. **(담임교사용)**
 8. **내신 & 모의고사 분석:** 내신점수와 모의고사 점수와의 상관관계를 그래프로 보여주며 학생별로 내신점수를 영역별로 조합하여 출력하고, 모의고사 점수를 회차에 따른 성적의 변화를 그래프로 출력합니다. **(담임교사용)**
 9. **내신 분석하기(대학별 교과 점수 확인):** 학급 학생들, 학년 전체의 성적을 분포도로 출력됩니다. 각 학생을 누르면 과목마다 성취도 및 등급이 출력되고, 과목 조합에 따라 내신 등급도 계산합니다. 또한 각 대학별로 교과전형의 점수 계산 방식을 내장하고 있어 학생마다 각 대학에서 교과전형 점수를 확인할 수 있습니다.
-10. **대학별 입결 분포도:** 업데이트 예정입니다.
+10. **대학별 입결 분포도:** 주요 대학들의 전형별 입결을 시각화된 차트로 확인할 수 있습니다. 대학마다 50%cut, 70%cut, 평균 등급, 경쟁률, 추가합격 인원 등의 자세한 입학 관련 데이터를 확인할 수 있습니다.
+11. **우리 학교 모의고사 성적 현황:** '내신 & 모의고사 분석'에서 원하는 학년의 데이터를 불러온 다음 시행해야 함. 학년의 내신 성적을 업로드 한 후, 탭을 확인하면 우리 학교의 모의고사 성적 및 분석 자료를 확인할 수 있습니다.
+   * 학년 - 연도 - 회차 선택 후 데이터 갱신을 합니다.
+   * **성적 우수자 현황:** 한국사 과목을 제외한 국어, 수학, 영어, 탐구1, 탐구2 과목의 원점수 합, 원점수 평균, 표준점수 합, 백분위 평균을 확인합니다. 원점수, 표준점수, 백분위 각각을 기준으로 정렬할 수 있습니다.
+   * **원점수 합 분포 & 급간별 인원 통계:** 급간을 설정하여 급간별 인원수를 확인합니다. 막대를 누르면 해당 학생들의 모의고사 성적을 확인할 수 있습니다.
+   * **선택과목 및 평균 분석:** 각 과목의 선택 과목 비율 및, 평균 원점수, 평균 백분위, 평균 등급을 확인합니다. 그래프를 누르면 그 과목을 선택한 학생들의 모의고사 성적을 확인할 수 있습니다.
+   * **과목별 분포도:** 각 과목의 성적을 급간별로 나누어 해당 학생의 인원수를 나타낸 그래프입니다. 그래프의 막대를 누르면 해당 학생들의 모의고사 성적을 확인할 수 있습니다. 등급, 원점수, 표준점수, 백분위의 급간을 설정하여 그래프를 변경할 수 있습니다.
+   * **수능 최저학력기준 충족 현황:** 모의고사 등급합을 2합, 3합, 4합에 따라 2~15까지 만족한 학생들을 나타낸 표입니다. 숫자를 누르면 그 등급을 충족한 학생의 충족 과목을 알려줍니다. 참고로 그 학생이 최고로 충족할 수 있는 등급합에만 학생이 표시됩니다. 예를 들어 2합 2를 맞춘 학생은 2합 2에만 표시가 됩니다. (3합, 4합은 별도)
 `;
 
-  window.exportManualToPdf = function() {
+  window.exportManualToPdf = function () {
     let parsedHtml = "";
     if (typeof marked !== 'undefined') {
-        parsedHtml = marked.parse(PROJECT_MANUAL_MD);
+      parsedHtml = marked.parse(PROJECT_MANUAL_MD);
     } else {
-        parsedHtml = "<p>마크다운 파서를 불러올 수 없습니다. 인터넷이 연결되어 있는지 확인해주세요.</p>";
+      parsedHtml = "<p>마크다운 파서를 불러올 수 없습니다. 인터넷이 연결되어 있는지 확인해주세요.</p>";
     }
 
     const printWin = window.open("", "_blank", "width=900,height=700");
     if (!printWin) {
-        alert("팝업이 차단되었습니다. 팝업 차단을 해제하고 다시 시도해주세요.");
-        return;
+      alert("팝업이 차단되었습니다. 팝업 차단을 해제하고 다시 시도해주세요.");
+      return;
     }
-    
+
     printWin.document.write(`<!DOCTYPE html><html lang="ko"><head>
       <meta charset="UTF-8">
       <title>부안고등학교 진학지도 프로그램 설명서</title>
@@ -10682,15 +10695,15 @@ ${univPromptSupplement}
         }
       </style>
     </head><body><div class="container">${parsedHtml}</div></body></html>`);
-    
+
     printWin.document.close();
     printWin.focus();
     setTimeout(() => { printWin.print(); }, 500);
   };
 
   const manualBtn = document.getElementById("download-manual-btn");
-  if(manualBtn) {
-      manualBtn.addEventListener('click', window.exportManualToPdf);
+  if (manualBtn) {
+    manualBtn.addEventListener('click', window.exportManualToPdf);
   }
 
   // Keep legacy alias for any existing references
@@ -10737,7 +10750,7 @@ ${univPromptSupplement}
 
   if (compareLoadDataBtn) {
     compareLoadDataBtn.addEventListener('click', () => {
-      isCompareInitialized = false; 
+      isCompareInitialized = false;
       initGpaMockCompare();
     });
   }
@@ -10746,24 +10759,24 @@ ${univPromptSupplement}
     return new Promise((resolve, reject) => {
       const cbName = '__gpaMockJsonp_' + Date.now() + '_' + Math.random().toString(36).slice(2);
       const script = document.createElement('script');
-      
+
       const timer = setTimeout(() => {
-        cleanup(); 
+        cleanup();
         reject(new Error('데이터 로딩 시간 초과 (구글 서버 응답 없음)'));
       }, 15000);
-      
+
       function cleanup() {
         clearTimeout(timer);
         delete window[cbName];
         if (script.parentNode) script.parentNode.removeChild(script);
       }
-      
-      window[cbName] = function(data) { cleanup(); resolve(data); };
-      script.onerror = function() { 
-        cleanup(); 
-        reject(new Error('네트워크 연결 오류 또는 보안 정책(CORS) 제한')); 
+
+      window[cbName] = function (data) { cleanup(); resolve(data); };
+      script.onerror = function () {
+        cleanup();
+        reject(new Error('네트워크 연결 오류 또는 보안 정책(CORS) 제한'));
       };
-      
+
       const qs = new URLSearchParams(params);
       qs.set('callback', cbName);
       script.src = url + (url.includes('?') ? '&' : '?') + qs.toString();
@@ -11025,7 +11038,7 @@ ${univPromptSupplement}
     const loader = document.getElementById('compareChartLoader');
     if (loader) loader.classList.add('hidden');
     isCompareInitialized = true;
-    updateCompareChart(); 
+    updateCompareChart();
   }
 
   function setupCompareListeners() {
@@ -11052,7 +11065,7 @@ ${univPromptSupplement}
     const yearVal = document.getElementById('compareYear').value;
     const roundVal = document.getElementById('compareMockRound').value;
     const classVal = document.getElementById('compareClassFilter').value;
-    
+
     // 연도 필터링 (학년 선택 시)
     const yearSelect = document.getElementById('compareYear');
     const prevYear = yearSelect.value;
@@ -11063,7 +11076,7 @@ ${univPromptSupplement}
         filteredYears.add(m.year);
       }
     });
-    Array.from(filteredYears).sort((a,b) => b-a).forEach(y => {
+    Array.from(filteredYears).sort((a, b) => b - a).forEach(y => {
       const opt = document.createElement('option');
       opt.value = opt.text = y;
       if (String(y) === prevYear) opt.selected = true;
@@ -11102,7 +11115,7 @@ ${univPromptSupplement}
         filteredClasses.add(m.classNum);
       }
     });
-    Array.from(filteredClasses).sort((a,b) => a-b).forEach(c => {
+    Array.from(filteredClasses).sort((a, b) => a - b).forEach(c => {
       const opt = document.createElement('option');
       opt.value = c; opt.text = `${c}반`;
       if (String(c) === prevClass) opt.selected = true;
@@ -11268,23 +11281,23 @@ ${univPromptSupplement}
     const isMockOnly = xType === 'mockOnly';
     let yLabel = "모의고사 ";
     let isReversed = false;
-    if(scoreType === 'grade') { yLabel += "등급 합"; isReversed = true; }
-    else if(scoreType === 'best_grade') { yLabel += `최고의 ${bestN}합`; isReversed = true; }
-    else if(scoreType === 'raw') { yLabel += "원점수 합"; isReversed = false; }
-    else if(scoreType === 'std') { yLabel += "표준점수 합"; isReversed = false; }
+    if (scoreType === 'grade') { yLabel += "등급 합"; isReversed = true; }
+    else if (scoreType === 'best_grade') { yLabel += `최고의 ${bestN}합`; isReversed = true; }
+    else if (scoreType === 'raw') { yLabel += "원점수 합"; isReversed = false; }
+    else if (scoreType === 'std') { yLabel += "표준점수 합"; isReversed = false; }
 
     const xScaleOptions = isMockOnly
       ? {
-          title: { display: true, text: '📋 번호', color: '#96baff', font: { weight: 'bold' } },
-          ticks: { color: '#ccc', stepSize: 1 },
-          grid: { color: 'rgba(255,255,255,0.1)' }
-        }
+        title: { display: true, text: '📋 번호', color: '#96baff', font: { weight: 'bold' } },
+        ticks: { color: '#ccc', stepSize: 1 },
+        grid: { color: 'rgba(255,255,255,0.1)' }
+      }
       : {
-          title: { display: true, text: `🏫 내신 등급 (${xType})`, color: '#96baff', font: { weight: 'bold' } },
-          min: 1, max: 9, reverse: true,
-          grid: { color: 'rgba(255,255,255,0.1)' },
-          ticks: { color: '#ccc' }
-        };
+        title: { display: true, text: `🏫 내신 등급 (${xType})`, color: '#96baff', font: { weight: 'bold' } },
+        min: 1, max: 9, reverse: true,
+        grid: { color: 'rgba(255,255,255,0.1)' },
+        ticks: { color: '#ccc' }
+      };
 
     if (compareChartInstance) compareChartInstance.destroy();
     compareChartInstance = new Chart(ctx, {
@@ -11293,12 +11306,12 @@ ${univPromptSupplement}
         datasets: [{
           label: '학생 데이터',
           data: data,
-          backgroundColor: function(ctx) {
+          backgroundColor: function (ctx) {
             const val = ctx.raw?.x;
             if (!val) return 'rgba(124, 131, 253, 0.7)';
             if (isMockOnly) return 'rgba(150, 186, 255, 0.75)';
             const ratio = Math.max(0, Math.min(1, (val - 1) / 8));
-            return `rgba(${Math.round(255*(1-ratio))}, 100, ${Math.round(255*ratio)}, 0.7)`;
+            return `rgba(${Math.round(255 * (1 - ratio))}, 100, ${Math.round(255 * ratio)}, 0.7)`;
           },
           pointRadius: 7, pointHoverRadius: 10
         }]
@@ -11357,8 +11370,8 @@ ${univPromptSupplement}
       const cells = subjects.map(s => {
         const d = m[s] || {};
         const grade = (d.grade !== undefined && d.grade !== null && d.grade !== '') ? d.grade : '-';
-        const raw   = (d.raw   !== undefined && d.raw   !== null && d.raw   !== '') ? d.raw   : '-';
-        const std   = (d.std   !== undefined && d.std   !== null && d.std   !== '') ? d.std   : '-';
+        const raw = (d.raw !== undefined && d.raw !== null && d.raw !== '') ? d.raw : '-';
+        const std = (d.std !== undefined && d.std !== null && d.std !== '') ? d.std : '-';
         const subName = d.subjectName ? `<div style="font-size:0.7rem;color:${subjectColors[s]};opacity:0.8;margin-top:2px;">${d.subjectName}</div>` : '';
         return `
           <td style="padding:0.7rem 0.4rem;border-left:1px solid var(--clr-border-subtle);vertical-align:top;">
@@ -11411,7 +11424,7 @@ ${univPromptSupplement}
         <div style="margin-bottom:2.5rem;">
           <h4 style="color:var(--clr-h4-blue);font-weight:700;margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem;">🏫 3학년 내신 등급 현황</h4>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:1rem;">
-            ${['전체내신','국영수','국영수과','국영수사','국영수사과','수영과','국영사'].map(k => `
+            ${['전체내신', '국영수', '국영수과', '국영수사', '국영수사과', '수영과', '국영사'].map(k => `
               <div class="glass-panel" style="padding:1rem;border-radius:12px;text-align:center;background:var(--clr-inset-bg);">
                 <div style="font-size:0.75rem;color:var(--text-secondary);margin-bottom:0.4rem;">${k}</div>
                 <div style="font-size:1.4rem;font-weight:800;color:var(--text-primary);">${studentGpa[k]}</div>
@@ -11481,14 +11494,14 @@ ${univPromptSupplement}
     updateStudentHistoryChart();
   }
 
-  window.updateStudentHistoryChart = function() {
+  window.updateStudentHistoryChart = function () {
     const studentMocks = window.__studentHistoryMocks;
     const subjectLabels = window.__studentHistorySubjectLabels;
     const xLabels = window.__studentHistoryXLabels;
     if (!studentMocks || !xLabels) return;
 
     const selectedSubjects = Array.from(document.querySelectorAll('input[name="studentHistorySubject"]:checked')).map(cb => cb.value);
-    const selectedTypes   = Array.from(document.querySelectorAll('input[name="studentHistoryScoreType"]:checked')).map(cb => cb.value);
+    const selectedTypes = Array.from(document.querySelectorAll('input[name="studentHistoryScoreType"]:checked')).map(cb => cb.value);
 
     const subjectTag = selectedSubjects.map(s => subjectLabels[s] || s).join('+') || '(없음)';
 
@@ -11514,15 +11527,15 @@ ${univPromptSupplement}
     }
 
     const gradeData = selectedTypes.includes('grade') ? sumSeries('grade') : [];
-    const rawData   = selectedTypes.includes('raw')   ? sumSeries('raw')   : [];
-    const stdData   = selectedTypes.includes('std')   ? sumSeries('std')   : [];
+    const rawData = selectedTypes.includes('raw') ? sumSeries('raw') : [];
+    const stdData = selectedTypes.includes('std') ? sumSeries('std') : [];
 
     const gradeRange = dynRange(gradeData, true);
     const scoreRange = dynRange([...rawData, ...stdData], false);
 
     const showGrade = selectedTypes.includes('grade') && gradeData.some(v => v !== null);
     const showScore = (selectedTypes.includes('raw') || selectedTypes.includes('std')) &&
-                      [...rawData, ...stdData].some(v => v !== null);
+      [...rawData, ...stdData].some(v => v !== null);
 
     const datasets = [];
     if (selectedTypes.includes('grade')) datasets.push({
@@ -11597,7 +11610,7 @@ ${univPromptSupplement}
       renderSchoolMockStatus();
       return;
     }
-    
+
     // compareGlobalData가 없으면 fetch (initGpaMockCompare 로직 재사용)
     if (!compareGlobalData) {
       const loader = document.getElementById('compareChartLoader');
@@ -11605,7 +11618,7 @@ ${univPromptSupplement}
       await initGpaMockCompare();
       if (loader) loader.classList.add('hidden');
     }
-    
+
     if (compareGlobalData) {
       setupSchoolMockListeners();
       updateSchoolMockDropdowns();
@@ -11625,10 +11638,10 @@ ${univPromptSupplement}
     });
     // 표 정렬만 업데이트 (차트 재렌더 불필요)
     ['schoolMockTopCount', 'schoolMockTopSort',
-     'topSubj_kor', 'topSubj_math', 'topSubj_eng', 'topSubj_exp1', 'topSubj_exp2'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.addEventListener('change', renderTopStudentsTable);
-    });
+      'topSubj_kor', 'topSubj_math', 'topSubj_eng', 'topSubj_exp1', 'topSubj_exp2'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('change', renderTopStudentsTable);
+      });
 
     const refreshBtn = document.getElementById('schoolMockRefreshBtn');
     if (refreshBtn) {
@@ -11652,11 +11665,11 @@ ${univPromptSupplement}
 
   function updateSchoolMockDropdowns() {
     if (!compareGlobalData) return;
-    
+
     const gradeSelect = document.getElementById('schoolMockGrade');
     const yearSelect = document.getElementById('schoolMockYear');
     const roundSelect = document.getElementById('schoolMockRound');
-    
+
     const gradeVal = gradeSelect.value;
     const yearVal = yearSelect.value;
     const roundVal = roundSelect.value;
@@ -11684,7 +11697,7 @@ ${univPromptSupplement}
         filteredYears.add(m.year);
       }
     });
-    Array.from(filteredYears).sort((a,b) => b-a).forEach(y => {
+    Array.from(filteredYears).sort((a, b) => b - a).forEach(y => {
       const opt = document.createElement('option');
       opt.value = opt.text = y;
       if (String(y) === prevYear) opt.selected = true;
@@ -11765,7 +11778,7 @@ ${univPromptSupplement}
     const dataPoints = [];
     const distTableData = [];
     let cumulative = 0;
-    
+
     // Sort keys in descending order for table
     const sortedBins = Object.keys(bins).map(Number).sort((a, b) => b - a);
     sortedBins.forEach(bin => {
@@ -11773,7 +11786,7 @@ ${univPromptSupplement}
       cumulative += count;
       const ratio = (count / studentScores.length * 100).toFixed(1);
       const cumRatio = (cumulative / studentScores.length * 100).toFixed(1);
-      
+
       distTableData.push(`
         <tr>
           <td style="padding: 10px; border: 1px solid var(--panel-border); text-align: center;">${bin} ~ ${bin + interval}</td>
@@ -11783,7 +11796,7 @@ ${univPromptSupplement}
           <td style="padding: 10px; border: 1px solid var(--panel-border); text-align: center;">${cumRatio}%</td>
         </tr>`);
     });
-    
+
     // Sort keys in ascending order for chart
     const chartBins = Object.keys(bins).map(Number).sort((a, b) => a - b);
     chartBins.forEach(bin => {
@@ -11803,9 +11816,9 @@ ${univPromptSupplement}
   // ─── 헬퍼: 체크된 과목 목록 반환 ────────────────────────────────
   function getCheckedSubjects() {
     return [
-      ['topSubj_kor',  '국어'],
+      ['topSubj_kor', '국어'],
       ['topSubj_math', '수학'],
-      ['topSubj_eng',  '영어'],
+      ['topSubj_eng', '영어'],
       ['topSubj_exp1', '탐구1'],
       ['topSubj_exp2', '탐구2'],
     ].filter(([id]) => {
@@ -11827,9 +11840,9 @@ ${univPromptSupplement}
     if (!_currentStudentScores.length) return;
 
     const topCount = parseInt(document.getElementById('schoolMockTopCount')?.value) || 20;
-    const sortKey  = document.getElementById('schoolMockTopSort')?.value || 'selsum';
-    const checked  = getCheckedSubjects();
-    const allFive  = checked.length === 5;
+    const sortKey = document.getElementById('schoolMockTopSort')?.value || 'selsum';
+    const checked = getCheckedSubjects();
+    const allFive = checked.length === 5;
 
     // 각 학생에 선택합/선택평균 추가
     const withSel = _currentStudentScores.map(s => {
@@ -11891,7 +11904,7 @@ ${univPromptSupplement}
   function showStudentModal(title, students) {
     const modal = document.getElementById('analysisModal');
     const titleEl = document.getElementById('modalTitle');
-    const bodyEl  = document.getElementById('modalBody');
+    const bodyEl = document.getElementById('modalBody');
     if (!modal || !bodyEl) return;
 
     if (titleEl) titleEl.textContent = title;
@@ -11950,9 +11963,9 @@ ${univPromptSupplement}
   // 탐구 최대 1과목 제약을 지키는 최소 N합 조합
   function _bestNCombo(s, n) {
     const domainMap = [
-      { key: '국어',      label: '국어' },
-      { key: '수학',      label: '수학' },
-      { key: '영어',      label: '영어' },
+      { key: '국어', label: '국어' },
+      { key: '수학', label: '수학' },
+      { key: '영어', label: '영어' },
       { key: '탐구영역1', isTanku: true },
       { key: '탐구영역2', isTanku: true },
     ];
@@ -11979,7 +11992,7 @@ ${univPromptSupplement}
     if (!tbody) return;
 
     _csatMinData = {};
-    const thresholds = [2,3,4,5,6,7,8,9,10,11,12,13,14,15];
+    const thresholds = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
     const nList = [2, 3, 4];
 
     // 학생별 best 조합 계산
@@ -12000,7 +12013,7 @@ ${univPromptSupplement}
     });
 
     const thStyle = 'padding: 10px; border: 1px solid var(--panel-border); text-align: center;';
-    const tdBase  = 'padding: 10px 8px; border: 1px solid var(--panel-border); text-align: center;';
+    const tdBase = 'padding: 10px 8px; border: 1px solid var(--panel-border); text-align: center;';
     const rowLabels = { 2: '2합', 3: '3합', 4: '4합' };
 
     let html = '';
@@ -12078,31 +12091,31 @@ ${univPromptSupplement}
   }
 
   function showStudentScoreModal(s, bests) {
-    const modal   = document.getElementById('analysisModal');
+    const modal = document.getElementById('analysisModal');
     const titleEl = document.getElementById('modalTitle');
-    const bodyEl  = document.getElementById('modalBody');
+    const bodyEl = document.getElementById('modalBody');
     if (!modal || !bodyEl) return;
     if (titleEl) titleEl.textContent = `${s.name} (${s.grade}학년 ${s.classNum}반 ${s.studentNum}번) 모의고사 성적`;
 
     const td = 'padding: 8px 10px; border: 1px solid var(--panel-border); text-align: center;';
 
     const domainRows = [
-      { key: '국어',      label: '국어',   color: '#5b8dee' },
-      { key: '수학',      label: '수학',   color: '#ff6b6b' },
-      { key: '영어',      label: '영어',   color: '#2ecc71' },
-      { key: '한국사',    label: '한국사', color: '#95a5a6' },
-      { key: '탐구영역1', label: '탐구1',  color: '#f39c12' },
-      { key: '탐구영역2', label: '탐구2',  color: '#e056fd' },
+      { key: '국어', label: '국어', color: '#5b8dee' },
+      { key: '수학', label: '수학', color: '#ff6b6b' },
+      { key: '영어', label: '영어', color: '#2ecc71' },
+      { key: '한국사', label: '한국사', color: '#95a5a6' },
+      { key: '탐구영역1', label: '탐구1', color: '#f39c12' },
+      { key: '탐구영역2', label: '탐구2', color: '#e056fd' },
     ];
 
     let subjectRows = '';
     domainRows.forEach(({ key, label, color }) => {
       const d = s[key] || {};
       const subjName = (d.subjectName || d.과목명 || '').trim();
-      const raw   = d.raw   ?? d.원점수      ?? '-';
-      const std   = d.std   ?? d.표준점수    ?? '-';
-      const pct   = d.percentile ?? d.전국백분위 ?? '-';
-      const grade = d.grade ?? d.등급        ?? '-';
+      const raw = d.raw ?? d.원점수 ?? '-';
+      const std = d.std ?? d.표준점수 ?? '-';
+      const pct = d.percentile ?? d.전국백분위 ?? '-';
+      const grade = d.grade ?? d.등급 ?? '-';
       if (!subjName && raw === '-') return;
       subjectRows += `<tr>
         <td style="${td}font-weight:700;color:${color};">${label}</td>
@@ -12169,9 +12182,9 @@ ${univPromptSupplement}
   }
 
   function showCsatMinModal(title, entries) {
-    const modal   = document.getElementById('analysisModal');
+    const modal = document.getElementById('analysisModal');
     const titleEl = document.getElementById('modalTitle');
-    const bodyEl  = document.getElementById('modalBody');
+    const bodyEl = document.getElementById('modalBody');
     if (!modal || !bodyEl) return;
     if (titleEl) titleEl.textContent = title;
 
@@ -12220,16 +12233,16 @@ ${univPromptSupplement}
     }
 
     const gradeEl = document.getElementById('schoolMockGrade');
-    const yearEl  = document.getElementById('schoolMockYear');
+    const yearEl = document.getElementById('schoolMockYear');
     const roundEl = document.getElementById('schoolMockRound');
     const gradeText = gradeEl?.options[gradeEl.selectedIndex]?.text || '전체';
-    const yearText  = yearEl?.options[yearEl.selectedIndex]?.text  || '전체';
+    const yearText = yearEl?.options[yearEl.selectedIndex]?.text || '전체';
     const roundText = roundEl?.options[roundEl.selectedIndex]?.text || '전체';
 
     // ── 차트 이미지 캡처 ──
-    const distImg        = document.getElementById('schoolMockDistChart')?.toDataURL('image/png') || '';
-    const korChoiceImg   = document.getElementById('schoolMockKorChoiceChart')?.toDataURL('image/png') || '';
-    const mathChoiceImg  = document.getElementById('schoolMockMathChoiceChart')?.toDataURL('image/png') || '';
+    const distImg = document.getElementById('schoolMockDistChart')?.toDataURL('image/png') || '';
+    const korChoiceImg = document.getElementById('schoolMockKorChoiceChart')?.toDataURL('image/png') || '';
+    const mathChoiceImg = document.getElementById('schoolMockMathChoiceChart')?.toDataURL('image/png') || '';
     const socialChoiceImg = document.getElementById('schoolMockSocialChoiceChart')?.toDataURL('image/png') || '';
     const scienceChoiceImg = document.getElementById('schoolMockScienceChoiceChart')?.toDataURL('image/png') || '';
 
@@ -12246,15 +12259,15 @@ ${univPromptSupplement}
       .filter(e => e.img);
 
     // ── 테이블 HTML 수집 ──
-    const topThead     = document.querySelector('#schoolMockTopTable thead')?.innerHTML || '';
-    const topTbody     = document.getElementById('schoolMockTopBody')?.innerHTML || '';
-    const distRows     = document.getElementById('schoolMockDistBody')?.innerHTML || '';
-    const korAvgRows   = document.getElementById('schoolMockKorAvgBody')?.innerHTML || '';
-    const mathAvgRows  = document.getElementById('schoolMockMathAvgBody')?.innerHTML || '';
+    const topThead = document.querySelector('#schoolMockTopTable thead')?.innerHTML || '';
+    const topTbody = document.getElementById('schoolMockTopBody')?.innerHTML || '';
+    const distRows = document.getElementById('schoolMockDistBody')?.innerHTML || '';
+    const korAvgRows = document.getElementById('schoolMockKorAvgBody')?.innerHTML || '';
+    const mathAvgRows = document.getElementById('schoolMockMathAvgBody')?.innerHTML || '';
     const socialAvgRows = document.getElementById('schoolMockSocialAvgBody')?.innerHTML || '';
     const scienceAvgRows = document.getElementById('schoolMockScienceAvgBody')?.innerHTML || '';
-    const etcAvgRows   = document.getElementById('schoolMockAverageBody')?.innerHTML || '';
-    const csatMinRows  = document.getElementById('csatMinBody')?.innerHTML || '';
+    const etcAvgRows = document.getElementById('schoolMockAverageBody')?.innerHTML || '';
+    const csatMinRows = document.getElementById('csatMinBody')?.innerHTML || '';
     const csatRankRows = document.getElementById('csatRankBody')?.innerHTML || '';
 
     // ── 공통 헬퍼 ──
@@ -12432,17 +12445,17 @@ ${univPromptSupplement}
     });
   }
 
-  const SOCIAL_SUBJECTS = new Set(['생활과윤리','윤리와사상','한국지리','세계지리','동아시아사','세계사','정치와법','경제','사회문화']);
+  const SOCIAL_SUBJECTS = new Set(['생활과윤리', '윤리와사상', '한국지리', '세계지리', '동아시아사', '세계사', '정치와법', '경제', '사회문화']);
   // 로마숫자 Ⅰ/Ⅱ와 라틴 I/II 둘 다 허용
   const SCIENCE_SUBJECTS = new Set([
-    '물리학Ⅰ','물리학Ⅱ','화학Ⅰ','화학Ⅱ','생명과학Ⅰ','생명과학Ⅱ','지구과학Ⅰ','지구과학Ⅱ',
-    '물리학I','물리학II','화학I','화학II','생명과학I','생명과학II','지구과학I','지구과학II'
+    '물리학Ⅰ', '물리학Ⅱ', '화학Ⅰ', '화학Ⅱ', '생명과학Ⅰ', '생명과학Ⅱ', '지구과학Ⅰ', '지구과학Ⅱ',
+    '물리학I', '물리학II', '화학I', '화학II', '생명과학I', '생명과학II', '지구과학I', '지구과학II'
   ]);
   // 과목명 표기 정규화: 라틴 I/II → 로마숫자 Ⅰ/Ⅱ (출력용)
   function normSubjName(s) {
     return String(s || '').trim()
-      .replace(/II$/,'Ⅱ').replace(/I$/,'Ⅰ')
-      .replace(/II(\s)/g,'Ⅱ$1').replace(/I(\s)/g,'Ⅰ$1');
+      .replace(/II$/, 'Ⅱ').replace(/I$/, 'Ⅰ')
+      .replace(/II(\s)/g, 'Ⅱ$1').replace(/I(\s)/g, 'Ⅰ$1');
   }
 
   function renderSchoolMockChoices(studentScores) {
@@ -12477,7 +12490,7 @@ ${univPromptSupplement}
         if (domain.startsWith('탐구')) {
           domainLabel = SOCIAL_SUBJECTS.has(subjName) ? '사회탐구'
             : (SCIENCE_SUBJECTS.has(rawName.trim()) || SCIENCE_SUBJECTS.has(subjName)) ? '과학탐구'
-            : '탐구';
+              : '탐구';
         } else {
           domainLabel = domain;
         }
@@ -12496,16 +12509,16 @@ ${univPromptSupplement}
     renderChoicePieChart('schoolMockMathChoiceChart', 'schoolMockMathChoiceChart', mathChoices,
       ['#ff6b6b', '#7c83fd', '#ffd93d']);
     renderChoicePieChart('schoolMockSocialChoiceChart', 'schoolMockSocialChoiceChart', socialChoices,
-      ['#ff8fab','#ffb3c6','#ffd93d','#ff9f1c','#c77dff','#e0aaff','#96baff','#4ecdc4','#6bcb77']);
+      ['#ff8fab', '#ffb3c6', '#ffd93d', '#ff9f1c', '#c77dff', '#e0aaff', '#96baff', '#4ecdc4', '#6bcb77']);
     renderChoicePieChart('schoolMockScienceChoiceChart', 'schoolMockScienceChoiceChart', scienceChoices,
-      ['#5b8dee','#3a6bc7','#7c83fd','#5258d0','#4ecdc4','#2ea89f','#6bcb77','#43a85a']);
+      ['#5b8dee', '#3a6bc7', '#7c83fd', '#5258d0', '#4ecdc4', '#2ea89f', '#6bcb77', '#43a85a']);
 
     // 도메인별 테이블 렌더링
     const domainTableMap = {
-      '국어':      'schoolMockKorAvgBody',
-      '수학':      'schoolMockMathAvgBody',
-      '사회탐구':  'schoolMockSocialAvgBody',
-      '과학탐구':  'schoolMockScienceAvgBody',
+      '국어': 'schoolMockKorAvgBody',
+      '수학': 'schoolMockMathAvgBody',
+      '사회탐구': 'schoolMockSocialAvgBody',
+      '과학탐구': 'schoolMockScienceAvgBody',
     };
     const domainHtml = { '국어': '', '수학': '', '사회탐구': '', '과학탐구': '', '_etc': '' };
 
@@ -12566,20 +12579,20 @@ ${univPromptSupplement}
         if (domain.startsWith('탐구')) {
           domainLabel = SOCIAL_SUBJECTS.has(subjName) ? '사회탐구'
             : (SCIENCE_SUBJECTS.has(rawName.trim()) || SCIENCE_SUBJECTS.has(subjName)) ? '과학탐구'
-            : '탐구';
+              : '탐구';
         } else {
           domainLabel = domain;
         }
 
         if (!_subjDistData[subjName]) _subjDistData[subjName] = { domain: domainLabel, grade: [], raw: [], std: [], pct: [], students: [] };
         const grade = parseFloat(d.grade || d.등급);
-        const raw   = parseFloat(d.raw   || d.원점수);
-        const std   = parseFloat(d.std   || d.표준점수);
-        const pct   = parseFloat(d.percentile || d.전국백분위);
+        const raw = parseFloat(d.raw || d.원점수);
+        const std = parseFloat(d.std || d.표준점수);
+        const pct = parseFloat(d.percentile || d.전국백분위);
         if (!isNaN(grade)) _subjDistData[subjName].grade.push(grade);
-        if (!isNaN(raw))   _subjDistData[subjName].raw.push(raw);
-        if (!isNaN(std))   _subjDistData[subjName].std.push(std);
-        if (!isNaN(pct))   _subjDistData[subjName].pct.push(pct);
+        if (!isNaN(raw)) _subjDistData[subjName].raw.push(raw);
+        if (!isNaN(std)) _subjDistData[subjName].std.push(std);
+        if (!isNaN(pct)) _subjDistData[subjName].pct.push(pct);
         _subjDistData[subjName].students.push({ student: s, grade, raw, std, pct });
       });
     });
@@ -12598,19 +12611,19 @@ ${univPromptSupplement}
     if (!data) return null;
 
     let values;
-    if (type === 'grade')            values = data.grade;
+    if (type === 'grade') values = data.grade;
     else if (type.startsWith('raw')) values = data.raw;
     else if (type.startsWith('std')) values = data.std;
-    else                             values = data.pct;
+    else values = data.pct;
     if (!values.length) return null;
 
     let labels, counts, bucketLos, step;
 
     if (type === 'grade') {
-      labels = ['1','2','3','4','5','6','7','8','9'];
+      labels = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
       counts = new Array(9).fill(0);
       values.forEach(v => { const i = Math.round(v) - 1; if (i >= 0 && i <= 8) counts[i]++; });
-      bucketLos = [1,2,3,4,5,6,7,8,9];
+      bucketLos = [1, 2, 3, 4, 5, 6, 7, 8, 9];
       step = 1;
     } else {
       step = (type === 'raw20' || type === 'std20' || type === 'pct20') ? 20 : 10;
@@ -12646,7 +12659,7 @@ ${univPromptSupplement}
     grid.innerHTML = '';
 
     const domainOrder = ['국어', '수학', '영어', '한국사', '사회탐구', '과학탐구', '탐구'];
-    const gradeColors = ['#e74c3c','#e67e22','#f39c12','#2ecc71','#27ae60','#3498db','#8e44ad','#95a5a6','#7f8c8d'];
+    const gradeColors = ['#e74c3c', '#e67e22', '#f39c12', '#2ecc71', '#27ae60', '#3498db', '#8e44ad', '#95a5a6', '#7f8c8d'];
 
     // 도메인 순서대로 정렬된 과목 목록
     const sortedSubjects = [];
@@ -12670,7 +12683,7 @@ ${univPromptSupplement}
       titleRow.style.cssText = 'display:flex;justify-content:space-between;align-items:baseline;';
       titleRow.innerHTML = `
         <span style="font-weight:700;font-size:0.85rem;color:var(--text-primary);">${subj}</span>
-        <span style="font-size:0.72rem;color:var(--text-secondary);">${domain} · ${counts.reduce((a,b)=>a+b,0)}명</span>`;
+        <span style="font-size:0.72rem;color:var(--text-secondary);">${domain} · ${counts.reduce((a, b) => a + b, 0)}명</span>`;
 
       const wrap = document.createElement('div');
       wrap.style.cssText = 'height:175px;position:relative;';
@@ -12703,10 +12716,10 @@ ${univPromptSupplement}
             if (!subjData) return;
             const matched = subjData.students.filter(({ grade, raw, std, pct }) => {
               let val;
-              if (type === 'grade')            val = grade;
+              if (type === 'grade') val = grade;
               else if (type.startsWith('raw')) val = raw;
               else if (type.startsWith('std')) val = std;
-              else                             val = pct;
+              else val = pct;
               if (isNaN(val)) return false;
               if (type === 'grade') return Math.round(val) === idx + 1;
               const lo = bucketLos[idx];
