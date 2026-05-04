@@ -24,6 +24,7 @@
   --clr-border-subtle: rgba(255, 255, 255, 0.07);
   --clr-checkbox-bg: rgba(0, 0, 0, 0.3);
   --clr-chart-bg: rgba(0, 0, 0, 0.2);
+  --upload-card-bg: rgba(0, 0, 0, 0.2);
 }
 
 * {
@@ -2031,6 +2032,7 @@ body.light-mode {
   --clr-border-subtle: rgba(94, 106, 210, 0.12);
   --clr-checkbox-bg: rgba(255, 255, 255, 0.98);
   --clr-chart-bg: rgba(252, 253, 255, 0.9);
+  --upload-card-bg: rgba(255, 255, 255, 0.8);
 }
 
 body.light-mode #theme-toggle-btn {

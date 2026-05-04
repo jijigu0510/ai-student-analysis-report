@@ -83,16 +83,16 @@
       
       <div id="universal-upload-body" class="universal-upload-body">
         <!-- 공통 설정 (API Key) -->
-        <div style="margin-bottom: 1.5rem; background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 12px; border: 1px solid rgba(150, 186, 255, 0.3);">
-          <label for="uni-api-key" style="color: #96baff; font-weight: bold; font-size: 0.95rem; margin-bottom: 0.5rem; display: block;">🔑 Google Gemini API Key <span style="font-size: 0.8rem; font-weight: normal; color: var(--text-secondary);">(모든 분석 탭에 공통 적용됩니다)</span></label>
+        <div style="margin-bottom: 1.5rem; background: var(--upload-card-bg); padding: 1rem; border-radius: 12px; border: 1px solid rgba(150, 186, 255, 0.3);">
+          <label for="uni-api-key" style="color: var(--clr-h4-blue); font-weight: bold; font-size: 0.95rem; margin-bottom: 0.5rem; display: block;">🔑 Google Gemini API Key <span style="font-size: 0.8rem; font-weight: normal; color: var(--text-secondary);">(모든 분석 탭에 공통 적용됩니다)</span></label>
           <input type="password" id="uni-api-key" placeholder="AI Studio에서 발급받은 API 키를 입력하세요..." style="background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-primary); border-radius: 8px; padding: 0.75rem 1rem; width: 100%;">
         </div>
 
         <div class="universal-upload-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
         
         <!-- 개인 분석 파일 -->
-        <div class="uni-upload-card" style="background: rgba(0,0,0,0.2); padding: 1.2rem; border-radius: 12px; border: 1px solid var(--panel-border);">
-          <h4 style="color: #96baff; margin-bottom: 1rem; font-size: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">👤 개인 분석용</h4>
+        <div class="uni-upload-card" style="background: var(--upload-card-bg); padding: 1.2rem; border-radius: 12px; border: 1px solid var(--panel-border);">
+          <h4 style="color: var(--clr-h4-blue); margin-bottom: 1rem; font-size: 1rem; border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem;">👤 개인 분석용</h4>
           <div class="form-group" style="margin-bottom: 0.8rem;">
             <label style="font-size: 0.8rem; color: var(--text-secondary);">인적사항 엑셀파일 <span style="font-size: 0.7rem; color: #7cb9ff; display: block; margin-top: 2px;">(경로: 나이스 - 학급담임 - 학교생활기록부 - 학생부 항목별 조회 - 인적,학적사항 - 인적사항)</span></label>
             <input type="file" id="uni-excel-upload" accept=".xlsx, .xls" style="font-size: 0.8rem; padding: 0.5rem; width: 100%;">
@@ -108,8 +108,8 @@
         </div>
 
         <!-- 합불합 분석 파일 -->
-        <div class="uni-upload-card" style="background: rgba(0,0,0,0.2); padding: 1.2rem; border-radius: 12px; border: 1px solid var(--panel-border);">
-          <h4 style="color: #96baff; margin-bottom: 1rem; font-size: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">📊 합불합 분석용</h4>
+        <div class="uni-upload-card" style="background: var(--upload-card-bg); padding: 1.2rem; border-radius: 12px; border: 1px solid var(--panel-border);">
+          <h4 style="color: var(--clr-h4-blue); margin-bottom: 1rem; font-size: 1rem; border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem;">📊 합불합 분석용</h4>
           <div class="form-group" style="margin-bottom: 0.8rem;">
             <label style="font-size: 0.8rem; color: var(--text-secondary);">수시진학관리 (결과) <span style="font-size: 0.7rem; color: #7cb9ff; display: block; margin-top: 2px;">(제공된 '수시진학관리' 대교협 엑셀 파일 업로드)</span></label>
             <input type="file" id="uni-pf-results-upload" accept=".xlsx, .xls" style="font-size: 0.8rem; padding: 0.5rem; width: 100%;">
@@ -136,8 +136,8 @@
         </div>
 
         <!-- 성적 분석 파일 -->
-        <div class="uni-upload-card" style="background: rgba(0,0,0,0.2); padding: 1.2rem; border-radius: 12px; border: 1px solid var(--panel-border);">
-          <h4 style="color: #96baff; margin-bottom: 1rem; font-size: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">📈 모의고사 / 내신 분석용</h4>
+        <div class="uni-upload-card" style="background: var(--upload-card-bg); padding: 1.2rem; border-radius: 12px; border: 1px solid var(--panel-border);">
+          <h4 style="color: var(--clr-h4-blue); margin-bottom: 1rem; font-size: 1rem; border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem;">📈 모의고사 / 내신 분석용</h4>
           <div class="form-group" style="margin-bottom: 0.8rem;">
             <label style="font-size: 0.8rem; color: var(--text-secondary);">모의고사 성적표 학년 선택</label>
             <select id="uni-mock-grade" style="background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-primary); border-radius: 8px; padding: 0.5rem 1rem; width: 100%; font-size: 0.8rem;">
@@ -175,7 +175,8 @@
         <button id="tab-mock-exam" class="tab-btn">📊 모의고사 문항 분석</button>
         <button id="tab-gpa-mock-compare" class="tab-btn">📈 내신 & 모의고사 분석</button>
         <button id="tab-grade-rank" class="tab-btn">📊 내신 분석하기(대학별 교과 점수 확인)</button>
-        <button id="tab-coming-soon" class="tab-btn disabled" disabled title="업데이트 예정입니다">📅 대학별 입결 분포도 (업데이트 예정)</button>
+        <button id="tab-admission-dist" class="tab-btn">📊 대학별 입결 분포도</button>
+        <button id="tab-school-mock-status" class="tab-btn">🏫 우리 학교 모의고사 성적 현황</button>
       </nav>
 
 
@@ -735,7 +736,7 @@
           <summary style="cursor:pointer; font-size:0.85rem; font-weight:600; color:#7cb9ff; user-select:none; padding:0.5rem 0; display:flex; align-items:center; gap:0.4rem;">
             <span>📋</span> 면접 특화 데이터 보유 대학 현황 보기
           </summary>
-          <div id="iv-univ-status-content" style="margin-top:0.6rem; padding:1rem; background:rgba(0,0,0,0.2); border-radius:8px; font-size:0.8rem; line-height:1.8;">
+          <div id="iv-univ-status-content" style="margin-top:0.6rem; padding:1rem; background:var(--upload-card-bg); border-radius:8px; font-size:0.8rem; line-height:1.8;">
             <!-- JS로 동적 생성 -->
           </div>
         </details>
@@ -1259,6 +1260,330 @@
   </main>
 
 
+
+  <!-- ===== 대학별 입결 분포도 탭 뷰 ===== -->
+  <main id="view-admission-dist" class="main-container view-section hidden" style="padding: 0; background: none; box-shadow: none; border: none; display: none;">
+    <div id="adist-root" style="width: 100%; padding: 1.5rem 0;"></div>
+  </main>
+
+  <!-- ===== 우리 학교 모의고사 성적 현황 탭 ===== -->
+  <main id="view-school-mock-status" class="main-container view-section hidden" style="display: none;">
+    <!-- Header with Filters -->
+    <section class="glass-panel" style="padding: 1.5rem; margin-bottom: 1.5rem;">
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+        <h2 style="margin: 0; font-size: 1.5rem; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
+          🏫 우리 학교 모의고사 성적 현황
+        </h2>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <select id="schoolMockGrade" class="form-select" style="width: auto;">
+            <option value="all">전체 학년</option>
+          </select>
+          <select id="schoolMockYear" class="form-select" style="width: auto;">
+            <option value="all">전체 연도</option>
+          </select>
+          <select id="schoolMockRound" class="form-select" style="width: auto;">
+            <option value="all">전체 회차</option>
+          </select>
+          <button id="schoolMockRefreshBtn" class="btn-primary" style="padding: 0.5rem 1rem;">
+            🔄 데이터 갱신
+          </button>
+          <button id="schoolMockPdfBtn" class="btn-primary" style="padding: 0.5rem 1rem; background: linear-gradient(135deg,#e05fc4,#a855f7);">
+            📄 PDF 다운로드
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Top Students Table -->
+    <section class="glass-panel" style="padding: 1.5rem; margin-bottom: 1.5rem;">
+      <div style="margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.8rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.6rem;">
+          <h3 style="margin: 0; color: var(--accent-primary);">📊 성적 우수자 현황</h3>
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span style="font-size: 0.85rem; color: var(--text-secondary);">표시 인원:</span>
+            <input type="number" id="schoolMockTopCount" value="20" min="5" max="100" class="form-input" style="width: 70px; padding: 0.3rem;">
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; padding: 0.7rem 1rem; background: rgba(124,131,253,0.06); border-radius: 8px; border: 1px solid var(--panel-border);">
+          <span style="font-size: 0.82rem; color: var(--text-secondary); white-space: nowrap;">과목 선택</span>
+          <label style="display:flex;align-items:center;gap:0.3rem;font-size:0.85rem;cursor:pointer;color:var(--text-primary);"><input type="checkbox" id="topSubj_kor" checked> 국어</label>
+          <label style="display:flex;align-items:center;gap:0.3rem;font-size:0.85rem;cursor:pointer;color:var(--text-primary);"><input type="checkbox" id="topSubj_math" checked> 수학</label>
+          <label style="display:flex;align-items:center;gap:0.3rem;font-size:0.85rem;cursor:pointer;color:var(--text-primary);"><input type="checkbox" id="topSubj_eng" checked> 영어</label>
+          <label style="display:flex;align-items:center;gap:0.3rem;font-size:0.85rem;cursor:pointer;color:var(--text-primary);"><input type="checkbox" id="topSubj_exp1" checked> 탐구1</label>
+          <label style="display:flex;align-items:center;gap:0.3rem;font-size:0.85rem;cursor:pointer;color:var(--text-primary);"><input type="checkbox" id="topSubj_exp2" checked> 탐구2</label>
+          <div style="width:1px;height:1.2rem;background:var(--panel-border);"></div>
+          <span style="font-size: 0.82rem; color: var(--text-secondary);">정렬</span>
+          <select id="schoolMockTopSort" class="form-select" style="width:auto;padding:0.3rem 0.6rem;font-size:0.85rem;">
+            <option value="selsum">선택 합 기준</option>
+            <option value="selavg">선택 평균 기준</option>
+            <option value="stdsum">표준점수합</option>
+            <option value="pctavg">백분위 평균</option>
+          </select>
+        </div>
+      </div>
+      <div class="table-container" style="overflow-x: auto;">
+        <table class="mock-table" id="schoolMockTopTable" style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+          <thead>
+            <tr style="background: rgba(124, 131, 253, 0.1);">
+              <th style="padding: 10px; border: 1px solid var(--panel-border);">순위</th>
+              <th style="padding: 10px; border: 1px solid var(--panel-border);">학반번호</th>
+              <th style="padding: 10px; border: 1px solid var(--panel-border);">성명</th>
+              <th style="padding: 10px; border: 1px solid var(--panel-border);" data-sort-key="국어">국어</th>
+              <th style="padding: 10px; border: 1px solid var(--panel-border);" data-sort-key="수학">수학</th>
+              <th style="padding: 10px; border: 1px solid var(--panel-border);" data-sort-key="영어">영어</th>
+              <th style="padding: 10px; border: 1px solid var(--panel-border);" data-sort-key="탐구1">탐구1</th>
+              <th style="padding: 10px; border: 1px solid var(--panel-border);" data-sort-key="탐구2">탐구2</th>
+              <th style="padding: 10px; border: 1px solid var(--panel-border);" data-sort-key="원점수합">원점수합</th>
+              <th style="padding: 10px; border: 1px solid var(--panel-border);" data-sort-key="표점합">표점합</th>
+              <th style="padding: 10px; border: 1px solid var(--panel-border);" data-sort-key="백분위평균">백분위평균</th>
+            </tr>
+          </thead>
+          <tbody id="schoolMockTopBody">
+            <!-- JS dynamically filled -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Raw Score Distribution -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+      <section class="glass-panel" style="padding: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+          <h3 style="margin: 0; color: var(--clr-h4-pink);">📈 원점수 합 분포</h3>
+          <select id="schoolMockInterval" class="form-select" style="width: auto;">
+            <option value="5">5점 간격</option>
+            <option value="10" selected>10점 간격</option>
+            <option value="20">20점 간격</option>
+            <option value="30">30점 간격</option>
+          </select>
+        </div>
+        <div style="height: 350px; position: relative;">
+          <canvas id="schoolMockDistChart"></canvas>
+        </div>
+      </section>
+
+      <section class="glass-panel" style="padding: 1.5rem;">
+        <h3 style="margin: 0 0 1rem; color: var(--clr-h4-blue);">📝 급간별 인원 통계</h3>
+        <div class="table-container" style="overflow-y: auto; max-height: 350px;">
+          <table class="mock-table" style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+            <thead>
+              <tr style="background: rgba(150, 186, 255, 0.1);">
+                <th style="padding: 10px; border: 1px solid var(--panel-border);">급간(원점수)</th>
+                <th style="padding: 10px; border: 1px solid var(--panel-border);">인원</th>
+                <th style="padding: 10px; border: 1px solid var(--panel-border);">비율</th>
+                <th style="padding: 10px; border: 1px solid var(--panel-border);">누적인원</th>
+                <th style="padding: 10px; border: 1px solid var(--panel-border);">누적비율</th>
+              </tr>
+            </thead>
+            <tbody id="schoolMockDistBody">
+              <!-- JS dynamically filled -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- Subject Choices and Averages -->
+    <section class="glass-panel" style="padding: 1.5rem; margin-bottom: 1.5rem;">
+      <h3 style="margin: 0 0 1.5rem; color: var(--accent-primary);">🎯 선택과목 및 평균 분석</h3>
+
+      <!-- 국어 -->
+      <div style="display: grid; grid-template-columns: 260px 1fr; gap: 1.5rem; align-items: start; margin-bottom: 2rem;">
+        <div>
+          <h4 style="text-align: center; margin-bottom: 0.5rem; color: var(--text-primary);">국어 선택 비율</h4>
+          <div style="height: 200px; position: relative;">
+            <canvas id="schoolMockKorChoiceChart"></canvas>
+          </div>
+        </div>
+        <div>
+          <table class="mock-table" style="width: 100%; border-collapse: collapse; font-size: 0.82rem; text-align: center;">
+            <thead>
+              <tr style="background: rgba(91,141,238,0.12);">
+                <th style="padding: 8px; border: 1px solid var(--panel-border);">선택과목</th>
+                <th style="padding: 8px; border: 1px solid var(--panel-border);">인원</th>
+                <th style="padding: 8px; border: 1px solid var(--panel-border);">선택비율</th>
+                <th style="padding: 8px; border: 1px solid var(--panel-border);">평균 원점수</th>
+                <th style="padding: 8px; border: 1px solid var(--panel-border);">평균 백분위</th>
+                <th style="padding: 8px; border: 1px solid var(--panel-border);">평균 등급</th>
+              </tr>
+            </thead>
+            <tbody id="schoolMockKorAvgBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 수학 -->
+      <div style="display: grid; grid-template-columns: 260px 1fr; gap: 1.5rem; align-items: start; margin-bottom: 2rem;">
+        <div>
+          <h4 style="text-align: center; margin-bottom: 0.5rem; color: var(--text-primary);">수학 선택 비율</h4>
+          <div style="height: 200px; position: relative;">
+            <canvas id="schoolMockMathChoiceChart"></canvas>
+          </div>
+        </div>
+        <div>
+          <table class="mock-table" style="width: 100%; border-collapse: collapse; font-size: 0.82rem; text-align: center;">
+            <thead>
+              <tr style="background: rgba(255,107,107,0.12);">
+                <th style="padding: 8px; border: 1px solid var(--panel-border);">선택과목</th>
+                <th style="padding: 8px; border: 1px solid var(--panel-border);">인원</th>
+                <th style="padding: 8px; border: 1px solid var(--panel-border);">선택비율</th>
+                <th style="padding: 8px; border: 1px solid var(--panel-border);">평균 원점수</th>
+                <th style="padding: 8px; border: 1px solid var(--panel-border);">평균 백분위</th>
+                <th style="padding: 8px; border: 1px solid var(--panel-border);">평균 등급</th>
+              </tr>
+            </thead>
+            <tbody id="schoolMockMathAvgBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 사회탐구 -->
+      <div style="display: grid; grid-template-columns: 260px 1fr; gap: 1.5rem; align-items: start; margin-bottom: 2rem;">
+        <div>
+          <h4 style="text-align: center; margin-bottom: 0.5rem; color: var(--text-primary);">사회탐구 선택 비율</h4>
+          <div style="height: 200px; position: relative;">
+            <canvas id="schoolMockSocialChoiceChart"></canvas>
+          </div>
+        </div>
+        <div>
+          <table class="mock-table" style="width: 100%; border-collapse: collapse; font-size: 0.82rem; text-align: center;">
+            <thead>
+              <tr style="background: rgba(255,143,171,0.12);">
+                <th style="padding: 8px; border: 1px solid var(--panel-border);">선택과목</th>
+                <th style="padding: 8px; border: 1px solid var(--panel-border);">인원</th>
+                <th style="padding: 8px; border: 1px solid var(--panel-border);">선택비율</th>
+                <th style="padding: 8px; border: 1px solid var(--panel-border);">평균 원점수</th>
+                <th style="padding: 8px; border: 1px solid var(--panel-border);">평균 백분위</th>
+                <th style="padding: 8px; border: 1px solid var(--panel-border);">평균 등급</th>
+              </tr>
+            </thead>
+            <tbody id="schoolMockSocialAvgBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 과학탐구 -->
+      <div style="display: grid; grid-template-columns: 260px 1fr; gap: 1.5rem; align-items: start; margin-bottom: 2rem;">
+        <div>
+          <h4 style="text-align: center; margin-bottom: 0.5rem; color: var(--text-primary);">과학탐구 선택 비율</h4>
+          <div style="height: 200px; position: relative;">
+            <canvas id="schoolMockScienceChoiceChart"></canvas>
+          </div>
+        </div>
+        <div>
+          <table class="mock-table" style="width: 100%; border-collapse: collapse; font-size: 0.82rem; text-align: center;">
+            <thead>
+              <tr style="background: rgba(78,205,196,0.12);">
+                <th style="padding: 8px; border: 1px solid var(--panel-border);">선택과목</th>
+                <th style="padding: 8px; border: 1px solid var(--panel-border);">인원</th>
+                <th style="padding: 8px; border: 1px solid var(--panel-border);">선택비율</th>
+                <th style="padding: 8px; border: 1px solid var(--panel-border);">평균 원점수</th>
+                <th style="padding: 8px; border: 1px solid var(--panel-border);">평균 백분위</th>
+                <th style="padding: 8px; border: 1px solid var(--panel-border);">평균 등급</th>
+              </tr>
+            </thead>
+            <tbody id="schoolMockScienceAvgBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 영어 / 한국사 요약 -->
+      <div class="table-container" style="margin-top: 0.5rem;">
+        <table class="mock-table" style="width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: center;">
+          <thead>
+            <tr style="background: rgba(150, 186, 255, 0.1);">
+              <th style="padding: 10px; border: 1px solid var(--panel-border);">영역</th>
+              <th style="padding: 10px; border: 1px solid var(--panel-border);">선택과목</th>
+              <th style="padding: 10px; border: 1px solid var(--panel-border);">인원</th>
+              <th style="padding: 10px; border: 1px solid var(--panel-border);">선택비율</th>
+              <th style="padding: 10px; border: 1px solid var(--panel-border);">평균 원점수</th>
+              <th style="padding: 10px; border: 1px solid var(--panel-border);">평균 백분위</th>
+              <th style="padding: 10px; border: 1px solid var(--panel-border);">평균 등급</th>
+            </tr>
+          </thead>
+          <tbody id="schoolMockAverageBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 과목별 분포도 -->
+    <section class="glass-panel" style="padding: 1.5rem; margin-bottom: 1.5rem;">
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.2rem;">
+        <h3 style="margin: 0; color: var(--accent-primary);">📊 과목별 분포도</h3>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <label style="color: var(--text-secondary); font-size: 0.88rem;">구분</label>
+          <select id="subjDistTypeSelect" style="background: var(--panel-bg); color: var(--text-primary); border: 1px solid var(--panel-border); border-radius: 6px; padding: 0.4rem 0.8rem; font-size: 0.88rem; cursor: pointer;">
+            <option value="grade">등급(1~9)</option>
+            <option value="raw10">원점수(10점단위)</option>
+            <option value="raw20">원점수(20점단위)</option>
+            <option value="std10">표준점수(10점단위)</option>
+            <option value="std20">표준점수(20점단위)</option>
+            <option value="pct10">백분위(10단위)</option>
+            <option value="pct20">백분위(20단위)</option>
+          </select>
+        </div>
+      </div>
+      <div id="subjDistGrid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;"></div>
+    </section>
+
+    <!-- 수능 최저학력기준 충족 현황 -->
+    <section class="glass-panel" style="padding: 1.5rem; margin-bottom: 1.5rem;">
+      <h3 style="margin: 0 0 0.5rem; color: var(--accent-primary);">📋 수능 최저학력기준 충족 현황</h3>
+      <p style="color: var(--text-secondary); font-size: 0.83rem; margin: 0 0 1.2rem;">국어·수학·영어·탐구1·탐구2 중 최저 등급합 기준 충족 인원 &nbsp;|&nbsp; 숫자 클릭 시 해당 학생 목록 확인</p>
+      <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.88rem; min-width: 700px;">
+          <thead>
+            <tr style="background: rgba(124, 131, 253, 0.1);">
+              <th style="padding: 10px 14px; border: 1px solid var(--panel-border); text-align: center; white-space: nowrap; font-weight: 700;">구분</th>
+              <th style="padding: 10px 8px; border: 1px solid var(--panel-border); text-align: center;">2</th>
+              <th style="padding: 10px 8px; border: 1px solid var(--panel-border); text-align: center;">3</th>
+              <th style="padding: 10px 8px; border: 1px solid var(--panel-border); text-align: center;">4</th>
+              <th style="padding: 10px 8px; border: 1px solid var(--panel-border); text-align: center;">5</th>
+              <th style="padding: 10px 8px; border: 1px solid var(--panel-border); text-align: center;">6</th>
+              <th style="padding: 10px 8px; border: 1px solid var(--panel-border); text-align: center;">7</th>
+              <th style="padding: 10px 8px; border: 1px solid var(--panel-border); text-align: center;">8</th>
+              <th style="padding: 10px 8px; border: 1px solid var(--panel-border); text-align: center;">9</th>
+              <th style="padding: 10px 8px; border: 1px solid var(--panel-border); text-align: center;">10</th>
+              <th style="padding: 10px 8px; border: 1px solid var(--panel-border); text-align: center;">11</th>
+              <th style="padding: 10px 8px; border: 1px solid var(--panel-border); text-align: center;">12</th>
+              <th style="padding: 10px 8px; border: 1px solid var(--panel-border); text-align: center;">13</th>
+              <th style="padding: 10px 8px; border: 1px solid var(--panel-border); text-align: center;">14</th>
+              <th style="padding: 10px 8px; border: 1px solid var(--panel-border); text-align: center;">15</th>
+            </tr>
+          </thead>
+          <tbody id="csatMinBody">
+          </tbody>
+        </table>
+      </div>
+
+      <div style="margin-top: 2rem;">
+        <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.8rem;">
+          <h4 style="margin: 0; color: var(--text-primary); font-size: 0.93rem; font-weight: 700;">전교 석차별 수능 최저 등급합</h4>
+          <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.83rem; color: var(--text-secondary);">
+            상위
+            <input type="number" id="csatRankCount" value="30" min="1" max="1000"
+              style="width: 60px; background: var(--panel-bg); color: var(--text-primary); border: 1px solid var(--panel-border); border-radius: 6px; padding: 0.25rem 0.4rem; font-size: 0.83rem; text-align: center;">
+            명
+          </label>
+        </div>
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 600px;">
+            <thead>
+              <tr style="background: rgba(124, 131, 253, 0.1);">
+                <th style="padding: 8px 10px; border: 1px solid var(--panel-border); text-align: center; white-space: nowrap;">전교순위</th>
+                <th style="padding: 8px 10px; border: 1px solid var(--panel-border); text-align: center;">학반번호</th>
+                <th style="padding: 8px 10px; border: 1px solid var(--panel-border);">성명</th>
+                <th style="padding: 8px 10px; border: 1px solid var(--panel-border); text-align: center;">2합</th>
+                <th style="padding: 8px 10px; border: 1px solid var(--panel-border); text-align: center;">3합</th>
+                <th style="padding: 8px 10px; border: 1px solid var(--panel-border); text-align: center;">4합</th>
+              </tr>
+            </thead>
+            <tbody id="csatRankBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
 
   </div> <!-- // End of .app-layout -->
 
@@ -2162,6 +2487,12 @@
         console.warn("AdmissionAnalysis: Root element not found or already mounted", !!el);
       }
     }
+    // ─── 우리 학교 모의고사 성적 현황 전용 ─────────────────────────────────────────
+    function mountSchoolMockStatus() {
+      // 이 부분은 app.js에서 직접 처리하거나 별도 파일로 분리 가능
+      // 여기서는 app.js에서 처리하도록 함
+    }
+    
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', mountAdmissionAnalysis);
     } else {
@@ -2170,6 +2501,7 @@
   </script>
   <script src="app.js?v=7"></script>
   <script src="grade-rank.js"></script>
+  <script src="admission_dist.js"></script>
   <script type="module" src="firebase-visitors.js"></script>
 
   <!-- 인쇄용 히든 컨테이너 -->
