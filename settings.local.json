@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:script.google.com)",
+      "WebFetch(domain:script.googleusercontent.com)",
+      "WebFetch(domain:docs.google.com)",
+      "Bash(curl -s \"https://docs.google.com/spreadsheets/d/1MvB5IOnKSAWVUGmlznajg_1nb47A2nGOIp2jTem-K54/gviz/tq?tqx=out:json&sheet=%ED%95%9C%EC%96%91%EB%8C%80%20%EC%9E%85%EC%8B%9C%20%EA%B2%B0%EA%B3%BC\\(23-25\\)\")",
+      "Bash(node --check admission_dist.js)",
+      "Bash(node -e ' *)"
+    ]
+  }
+}
