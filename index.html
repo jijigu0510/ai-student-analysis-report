@@ -521,58 +521,96 @@
           <!-- 대학 / 계열 / 학과 -->
           <div class="form-group-row-3">
             <div class="form-group">
-              <label for="st-university" style="color: var(--text-secondary); font-weight: 500;">목표 대학</label>
-              <select id="st-university" required style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.75rem 1rem;width:100%;">
-                <option value="" disabled selected>대학을 선택하세요</option>
+              <label for="st-university" style="color: var(--text-secondary); font-weight: 500;">목표 대학 <span style="color:#aaa;font-weight:400;font-size:0.85em;">(선택)</span></label>
+              <select id="st-university" style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.75rem 1rem;width:100%;">
+                <option value="">미선택 — 일반 세특 평가</option>
               </select>
             </div>
             <div class="form-group">
-              <label for="st-category" style="color: var(--text-secondary); font-weight: 500;">계열</label>
-              <select id="st-category" required style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.75rem 1rem;width:100%;">
-                <option value="" disabled selected>계열을 선택하세요</option>
+              <label for="st-category" style="color: var(--text-secondary); font-weight: 500;">계열 <span style="color:#aaa;font-weight:400;font-size:0.85em;">(선택)</span></label>
+              <select id="st-category" style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.75rem 1rem;width:100%;">
+                <option value="">계열을 선택하세요</option>
               </select>
             </div>
             <div class="form-group">
-              <label for="st-major" style="color: var(--text-secondary); font-weight: 500;">지원 학과</label>
-              <select id="st-major" required style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.75rem 1rem;width:100%;">
-                <option value="" disabled selected>학과를 선택하세요</option>
+              <label for="st-major" style="color: var(--text-secondary); font-weight: 500;">지원 학과 <span style="color:#aaa;font-weight:400;font-size:0.85em;">(선택)</span></label>
+              <select id="st-major" style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.75rem 1rem;width:100%;">
+                <option value="">학과를 선택하세요</option>
               </select>
             </div>
           </div>
-          <!-- 교육과정 및 계열 -->
-          <div class="form-group-row">
-            <div class="form-group">
-              <label for="st-curriculum" style="color: var(--text-secondary); font-weight: 500;">교육과정</label>
-              <select id="st-curriculum"
-                style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.75rem 1rem;width:100%;">
-                <option value="">교육과정 선택</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="st-subject-category" style="color: var(--text-secondary); font-weight: 500;">계열(구분)</label>
-              <select id="st-subject-category"
-                style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.75rem 1rem;width:100%;">
-                <option value="">계열 선택</option>
-              </select>
+          <!-- 분석 유형 모드 토글 -->
+          <div class="form-group" style="margin-bottom:1.4rem;">
+            <label style="color:var(--text-secondary);font-weight:500;display:block;margin-bottom:0.6rem;">분석 유형</label>
+            <div style="display:flex;border-radius:10px;overflow:hidden;border:1px solid var(--input-border);">
+              <button type="button" id="st-mode-subject"
+                style="flex:1;padding:0.7rem 1rem;background:var(--accent-primary);color:#fff;border:none;cursor:pointer;font-weight:600;font-size:0.93rem;transition:background 0.2s,color 0.2s;">
+                📚 교과 세특
+              </button>
+              <button type="button" id="st-mode-activity"
+                style="flex:1;padding:0.7rem 1rem;background:var(--input-bg);color:var(--text-secondary);border:none;border-left:1px solid var(--input-border);cursor:pointer;font-weight:500;font-size:0.93rem;transition:background 0.2s,color 0.2s;">
+                🎭 창체 및 행특
+              </button>
             </div>
           </div>
-          <!-- 선택구분 및 과목명 -->
-          <div class="form-group-row">
-            <div class="form-group">
-              <label for="st-selection" style="color: var(--text-secondary); font-weight: 500;">선택 구분</label>
-              <select id="st-selection"
-                style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.75rem 1rem;width:100%;">
-                <option value="">선택 구분 선택</option>
-              </select>
+
+          <!-- 교과 세특 영역 -->
+          <div id="st-subject-area">
+            <!-- 교육과정 및 계열 -->
+            <div class="form-group-row">
+              <div class="form-group">
+                <label for="st-curriculum" style="color: var(--text-secondary); font-weight: 500;">교육과정</label>
+                <select id="st-curriculum"
+                  style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.75rem 1rem;width:100%;">
+                  <option value="">교육과정 선택</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="st-subject-category" style="color: var(--text-secondary); font-weight: 500;">계열(구분)</label>
+                <select id="st-subject-category"
+                  style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.75rem 1rem;width:100%;">
+                  <option value="">계열 선택</option>
+                </select>
+              </div>
             </div>
-            <div class="form-group">
-              <label for="st-subject-name" style="color: var(--text-secondary); font-weight: 500;">과목명</label>
-              <select id="st-subject-name"
-                style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.75rem 1rem;width:100%;">
-                <option value="">과목 선택</option>
-              </select>
+            <!-- 선택구분 및 과목명 -->
+            <div class="form-group-row">
+              <div class="form-group">
+                <label for="st-selection" style="color: var(--text-secondary); font-weight: 500;">선택 구분</label>
+                <select id="st-selection"
+                  style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.75rem 1rem;width:100%;">
+                  <option value="">선택 구분 선택</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="st-subject-name" style="color: var(--text-secondary); font-weight: 500;">과목명</label>
+                <select id="st-subject-name"
+                  style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.75rem 1rem;width:100%;">
+                  <option value="">과목 선택</option>
+                </select>
+              </div>
             </div>
           </div>
+
+          <!-- 창체 및 행특 영역 -->
+          <div id="st-activity-area" class="hidden">
+            <div class="form-group">
+              <label for="st-activity-type" style="color:var(--text-secondary);font-weight:500;">활동 유형</label>
+              <select id="st-activity-type"
+                style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.75rem 1rem;width:100%;">
+                <option value="">활동 유형을 선택하세요</option>
+                <option value="자율활동">자율활동</option>
+                <option value="진로활동">진로활동</option>
+                <option value="동아리활동">동아리활동</option>
+                <option value="행특">행동특성 및 종합의견 (행특)</option>
+              </select>
+            </div>
+            <div style="font-size:0.82rem;color:var(--text-secondary);margin-top:-0.5rem;margin-bottom:1rem;padding:0.6rem 0.9rem;background:rgba(150,186,255,0.07);border-radius:8px;border-left:3px solid rgba(150,186,255,0.3);">
+              <strong style="color:#96baff;">자율·동아리·행특</strong>은 공동체역량+탐구역량 중심 평가 &nbsp;|&nbsp;
+              <strong style="color:#96d6b0;">진로활동</strong>은 학업역량+진로역량+공동체역량 평가
+            </div>
+          </div>
+
           <!-- 세특 텍스트 -->
           <div class="form-group">
             <label for="st-content" style="color: var(--text-secondary); font-weight: 500;">세특 내용 <span class="label-desc" style="color: #96baff; font-weight: normal;">(교사가 작성한 내용을 그대로 붙여넣으세요)</span></label>
@@ -592,7 +630,7 @@
       <div class="result-container" id="st-resultContainer">
         <div class="empty-state" id="st-emptyState">
           <div class="empty-icon">📝</div>
-          <p>왼쪽에서 대학·학과를 선택하고<br>세특 내용을 입력한 후 분석 버튼을 클릭하세요.</p>
+          <p>세특 내용을 입력한 후 분석 버튼을 클릭하세요.<br><span style="font-size:0.85em;color:var(--text-secondary);">대학·학과 선택 시 전공적합성 포함 평가, 미선택 시 학업·공동체역량 중심 평가</span></p>
         </div>
         <div class="loading-state hidden" id="st-loadingState">
           <div class="spinner"></div>
@@ -616,17 +654,17 @@
           <!-- 영역별 점수 카드 -->
           <div class="competency-cards" style="margin-top:1.5rem;">
             <div class="comp-card" data-comp="academic">
-              <h4>학업역량 <small style="font-size:0.75rem;color:var(--text-secondary)">(40점)</small></h4>
+              <h4 id="st-label-academic">학업역량 <small style="font-size:0.75rem;color:var(--text-secondary)">(40점)</small></h4>
               <div class="comp-score" id="st-academicScore">-</div>
               <button class="btn-detail" type="button" id="st-btnAca">상세 보기</button>
             </div>
             <div class="comp-card" data-comp="career">
-              <h4>진로역량 <small style="font-size:0.75rem;color:var(--text-secondary)">(40점)</small></h4>
+              <h4 id="st-label-career">진로역량 <small style="font-size:0.75rem;color:var(--text-secondary)">(40점)</small></h4>
               <div class="comp-score" id="st-careerScore">-</div>
               <button class="btn-detail" type="button" id="st-btnCar">상세 보기</button>
             </div>
             <div class="comp-card" data-comp="community">
-              <h4>공동체역량 <small style="font-size:0.75rem;color:var(--text-secondary)">(20점)</small></h4>
+              <h4 id="st-label-community">공동체역량 <small style="font-size:0.75rem;color:var(--text-secondary)">(20점)</small></h4>
               <div class="comp-score" id="st-communityScore">-</div>
               <button class="btn-detail" type="button" id="st-btnCom">상세 보기</button>
             </div>
@@ -635,6 +673,16 @@
           <div class="overall-evaluation" style="margin-top:1.5rem;">
             <h3>📊 점수 산출 근거</h3>
             <div id="st-scoreJustification" class="markdown-body"></div>
+          </div>
+          <!-- 5대 핵심 관점 충족 점검 -->
+          <div class="overall-evaluation" style="margin-top:1.5rem;">
+            <h3>🔍 5대 핵심 관점 충족 점검</h3>
+            <div id="st-perspectiveCheck"></div>
+          </div>
+          <!-- Red Flag 경고 -->
+          <div class="overall-evaluation" style="margin-top:1rem;">
+            <h3>🚨 치명적 탈락 패턴(Red Flag) 경고</h3>
+            <div id="st-redFlags"></div>
           </div>
           <!-- 강점 -->
           <div class="overall-evaluation" style="margin-top:1rem;">
@@ -646,9 +694,14 @@
             <h3>⚠️ 개선이 필요한 부분</h3>
             <div id="st-improvements" class="markdown-body"></div>
           </div>
-          <!-- 개선 예시 -->
+          <!-- 5대 전략 적용 세특 (500자 이내) -->
           <div class="overall-evaluation" style="margin-top:1rem;">
-            <h3>💡 개선된 세특 예시</h3>
+            <h3>✏️ 5대 전략 적용 세특 <small style="font-size:0.78rem;color:var(--text-secondary);font-weight:400;">(500자 이내)</small></h3>
+            <div id="st-strategicRewrite" class="markdown-body" style="background:rgba(74,222,128,0.07);padding:1rem;border-radius:8px;border-left:4px solid #4ade80;"></div>
+          </div>
+          <!-- 개선 예시 (장문) -->
+          <div class="overall-evaluation" style="margin-top:1rem;">
+            <h3>💡 심층 개선 세특 예시 <small style="font-size:0.78rem;color:var(--text-secondary);font-weight:400;">(1500자 이상)</small></h3>
             <div id="st-rewrite" class="markdown-body" style="background:rgba(150,186,255,0.08);padding:1rem;border-radius:8px;border-left:4px solid var(--accent-primary);"></div>
           </div>
         </div>
@@ -1271,9 +1324,12 @@
     <!-- Header with Filters -->
     <section class="glass-panel" style="padding: 1.5rem; margin-bottom: 1.5rem;">
       <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
-        <h2 style="margin: 0; font-size: 1.5rem; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
-          🏫 우리 학교 모의고사 성적 현황
-        </h2>
+        <div>
+          <h2 style="margin: 0 0 0.3rem; font-size: 1.5rem; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
+            🏫 우리 학교 모의고사 성적 현황
+          </h2>
+          <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary);">⚠️ 먼저 <strong>내신 &amp; 모의고사 분석</strong> 탭에서 해당 학년의 성적 데이터를 연동한 후 이용해 주세요.</p>
+        </div>
         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
           <select id="schoolMockGrade" class="form-select" style="width: auto;">
             <option value="all">전체 학년</option>

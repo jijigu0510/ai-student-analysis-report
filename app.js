@@ -3591,7 +3591,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // 헤더 행 탐색 (성명 셀 기준)
     let headerRowIdx = -1, nameCol = -1;
     let gradeYearCol = -1, termCol = -1;
-    let subjectCol = -1, subjectCol2 = -1, creditCol = -1, gradeCol = -1, achieveCol = -1;
+    let subjectCol = -1, subjectCol2 = -1, creditCol = -1, gradeCol = -1, achieveCol = -1, rawScoreCol = -1;
 
     for (let i = 0; i < Math.min(jsonData.length, 15); i++) {
       if (!jsonData[i]) continue;
@@ -3628,6 +3628,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
       //성취도 컬럼
       if (achieveCol === -1 && cell.includes("성취도")) achieveCol = j;
+      //원점수/과목평균 컬럼
+      if (rawScoreCol === -1 && cell.includes("원점수")) rawScoreCol = j;
     }
     // 위치 기반 폴백
     if (subjectCol === -1 && headerRow.length >= 6) subjectCol = 5;
@@ -3672,14 +3674,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const achieve = achieveCol !== -1 ? String(row[achieveCol] || "").trim() : "";
 
+      // 원점수/과목평균(표준편차) 파싱
+      let rawScoreInfo = "";
+      if (rawScoreCol !== -1 && row[rawScoreCol] != null) {
+        const rs = String(row[rawScoreCol]).trim();
+        const m = rs.match(/^(\d+)\s*\/\s*([\d.]+)(?:\(([\d.]+)\))?/);
+        if (m) rawScoreInfo = `원점수${m[1]}/평균${m[2]}${m[3] ? '/표준편차' + m[3] : ''}`;
+      }
+      const cleanAchieve = achieve.split('(')[0].trim();
+      const 수강자수 = achieve.match(/\((\d+)\)/)?.[1] || "";
+
       if (!isNaN(gradeVal) && gradeVal >= 1 && gradeVal <= 9) {
         totalWeightedSum += credit * gradeVal;
         totalCredits += credit;
-        courseDetails.push({ subject, grade: gradeVal, credit, type: 'grade' });
+        courseDetails.push({ subject, grade: gradeVal, credit, type: 'grade', rawScoreInfo, 수강자수 });
       } else {
-        if (achieve && achieve.toUpperCase() !== "P") {
-          achieveOnlyCourses.push(subject + "(" + achieve + ")");
-          courseDetails.push({ subject, grade: achieve, credit, type: 'achieve' });
+        if (cleanAchieve && cleanAchieve.toUpperCase() !== "P") {
+          achieveOnlyCourses.push(subject + "(" + cleanAchieve + ")");
+          courseDetails.push({ subject, grade: cleanAchieve, credit, type: 'achieve', rawScoreInfo, 수강자수 });
         }
       }
     }
@@ -3695,9 +3707,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (extractedCourses.length > 0) {
       if (coursesInput) {
-        coursesInput.value = courseDetails.map(c =>
-          c.type === 'grade' ? `${c.subject}(${c.credit}단위): ${c.grade}등급` : `${c.subject}(${c.credit}단위): ${c.grade}`
-        ).join(", ");
+        coursesInput.value = courseDetails.map(c => {
+          const parts = [];
+          if (c.rawScoreInfo) parts.push(c.rawScoreInfo);
+          if (c.수강자수) parts.push(`수강자${c.수강자수}`);
+          const extra = parts.length ? ` [${parts.join(', ')}]` : '';
+          return c.type === 'grade'
+            ? `${c.subject}(${c.credit}단위): ${c.grade}등급${extra}`
+            : `${c.subject}(${c.credit}단위): ${c.grade}${extra}`;
+        }).join(", ");
       }
       const avgLabel = totalCredits > 0
         ? "가중평균 " + (totalWeightedSum / totalCredits).toFixed(2) + "등급"
@@ -4248,26 +4266,56 @@ document.addEventListener("DOMContentLoaded", () => {
     const pfCourseDetails = [];
     const gradeEl = document.getElementById("pf-detail-grades");
     if (gradeEl) {
-      gradeEl.value = gRows.length ? gRows.map(r => {
-        const sub = getVal(r, ["과목명", "교과목명", "과목"]);
-        const grdRaw = getVal(r, ["석차등급(수강자수)", "성취도(수강자수)", "등급", "성취도", "석차등급"]);
-        const creditRaw = getVal(r, ["단위수", "이수단위", "단위"]);
+      if (!gRows.length) {
+        gradeEl.value = "데이터 없음";
+      } else {
+        const generalLines = [], careerLines = [], artsLines = [];
+        gRows.forEach(r => {
+          const sub = getVal(r, ["과목명", "교과목명", "과목"]) || "과목미상";
+          const creditRaw = getVal(r, ["단위수", "이수단위", "단위"]);
+          const credit = parseFloat(String(creditRaw).match(/\d+(\.\d+)?/)?.[0] || "0") || 1;
 
-        // Extract only the part before '(' if it exists, e.g., '2' from '2(118)'
-        const grd = String(grdRaw).split('(')[0].trim() || "-";
-        const credit = parseFloat(String(creditRaw).match(/\d+(\.\d+)?/)?.[0] || "0") || 1;
+          // 파일 유형 구분: 고유 컬럼 존재 여부로 판단
+          const rawGeneral = String(getVal(r, ["원점수/과목평균(표준편차)"]) || "").trim();
+          const rawCareer  = String(getVal(r, ["원점수/과목평균"]) || "").trim();
+          const distrib    = String(getVal(r, ["성취도별 분포비율"]) || "").trim();
+          const gradeRaw   = String(getVal(r, ["석차등급(수강자수)", "석차등급"]) || "").trim();
+          const achieveRaw = String(getVal(r, ["성취도(수강자수)", "성취도"]) || "").trim();
 
-        // Determine type for badge
-        const isGrade = /^[1-9]$/.test(grd);
-        pfCourseDetails.push({
-          subject: sub || "과목미상",
-          grade: grd,
-          credit: credit,
-          type: isGrade ? 'grade' : 'achieve'
+          if (rawGeneral) {
+            // 일반과목 파일: 원점수/과목평균(표준편차) + 석차등급(수강자수)
+            const m = rawGeneral.match(/^(\d+)\s*\/\s*([\d.]+)(?:\(([\d.]+)\))?/);
+            const grdNum = gradeRaw.split('(')[0].trim() || "-";
+            const students = gradeRaw.match(/\((\d+)\)/)?.[1] || "";
+            const isGrade = /^[1-9]$/.test(grdNum);
+            pfCourseDetails.push({ subject: sub, grade: grdNum, credit, type: isGrade ? 'grade' : 'achieve' });
+            let line = `${sub}(${credit}단위): ${grdNum}${isGrade ? '등급' : ''}`;
+            if (m) line += ` [원점수${m[1]}/평균${m[2]}${m[3] ? '/표준편차' + m[3] : ''}${students ? ', 수강자' + students : ''}]`;
+            generalLines.push(line);
+          } else if (distrib || rawCareer) {
+            // 진로선택과목 파일: 원점수/과목평균 + 성취도(수강자수) + 성취도별 분포비율
+            const m = rawCareer.match(/^(\d+)\s*\/\s*([\d.]+)/);
+            const achieve = achieveRaw.split('(')[0].trim() || "-";
+            const students = achieveRaw.match(/\((\d+)\)/)?.[1] || "";
+            pfCourseDetails.push({ subject: sub, grade: achieve, credit, type: 'achieve' });
+            let line = `${sub}(${credit}단위): ${achieve}`;
+            if (m) line += ` [원점수${m[1]}/평균${m[2]}${students ? ', 수강자' + students : ''}]`;
+            if (distrib) line += ` {분포: ${distrib}}`;
+            careerLines.push(line);
+          } else {
+            // 체육·음악·미술 파일: 성취도만
+            const achieve = achieveRaw.trim() || "-";
+            pfCourseDetails.push({ subject: sub, grade: achieve, credit, type: 'achieve' });
+            artsLines.push(`${sub}(${credit}단위): ${achieve}`);
+          }
         });
 
-        return `${sub || "과목미상"}: ${grd}`;
-      }).join(", ") : "데이터 없음";
+        const sections = [];
+        if (generalLines.length) sections.push("[일반과목]\n" + generalLines.join("\n"));
+        if (careerLines.length) sections.push("[진로선택과목]\n" + careerLines.join("\n"));
+        if (artsLines.length) sections.push("[체육·음악·미술]\n" + artsLines.join("\n"));
+        gradeEl.value = sections.join("\n\n");
+      }
     }
     renderCourseTable(pfCourseDetails, "pf-course-table-container");
     // Update global subject list for reference
@@ -6519,6 +6567,9 @@ SW\uc6b0\uc218(AI\ucef4\uacf5): \ud559\uc5c5\ud0d0\uad6c\uc5ed\ub7c9 60%(\ud559\
 4. 대학별 평가 기준에서 제시하는 '핵심 권장과목' 및 '권장과목'의 이수 여부와 성취도를 가장 우선적으로 체크하십시오. 과목 선택의 위계가 맞지 않거나 필수 과목이 누락되었다면 강력하게 비판하십시오.
 5. 불합격의 경우, 생기부의 어떤 부분(교과 성적의 구멍, 활동의 깊이 부족, 2015 개정 교육과정 핵심역량 증빙 실패 등)이 결정적인 결격 사유가 되었는지 실제 데이터에 기반하여 날카롭게 지적하십시오.
 6. 합격의 경우에도 운이 좋았다는 표현보다는, 대학이 높게 평가했을 '압도적인 강점(탐구력, 전공관련 교과 성취도 등)'을 실제 제출된 텍스트 내용 안에서 근거를 찾아 분석하십시오.
+7. [과목 선택의 적극성과 이수 단위 평가] 학생이 지원 전공과 관련된 교과목(진로선택, 융합선택 등)을 위계에 맞게, 그리고 충실한 이수 단위를 들여 이수했는지 반드시 확인하십시오. 수강자 수가 적어 등급이 불리한 소인수 과목임에도 진로를 위해 과감히 도전하여 선택한 사실이 확인된다면, 이를 학업에 대한 높은 의지로 보고 적극적으로 긍정 평가에 반영하십시오.
+8. [성적 지표의 맥락적 해석] 수치만으로 판단하지 마십시오. '원점수'와 '과목 평균'을 비교하여 시험의 난이도와 해당 고교의 교육 환경을 유추하십시오. (예: 과목 평균이 낮음에도 높은 원점수를 받았다면 학업 역량이 매우 우수한 것으로 평가) '성취도별 분포비율'을 확인하여 A등급 비율이 지나치게 높아 성적 부풀리기가 의심되는지, 혹은 정상적인 분포 내에서의 성취인지를 고려하여 성취 수준을 판단하십시오.
+9. [정량 데이터와 정성 기록(세특)의 교차 검증] 원점수·성취도가 높더라도 세특에 학생의 주도적인 탐구 과정이나 논리적 사고력에 대한 구체적 묘사가 없다면 높은 평가를 유보하십시오. 반대로 수치 지표가 다소 아쉽더라도 세특에 어려운 과제에 도전하고 논리적으로 문제를 해결한 구체적인 과정이 있다면, 이를 학업 역량의 우수성으로 반영하십시오.
 
 [학생 지원 정보]
 대학: ${data.university}
@@ -6540,7 +6591,11 @@ ${uniCriteria.factors}
 [리포트 작성 항목]
 1. [냉철한 원인 분석] 통계적 데이터(등급)와 2015 개정 교육과정 평가지표를 종합하여, ${data.result === '합격' ? '합격' : '불합격'}의 핵심적인 원인을 3가지 이상의 구체적인 논거로 제시하십시오.
 2. [대학 평가 요소별 매칭] 해당 대학의 평가 요소(학업역량, 진로역량, 공동체역량)별로 2015 개정 교육과정 가이드북의 세부 지표(탐구력, 성취도 추이, 협업능력 등)를 기준으로 학생의 기록이 어떻게 부합하거나 미달했는지 엄격하게 대조 분석하십시오.
-3. [냉정한 사후 대안] ${data.result === '합격' ? '대학 입학 후 학업 시 유의점 및 성공 요인 유지 방안' : '만약 시간을 되돌린다면, 생기부의 어떤 부분을 어떻게 보완했어야 합격 가능했을지'}에 대해 구체적인 로드맵을 제안하십시오.
+3. [과목 선택 및 성적 맥락 분석] 다음 세 관점을 반드시 리포트 내 별도 섹션으로 다루십시오.
+   - 과목 선택의 적극성: 지원 전공 관련 진로선택·융합선택 과목의 위계적 이수 여부, 이수 단위의 충실성, 소인수 과목 도전 여부를 평가하십시오.
+   - 성적 지표의 맥락적 해석: 원점수-과목평균 비교를 통한 난이도 유추, 성취도 분포비율을 통한 A등급 부풀리기 의심 여부를 검토하십시오.
+   - 정량-정성(세특) 교차 검증: 수치와 세특 기록이 상호 일치하는지, 수치가 낮아도 세특에서 탁월한 탐구 역량이 드러나는지 교차 분석하십시오.
+4. [냉정한 사후 대안] ${data.result === '합격' ? '대학 입학 후 학업 시 유의점 및 성공 요인 유지 방안' : '만약 시간을 되돌린다면, 생기부의 어떤 부분을 어떻게 보완했어야 합격 가능했을지'}에 대해 구체적인 로드맵을 제안하십시오.
 
 형식: 마크다운(Markdown) 형식을 사용하며, 가독성을 극대화하여 전문적인 보고서 형태로 작성하십시오. 전체 평가 보고서의 분량을 기존보다 2~3배 이상 대폭 늘려 최소 3000자 이상의 매우 상세하고 긴 리포트로 서술해야 합니다.`;
 
@@ -6597,6 +6652,9 @@ ${uniCriteria.factors}
 3. 세부능력 및 특기사항에서 단순한 활동의 나열이 아닌, '자기주도적 탐구 역량'과 '지적 호기심의 깊이'를 날카롭게 파헤쳐 평가하십시오. 기록상 명백한 근거가 부족하면 과감히 최하점을 부여하십시오.
 4. 공동체 역량 분석 시에도 단순히 착하다는 평가가 아닌, 직접 제공된 구체적인 협력 사례와 리더십, 성실성(출결 등)을 바탕으로 냉정하게 배점을 부여하십시오. 출결상 미비점이 있다면 강력하게 감점하십시오.
 5. 점수(score) 부여 시 90점 이상은 대한민국 최상위권 수준의 압도적 성취(전국구 수준의 탁월성)가 제공된 텍스트에서 명백히 확인될 때만 부여하며, 보통 수준은 70~80점, 조금이라도 부족함이 보이거나 평범한 기록일 경우 과감히 60점 이하를 점수화하십시오. 칭찬보다는 보완점을 중심으로 매섭게 평가하십시오.
+6. [과목 선택의 적극성과 이수 단위 평가] 학생이 지원 전공과 관련된 교과목(진로선택, 융합선택 등)을 위계에 맞게, 그리고 충실한 이수 단위를 들여 이수했는지 반드시 확인하십시오. 수강자 수가 적어 등급이 불리한 소인수 과목임에도 진로를 위해 과감히 도전한 사실이 확인된다면, 이를 학업에 대한 높은 의지로 보고 적극적으로 긍정 평가에 반영하십시오. (진로역량과 학업역량 모두에 반영)
+7. [성적 지표의 맥락적 해석] 수치만으로 판단하지 마십시오. '원점수'와 '과목 평균'을 비교하여 시험의 난이도와 해당 고교의 교육 환경을 유추하십시오. (예: 과목 평균이 낮음에도 높은 원점수를 받았다면 학업 역량이 매우 우수한 것으로 반드시 상향 평가) '성취도별 분포비율'을 확인하여 A등급 비율이 지나치게 높아 성적 부풀리기가 의심되는지, 혹은 정상적인 분포 내에서의 성취인지를 고려하여 성취 수준을 판단하십시오.
+8. [정량 데이터와 정성 기록(세특)의 교차 검증] 원점수·성취도가 높더라도 세특에 학생의 주도적인 탐구 과정이나 논리적 사고력에 대한 구체적 묘사가 없다면 높은 평가를 유보하십시오. 반대로 수치 지표가 다소 아쉽더라도 세특에 어려운 과제에 도전하고 논리적으로 문제를 해결한 구체적인 과정이 있다면, 이를 학업 역량의 우수성으로 반드시 반영하십시오. 이 교차 검증 결과를 overallEvaluation의 별도 섹션으로 서술하십시오.
 
 [2015 개정 교육과정 핵심 평가지표 적용]
 - 학업역량: 학업성취도(추이), 학업태도(자기주도성), 탐구력(지식 융합 및 문제해결)
@@ -6640,7 +6698,10 @@ overallEvaluation 필드는 아래 형식을 반드시 따르십시오:
 1. 소제목: ## 기호로 굵은 소제목을 붙여 섹션을 구분하십시오. (예: ## ✅ 종합 강점, ## ⚠️ 핵심 보완과제, ## 🎯 합격 가능성 진단, ## 📌 전략적 제언)
 2. 강조 표시: 가장 중요하고 결정적인 핵심 문장이나 단어(합격·불합격 요인, 치명적 약점, 압도적 강점)에는 반드시 ==텍스트== 형식으로 강조 마킹을 하십시오. (예: ==국어 성적이 3등급으로 급격히 하락하여 치명적 약점이 됩니다==)
 3. 각 소제목 아래에는 글머리 기호(-)를 사용하여 핵심 내용을 정리하십시오.
-4. 최소 4개 이상의 소제목 섹션으로 구성하여 분량을 충분히 채우십시오.`;
+4. 최소 5개 이상의 소제목 섹션으로 구성하되, 아래 섹션을 반드시 포함하십시오:
+   - ## 📚 과목 선택 분석 (이수 단위, 진로 위계 적합성, 소인수 과목 도전 여부)
+   - ## 🔍 성적 맥락 & 정량·정성 교차 검증 (원점수-평균 비교, 분포비율 해석, 수치와 세특의 일치 여부)
+   - 그 외 종합 강점 / 핵심 보완과제 / 합격 가능성 진단 / 전략적 제언 섹션`;
 
 
 
@@ -7264,6 +7325,31 @@ overallEvaluation 필드는 아래 형식을 반드시 따르십시오:
   const stSelectionSelect = document.getElementById("st-selection");
   const stSubjectSelect = document.getElementById("st-subject-name");
 
+  // 분석 유형 모드 토글
+  const stModeSubjectBtn  = document.getElementById("st-mode-subject");
+  const stModeActivityBtn = document.getElementById("st-mode-activity");
+  const stSubjectArea     = document.getElementById("st-subject-area");
+  const stActivityArea    = document.getElementById("st-activity-area");
+  const stActivityTypeSelect = document.getElementById("st-activity-type");
+  let stCurrentMode = "subject";
+
+  function switchStMode(mode) {
+    stCurrentMode = mode;
+    const isSubject = mode === "subject";
+    stSubjectArea?.classList.toggle("hidden", !isSubject);
+    stActivityArea?.classList.toggle("hidden", isSubject);
+    if (stModeSubjectBtn) {
+      stModeSubjectBtn.style.background = isSubject ? "var(--accent-primary)" : "var(--input-bg)";
+      stModeSubjectBtn.style.color = isSubject ? "#fff" : "var(--text-secondary)";
+    }
+    if (stModeActivityBtn) {
+      stModeActivityBtn.style.background = isSubject ? "var(--input-bg)" : "var(--accent-primary)";
+      stModeActivityBtn.style.color = isSubject ? "var(--text-secondary)" : "#fff";
+    }
+  }
+  stModeSubjectBtn?.addEventListener("click", () => switchStMode("subject"));
+  stModeActivityBtn?.addEventListener("click", () => switchStMode("activity"));
+
   const subjectHierarchy = {
     "2015 개정": {
       "사회과": {
@@ -7273,7 +7359,8 @@ overallEvaluation 필드는 아래 형식을 반드시 따르십시오:
       },
       "수학과": {
         "공통 과목": ["수학"],
-        "진로 선택": ["기하", "실용 수학", "경제 수학", "수학과제 탐구", "기본 수학", "[전공별 권장이수과목 참고자료] ${rawRecommendedSubjects.substring(0, 150000)}", "수학Ⅱ", "미적분", "확률과 통계"]
+        "일반 선택": ["수학Ⅰ", "수학Ⅱ", "미적분", "확률과 통계"],
+        "진로 선택": ["실용 수학", "기하", "경제 수학", "수학과제 탐구", "기본 수학"]
       },
       "과학과": {
         "공통 과목": ["통합과학", "과학탐구실험"],
@@ -7494,20 +7581,122 @@ overallEvaluation 필드는 아래 형식을 반드시 따르십시오:
       community: "공동체역량: 협력·소통, 나눔·배려·리더십"
     };
 
-    const uniCriteria = universityEvalCriteria[fd.university];
-    const univProfile = uniCriteria ? uniCriteria.factors : (univSetechProfile[fd.university] || "학생부종합전형의 일반적 기준(학업역량·진로역량·공동체역량)에 따라 평가합니다.");
-    const weights = uniCriteria?.weights || defaultWeights;
-    const comps = uniCriteria?.competencies || defaultCompetencies;
+    let weights, comps, univProfile, maxAca, maxCar, maxCom, headerBlock;
 
-    // 계산된 만점
-    const maxAca = Math.round(weights.academic * 100);
-    const maxCar = Math.round(weights.career * 100);
-    const maxCom = Math.round(weights.community * 100);
+    if (fd.activityType) {
+      // ── 창체/행특 모드 ──
+      const uniContext = (fd.university && fd.major) ? `\n목표 대학: ${fd.university} / 학과: ${fd.major} (참고용)` : "";
+      if (fd.activityType === "자율활동") {
+        maxAca = 30; maxCar = 0; maxCom = 70;
+        comps = {
+          academic: "탐구역량(30점): 자율활동 중 드러나는 지적 호기심, 탐구 깊이, 주어진 활동 안에서 관련 주제를 스스로 더 깊이 탐구하거나 새로운 문제 해결 방안을 제안하는 자기주도적 학업 역량",
+          community: "공동체역량(70점): 공동체 목표 달성을 위한 협력·소통, 갈등·문제 해결 노력, 자발적 참여도, 리더십·배려·책임감, 학급·학교 공동체 기여, 직책이 아닌 실질적 역할과 성실성"
+        };
+        headerBlock = `[분석 모드: 자율활동 (창의적 체험활동)]${uniContext}
 
-    const prompt = `당신은 대한민국 최고의 대학입학사정관 전문가입니다.
-다음 학생이 지원하는 대학·학과의 학생부종합전형 기준에 따라, 교사가 작성한 세부능력 및 특기사항(세특)을 '2015 개정 교육과정 핵심역량 가이드북'의 지표를 기준으로 매우 엄격하게 평가해 주세요.
+[자율활동 입학사정관 평가 개요]
+자율활동은 학급·학교 단위의 공통 단체 활동이 많으므로, 단순 참여 사실이 아닌 '과정과 변화'를 중심으로 평가합니다.
+- 학교나 학급의 단체 활동 속에서 학생 개인이 나만의 역할을 찾아 주도적으로 참여하여 나와 공동체가 함께 성장한 과정이 핵심입니다.
+- 동일 행사에 참여했더라도 수동적으로 따라간 것이 아니라, 그 안에서 학생 개인이 능동적으로 기획·실천한 '개별화된 특성과 태도'가 구체적으로 드러나는 서술을 높이 평가합니다.
+- 학생회장·반장 등 직책(타이틀)보다는 실질적인 역할과 책임감을 더 중요하게 봅니다.
+- '왜 참여했는가(계기) → 본인의 역할 → 어려움 극복 → 생각·인식의 성장·변화'의 흐름이 드러나야 우수한 기록입니다.
 
-[대학·계열·학과]
+[평가 기준 및 배점 — 총 100점]
+자율활동은 공동체역량과 탐구역량을 중심으로 평가합니다.
+1. 탐구역량 (최대 30점 — academicScore에 기재): ${comps.academic}
+2. 공동체역량 (최대 70점 — communityScore에 기재): ${comps.community}
+※ careerScore는 반드시 0으로 설정하고, totalScore = academicScore + communityScore 이어야 합니다.`;
+      } else if (fd.activityType === "동아리활동") {
+        maxAca = 40; maxCar = 0; maxCom = 60;
+        comps = {
+          academic: "탐구역량(40점): 동아리 탐구 활동의 깊이와 창의성, 스스로 호기심을 가지고 깊고 폭넓게 탐구한 자기주도성, 지식 융합·심화 과정, 프로젝트·실험·토론 기획 및 새로운 과제 도전·해결 경험",
+          community: "공동체역량(60점): 동아리 내 역할과 책임감, 협력·소통·리더십, 공동 목표 달성을 위한 타인 의견 경청·조율, 팀워크로 어려움 극복 경험, 팀원으로서의 성실한 기여도"
+        };
+        headerBlock = `[분석 모드: 동아리활동 (창의적 체험활동)]${uniContext}
+
+[동아리활동 입학사정관 평가 개요]
+입학사정관은 동아리활동을 통해 학생의 관심 영역, 탐구 역량, 자기주도성, 적극성, 공동체 협력 정도를 종합적으로 평가합니다.
+- 결과보다는 '과정·태도·성장' 중심: 왜 그 주제를 선정했는지(동기), 학생이 맡은 역할, 활동을 통해 무엇을 배우고 어떻게 성장했는지가 핵심입니다.
+- 양(수량)보다 '질(Quality)': 동아리 개수가 많다고 좋은 평가를 받는 것이 아닙니다. 실질적 기여도와 성취 과정이 구체적으로 드러나는 심화된 경험이 중요합니다.
+- 나만의 특별한 역할과 주도성 강조: 여러 학생이 공통으로 수행하는 일반적 활동 소개보다, 그 안에서 학생 본인이 어떤 주도적 역할을 수행했고 어떤 태도로 임했는지 '개별화된 특성'이 드러나야 합니다.
+- 전공과 직접적 관련이 없더라도 해당 전공에서 요구하는 기초 학업 역량·소양을 기르기 위한 탐구 활동이었다면 우수한 평가를 받을 수 있습니다.
+- 무엇에 호기심을 가졌고(탐구역량), 어떻게 주도적으로 파고들었으며(자기주도성), 그 과정에서 친구들과 어떻게 협력했는지(공동체역량)를 유기적으로 연결하여 평가합니다.
+
+[평가 기준 및 배점 — 총 100점]
+동아리활동은 탐구역량과 공동체역량을 중심으로 평가합니다.
+1. 탐구역량 (최대 40점 — academicScore에 기재): ${comps.academic}
+2. 공동체역량 (최대 60점 — communityScore에 기재): ${comps.community}
+※ careerScore는 반드시 0으로 설정하고, totalScore = academicScore + communityScore 이어야 합니다.`;
+      } else if (fd.activityType === "행특") {
+        maxAca = 20; maxCar = 0; maxCom = 80;
+        comps = {
+          academic: "탐구역량(20점): 학업에 대한 목표의식과 노력, 자기주도적 학습태도, 수업 참여도, 지적 호기심 표현 및 성장 의지 (전공·진로 관련 활동 관찰 시 진로역량의 근거로도 활용)",
+          community: "공동체역량(80점): 개인적 성향·인성(정직·책임감·성실성·규칙 준수), 또래·교사와의 관계, 타인 배려심, 공동체 의식, 리더십, 학교생활 전반의 충실도 및 안정적 태도"
+        };
+        headerBlock = `[분석 모드: 행동특성 및 종합의견 (행특)]${uniContext}
+
+[행특 입학사정관 평가 개요]
+행특은 담임 선생님이 1년간 학생의 학습·행동·인성 등 학교생활 전반을 수시로 관찰하고 누가 기록한 내용을 바탕으로 작성한 종합 성장 보고서입니다. 과거 '교사 추천서'를 대신하는 매우 중요한 평가 자료입니다.
+- 추상적인 칭찬보다는 '구체적 사례와 성장' 중심: '모범적이다'와 같은 상투적 칭찬보다 학생 개개인의 특성이 뚜렷하게 드러나는 구체적 사례를 훨씬 유용하게 평가합니다.
+- 전공 관련성보다는 '학교생활 전반의 충실도': 수업에 임하는 자세, 교칙 준수, 공동체 안에서의 역할 등 일상적 학교생활을 얼마나 성실하고 안정적으로 이어왔는지가 그 자체로 훌륭한 평가 대상입니다.
+- 면접 평가의 주요 확인 자료: 기재된 내용의 근거가 되는 구체적 경험·사례를 면접에서 직접 확인하므로, 행특에 좋은 평가가 있다면 학생이 관련 사례를 면접에서 설명할 수 있어야 합니다.
+- 학업역량, 진로역량, 공동체역량 등 모든 평가 역량을 총체적으로 확인할 수 있는 영역입니다.
+
+[평가 기준 및 배점 — 총 100점]
+행특은 공동체역량을 중심으로 평가합니다.
+1. 탐구역량 (최대 20점 — academicScore에 기재): ${comps.academic}
+2. 공동체역량 (최대 80점 — communityScore에 기재): ${comps.community}
+※ careerScore는 반드시 0으로 설정하고, totalScore = academicScore + communityScore 이어야 합니다.`;
+      } else if (fd.activityType === "진로활동") {
+        maxAca = 40; maxCar = 40; maxCom = 20;
+        comps = {
+          academic: "학업역량(40점): 학업적 기반과 지적 탐구 역량, 진로 관련 지식의 깊이와 계열 이해도, 단체 진로 프로그램을 넘어 스스로 탐구를 심화·확장한 자기주도적 발전역량",
+          career: "진로역량(40점): 진로 탐색의 진정성과 자기주도성, 전공·계열 적합성, 구체적 성장 과정, 탐구 후 후속 심화활동(독서·보고서·추가 탐구 등) 연계 여부, 계획의 실천성 및 진로 변경 시 탐색 과정의 타당성",
+          community: "공동체역량(20점): 협력·소통, 활동 내 역할과 기여, 타인 배려"
+        };
+        headerBlock = `[분석 모드: 진로활동 (창의적 체험활동)]${uniContext}
+
+[진로활동 입학사정관 평가 개요]
+진로활동은 학생이 자신의 진로를 어떻게 설계하고 탐색해 왔는지, 그 과정에서 어떤 주도적 노력을 기울였는지를 확인하는 핵심 항목입니다.
+- 결과나 참여 사실보다 '탐구 과정과 성장' 중심: 어떤 동기로 시작했는지, 스스로 무엇을 고민하고 어떤 선택과 노력을 해왔는지, 그로 인해 어떻게 성장했는지를 비중 있게 평가합니다.
+- 공통 활동 속 '나만의 후속 심화 활동' 발현: 모든 학생이 공통으로 참여하는 진로 프로그램만 기재되어 있다면 우수한 평가를 받기 어렵습니다. 강연 후 독서·탐구 보고서로 연계하는 등 본인만의 후속 심화 활동이 구체적으로 기록되어야 합니다.
+- 학교생활기록부 타 영역과의 유기적 연계: 동아리, 세특, 행특 등 다른 영역과 유기적으로 연계하여 진로 탐색이 진정성 있게 이루어졌는지 확인합니다.
+- 진로 변경에 대한 유연한 평가: 고등학교는 진로 탐색 시기이므로 진로 변경은 불이익이 없습니다. 타당한 사유와 주도적 탐색 노력이 드러나면 오히려 깊이 있는 탐색 역량으로 긍정 평가합니다.
+- 핵심: 꿈과 관심사를 찾기 위해 얼마나 진지하게 고민했고, 스스로 어떤 깊이 있는 탐구와 도전을 실천했는가를 집중적으로 평가합니다.
+
+[평가 기준 및 배점 — 총 100점]
+진로활동은 학업역량·진로역량·공동체역량을 함께 평가합니다.
+1. 학업역량 (최대 40점): ${comps.academic}
+2. 진로역량 (최대 40점): ${comps.career}
+3. 공동체역량 (최대 20점): ${comps.community}
+※ totalScore = academicScore + careerScore + communityScore 이어야 합니다.`;
+      }
+    } else if (fd.noUniMode) {
+      // 대학·학과 미선택 — 진로역량 제외, 학업+공동체 중심 평가
+      weights = { academic: 0.70, career: 0.00, community: 0.30 };
+      comps = {
+        academic: "학업역량: 학업성취도 및 성적 추이, 자기주도적 학업태도, 탐구력·지적호기심, 수업 참여 깊이",
+        community: "공동체역량: 협력·소통능력, 나눔·배려·성실성, 리더십 및 책임감"
+      };
+      maxAca = 70; maxCar = 0; maxCom = 30;
+      headerBlock = `[평가 모드]
+대학·학과 미선택 — 일반 세특 평가 모드${fd.subjectName ? " / 과목: " + fd.subjectName : ""}
+(진로역량·전공적합성 평가는 제외하고, 학업역량과 공동체역량만 평가합니다.)
+
+[평가 기준 및 배점]
+총점 100점 만점으로 평가합니다.
+1. 학업역량 (최대 70점): ${comps.academic}
+2. 공동체역량 (최대 30점): ${comps.community}
+※ careerScore는 반드시 0으로 설정하고, totalScore = academicScore + communityScore 이어야 합니다.`;
+    } else {
+      const uniCriteria = universityEvalCriteria[fd.university];
+      univProfile = uniCriteria ? uniCriteria.factors : (univSetechProfile[fd.university] || "학생부종합전형의 일반적 기준(학업역량·진로역량·공동체역량)에 따라 평가합니다.");
+      weights = uniCriteria?.weights || defaultWeights;
+      comps = uniCriteria?.competencies || defaultCompetencies;
+      maxAca = Math.round(weights.academic * 100);
+      maxCar = Math.round(weights.career * 100);
+      maxCom = Math.round(weights.community * 100);
+      headerBlock = `[대학·계열·학과]
 대학: ${fd.university} / 계열: ${fd.category} / 학과: ${fd.major}${fd.subjectName ? " / 과목: " + fd.subjectName : ""}
 
 [해당 대학 학생부종합전형 특성 및 평가 주안점]
@@ -7517,24 +7706,74 @@ ${univProfile}
 해당 대학의 실제 평가 배점을 적용하여 총점 100점 만점으로 평가합니다.
 1. 학업역량 (최대 ${maxAca}점): ${comps.academic} (학업성취도, 학업태도, 탐구력 중심)
 2. 진로역량 (최대 ${maxCar}점): ${comps.career} (전공교과 이수노력 및 성취도, 진로탐색활동 중심)
-3. 공동체역량 (최대 ${maxCom}점): ${comps.community} (협합/소통, 나눔/배려, 성실성, 리더십 중심)
+3. 공동체역량 (최대 ${maxCom}점): ${comps.community} (협합/소통, 나눔/배려, 성실성, 리더십 중심)`;
+    }
+
+    const prompt = `당신은 대한민국 최고의 대학입학사정관 전문가입니다.
+교사가 작성한 세부능력 및 특기사항(세특)을 '2015 개정 교육과정 핵심역량 가이드북'의 지표를 기준으로 매우 엄격하게 평가해 주세요.
+
+${headerBlock}
 
 [세특 원문]
 ${fd.content}
 
+[세특 작성 참고 자료 — 평가 및 재작성 시 반드시 활용]
+
+▶ [표 1] 교사 입장의 서술 예시 (문장 종결부에 적극 활용):
+~에 대한 활동지를 작성함 / ~에 대해 느낀 점을 충실하게 작성함 / ~을 활동지에 기록함 / ~에 대해 발표함 / ~에 대해 느낀 바를 발표함 / ~에 대해 생각해보고 의견을 공유함 / ~으로 표현함 / ~하다는 포부를 밝힘 / ~하는 모습을 보임 / ~한 모습이 돋보임 / ~한 모습이 남다름 / ~한 모습이 뛰어남 / ~한 모습은 칭찬할 만함 / ~에 대한 ~한 태도를 지님 / ~에 대해 좀 더 심도 있게 탐구함 / ~하는 능력이 뛰어남 / ~하는 능력을 지님 / ~에 두각을 보임 / ~을 정확하게 이해하여 표현함 / ~하여 학생들에게 좋은 반응을 얻음 / ~하여 친구들의 호응과 공감을 끌어냄
+
+▶ [표 2] 학교생활기록부 작성 보조 어휘 (재작성 시 어휘 선택에 적극 활용):
+• 대학의 인재상(주제어): 고민의 깊이, 공감적 사고력, 공동체의식, 국제적 문화 감각, 나눔, 논리적사고, 도전정신, 독창성, 리더십, 목표지향성, 문제해결능력, 발전가능성, 배려심, 사고의 독창성, 사회성, 상황적응능력, 성실성, 성장잠재력, 소통능력, 실천력, 역경극복 역량, 역할충실, 열정, 원만한 대인관계, 위기대응능력, 융합적 문제해결력, 의사소통능력, 자기관리능력, 자기주도역량, 자신감, 잠재력, 지식활용능력, 지적호기심, 진실성, 창의융합성, 책임감, 타인과의 소통, 타인배려, 팀워크, 포용력, 폭넓은 안목, 협동능력, 환경극복 의지 및 태도
+• 동사(서술어): 가려내다, 기술하다, 약술하다, 열거하다, 정의하다, 진술하다, 짝짓다, 찾아내다, 구별하다, 부인하다, 설명하다, 예시하다, 예측하다, 의역하다, 일반화하다, 전환하다, 추론하다, 추정하다, 계산하다, 관계 짓다, 발견하다, 변용하다, 변환하다, 예증하다, 재구조화시키다, 조종하다, 준비하다, 품어내다, 개발하다, 고안하다, 구체화하다, 도출하다, 병합하다, 분류하다, 생산하다, 설계하다, 세분하다, 도식하다, 변별하다, 구분하다, 식별하다, 예증하다, 추론하다, 가려내다, 관계 짓다, 분리하다, 환원시키다, 창조하다, 편집하다, 형성하다, 간추리다, 감지하다, 결론짓다, 고려하다, 비교하다, 서술하다, 요약하다, 입증하다, 주장하다, 총평하다, 타당화하다, 토론하다, 판단하다, 평가하다, 표준화하다, 해석하다, 수정하다, 재정리하다, 조직하다, 지어내다
+• 형용사/부사: 우월하다, 우수하다, 탁월하다, 뛰어나다, 빼어나다, 두드러지다, 도드라지다, 드러나다, 뚜렷하다, 우뚝하다, 돋보이다, 남다르다, 특출나다, 출중하다, 걸출하다, 훌륭하다, 칭찬할 만하다, 나무랄데 없다, 완벽하다, 아름답다, 위대하다 / 매우, 대단히, 퍽, 무척, 굉장히, 상당히, 꽤, 몹시, 많이, 지나치게, 더없이, 더할 나위 없이, 아주, 한없이, 자못, 적잖게, 제법, 극히, 참으로, 적절히, 잘, 효과적으로, 탁월하게, 우수하게, 뛰어나게, 뚜렷하게, 돋보이게
+
+위 표 1의 서술 예시와 표 2의 어휘들을 rewriteSuggestion 및 strategicRewrite 작성 시 적극적으로 활용하여, 실제 교사가 작성한 것처럼 자연스럽고 전문적인 문체로 서술하십시오.
+
 [엄격한 평가 및 감점 주의사항]
 - **[핵심] 2015 개정 교육과정 평가지표 준수**: 단순 활동 나열이나 미사여구는 점수를 부여하지 않습니다. 지적 호기심의 '발현-과정-결과'가 논리적으로 증명될 때만 고득점을 부여하세요.
-- **[핵심] 2026 학교생활기록부 기재요령 준수**:
-  1. 기재 금지: 학생·학부모(친인척)의 성명/직장명/신상정보, 공인어학시험 성적, 교외 수상실적, 모의고사/수능 성적.
-  2. 기재 금지: K-MOOC, KOCW, 소논문(R&E), 학회지, 도서 출간, 발명특허, 특정 대학명/기관명/상호명/강사명.
-  3. 객관적 사실 기반: 학교 수업 중의 수행평가, 발표, 토론 등 정규 교육과정 내의 관찰된 내용만 작성. 과장된 미사여구나 감정적 서술 배제.
-  4. 어투: 문장의 끝은 반드시 객관적인 명사형 종결어미(~함, ~모습을 보임, ~을 파악함, ~을 탐구함 등)를 사용할 것. 어투가 맞지 않으면 'improvements'에 강력하게 지적하세요.
+- **[핵심] 2026 학교생활기록부 기재요령 — 기본 작성 원칙**:
+  1. 관찰 기반·성취기준 중심: 교사가 학생을 직접 관찰·평가한 내용을 바탕으로, 과목별 성취기준과 성취수준에 근거하여 학생 개인의 성취 과정·학습 참여도·자기주도적 학습에 의한 변화와 성장을 명료하게 서술해야 함.
+  2. 단순 나열 금지: 수업 중 활동을 단순히 나열하거나 교육과정 성취기준에 명시된 지식을 그대로 베껴 쓰는 서술 금지.
+  3. 명사형 종결어미 준수: 모든 서술 문장의 끝은 반드시 명사형 종결어미(~함, ~임, ~모습을 보임, ~을 파악함, ~을 탐구함)로 끝낼 것. 어투가 맞지 않으면 'improvements'에 강력하게 지적할 것.
+  4. 객관적 사실 기반: 학교 수업 중 수행평가·발표·토론 등 정규 교육과정 내의 관찰된 내용만 작성. 과장된 미사여구나 감정적 서술 배제.
+- **[핵심] 2026 학교생활기록부 기재요령 — 절대 기재 금지 항목** (원문 세특에 아래 내용이 포함된 경우 'improvements'에서 반드시 지적하고, rewriteSuggestion·strategicRewrite에는 절대 포함 금지):
+  1. 대회·수상·시험 성적: 교내외 대회 참여 사실 및 성적·수상 실적, 교외 기관 수여 상, 공인어학시험(TOEIC·TOEFL·HSK 등), 교내외 인증시험, 모의고사·전국연합학력평가 성적. ※ 금지된 대회 명칭을 '단순 행사'로 바꾸어 적는 행위도 절대 불가.
+  2. 특정 명칭·개인정보: 특정 대학명, 외부 기관명, 상호명(예: 엑셀, 유튜브, 카카오 등 고유 서비스명), 강사명, 부모·친인척의 직장명·직위명 등 사회경제적 지위를 암시하는 정보.
+  3. 외부 실적: 도서 출간, 논문의 학회지 투고·등재, 지식재산권(특허·상표 등) 출원·등록, 어학연수 및 해외 봉사 등 해외 활동 실적.
+  4. 온라인 강의 플랫폼: K-MOOC, MOOC, KOCW 등 온라인 강의 플랫폼 수강 사항.
+  5. 방과후학교: 방과후학교 활동 내용 일절 기재 불가.
+  6. 소논문·R&E: 소논문(R&E) 관련 내용 기재 불가.
 - 세특이 짧거나 내용이 빈약할 경우 냉정하게 낮은 점수를 부여하고 구체적 이유를 작성하세요.
 - rewriteSuggestion은 원문 내용과 위 기재요령을 완벽하게 반영하여 대학 평가에 가장 유리하게 다듬어진 세특 전문을 작성하세요(명사형 어미 준수, 최소 1500자 이상). 2015 가이드북의 '탁월성' 지표가 드러나도록 문장을 구성하십시오. 보고서 전체 분량을 기존보다 2~3배 이상 대폭 늘려 매우 구체적이고 길게 서술해야 합니다.
 - 점수가 일치해야 합니다 (totalScore = academicScore + careerScore + communityScore).
 
+[5대 핵심 관점 충족 여부 점검 — perspectiveCheck]
+위 세특이 다음 5가지 핵심 관점을 충족하는지 반드시 평가하십시오 (perspectiveCheck 배열, 정확히 5개 항목):
+1. 왜 했는가? (동기의 진정성) — 지적 호기심의 출발점이 명확하게 드러나는가?
+2. 어떤 과정으로 했는가? (탐구의 깊이) — 문제 발견→탐색→분석→적용→성찰의 논리적 흐름이 서술되었는가?
+3. 추가 활동은 무엇을 했는가? (자발적 확장) — 수업 내용을 넘어 자발적으로 심화 탐구한 내용이 있는가?
+4. 어떤 역량이 보이는가? (평가 가능성) — 학업역량·진로역량·공동체역량 중 측정 가능한 역량이 드러나는가?
+5. 주도적으로 했는가? (학생 중심성) — 학생이 스스로 사고하고 주도적으로 행동한 사실이 구체적으로 드러나는가?
+각 항목: {perspective: "관점명(소괄호 포함)", met: true/false, comment: "세특 원문 기반 구체적 근거"}
+
+[치명적 탈락 패턴(Red Flag) 경고 — redFlags]
+다음 3가지 치명적 패턴의 존재 여부를 반드시 판정하십시오 (redFlags 배열, 정확히 3개 항목):
+1. 나열형 기록: 활동 내용만 열거하고 과정·동기·성찰이 없는 서술 (가장 치명적)
+2. 부정적 뉘앙스: "노력이 필요함", "아쉬움이 있음" 등 학생 부족함을 암시하는 표현
+3. 근거 없는 추상적 칭찬: "탁월함", "우수함" 등 구체적 사실 없이 결과만 선언하는 미사여구
+각 항목: {pattern: "패턴명", detected: true/false, detail: "해당 표현 직접 인용 또는 '해당 없음'"}
+
+[5가지 핵심 기재 전략 적용 세특 재작성 — strategicRewrite]
+위 진단을 바탕으로 다음 5가지 전략을 모두 반드시 적용하여 500자 이내의 세특을 완성하십시오 (strategicRewrite 필드):
+1. '왜(동기)'로 시작: '수업에서 OO을 배우다가 궁금해져서 탐구를 시작함' 형태로 지적 호기심의 출발점을 명확히 서술
+2. 나열 금지: 전공 적합성 가장 높은 1개 활동만 선택하여 '문제 발견→탐색→분석→적용→성찰' 과정으로 깊게 서술
+3. 3단계 실패 극복 구조화: [실패 원인 인식→수정 과정(변인 통제 등)→개선 결과] 3단계를 반드시 포함
+4. 학생 발화 직접 인용: "~라고 지적하며", "~을 제안함" 형태의 따옴표 직접 인용을 반드시 포함
+5. '이해 과정→고급 용어' 순서: 논리적 경로 먼저 제시 후 고급 용어 배치, 연결어(더 나아가, 주목할 점은, 이를 통해) 적극 활용
+문장 종결은 반드시 명사형 어미(~함, ~모습을 보임)로 작성하고, 기재 금지 사항을 절대 포함하지 마십시오.
+
 출력 JSON 형식:
-{"totalScore":<0-100>,"academicScore":<0-${maxAca}>,"careerScore":<0-${maxCar}>,"communityScore":<0-${maxCom}>,"scoreJustification":"<마크다운 소제목 구분 산출근거>","strengths":"<블릿문 3~5개>","improvements":"<블릿문 3~5개 + 구체적 이유>","rewriteSuggestion":"<개선된 세특 전문>"}`;
+{"totalScore":<0-100>,"academicScore":<0-${maxAca}>,"careerScore":<0-${maxCar}>,"communityScore":<0-${maxCom}>,"scoreJustification":"<마크다운 소제목 구분 산출근거>","strengths":"<블릿문 3~5개>","improvements":"<블릿문 3~5개 + 구체적 이유>","rewriteSuggestion":"<개선된 세특 전문(1500자 이상)>","perspectiveCheck":[{"perspective":"...","met":true,"comment":"..."}],"redFlags":[{"pattern":"...","detected":false,"detail":"..."}],"strategicRewrite":"<5대 전략 적용 세특(500자 이내)>"}`;
 
     const body = {
       contents: [{ role: "user", parts: [{ text: prompt }] }],
@@ -7552,11 +7791,37 @@ ${fd.content}
             scoreJustification: { type: "STRING" },
             strengths: { type: "STRING" },
             improvements: { type: "STRING" },
-            rewriteSuggestion: { type: "STRING" }
+            rewriteSuggestion: { type: "STRING" },
+            perspectiveCheck: {
+              type: "ARRAY",
+              items: {
+                type: "OBJECT",
+                properties: {
+                  perspective: { type: "STRING" },
+                  met: { type: "BOOLEAN" },
+                  comment: { type: "STRING" }
+                },
+                required: ["perspective", "met", "comment"]
+              }
+            },
+            redFlags: {
+              type: "ARRAY",
+              items: {
+                type: "OBJECT",
+                properties: {
+                  pattern: { type: "STRING" },
+                  detected: { type: "BOOLEAN" },
+                  detail: { type: "STRING" }
+                },
+                required: ["pattern", "detected", "detail"]
+              }
+            },
+            strategicRewrite: { type: "STRING" }
           },
           required: [
             "totalScore", "academicScore", "careerScore", "communityScore",
-            "scoreJustification", "strengths", "improvements", "rewriteSuggestion"
+            "scoreJustification", "strengths", "improvements", "rewriteSuggestion",
+            "perspectiveCheck", "redFlags", "strategicRewrite"
           ]
         }
       }
@@ -7617,9 +7882,43 @@ ${fd.content}
   // =========================================================
   // 세특 분석 — 결과 렌더링
   // =========================================================
-  function renderSetechResult(data) {
+  function renderSetechResult(data, noUniMode, activityType) {
     const dash = document.getElementById("st-dashboard");
     if (!dash) return;
+
+    // 역량 카드 라벨 및 표시/숨김 처리
+    const careerCard    = document.querySelector(".comp-card[data-comp='career']");
+    const labelAca      = document.getElementById("st-label-academic");
+    const labelCar      = document.getElementById("st-label-career");
+    const labelCom      = document.getElementById("st-label-community");
+
+    const sm = s => `<small style="font-size:0.75rem;color:var(--text-secondary)">(${s}점)</small>`;
+
+    if (activityType && activityType !== "진로활동") {
+      // 자율활동 / 동아리활동 / 행특 — 진로역량 카드 숨김, 탐구역량으로 라벨 변경
+      if (careerCard) careerCard.style.display = "none";
+      const acaMap  = { "자율활동": 30, "동아리활동": 40, "행특": 20 };
+      const comMap  = { "자율활동": 70, "동아리활동": 60, "행특": 80 };
+      if (labelAca) labelAca.innerHTML = `탐구역량 ${sm(acaMap[activityType] ?? 30)}`;
+      if (labelCom) labelCom.innerHTML = `공동체역량 ${sm(comMap[activityType] ?? 70)}`;
+    } else if (activityType === "진로활동") {
+      // 진로활동 — 3개 카드 모두 표시, 라벨 표준
+      if (careerCard) careerCard.style.display = "";
+      if (labelAca) labelAca.innerHTML = `학업역량 ${sm(40)}`;
+      if (labelCar) labelCar.innerHTML = `진로역량 ${sm(40)}`;
+      if (labelCom) labelCom.innerHTML = `공동체역량 ${sm(20)}`;
+    } else if (noUniMode) {
+      // 교과세특 대학 미선택 — 진로역량 카드 숨김
+      if (careerCard) careerCard.style.display = "none";
+      if (labelAca) labelAca.innerHTML = `학업역량 ${sm(70)}`;
+      if (labelCom) labelCom.innerHTML = `공동체역량 ${sm(30)}`;
+    } else {
+      // 교과세특 대학 선택 — 기본값 복원
+      if (careerCard) careerCard.style.display = "";
+      if (labelAca) labelAca.innerHTML = `학업역량 ${sm(40)}`;
+      if (labelCar) labelCar.innerHTML = `진로역량 ${sm(40)}`;
+      if (labelCom) labelCom.innerHTML = `공동체역량 ${sm(20)}`;
+    }
 
     document.getElementById("st-totalScore").textContent = data.totalScore ?? "-";
     document.getElementById("st-academicScore").textContent = data.academicScore ?? "-";
@@ -7634,6 +7933,43 @@ ${fd.content}
     document.getElementById("st-strengths").innerHTML = marked.parse(data.strengths || "");
     document.getElementById("st-improvements").innerHTML = marked.parse(data.improvements || "");
     document.getElementById("st-rewrite").innerHTML = marked.parse(data.rewriteSuggestion || "");
+
+    // 5대 핵심 관점 체크리스트
+    const pcEl = document.getElementById("st-perspectiveCheck");
+    if (pcEl && Array.isArray(data.perspectiveCheck)) {
+      pcEl.innerHTML = data.perspectiveCheck.map(item => {
+        const icon = item.met ? "✅" : "❌";
+        const color = item.met ? "#4ade80" : "#f87171";
+        return `<div style="display:flex;align-items:flex-start;gap:0.6rem;margin-bottom:0.5rem;padding:0.65rem 0.85rem;border-radius:6px;background:rgba(255,255,255,0.03);">
+          <span style="font-size:1rem;flex-shrink:0;margin-top:1px;">${icon}</span>
+          <div><strong style="color:${color}">${item.perspective}</strong><br>
+          <span style="font-size:0.85rem;color:var(--text-secondary);line-height:1.5;">${item.comment}</span></div>
+        </div>`;
+      }).join("");
+    }
+
+    // Red Flag 경고
+    const rfEl = document.getElementById("st-redFlags");
+    if (rfEl && Array.isArray(data.redFlags)) {
+      rfEl.innerHTML = data.redFlags.map(item => {
+        const icon = item.detected ? "🚨" : "✅";
+        const color = item.detected ? "#f87171" : "#4ade80";
+        const bg = item.detected ? "rgba(248,113,113,0.08)" : "rgba(74,222,128,0.05)";
+        return `<div style="display:flex;align-items:flex-start;gap:0.6rem;margin-bottom:0.5rem;padding:0.65rem 0.85rem;border-radius:6px;background:${bg};border-left:3px solid ${color};">
+          <span style="font-size:1rem;flex-shrink:0;margin-top:1px;">${icon}</span>
+          <div><strong style="color:${color}">${item.pattern}</strong><br>
+          <span style="font-size:0.85rem;color:var(--text-secondary);line-height:1.5;">${item.detail}</span></div>
+        </div>`;
+      }).join("");
+    }
+
+    // 5대 전략 적용 세특 (500자 이내)
+    const srEl = document.getElementById("st-strategicRewrite");
+    if (srEl) {
+      const text = data.strategicRewrite || "";
+      const charCount = text.length;
+      srEl.innerHTML = `<div style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:0.5rem;text-align:right;">${charCount}자</div>` + marked.parse(text);
+    }
 
     const modalMap = {
       "st-btnAca": { title: "\ud559\uc5c5\uc5ed\ub7c9", score: data.academicScore, note: "40\uc810 \ub9cc\uc810" },
@@ -7690,12 +8026,14 @@ ${fd.content}
         category: stCategorySelect ? stCategorySelect.value : "",
         major: stMajorSelect ? stMajorSelect.value : "",
         subjectName: document.getElementById("st-subject-name").value.trim(),
-        content: document.getElementById("st-content").value.trim()
+        content: document.getElementById("st-content").value.trim(),
+        activityType: stCurrentMode === "activity" ? (stActivityTypeSelect?.value || "") : ""
       };
+      fd.noUniMode = !fd.activityType && (!fd.university || !fd.major);
 
       if (!fd.apiKey) { alert("API \ud0a4\ub97c \uc785\ub825\ud558\uc138\uc694."); return; }
-      if (!fd.university || !fd.major) { alert("\ub300\ud559\uacfc \ud559\uacfc\ub97c \uc120\ud0dd\ud558\uc138\uc694."); return; }
       if (!fd.content) { alert("\uc138\ud2b9 \ub0b4\uc6a9\uc744 \uc785\ub825\ud558\uc138\uc694."); return; }
+      if (stCurrentMode === "activity" && !fd.activityType) { alert("\ud65c\ub3d9 \uc720\ud615\uc744 \uc120\ud0dd\ud558\uc138\uc694."); return; }
 
       stEmptyState.classList.add("hidden");
       stDashboardEl.classList.add("hidden");
@@ -7720,7 +8058,7 @@ ${fd.content}
           throw new Error("AI 응답 파싱 실패 (" + parseErr.message + ").\n" + errContext + "\n\n(원문 앞 600자: " + raw.substring(0, 600) + ")");
         }
         stLoadingState.classList.add("hidden");
-        renderSetechResult(parsed);
+        renderSetechResult(parsed, fd.noUniMode, fd.activityType);
         if (window.innerWidth <= 992) {
           document.getElementById("st-resultContainer")?.scrollIntoView({ behavior: "smooth" });
         }
