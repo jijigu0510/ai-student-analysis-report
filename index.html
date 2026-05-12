@@ -177,6 +177,7 @@
         <button id="tab-grade-rank" class="tab-btn">📊 내신 분석하기(대학별 교과 점수 확인)</button>
         <button id="tab-admission-dist" class="tab-btn">📊 대학별 입결 분포도</button>
         <button id="tab-school-mock-status" class="tab-btn">🏫 우리 학교 모의고사 성적 현황</button>
+        <button id="tab-hexagon" class="tab-btn">🔷 육각형 인재 확인하기</button>
       </nav>
 
 
@@ -1641,7 +1642,97 @@
     </section>
   </main>
 
+  <!-- ===== 육각형 인재 확인하기 탭 뷰 ===== -->
+  <main id="view-hexagon" class="main-container view-section hidden" style="display:none;">
+    <section class="glass-panel" style="padding:1.5rem 2rem; margin-bottom:1.5rem;">
+      <h2 class="section-title" style="display:flex;align-items:center;gap:0.5rem;">🔷 육각형 인재 확인하기</h2>
+      <p style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:1.5rem;">업로드된 교과 세특·창체·행특을 AI로 분석하여 6가지 역량의 육각형 그래프와 키워드 분포를 확인합니다.</p>
+
+      <!-- 학생 선택 -->
+      <div style="display:flex;flex-wrap:wrap;gap:0.75rem;align-items:flex-end;">
+        <div>
+          <label style="font-size:0.8rem;color:var(--text-secondary);display:block;margin-bottom:0.3rem;">학년</label>
+          <select id="hx-grade-sel" style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.6rem 1rem;min-width:100px;">
+            <option value="">학년 선택</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:0.8rem;color:var(--text-secondary);display:block;margin-bottom:0.3rem;">반</label>
+          <select id="hx-class-sel" style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.6rem 1rem;min-width:100px;">
+            <option value="">반 선택</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:0.8rem;color:var(--text-secondary);display:block;margin-bottom:0.3rem;">학생</label>
+          <select id="hx-name-sel" style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.6rem 1rem;min-width:180px;">
+            <option value="">학생 선택</option>
+          </select>
+        </div>
+        <button id="hx-analyze-btn" class="btn-primary" style="padding:0.6rem 1.5rem;height:fit-content;">분석하기</button>
+      </div>
+      <p style="margin-top:0.75rem;font-size:0.8rem;color:var(--text-secondary);">※ 인적사항 파일과 세특/비교과 파일을 먼저 <strong>통합 파일 업로드</strong>에서 올려주세요.</p>
+    </section>
+
+    <!-- 로딩 -->
+    <div id="hx-loading" style="display:none;text-align:center;padding:2rem;">
+      <span class="spinner" style="width:32px;height:32px;border-width:3px;display:inline-block;"></span>
+      <p style="color:var(--text-secondary);margin-top:0.75rem;">AI가 역량을 분석 중입니다...</p>
+    </div>
+
+    <!-- 오류 박스 -->
+    <div id="hx-error-box" style="display:none;padding:1rem 1.5rem;border-radius:12px;border:1px solid rgba(255,71,87,0.3);background:rgba(255,71,87,0.07);color:#ff4757;white-space:pre-wrap;margin-bottom:1rem;"></div>
+
+    <!-- 키워드 섹션 -->
+    <div id="hx-keyword-section" style="display:none;">
+      <!-- 워드클라우드 -->
+      <section class="glass-panel" style="padding:1.5rem 2rem;margin-bottom:1.5rem;">
+        <h3 style="margin:0 0 1rem;font-size:1.1rem;color:var(--text-primary);">키워드 워드클라우드</h3>
+        <div id="hx-wordcloud" style="min-height:140px;line-height:2;text-align:center;padding:0.5rem;"></div>
+      </section>
+
+      <!-- 빈도 막대 차트 -->
+      <section class="glass-panel" style="padding:1.5rem 2rem;margin-bottom:1.5rem;">
+        <h3 style="margin:0 0 1rem;font-size:1.1rem;color:var(--text-primary);">키워드 빈도 (상위 20개)</h3>
+        <div style="height:380px;position:relative;">
+          <canvas id="hx-bar-chart"></canvas>
+        </div>
+      </section>
+    </div>
+
+    <!-- 육각형 레이더 섹션 -->
+    <div id="hx-radar-section" style="display:none;">
+      <div id="hx-radar-wrap" style="display:none;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;align-items:start;">
+          <!-- 레이더 차트 -->
+          <section class="glass-panel" style="padding:1.5rem 2rem;">
+            <h3 style="margin:0 0 1rem;font-size:1.1rem;color:var(--text-primary);">육각형 역량 그래프 <span style="font-size:0.8rem;color:var(--text-secondary);">(점을 클릭하면 근거 확인)</span></h3>
+            <div style="height:500px;position:relative;">
+              <canvas id="hx-radar-chart"></canvas>
+            </div>
+          </section>
+
+          <!-- 점수 카드 -->
+          <section class="glass-panel" style="padding:1.5rem 2rem;">
+            <h3 style="margin:0 0 1rem;font-size:1.1rem;color:var(--text-primary);">역량별 점수 <span style="font-size:0.8rem;color:var(--text-secondary);">(카드 클릭 → 근거)</span></h3>
+            <div id="hx-score-cards" style="display:flex;flex-direction:column;gap:0.75rem;"></div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </main>
+
   </div> <!-- // End of .app-layout -->
+
+  <!-- 육각형 근거 모달 -->
+  <div id="hx-reason-modal" class="modal-overlay hidden">
+    <div class="modal-container glass-panel" style="max-width:560px;">
+      <div class="modal-header">
+        <h3 id="hx-modal-title">역량 평가 근거</h3>
+        <button class="modal-close" id="hx-modal-close" type="button">&times;</button>
+      </div>
+      <div id="hx-modal-body" class="modal-body" style="padding:1.5rem;max-height:60vh;overflow-y:auto;"></div>
+    </div>
+  </div>
 
   <div id="analysisModal" class="modal-overlay hidden">
     <div class="modal-container glass-panel">
@@ -2558,6 +2649,7 @@
   <script src="app.js?v=7"></script>
   <script src="grade-rank.js"></script>
   <script src="admission_dist.js"></script>
+  <script src="hexagon.js"></script>
   <script type="module" src="firebase-visitors.js"></script>
 
   <!-- 인쇄용 히든 컨테이너 -->

@@ -269,6 +269,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const tabPassFailExamples = document.getElementById("tab-passfail-examples");
   const tabAdmissionDist = document.getElementById("tab-admission-dist");
   const tabSchoolMockStatus = document.getElementById("tab-school-mock-status");
+  const tabHexagon = document.getElementById("tab-hexagon");
   const viewIndividual = document.getElementById("view-individual");
   const viewPassFail = document.getElementById("view-passfail");
   const viewPassFailExamples = document.getElementById("view-passfail-examples");
@@ -280,9 +281,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const viewGradeRank = document.getElementById("view-grade-rank");
   const viewAdmissionDist = document.getElementById("view-admission-dist");
   const viewSchoolMockStatus = document.getElementById("view-school-mock-status");
+  const viewHexagon = document.getElementById("view-hexagon");
 
-  const allTabs = [tabIndividual, tabPassFail, tabPassFailExamples, tabSetech, tabCsat, tabInterview, tabMockExam, tabGpaMockCompare, tabGradeRank, tabAdmissionDist, tabSchoolMockStatus].filter(Boolean);
-  const allViews = [viewIndividual, viewPassFail, viewPassFailExamples, viewSetech, viewCsat, viewInterview, viewMockExam, viewGpaMockCompare, viewGradeRank, viewAdmissionDist, viewSchoolMockStatus].filter(Boolean);
+  const allTabs = [tabIndividual, tabPassFail, tabPassFailExamples, tabSetech, tabCsat, tabInterview, tabMockExam, tabGpaMockCompare, tabGradeRank, tabAdmissionDist, tabSchoolMockStatus, tabHexagon].filter(Boolean);
+  const allViews = [viewIndividual, viewPassFail, viewPassFailExamples, viewSetech, viewCsat, viewInterview, viewMockExam, viewGpaMockCompare, viewGradeRank, viewAdmissionDist, viewSchoolMockStatus, viewHexagon].filter(Boolean);
 
   function switchTabTo(activeTab, activeView) {
     allTabs.forEach(t => t.classList.remove("active"));
@@ -295,7 +297,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (activeView) {
       activeView.classList.remove("hidden");
       activeView.classList.add("active");
-      activeView.style.display = (activeView.id === "view-csat" || activeView.id === "view-grade-rank" || activeView.id === "view-passfail-examples" || activeView.id === "view-admission-dist" || activeView.id === "view-school-mock-status") ? "block" : "grid";
+      activeView.style.display = (activeView.id === "view-csat" || activeView.id === "view-grade-rank" || activeView.id === "view-passfail-examples" || activeView.id === "view-admission-dist" || activeView.id === "view-school-mock-status" || activeView.id === "view-hexagon") ? "block" : "grid";
     }
 
     // Sidebar Interview Settings Visibility
@@ -349,6 +351,10 @@ document.addEventListener("DOMContentLoaded", () => {
     initSchoolMockStatus();
     // 탭 전환 시 캔버스 리사이즈 트리거
     setTimeout(() => window.dispatchEvent(new Event('resize')), 100);
+  });
+  if (tabHexagon) tabHexagon.addEventListener("click", () => {
+    switchTabTo(tabHexagon, viewHexagon);
+    if (typeof window.initHexagonTab === "function") window.initHexagonTab();
   });
 
   // --- Tab Container Toggle Logic ---
@@ -2403,12 +2409,12 @@ document.addEventListener("DOMContentLoaded", () => {
     // Header Row: Empty top-left cell, then columns 1 to 14
     html += '<div class="matrix-header" style="background:transparent; border:none;"></div>';
     for (let x = 1; x <= 14; x++) {
-      html += `<div class="matrix-header">${x}합</div>`;
+      html += `<div class="matrix-header">${x}</div>`;
     }
 
     // Rows: Y from 4 down to 1
     for (let y = 4; y >= 1; y--) {
-      html += `<div class="matrix-label-y">${y}과목</div>`;
+      html += `<div class="matrix-label-y">${y}합</div>`;
       for (let x = 1; x <= 14; x++) {
         // Find items matching this (x, y)
         const cellItems = filtered.filter(item => parseInt(item.등급합) === x && parseInt(item.과목수) === y);
@@ -2606,6 +2612,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let globalCourseJson = null;
   let globalBatchJsons = [];
   let lastReportData = null; // PDF \uc778\uc1c4\uc6a9 \ucd5c\uc2e0 \ub370\uc774\ud130 \uc800\uc7a5
+  window.getHexagonAppData = () => ({ students, globalBatchJsons, globalCourseJson });
 
   const universityData = {
 
@@ -6554,7 +6561,7 @@ SW\uc6b0\uc218(AI\ucef4\uacf5): \ud559\uc5c5\ud0d0\uad6c\uc5ed\ub7c9 60%(\ud559\
     }
   }
   async function generateAIReportPF(data, apiKey) {
-    const modelsToTry = ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.0-flash"];
+    const modelsToTry = ["gemini-3.1-pro", "gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash-lite"];
     const attemptLogs = [];
     const uniCriteria = universityEvalCriteria[data.university] || { factors: "" };
     const prompt = `당신은 대한민국 대학 입시 분석 전문가이자 매우 엄격하고 비판적인 시각을 가진 입학사정관입니다.
@@ -6631,7 +6638,7 @@ ${uniCriteria.factors}
   }
 
   async function generateAIReport(data) {
-    const modelsToTry = ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.0-flash"];
+    const modelsToTry = ["gemini-3.1-pro", "gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash-lite"];
     const attemptLogs = [];
     const uniCriteria = universityEvalCriteria[data.university];
     const weights = uniCriteria?.weights || { academic: 0.33, career: 0.33, community: 0.34 };
@@ -7601,6 +7608,11 @@ overallEvaluation 필드는 아래 형식을 반드시 따르십시오:
 - 학생회장·반장 등 직책(타이틀)보다는 실질적인 역할과 책임감을 더 중요하게 봅니다.
 - '왜 참여했는가(계기) → 본인의 역할 → 어려움 극복 → 생각·인식의 성장·변화'의 흐름이 드러나야 우수한 기록입니다.
 
+[자율활동 기재 요령]
+- 피상적 활동나열형, 학교프로그램 나열형, 행사 날짜 표기형 세특은 지양
+- 각종 행사 참여 활동을 통해 학생의 창의적인 기획과 활동 결과, 문제 발생시 문제 해결 능력을 확인하고 기록
+- 학급 구성원으로서 본인이 맡은 역할에 충실하고, 학급 활동에서 드러나는 자기주도적인 모습 및 개인의 특성을 기록
+
 [평가 기준 및 배점 — 총 100점]
 자율활동은 공동체역량과 탐구역량을 중심으로 평가합니다.
 1. 탐구역량 (최대 30점 — academicScore에 기재): ${comps.academic}
@@ -7622,6 +7634,11 @@ overallEvaluation 필드는 아래 형식을 반드시 따르십시오:
 - 전공과 직접적 관련이 없더라도 해당 전공에서 요구하는 기초 학업 역량·소양을 기르기 위한 탐구 활동이었다면 우수한 평가를 받을 수 있습니다.
 - 무엇에 호기심을 가졌고(탐구역량), 어떻게 주도적으로 파고들었으며(자기주도성), 그 과정에서 친구들과 어떻게 협력했는지(공동체역량)를 유기적으로 연결하여 평가합니다.
 
+[동아리활동 기재 요령]
+- 오매불망형, 중구난방형, 자유분방형, 방목형 세특은 지양
+- 동아리 활동을 통해 학생의 관심 분야를 파악하고 활동 범위, 개인의 역할 및 성과를 통해 학생의 탐구역량, 진로역량, 공동체역량을 확인하여 기록
+- 동아리 내에서 학생이 무엇을 경험하고 어떤 역할을 했는지 살펴봄으로써 지원 전공에 대한 전공 관심도 및 수학역량을 확인하여 기록
+
 [평가 기준 및 배점 — 총 100점]
 동아리활동은 탐구역량과 공동체역량을 중심으로 평가합니다.
 1. 탐구역량 (최대 40점 — academicScore에 기재): ${comps.academic}
@@ -7641,6 +7658,16 @@ overallEvaluation 필드는 아래 형식을 반드시 따르십시오:
 - 전공 관련성보다는 '학교생활 전반의 충실도': 수업에 임하는 자세, 교칙 준수, 공동체 안에서의 역할 등 일상적 학교생활을 얼마나 성실하고 안정적으로 이어왔는지가 그 자체로 훌륭한 평가 대상입니다.
 - 면접 평가의 주요 확인 자료: 기재된 내용의 근거가 되는 구체적 경험·사례를 면접에서 직접 확인하므로, 행특에 좋은 평가가 있다면 학생이 관련 사례를 면접에서 설명할 수 있어야 합니다.
 - 학업역량, 진로역량, 공동체역량 등 모든 평가 역량을 총체적으로 확인할 수 있는 영역입니다.
+
+[행동특성 및 종합의견 기재 요령]
+- 단순나열식, 구체성 부족, 자율활동 내용과의 불일치는 지양
+- 인성적 측면 핵심 요소: 대인관계의 특성, 배려심, 공동체 의식 → 핵심어: 책임감, 성실성, 리더십, 협동심, 나눔과 배려, 사회성
+- 학업역량 측면 핵심 요소: 학업에 대한 목표의식, 노력, 자기주도적 학습 태도, 수업 참여도 → 핵심어: 학업 태도, 학업 의지, 탐구활동, 자기주도성, 수업 참여도
+- 1년간의 행동 특성을 바탕으로 총체적인 학생의 변화와 성장 내용
+- 생활기록부 다른 항목에서 누락된 내용을 보충하여 기재
+- 중요한 활동에는 의미를 부여해 강조하여 기재(최종 정리)
+- 정성적인 내용(인성)뿐만 아니라, 정량적인 내용(학업역량의 발전과정)도 기록
+- 추상적이고 상투적인 내용보다는 구체적인 사례를 중심으로 기록
 
 [평가 기준 및 배점 — 총 100점]
 행특은 공동체역량을 중심으로 평가합니다.
@@ -7663,6 +7690,11 @@ overallEvaluation 필드는 아래 형식을 반드시 따르십시오:
 - 학교생활기록부 타 영역과의 유기적 연계: 동아리, 세특, 행특 등 다른 영역과 유기적으로 연계하여 진로 탐색이 진정성 있게 이루어졌는지 확인합니다.
 - 진로 변경에 대한 유연한 평가: 고등학교는 진로 탐색 시기이므로 진로 변경은 불이익이 없습니다. 타당한 사유와 주도적 탐색 노력이 드러나면 오히려 깊이 있는 탐색 역량으로 긍정 평가합니다.
 - 핵심: 꿈과 관심사를 찾기 위해 얼마나 진지하게 고민했고, 스스로 어떤 깊이 있는 탐구와 도전을 실천했는가를 집중적으로 평가합니다.
+
+[진로활동 기재 요령]
+- 단순나열식, 구체성 부족, 진로탐색 과정 안보이는 세특은 지양
+- 진로활동과 학교생활기록부의 타 영역 등을 연계하여 학생의 관심 영역과 구체적인 진로탐색 노력을 파악하여 기록
+- 확고한 진로를 가지고 꾸준히 관련된 활동을 한 경우 자신의 진로를 구체화하기 위해 노력하는 모습, 진로활동을 통해 진로를 고민하고 결정해 나가는 모습을 파악하여 기록
 
 [평가 기준 및 배점 — 총 100점]
 진로활동은 학업역량·진로역량·공동체역량을 함께 평가합니다.
@@ -7727,7 +7759,38 @@ ${fd.content}
 • 동사(서술어): 가려내다, 기술하다, 약술하다, 열거하다, 정의하다, 진술하다, 짝짓다, 찾아내다, 구별하다, 부인하다, 설명하다, 예시하다, 예측하다, 의역하다, 일반화하다, 전환하다, 추론하다, 추정하다, 계산하다, 관계 짓다, 발견하다, 변용하다, 변환하다, 예증하다, 재구조화시키다, 조종하다, 준비하다, 품어내다, 개발하다, 고안하다, 구체화하다, 도출하다, 병합하다, 분류하다, 생산하다, 설계하다, 세분하다, 도식하다, 변별하다, 구분하다, 식별하다, 예증하다, 추론하다, 가려내다, 관계 짓다, 분리하다, 환원시키다, 창조하다, 편집하다, 형성하다, 간추리다, 감지하다, 결론짓다, 고려하다, 비교하다, 서술하다, 요약하다, 입증하다, 주장하다, 총평하다, 타당화하다, 토론하다, 판단하다, 평가하다, 표준화하다, 해석하다, 수정하다, 재정리하다, 조직하다, 지어내다
 • 형용사/부사: 우월하다, 우수하다, 탁월하다, 뛰어나다, 빼어나다, 두드러지다, 도드라지다, 드러나다, 뚜렷하다, 우뚝하다, 돋보이다, 남다르다, 특출나다, 출중하다, 걸출하다, 훌륭하다, 칭찬할 만하다, 나무랄데 없다, 완벽하다, 아름답다, 위대하다 / 매우, 대단히, 퍽, 무척, 굉장히, 상당히, 꽤, 몹시, 많이, 지나치게, 더없이, 더할 나위 없이, 아주, 한없이, 자못, 적잖게, 제법, 극히, 참으로, 적절히, 잘, 효과적으로, 탁월하게, 우수하게, 뛰어나게, 뚜렷하게, 돋보이게
 
-위 표 1의 서술 예시와 표 2의 어휘들을 rewriteSuggestion 및 strategicRewrite 작성 시 적극적으로 활용하여, 실제 교사가 작성한 것처럼 자연스럽고 전문적인 문체로 서술하십시오.
+▶ [표 3] 행동동사 위계별 서술어 (세특 작성 시 학생의 역량 수준에 맞는 서술어 선택):
+• 인지(행동)동사 위계:
+  - 기억단계(저차원): 나열하다, 설명하다, 정의하다, 기술하다, 확인하다, 암기하다, 열거하다
+  - 이해단계: 해석하다, 요약하다, 예를 들다, 구분하다, 비교하다, 해설하다, 대비하다
+  - 적용단계: 적용하다, 계산하다, 실험하다, 예측하다, 연결하다, 조정하다, 구현하다
+  - 분석단계: 분석하다, 분류하다, 비교하다, 탐색하다, 논의하다, 평가하다, 연관짓다
+  - 평가단계(고차원): 평가하다, 가설설정, 검토하다, 추천하다, 결정하다, 논증하다, 비판하다
+  - 창출단계(고차원): 창조하다, 통합하다, 설계하다, 발명하다, 구성하다, 제안하다, 해결하다
+• 조사 서술어: 설명함, 정의함, 정리함, 나열함, 예를 듦, 비교함, 구분함, 기술함, 찾음, 인식함, 조사함, 활용함, 적용함, 실천함, 말할 수 있음, 해석함, 관찰함, 알게 됨, 따라함, 확인함
+• 탐구 서술어: 분석함, 평가함, 판단함, 가설을 세움, 검증함, 재구성함, 설계함, 종합함, 통합함, 대안을 제시함, 문제를 해결함, 전략을 수립함, 계획을 세움, 종합하여 발표함, 논리적인 글로 정리함, 새로운 해결책을 제시함, 시사점을 도출함, 사회적 의미를 탐색함, 토론을 주도함, 논리를 전개함
+• 정서행동동사 위계:
+  - 수용단계: 참여하다, 관찰하다, 제출하다, 활동하다, 함께하다, 지켜보다, 따라하다
+  - 반응단계: 반응하다, 다짐하다, 질문하다, 집중하다, 호응하다, 감탄하다, 공감하다
+  - 가치단계: 존중하다, 지지하다, 지속하다, 책임지다, 인정하다, 선택하다, 중시하다
+  - 조직단계: 조율하다, 조직하다, 통합하다, 협력하다, 설명하다, 조정하다
+  - 실천단계: 기획하다, 제안하다, 주도하다, 계획하다, 기여하다, 적용하다, 수행하다
+  - 책임단계: 유도하다, 환기하다, 배려하다, 해결하다, 공헌하다, 지도하다, 지속하다
+• 성취동사 위계: 시도하다→완성하다→향상하다→발휘하다→심화하다→선도하다
+• 변화 행동동사 위계: 인식하다→수정하다→적응하다→변화하다→혁신하다→전환하다
+
+▶ [표 4] 세특 작성시 5가지 핵심 고려사항 (재작성 시 이 기준으로 탁월성 구현):
+1. 맥락(동기·배경): 단순 흥미 서술은 보통, 학습·진로와 연결된 동기 서술은 우수, 사회·학문적 문제의식과 연결하여 스스로 기획한 내용은 탁월
+2. 증거(객관성·구체성): 결과만 서술하면 기본, 구체적 데이터·분석·결과 제시는 우수, 정량+정성 근거 모두 포함하여 재현성 높은 서술은 탁월
+3. 진전도(성장): 발전 과정 없으면 기본, 이전 한계 극복과 향상 사례 구체적 제시는 우수, 초기 약점을 뚜렷한 성취로 전환하고 자기주도적 개선이 드러나면 탁월
+4. 확장성(전이가능성): 다른 분야 전이 없으면 기본, 교과·진로 간 연계 활동 수행은 우수, 융합·창의적 확장과 새로운 문제 해결 적용은 탁월
+5. 지속성(일관성): 단발성 활동은 기본, 학기 내 반복은 보통, 학년 간 지속은 우수, 2년 이상 지속하며 심화·발전 양상이 명확하면 탁월
+
+▶ [표 5] 과목별 세부능력 특기사항 기재 요령 (교과 세특 재작성 시 반드시 준수):
+- 해당 교과를 배워야 하는 이유를 알고, 교과 내용에 지적 호기심을 갖고, 지식을 확장하되, 탐구 시 그 소재를 진로와 연관시킬 수도 있음
+- 반드시 포함할 요소: 학생의 수업 모습과 태도 / 수업 시간에 배운 내용과 관련된 탐구 활동 / 학생의 교과 역량 / 교과 내용과 관련된 후속 활동 / 학생의 역량 추가 기술 / 연계·심화·확장
+
+위 표 1~5의 서술 예시, 어휘, 서술어 위계, 기재 요령을 rewriteSuggestion 및 strategicRewrite 작성 시 적극적으로 활용하여, 실제 교사가 작성한 것처럼 자연스럽고 전문적인 문체로 서술하십시오. 특히 학생의 역량 수준에 맞는 서술어를 위계적으로 선택하고, 고차원 역량(평가·창출단계)이 드러나도록 탐구 서술어를 중심으로 작성하십시오.
 
 [엄격한 평가 및 감점 주의사항]
 - **[핵심] 2015 개정 교육과정 평가지표 준수**: 단순 활동 나열이나 미사여구는 점수를 부여하지 않습니다. 지적 호기심의 '발현-과정-결과'가 논리적으로 증명될 때만 고득점을 부여하세요.
@@ -7827,11 +7890,7 @@ ${fd.content}
       }
     };
 
-    const modelsToTry = [
-      "gemini-2.5-pro",
-      "gemini-2.5-flash",
-      "gemini-2.5-flash-lite"
-    ];
+    const modelsToTry = ["gemini-3.1-pro", "gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash-lite"];
 
     let lastErr;
     let attemptCount = 0;
@@ -9130,7 +9189,7 @@ ${univPromptSupplement}
 `;
 
       try {
-        const modelsToTry = ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.5-flash-lite"];
+        const modelsToTry = ["gemini-3.1-pro", "gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash-lite"];
         let resultText = "";
 
         for (const model of modelsToTry) {

@@ -329,6 +329,8 @@
   const JJU_GAS_URL = 'https://script.google.com/macros/s/AKfycbzz9UeBJks2skFzGeFB1Yz5vkfzj5akZJ_4xLXefo0ExorUZ6k1D5zxrlQzuF7AK--A-Q/exec';
   let JJU_DATA = [];
 
+  const JBNU_GAS_URL = 'https://script.google.com/macros/s/AKfycbySdYZbJiB0mvxpvUch2p7i22IQS4aOgNcXZKxWYyMKNHxSWIed7saajcp7uHQlh2c_Eg/exec';
+
   const CAU_GAS_URL = 'https://script.google.com/macros/s/AKfycbwQ8dCK5uaBMghg-woMHvaOQMseVsLQcYQNZJ-7N0Lew-kO6UldFYjwiaANm_qrdnZS/exec';
   let CAU_DATA = [];
 
@@ -1674,6 +1676,7 @@
               <option value="우석대">우석대학교</option>
               <option value="원광대">원광대학교</option>
               <option value="전남대">전남대학교</option>
+              <option value="전북대">전북대학교</option>
               <option value="전주대">전주대학교</option>
               <option value="중앙대">중앙대학교</option>
               <option value="충남대">충남대학교</option>
@@ -1694,7 +1697,7 @@
           </div>
 
           <!-- 전형 -->
-          <div style="display:flex;align-items:center;gap:0.5rem;">
+          <div id="adist-type-wrap" style="display:flex;align-items:center;gap:0.5rem;">
             <label style="font-size:0.8rem;font-weight:600;color:var(--text-secondary);white-space:nowrap;">전형</label>
             <select id="adist-type-sel" onchange="adOnTypeChange()"
               style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);
@@ -1703,7 +1706,7 @@
           </div>
 
           <!-- 학과 선택 -->
-          <div style="display:flex;align-items:center;gap:0.5rem;">
+          <div id="adist-major-wrap" style="display:flex;align-items:center;gap:0.5rem;">
             <label style="font-size:0.8rem;font-weight:600;color:var(--text-secondary);white-space:nowrap;">학과</label>
             <select id="adist-major-sel" onchange="adUpdateMain()"
               style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);
@@ -1713,7 +1716,7 @@
           </div>
 
           <!-- Y축 범위 -->
-          <div style="display:flex;align-items:center;gap:0.5rem;margin-left:auto;">
+          <div id="adist-ymax-wrap" style="display:flex;align-items:center;gap:0.5rem;margin-left:auto;">
             <label style="font-size:0.8rem;font-weight:600;color:var(--text-secondary);white-space:nowrap;">Y축</label>
             <select id="adist-ymax-sel" onchange="adUpdateMain()"
               style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);
@@ -1739,6 +1742,11 @@
           <div id="adist-main-area" style="position:relative;height:420px;width:100%;">
             <canvas id="adist-canvas-main"></canvas>
           </div>
+        </div>
+
+        <!-- 전북대 iframe -->
+        <div id="adist-jbnu-wrap" style="display:none;border-radius:16px;overflow:hidden;border:1px solid var(--panel-border);min-height:620px;">
+          <iframe id="adist-jbnu-iframe" src="" style="width:100%;height:620px;border:none;display:block;" title="전북대학교 입시 결과"></iframe>
         </div>
 
         <!-- 빈 상태 -->
@@ -1778,6 +1786,41 @@
   // ════════════════════════════════════════════════════════════════════════════
   function loadData(uniName) {
     adCurrentUni = uniName;
+
+    // ── 전북대: iframe 임베딩 모드 ──────────────────────────────────────────
+    const jbnuWrap    = document.getElementById('adist-jbnu-wrap');
+    const chartPanel  = document.getElementById('adist-chart-panel');
+    const typeWrap    = document.getElementById('adist-type-wrap');
+    const majorWrap   = document.getElementById('adist-major-wrap');
+    const ymaxWrap    = document.getElementById('adist-ymax-wrap');
+    const legendEl    = document.getElementById('adist-legend');
+    const badgeEl     = document.getElementById('adist-badge');
+    const yearWrapEl  = document.getElementById('adist-year-wrap');
+
+    if (uniName === '전북대') {
+      // 필터 컨트롤 숨기기
+      if (typeWrap)   typeWrap.style.display   = 'none';
+      if (majorWrap)  majorWrap.style.display  = 'none';
+      if (ymaxWrap)   ymaxWrap.style.display   = 'none';
+      if (yearWrapEl) yearWrapEl.style.display  = 'none';
+      if (legendEl)   legendEl.innerHTML        = '';
+      if (badgeEl)    badgeEl.textContent       = '전북대학교 학생부종합·교과 입시 결과 (Google Sheets 연동)';
+      // iframe src 설정 후 표시
+      const iframe = document.getElementById('adist-jbnu-iframe');
+      if (iframe && !iframe.src.includes('script.google.com')) iframe.src = JBNU_GAS_URL;
+      if (jbnuWrap)  jbnuWrap.style.display  = 'block';
+      if (chartPanel) chartPanel.style.display = 'none';
+      if (adMainChart) { adMainChart.destroy(); adMainChart = null; }
+      return;
+    }
+
+    // 전북대에서 다른 대학으로 전환 시 UI 복원
+    if (jbnuWrap)   jbnuWrap.style.display   = 'none';
+    if (chartPanel) chartPanel.style.display  = '';
+    if (typeWrap)   typeWrap.style.display    = 'flex';
+    if (majorWrap)  majorWrap.style.display   = 'flex';
+    if (ymaxWrap)   ymaxWrap.style.display    = 'flex';
+
     const meta = UNI_META[uniName];
 
     // 학년도 드롭다운 먼저 채우기 (rawData 술독 전)
