@@ -187,7 +187,7 @@
     <section class="glass-panel form-section">
       <h2 class="section-title">👤 학생 정보 입력 및 개인 분석</h2>
       <p style="color: var(--text-secondary); margin-bottom: 2.2rem; line-height: 1.7; font-size: 0.95rem;">각 학급의 학생부 자료를 활용하여 각 대학의 학생부종합전형 가이드북을 학습한 AI가 점수 산출 및 평가 근거를 제시하고 피드백을 통해 보완 방향을 제시합니다. (담임교사용)</p>
-      <form id="evalForm">
+      <form id="evalForm" novalidate>
           <div class="form-group-row" style="display: none;">
             <div class="form-group">
               <label for="excel-upload" style="color: var(--text-secondary); font-weight: 500;">인적사항 파일 (엑셀)</label>
@@ -512,7 +512,7 @@
     <section class="glass-panel form-section">
       <h2 class="section-title">✏️ 세특(세부능력 및 특기사항) 분석</h2>
       <p style="color: var(--text-secondary); margin-bottom: 2.2rem; line-height: 1.7; font-size: 0.95rem;">학생부기재요령과 대학별 우수 세특을 학습한 AI가 세특 내용을 분석하여 피드백을 제공하고, 이를 바탕으로 맞춤형 세특 작성을 지원합니다. (교과 교사용)</p>
-      <form id="setechForm">
+      <form id="setechForm" novalidate>
           <!-- API 키 -->
           <div class="form-group" style="display: none;">
             <label for="st-api-key" style="color: var(--text-secondary); font-weight: 500;">Google Gemini API Key <span class="label-desc" style="color: #96baff; font-weight: normal;">(필수)</span></label>
@@ -748,7 +748,7 @@
     <section class="glass-panel form-section" id="sidebar-interview-settings">
       <h2 class="section-title">🎤 면접 문항 생성 설정</h2>
       <p style="color: var(--text-secondary); margin-bottom: 2.2rem; line-height: 1.7; font-size: 0.95rem;">각 대학의 면접 가이드북을 학습한 AI가 10가지 맞춤 질문과 평가 영역, 모범 답안을 제시합니다. (*주의: 개인 분석에서 학생 데이터를 먼저 불러온 후 진행)</p>
-      <form id="interviewForm">
+      <form id="interviewForm" novalidate>
         <div class="form-group" style="display: none;">
           <label for="iv-api-key" style="color: var(--text-secondary); font-weight: 500;">Google Gemini API Key <span class="label-desc" style="color: #96baff; font-weight: normal;">(필수)</span></label>
           <input type="password" id="iv-api-key" placeholder="API 키를 입력하세요..." required style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.75rem 1rem;width:100%;">
