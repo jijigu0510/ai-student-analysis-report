@@ -2228,22 +2228,108 @@ body.light-mode .mock-individual-card {
   border-color: rgba(94, 106, 210, 0.15);
   box-shadow: 0 8px 24px rgba(94, 106, 210, 0.1);
 }
+body.light-mode .card-subj {
+  color: #1a1c35;
+}
+body.light-mode .card-stats {
+  background: rgba(94, 106, 210, 0.06);
+}
+body.light-mode .stat-value {
+  color: #1a1c35;
+}
+body.light-mode .diff-group {
+  background: rgba(94, 106, 210, 0.05);
+  border-color: rgba(94, 106, 210, 0.15);
+}
+body.light-mode .diff-items {
+  color: #1a1c35;
+}
+body.light-mode .mock-individual-card > div > [style*="border-top"] {
+  border-top-color: rgba(94, 106, 210, 0.15) !important;
+}
+body.light-mode .mock-result-header h3 {
+  color: #1a1c35 !important;
+}
+body.light-mode .mock-table td.subj-name {
+  color: #3555b8;
+}
+body.light-mode .card-wrong-list {
+  background: rgba(220, 53, 69, 0.07);
+  border-color: rgba(220, 53, 69, 0.25);
+  color: #c0392b;
+}
+
+/* 이수과목 테이블 라이트 모드 */
+body.light-mode .course-table-container {
+  background: rgba(94, 106, 210, 0.04);
+  border-color: rgba(94, 106, 210, 0.18);
+}
+body.light-mode .course-table th {
+  background: rgba(94, 106, 210, 0.1);
+  color: #3a3f7a;
+  border-bottom-color: rgba(94, 106, 210, 0.2);
+}
+body.light-mode .course-table td {
+  border-bottom-color: rgba(94, 106, 210, 0.1);
+  color: #2c2f4a;
+}
+body.light-mode .course-table tr:hover {
+  background: rgba(94, 106, 210, 0.07);
+}
+
+/* 성취도 배지 라이트 모드 */
+body.light-mode .badge-achieve {
+  background: rgba(94, 106, 210, 0.13);
+  color: #3a46b0;
+  border-color: rgba(94, 106, 210, 0.35);
+}
+
+/* 교과 평균 등급 입력 필드 라이트 모드 */
+body.light-mode #average-grade {
+  color: #2c2f6a !important;
+  background: rgba(94, 106, 210, 0.06) !important;
+}
+
+/* 내용 확인하기 트리거 라이트 모드 */
+body.light-mode .detail-modal-trigger {
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--text-secondary);
+}
+body.light-mode .detail-modal-trigger.active {
+  background: rgba(94, 106, 210, 0.1);
+  border-color: rgba(94, 106, 210, 0.35);
+  color: #2c3190;
+}
+body.light-mode .detail-modal-trigger.active:hover {
+  background: rgba(94, 106, 210, 0.18);
+  border-color: rgba(94, 106, 210, 0.6);
+  box-shadow: 0 4px 12px rgba(94, 106, 210, 0.15);
+}
+body.light-mode .detail-modal-trigger .status-text {
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--text-secondary);
+}
+body.light-mode .detail-modal-trigger.active .status-text {
+  background: rgba(40, 167, 69, 0.15);
+  color: #1a7a3c;
+}
 
 /* 등급 배지 소프트 튜닝 (라이트 모드) */
 body.light-mode .badge-grade {
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  color: #fff;
 }
-body.light-mode .grade-1 { background: #ffea00; color: #7a5800; }
-body.light-mode .grade-2 { background: #e0e0e0; color: #555; }
-body.light-mode .grade-3 { background: #e6b38c; color: #633b1f; }
-body.light-mode .grade-4 { background: #bdbdbd; color: #444; }
-body.light-mode .grade-5, 
-body.light-mode .grade-6, 
-body.light-mode .grade-7, 
-body.light-mode .grade-8, 
-body.light-mode .grade-9 { 
-  background: #eceff1; 
-  color: #78909c; 
+body.light-mode .grade-1 { background: linear-gradient(135deg, #f5c400, #e08000); color: #fff; }
+body.light-mode .grade-2 { background: linear-gradient(135deg, #9e9e9e, #757575); color: #fff; }
+body.light-mode .grade-3 { background: linear-gradient(135deg, #c07c3a, #8b4513); color: #fff; }
+body.light-mode .grade-4 { background: linear-gradient(135deg, #6d7ab5, #4a5296); color: #fff; }
+body.light-mode .grade-5,
+body.light-mode .grade-6,
+body.light-mode .grade-7,
+body.light-mode .grade-8,
+body.light-mode .grade-9 {
+  background: linear-gradient(135deg, #78909c, #546e7a);
+  color: #fff;
 }
 
 

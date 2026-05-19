@@ -1,5 +1,6 @@
 
 
+console.log('[APP] v8 loaded');
 // Firebase에서 GAS URL을 받아오는 콜백 — urls = { '1': {'3': url, ...}, '2': {...}, '3': {...} }
 window.onFirebaseGasUrls = function (urls) {
   if (!urls) return;
@@ -283,8 +284,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const viewSchoolMockStatus = document.getElementById("view-school-mock-status");
   const viewHexagon = document.getElementById("view-hexagon");
 
-  const allTabs = [tabIndividual, tabPassFail, tabPassFailExamples, tabSetech, tabCsat, tabInterview, tabMockExam, tabGpaMockCompare, tabGradeRank, tabAdmissionDist, tabSchoolMockStatus, tabHexagon].filter(Boolean);
-  const allViews = [viewIndividual, viewPassFail, viewPassFailExamples, viewSetech, viewCsat, viewInterview, viewMockExam, viewGpaMockCompare, viewGradeRank, viewAdmissionDist, viewSchoolMockStatus, viewHexagon].filter(Boolean);
+  const tabSubjectPath = document.getElementById("tab-subject-path");
+  const viewSubjectPath = document.getElementById("view-subject-path");
+
+  const allTabs = [tabIndividual, tabPassFail, tabPassFailExamples, tabSetech, tabSubjectPath, tabCsat, tabInterview, tabMockExam, tabGpaMockCompare, tabGradeRank, tabAdmissionDist, tabSchoolMockStatus, tabHexagon].filter(Boolean);
+  const allViews = [viewIndividual, viewPassFail, viewPassFailExamples, viewSetech, viewSubjectPath, viewCsat, viewInterview, viewMockExam, viewGpaMockCompare, viewGradeRank, viewAdmissionDist, viewSchoolMockStatus, viewHexagon].filter(Boolean);
 
   function switchTabTo(activeTab, activeView) {
     allTabs.forEach(t => t.classList.remove("active"));
@@ -297,7 +301,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (activeView) {
       activeView.classList.remove("hidden");
       activeView.classList.add("active");
-      activeView.style.display = (activeView.id === "view-csat" || activeView.id === "view-grade-rank" || activeView.id === "view-passfail-examples" || activeView.id === "view-admission-dist" || activeView.id === "view-school-mock-status" || activeView.id === "view-hexagon") ? "block" : "grid";
+      activeView.style.display = (activeView.id === "view-csat" || activeView.id === "view-grade-rank" || activeView.id === "view-passfail-examples" || activeView.id === "view-admission-dist" || activeView.id === "view-school-mock-status" || activeView.id === "view-hexagon" || activeView.id === "view-subject-path") ? "block" : "grid";
     }
 
     // Sidebar Interview Settings Visibility
@@ -327,6 +331,10 @@ document.addEventListener("DOMContentLoaded", () => {
     setTimeout(() => window.dispatchEvent(new Event('resize')), 100);
   });
   if (tabSetech) tabSetech.addEventListener("click", () => switchTabTo(tabSetech, viewSetech));
+  if (tabSubjectPath) tabSubjectPath.addEventListener("click", () => {
+    switchTabTo(tabSubjectPath, viewSubjectPath);
+    initSubjectPath();
+  });
   if (tabCsat) tabCsat.addEventListener("click", () => {
     switchTabTo(tabCsat, viewCsat);
     if (typeof window.initCsatChart === "function") window.initCsatChart();
@@ -461,21 +469,35 @@ document.addEventListener("DOMContentLoaded", () => {
             // 모의고사 업로드 시 학년 동기화
             if (mapping.uniId === 'uni-mock-upload') {
               const uniMockGradeEl = document.getElementById('uni-mock-grade');
+              const uniMockMonthEl = document.getElementById('uni-mock-month');
               if (uniMockGradeEl && uniMockGradeEl.value) {
                 currentMockGrade = uniMockGradeEl.value;
                 const mockGradeSelectEl = document.getElementById('mockGradeSelect');
                 if (mockGradeSelectEl) mockGradeSelectEl.value = currentMockGrade;
                 updateMonthSelectForGrade(currentMockGrade);
               }
+              if (uniMockMonthEl && uniMockMonthEl.value) {
+                currentMockMonth = uniMockMonthEl.value;
+                const mockMonthSelectEl = document.getElementById('mockMonthSelect');
+                if (mockMonthSelectEl) mockMonthSelectEl.value = currentMockMonth;
+                const uploadMonthTextEl = document.getElementById('uploadMonthText');
+                if (uploadMonthTextEl) uploadMonthTextEl.innerText = currentMockMonth;
+              }
             }
-
-            targetInput.files = e.target.files;
 
             // 향후 유지를 위해 IndexedDB에 파일 보관
             await saveFilesToDB(mapping.uniId, e.target.files);
 
-            const event = new Event('change', { bubbles: true });
-            targetInput.dispatchEvent(event);
+            if (mapping.uniId === 'uni-mock-upload') {
+              // files는 read-only라 relay 불가 → 직접 processMockFiles 호출
+              await processMockFiles(e.target.files);
+            } else {
+              const dt = new DataTransfer();
+              for (const f of e.target.files) dt.items.add(f);
+              targetInput.files = dt.files;
+              const event = new Event('change', { bubbles: true });
+              targetInput.dispatchEvent(event);
+            }
 
             const container = uniInput.closest('.uni-upload-card');
             if (container) {
@@ -491,6 +513,22 @@ document.addEventListener("DOMContentLoaded", () => {
         });
       }
     });
+
+    // 학년 변경 시 uni-mock-month 옵션 업데이트
+    const uniMockGradeEl = document.getElementById('uni-mock-grade');
+    const uniMockMonthEl = document.getElementById('uni-mock-month');
+    function updateUniMockMonthOptions(grade) {
+      if (!uniMockMonthEl) return;
+      const monthsByGrade = { '1': ['3','6','9','11'], '2': ['3','6','9','11'], '3': ['3','5','6','7','9','11'] };
+      const months = monthsByGrade[grade] || ['3','6','9','11'];
+      const prev = uniMockMonthEl.value;
+      uniMockMonthEl.innerHTML = months.map(m => `<option value="${m}">${m}월</option>`).join('');
+      if (months.includes(prev)) uniMockMonthEl.value = prev;
+    }
+    if (uniMockGradeEl) {
+      uniMockGradeEl.addEventListener('change', (e) => updateUniMockMonthOptions(e.target.value));
+      updateUniMockMonthOptions(uniMockGradeEl.value);
+    }
   }
 
   function setupUniversalApiKey() {
@@ -898,16 +936,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      if (!file.name.toLowerCase().endsWith('.csv')) continue;
-
+      const fname = file.name.toLowerCase();
       try {
-        let text = await readFileAsText(file);
-        text = text.replace(/❹/g, '우').replace(/④/g, '우');
-        const data = parseCSVString(text);
-        const extracted = extractMockStudentData(data);
-        mockDataByMonth[key] = mockDataByMonth[key].concat(extracted);
+        if (fname.endsWith('.pdf')) {
+          const extracted = await parseMockPDF(file);
+          mockDataByMonth[key] = mockDataByMonth[key].concat(extracted);
+        } else if (fname.endsWith('.csv')) {
+          let text = await readFileAsText(file);
+          text = text.replace(/❹/g, '우').replace(/④/g, '우');
+          const data = parseCSVString(text);
+          const extracted = extractMockStudentData(data);
+          mockDataByMonth[key] = mockDataByMonth[key].concat(extracted);
+        }
       } catch (err) {
         console.error(`Error processing file ${file.name}:`, err);
+        alert(`파일 처리 오류 (${file.name}): ${err.message}`);
       }
     }
 
@@ -918,6 +961,483 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       alert(`${currentMockGrade}학년 ${currentMockMonth}월 추출 자료가 없습니다. 성적표 파일이 맞는지 확인해 주세요.`);
     }
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 성적통지표 PDF 파싱
+  // ─────────────────────────────────────────────────────────────────────────────
+  async function parseMockPDF(file) {
+    const lib = window.pdfjsLib || window['pdfjs-dist/build/pdf'];
+    if (!lib) throw new Error('PDF.js가 로드되지 않았습니다. 페이지를 새로고침 후 다시 시도하세요.');
+    if (!lib.GlobalWorkerOptions.workerSrc) {
+      lib.GlobalWorkerOptions.workerSrc =
+        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    }
+    const data = new Uint8Array(await file.arrayBuffer());
+    const pdf = await lib.getDocument({ data }).promise;
+    console.log(`[PDF] ${file.name} — 총 ${pdf.numPages}페이지`);
+    const results = [];
+    for (let p = 1; p <= pdf.numPages; p++) {
+      try {
+        const page = await pdf.getPage(p);
+        const tc = await page.getTextContent();
+        const parsed = parseSungsekPage(tc.items);
+        if (parsed.length > 0) {
+          console.log(`[PDF] 페이지 ${p}: ${parsed[0].성명} (${parsed.length}과목)`);
+        }
+        results.push(...parsed);
+      } catch (e) {
+        console.warn(`[PDF] 페이지 ${p} 파싱 오류:`, e.message);
+      }
+    }
+    console.log(`[PDF] 파싱 완료 — 총 ${results.length}건`, results);
+    return results;
+  }
+
+  function parseSungsekPage(rawItems) {
+    // Include item width for adjacent-char merging
+    const items = rawItems
+      .filter(it => it.str && it.str.trim())
+      .map(it => ({ str: it.str.trim(), x: it.transform[4], y: it.transform[5], w: it.width || 0 }));
+    if (!items.length) return [];
+
+    // Group into lines (y-tolerance 4pt), sort top→bottom, left→right
+    const lineMap = new Map();
+    for (const item of items) {
+      let found = null;
+      for (const [k] of lineMap) { if (Math.abs(k - item.y) <= 4) { found = k; break; } }
+      const key = found !== null ? found : item.y;
+      if (!lineMap.has(key)) lineMap.set(key, []);
+      lineMap.get(key).push(item);
+    }
+    const lines = [...lineMap.entries()]
+      .sort((a, b) => b[0] - a[0])
+      .map(([y, rawCells]) => {
+        rawCells.sort((a, b) => a.x - b.x);
+        // Merge adjacent chars into tokens: gap < 2pt means same token
+        const cells = [];
+        for (const c of rawCells) {
+          const prev = cells.length ? cells[cells.length - 1] : null;
+          if (prev && c.x - (prev.x + (prev.w > 0 ? prev.w : 5)) < 2) {
+            prev.str += c.str;
+            prev.w = (c.x + (c.w > 0 ? c.w : 5)) - prev.x;
+          } else {
+            cells.push({ str: c.str, x: c.x, w: c.w > 0 ? c.w : 5 });
+          }
+        }
+        return { y, cells, text: cells.map(c => c.str).join(' ') };
+      });
+
+    const pageText = lines.map(l => l.text).join('\n');
+    const pageTextNorm = pageText.replace(/\s/g, '');
+
+    // Only process student score pages (not explanation/glossary pages)
+    if (!pageTextNorm.includes('성적통지표') || pageTextNorm.includes('표시용어해설')) {
+      console.warn('[PDF] 페이지 건너뜀 — 성적통지표 키워드 없음 또는 해설 페이지');
+      return [];
+    }
+
+    // ── 1. Student info ──
+    const student = { 학년: '', 반: '', 번호: '', 성명: '' };
+
+    // Primary: after school name "고등학교" → digits(학년반번) + name
+    const schoolM = pageTextNorm.match(/고등학교(\d{3,6})([가-힣]{2,5})/);
+    if (schoolM) {
+      const numStr = schoolM[1];
+      student.성명 = schoolM[2];
+      student.학년 = numStr[0];
+      const rest = numStr.slice(1);
+      if (rest.length <= 2) {
+        student.반 = rest[0] || '';
+        student.번호 = rest.slice(1) || rest[0] || '';
+      } else if (rest.length === 3) {
+        student.반 = rest[0];
+        student.번호 = rest.slice(1);
+      } else {
+        student.반 = rest.slice(0, 2);
+        student.번호 = rest.slice(2);
+      }
+    }
+
+    // Fallback: 학년/반/번 label pattern
+    if (!student.성명) {
+      const infoM = pageTextNorm.match(/(\d)학년(\d+)반(\d+)번([가-힣]{2,5})/);
+      if (infoM) [, student.학년, student.반, student.번호, student.성명] = infoM;
+    }
+
+    // Fallback: cell-based (Korean name with 3+ numbers to its left)
+    if (!student.성명) {
+      for (const line of lines.slice(0, 30)) {
+        const nameCell = line.cells.find(c => /^[가-힣]{2,5}$/.test(c.str));
+        if (!nameCell) continue;
+        const ni = line.cells.indexOf(nameCell);
+        const leftNums = line.cells.slice(0, ni).filter(c => /^\d+$/.test(c.str));
+        if (leftNums.length >= 3) {
+          student.학년 = leftNums[leftNums.length - 3].str;
+          student.반 = leftNums[leftNums.length - 2].str;
+          student.번호 = leftNums[leftNums.length - 1].str;
+          student.성명 = nameCell.str;
+          break;
+        }
+      }
+    }
+
+    if (!student.성명) return [];
+
+    // ── 3. Extract subject score rows ──
+    // Column layout: 배점@133 | 득점(원점수)@174 | 범위@205 | 표준점수@250 | 학급@287 | 학교@321 | 백분위@359 | 등급@406
+    const scores = {};
+    const ALL_SUBJS = ['국어', '수학', '영어', '한국사',
+      '사회·문화', '한국지리', '세계지리', '생활과윤리', '윤리와사상',
+      '동아시아사', '세계사', '경제', '정치와법',
+      '물리학Ⅰ', '물리학Ⅱ', '화학Ⅰ', '화학Ⅱ', '생명과학Ⅰ', '생명과학Ⅱ', '지구과학Ⅰ', '지구과학Ⅱ',
+      '물리학', '화학', '생명과학', '지구과학',
+      '농업기초기술', '공업일반', '상업경제', '수산해운산업기초', '인간발달',
+      '일본어Ⅰ', '중국어Ⅰ', '프랑스어Ⅰ', '독일어Ⅰ', '스페인어Ⅰ', '러시아어Ⅰ', '아랍어Ⅰ', '베트남어Ⅰ', '한문Ⅰ',
+      '일본어', '중국어', '프랑스어', '독일어', '스페인어', '러시아어', '아랍어', '베트남어', '한문'];
+    const CELL_SKIP = /^(영역|배점|득점|학급|학교|석차|응시|보충|해설|오류|학년|반|번호|성명|구분|실시일|학교명|전국|원점수|표준|백분위|등급|사회탐구|과학탐구|직업탐구|제2외국어)/;
+    const dataFilter = c => { const v = c.str.replace(/\s/g, ''); return v && /^[\d.~\/()-]+$/.test(v); };
+    // 로마숫자 Ⅰ/Ⅱ vs 라틴 I/II, 가운뎃점 · 차이 정규화
+    const normSubj = s => s.replace(/\s/g,'').replace(/[·・]/g,'').replace(/Ⅰ/g,'I').replace(/Ⅱ/g,'II');
+    const ALL_SUBJS_SORTED = [...ALL_SUBJS].sort((a,b) => normSubj(b).length - normSubj(a).length);
+
+    for (let li = 0; li < lines.length; li++) {
+      const line = lines[li];
+      const nosp = line.text.replace(/\s/g, '');
+      if (/배점득점|영역선택과목|보충학습|응시자수|세부영역|전국평균|오류코드/.test(nosp)) continue;
+
+      // Subject detection — handles split-character PDFs (국어/수학/영어/한국사 each char is a separate cell)
+      let cleanSubj = null;
+      const koM = nosp.match(/^국어\(([^)]+)\)/);
+      const mathM = nosp.match(/^수학\(([^)]+)\)/);
+      if (koM) {
+        cleanSubj = `국어(${koM[1]})`;
+      } else if (mathM) {
+        cleanSubj = `수학(${mathM[1]})`;
+      } else if (/^영어\d/.test(nosp)) {
+        cleanSubj = '영어';
+      } else if (/^한국사\d/.test(nosp)) {
+        cleanSubj = '한국사';
+      } else {
+        // nosp-based first: normalized prefix match (handles Roman numeral I/Ⅰ, middle dot differences)
+        const lineNorm = normSubj(line.text);
+        for (const subj of ALL_SUBJS_SORTED) {
+          const sn = normSubj(subj);
+          if (sn.length >= 3 && lineNorm.startsWith(sn) && /\d/.test(lineNorm.slice(sn.length))) {
+            cleanSubj = subj; break;
+          }
+        }
+        // Fallback: cell-based with normalization
+        if (!cleanSubj) {
+          for (let i = 0; i < line.cells.length; i++) {
+            const sn = normSubj(line.cells[i].str);
+            if (sn.length < 2) continue;
+            if (CELL_SKIP.test(sn)) continue;
+            const matched = ALL_SUBJS.find(k => normSubj(k).length >= 3 && sn === normSubj(k));
+            if (matched) { cleanSubj = matched; break; }
+          }
+        }
+      }
+      if (!cleanSubj) continue;
+      if (scores[cleanSubj]) continue;
+
+      // All numeric/symbol cells from this line — x-position selects correct column
+      let dataCells = line.cells.filter(dataFilter);
+
+      // Look ahead if too few data cells (some layouts span 2 rows)
+      if (dataCells.length < 2) {
+        for (let ahead = 1; ahead <= 3 && li + ahead < lines.length; ahead++) {
+          const next = lines[li + ahead];
+          if (Math.abs(next.y - line.y) > 50) break;
+          const nextNosp = next.text.replace(/\s/g, '');
+          if (/^국어\(|^수학\(|^영어\d|^한국사\d/.test(nextNosp)) break;
+          if (ALL_SUBJS.some(k => k.length >= 3 && next.cells.some(c => normSubj(c.str) === normSubj(k)))) break;
+          const nd = next.cells.filter(c => c.x >= 120 && dataFilter(c));
+          if (nd.length >= 2) { dataCells = nd; break; }
+        }
+      }
+
+      console.log(`[DBG] ${cleanSubj} y=${Math.round(line.y)} n=${dataCells.length} [${dataCells.slice(0,8).map(c=>`${c.str}@${Math.round(c.x)}`).join(',')}]`);
+
+      const sd = {};
+      // 원점수(득점): x≈155-205
+      const rawCell = dataCells.find(c => c.x >= 155 && c.x <= 205 && /^\d+$/.test(c.str));
+      if (rawCell) {
+        sd.원점수 = rawCell.str;
+      } else {
+        const pi = dataCells.filter(c => /^\d+$/.test(c.str) && parseInt(c.str) <= 200);
+        if (pi.length >= 2) sd.원점수 = pi[1].str;
+        else if (pi.length === 1) sd.원점수 = pi[0].str;
+      }
+
+      // 표준점수: x≈230-275 (영어/한국사 제외 — 절대평가)
+      if (cleanSubj !== '한국사' && cleanSubj !== '영어') {
+        const stdCell = dataCells.find(c => c.x >= 230 && c.x <= 275 && /^\d{2,3}$/.test(c.str));
+        if (stdCell) {
+          const n = parseInt(stdCell.str);
+          if (n >= 20 && n <= 250) sd.표준점수 = stdCell.str;
+        }
+        if (!sd.표준점수) {
+          const rangeIdx = dataCells.findIndex(c => c.str.includes('~'));
+          if (rangeIdx >= 0) {
+            for (let i = rangeIdx + 1; i < dataCells.length; i++) {
+              const v = dataCells[i].str;
+              if (/^\d{2,3}$/.test(v)) { const n = parseInt(v); if (n >= 20 && n <= 250) { sd.표준점수 = v; break; } }
+              if (dataCells[i].str.includes('/') || dataCells[i].str.includes('.')) break;
+            }
+          }
+        }
+      }
+
+      // 전국백분위: decimal at x≈330-405
+      const bfCell = dataCells.find(c => c.x >= 330 && c.x <= 405 && /^\d+\.\d+$/.test(c.str));
+      if (bfCell) sd.전국백분위 = bfCell.str;
+      else { const dc = dataCells.find(c => /^\d+\.\d+$/.test(c.str)); if (dc) sd.전국백분위 = dc.str; }
+
+      // 등급: single digit at x≈390-430
+      const gradeCell = dataCells.find(c => c.x >= 390 && c.x <= 430 && /^[1-9]$/.test(c.str));
+      if (gradeCell) {
+        sd.등급 = gradeCell.str;
+      } else {
+        // 영어/한국사: 등급 follows the "( N )" pattern — first [1-9] cell after any decimal or '('
+        const startIdx = dataCells.findIndex(c => /^\d+\.\d+$/.test(c.str) || c.str === '(');
+        const searchFrom = startIdx >= 0 ? startIdx + 1 : 0;
+        for (let i = searchFrom; i < dataCells.length; i++) {
+          if (/^[1-9]$/.test(dataCells[i].str)) { sd.등급 = dataCells[i].str; break; }
+        }
+      }
+
+      scores[cleanSubj] = sd;
+    }
+
+    // ── 4. Answer analysis: find question-number header rows ──
+    // Header row: ≥5 sequential integers, max >5 and ≤50, NO O/X cells in same row
+    const qColMaps = [];
+    for (const line of lines) {
+      const oxCheck = line.cells.filter(c => c.str === 'O' || c.str === 'X');
+      if (oxCheck.length >= 3) continue; // 채점결과 row, not a header
+      const numCells = line.cells.filter(c => /^\d+$/.test(c.str));
+      if (numCells.length < 5) continue;
+      const nums = numCells.map(c => parseInt(c.str));
+      const maxN = Math.max(...nums);
+      if (maxN <= 5 || maxN > 50) continue;
+      const sorted = [...nums].sort((a, b) => a - b);
+      let seq = 0;
+      for (let i = 1; i < sorted.length; i++) if (sorted[i] === sorted[i - 1] + 1) seq++;
+      if (seq >= numCells.length * 0.6) {
+        qColMaps.push({ y: line.y, entries: numCells.map(c => ({ x: c.x, n: parseInt(c.str) })) });
+      }
+    }
+
+    // ── 5. Build 탐구 subject x-split from "과목" label row ──
+    // e.g., "과목 생활과윤리 윤리와사상" → two subjects with x-position split at midpoint
+    const tangoSubjs = []; // [{name, idx}]
+    let tangoXSplit = -1;  // x midpoint between subject1 and subject2 columns
+    for (const line of lines) {
+      const nosp = line.text.replace(/\s/g, '');
+      if (!nosp.startsWith('과목')) continue;
+      const sCells = line.cells.filter(c => ALL_SUBJS.some(k => k.length >= 3 && normSubj(c.str) === normSubj(k)));
+      if (sCells.length >= 2) {
+        // Map back to canonical ALL_SUBJS name (preserving Ⅰ/Ⅱ/· in the stored name)
+        sCells.forEach(c => {
+          const canonical = ALL_SUBJS.find(k => k.length >= 3 && normSubj(c.str) === normSubj(k));
+          tangoSubjs.push({ name: canonical || c.str.replace(/\s/g,''), x: c.x });
+        });
+        tangoXSplit = (sCells[0].x + sCells[1].x) / 2;
+      }
+      break;
+    }
+
+    // ── 6. Parse 채점결과(O/X) and 정답률(A-E) rows ──
+    const itemAnalysis = {};
+    const rateAnalysis = {};
+    let lastAnswerSubj = '';
+    // 수학 Q16-30 단답형: OX 행에서 "번호 OX" 쌍 파싱 후 x좌표 → Q번호 맵 저장
+    // 오답률 행에서 같은 x좌표의 A-E 셀을 해당 Q번호로 매핑
+    let mathDandapMap = {}; // { oxCellX: qNum, ... }
+    let mathDandapSubj = '';
+
+    for (const line of lines) {
+      const nosp = line.text.replace(/\s/g, '');
+
+      // Track subject context from label-only lines that precede 채점결과 rows
+      if (/^영어$/.test(nosp)) { lastAnswerSubj = '영어'; continue; }
+      if (/^한국사$/.test(nosp)) { lastAnswerSubj = '한국사'; continue; }
+      if (/^국어정답/.test(nosp)) { lastAnswerSubj = Object.keys(scores).find(k => k.startsWith('국어')) || '국어'; continue; }
+      if (/^수학정답/.test(nosp)) { lastAnswerSubj = Object.keys(scores).find(k => k.startsWith('수학')) || '수학'; continue; }
+      if (/^탐구정답/.test(nosp)) { lastAnswerSubj = '탐구'; continue; }
+
+      const oxCells = line.cells.filter(c => c.str === 'O' || c.str === 'X');
+      const aeCells = line.cells.filter(c => /^[A-E]$/.test(c.str));
+      const oxCount = oxCells.length, aeCount = aeCells.length;
+
+      if (Math.max(oxCount, aeCount) < 3) continue;
+
+      const forceOX = nosp.includes('채점결과');
+      const forceAE = nosp.includes('정답률');
+      const doOX = forceOX || (!forceAE && oxCount >= aeCount);
+      const doAE = forceAE || (!forceOX && aeCount > oxCount);
+      if (!doOX && !doAE) continue;
+
+      // Detect subject from line text
+      let foundSubj = '';
+      const koM2 = nosp.match(/국어\(([^)]+)\)/);
+      const mathM2 = nosp.match(/수학\(([^)]+)\)/);
+      const choiceM = nosp.match(/^\(([^)]+)\)채점결과/);
+      if (koM2) foundSubj = `국어(${koM2[1]})`;
+      else if (mathM2) foundSubj = `수학(${mathM2[1]})`;
+      else if (choiceM) {
+        const sel = choiceM[1];
+        if (/언어와매체|화법과작문/.test(sel)) foundSubj = Object.keys(scores).find(k => k.startsWith('국어')) || `국어(${sel})`;
+        else if (/확률과통계|미적분|기하/.test(sel)) foundSubj = Object.keys(scores).find(k => k.startsWith('수학')) || `수학(${sel})`;
+      }
+      else if (/^영어채점결과|^영어정답률/.test(nosp)) foundSubj = '영어';
+      else if (/^한국사채점결과|^한국사정답률/.test(nosp)) foundSubj = '한국사';
+      else if (nosp.includes('영어') && !nosp.includes('제2외국어') && oxCount >= 10) foundSubj = '영어';
+      else {
+        const nospNorm = normSubj(nosp);
+        for (const s of ALL_SUBJS_SORTED) {
+          if (normSubj(s).length >= 3 && nospNorm.includes(normSubj(s))) { foundSubj = s; break; }
+        }
+      }
+      if (foundSubj) lastAnswerSubj = foundSubj;
+      const subjName = foundSubj || lastAnswerSubj;
+      if (!subjName) continue;
+
+      const isMathCtx = subjName.startsWith('수학');
+
+      // ── 객관식 grid 처리용 헤더 탐색 ──
+      let bestHeader = null, minDist = Infinity;
+      for (const h of qColMaps) {
+        const dist = h.y - line.y;
+        if (dist >= 0 && dist < minDist) { minDist = dist; bestHeader = h; }
+      }
+
+      const isTango = subjName === '탐구' || (!(/국어|수학|영어|한국사/.test(subjName)) && tangoSubjs.length >= 2);
+
+      // 과목별 최대 문항 수 (그리드 경로에서 범위 초과 Q번호 차단)
+      const subjectMaxQ = subjName.startsWith('수학') ? 15  // 그리드 경로: Q1-15만 허용 (Q16-30은 인라인 파싱)
+        : subjName.startsWith('국어') ? 45
+        : subjName === '영어' ? 45
+        : 20; // 한국사, 탐구, 직업탐구, 제2외국어
+
+      const resolveCell = (cell) => {
+        if (!bestHeader) return null;
+        let bestQ = null, bestD = 14;
+        for (const e of bestHeader.entries) {
+          const d = Math.abs(cell.x - e.x);
+          if (d < bestD) { bestD = d; bestQ = e.n; }
+        }
+        if (bestQ === null) return null;
+
+        let finalSubj = subjName, finalQ = bestQ;
+        if (isTango && tangoSubjs.length >= 2) {
+          if (cell.x <= tangoXSplit || bestQ <= 20) {
+            finalSubj = tangoSubjs[0].name;
+            finalQ = bestQ <= 20 ? bestQ : bestQ - 20;
+          } else {
+            finalSubj = tangoSubjs[1].name;
+            finalQ = bestQ > 20 ? bestQ - 20 : bestQ;
+          }
+        } else if (isTango && tangoSubjs.length === 1) {
+          finalSubj = tangoSubjs[0].name;
+          if (finalQ > 20) finalQ = (finalQ - 1) % 20 + 1;
+        } else if (!(/국어|수학|영어|한국사/.test(subjName)) && finalQ > 20) {
+          finalQ = (finalQ - 1) % 20 + 1;
+        }
+        // 과목 최대 문항 수 초과 시 무효
+        if (finalQ > subjectMaxQ || finalQ < 1) return null;
+        return { finalSubj, finalQ };
+      };
+
+      if (doOX) {
+        // ── 수학 Q16-30 인라인 "번호 OX" 쌍 파싱 ──
+        // 채점결과 행에서 "16 X 17 O ..." 패턴을 찾아 x좌표 → Q번호 맵 구성
+        if (isMathCtx) {
+          mathDandapMap = {};
+          mathDandapSubj = subjName;
+          const numCells16_30 = line.cells.filter(c => /^\d+$/.test(c.str) && +c.str >= 16 && +c.str <= 30);
+          const dandapOXSet = new Set(); // 인라인 쌍에 사용된 OX 셀 (그리드 처리 제외용)
+          for (const numCell of numCells16_30) {
+            const qn = +numCell.str;
+            // 번호 셀 바로 오른쪽(40px 이내) OX 셀 탐색
+            const paired = oxCells.filter(c => c.x > numCell.x && c.x - numCell.x <= 40)
+                                   .sort((a, b) => a.x - b.x)[0];
+            if (paired) {
+              dandapOXSet.add(paired);
+              mathDandapMap[paired.x] = qn;
+              if (paired.str === 'X') {
+                if (!itemAnalysis[subjName]) itemAnalysis[subjName] = [];
+                if (!itemAnalysis[subjName].includes(qn)) itemAnalysis[subjName].push(qn);
+              }
+            }
+          }
+          // Q1-15는 그리드 경로로 처리
+          for (const cell of oxCells) {
+            if (dandapOXSet.has(cell)) continue;
+            const r = resolveCell(cell);
+            if (!r) continue;
+            if (cell.str === 'X') {
+              if (!itemAnalysis[r.finalSubj]) itemAnalysis[r.finalSubj] = [];
+              if (!itemAnalysis[r.finalSubj].includes(r.finalQ)) itemAnalysis[r.finalSubj].push(r.finalQ);
+            }
+          }
+        } else {
+          // 수학 외 과목: 전체 그리드 경로
+          for (const cell of oxCells) {
+            const r = resolveCell(cell);
+            if (!r) continue;
+            if (cell.str === 'X') {
+              if (!itemAnalysis[r.finalSubj]) itemAnalysis[r.finalSubj] = [];
+              if (!itemAnalysis[r.finalSubj].includes(r.finalQ)) itemAnalysis[r.finalSubj].push(r.finalQ);
+            }
+          }
+        }
+      }
+
+      if (doAE) {
+        for (const cell of aeCells) {
+          // ── 수학 Q16-30 오답률: mathDandapMap x좌표 매핑 ──
+          if (isMathCtx && Object.keys(mathDandapMap).length > 0) {
+            let bestQ2 = null, bestD2 = 20;
+            for (const [oxX, qn] of Object.entries(mathDandapMap)) {
+              const d = Math.abs(cell.x - +oxX);
+              if (d < bestD2) { bestD2 = d; bestQ2 = qn; }
+            }
+            if (bestQ2 !== null) {
+              if (!rateAnalysis[mathDandapSubj]) rateAnalysis[mathDandapSubj] = {};
+              rateAnalysis[mathDandapSubj][bestQ2] = cell.str;
+              continue;
+            }
+          }
+          // Q1-15 (또는 비수학 과목): 그리드 경로
+          const r = resolveCell(cell);
+          if (!r) continue;
+          if (!rateAnalysis[r.finalSubj]) rateAnalysis[r.finalSubj] = {};
+          rateAnalysis[r.finalSubj][r.finalQ] = cell.str;
+        }
+      }
+    }
+
+    // ── 7. Compile ──
+    const allSubjsInResults = new Set([...Object.keys(scores), ...Object.keys(itemAnalysis)]);
+    const results = [];
+    for (const subj of allSubjsInResults) {
+      const sd = scores[subj] || {};
+      const wrongs = (itemAnalysis[subj] || []).sort((a, b) => a - b);
+      const rates = rateAnalysis[subj] || {};
+      results.push({
+        학년: student.학년, 반: student.반, 번호: student.번호, 성명: student.성명,
+        과목: subj,
+        원점수: sd.원점수 || '',
+        표준점수: sd.표준점수 || '',
+        전국백분위: sd.전국백분위 || '',
+        등급: sd.등급 || '',
+        오답문항: wrongs.join(', '),
+        오답문항_정답률: wrongs.map(q => `${q}(${rates[q] || '?'})`).join(', ')
+      });
+    }
+    return results;
   }
 
   async function saveToGoogleSheets() {
@@ -1452,7 +1972,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!individualReportGrid) return;
     individualReportGrid.innerHTML = '';
 
+    const seenSubjs = new Set();
     filtered.forEach(d => {
+      if (seenSubjs.has(d.과목)) return;
+      seenSubjs.add(d.과목);
       const card = document.createElement('div');
       card.className = 'mock-individual-card';
 
@@ -1615,9 +2138,11 @@ document.addEventListener("DOMContentLoaded", () => {
         if (summaryStudentInfo) summaryStudentInfo.innerText = `${first.학년}학년 ${first.반}반 ${first.번호}번`;
         if (summaryGradeBadges) {
           summaryGradeBadges.innerHTML = '';
-          // 주요 과목 등급 표시 (국어, 수학, 영어, 탐구 최대 2개)
           const majorSubjects = ['국어', '수학', '영어'];
+          const seenSubjs = new Set();
           filtered.forEach(d => {
+            if (seenSubjs.has(d.과목)) return;
+            seenSubjs.add(d.과목);
             const isMajor = majorSubjects.some(m => d.과목.includes(m));
             const isTamgu = !isMajor && !d.과목.includes('한국사');
             if (isMajor || isTamgu) {
@@ -3574,6 +4099,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (rows.length > 0) allRows.push(...rows);
           }
           globalCourseJson = allRows;
+          window.spCourseJson = globalCourseJson; // 진로 과목 탭 접근용
           await StorageManager.save("globalCourseJson", globalCourseJson);
           const targetName = nameInput ? nameInput.value.trim() : "";
           if (targetName) {
@@ -7226,6 +7752,7 @@ overallEvaluation 필드는 아래 형식을 반드시 따르십시오:
 
       // 3. Raw Excel Data
       globalCourseJson = await StorageManager.load("globalCourseJson");
+      if (globalCourseJson) window.spCourseJson = globalCourseJson;
       globalBatchJsons = await StorageManager.load("globalBatchJsons") || [];
       pfDetails = await StorageManager.load("pfDetails") || { grades: [], subjects: [], creatives: [], behaviors: [] };
 
@@ -13211,4 +13738,819 @@ ${univPromptSupplement}
       }
     });
   }
+
+  // ═══════════════════════════════════════════════════════
+  // 진로에 따른 과목 선택 확인하기
+  // ═══════════════════════════════════════════════════════
+  (function() {
+
+    // ── 대학별 권장과목 데이터 (PDF에서 추출) ──
+    const UNIV_DATA = {
+      "서울대학교": {
+        departments: [
+          // 유형 A: 제2외국어/한문 권장
+          { dept: "인문대학", note: "제2외국어/한문 교과(군)에서 1과목 이상 이수 권장", recommended: ["일본어", "중국어", "한문", "일본어Ⅰ", "중국어Ⅰ", "한문Ⅰ", "일본어Ⅱ", "중국어Ⅱ", "한문Ⅱ"] },
+          { dept: "사회과학대학", note: "제2외국어/한문 교과(군)에서 1과목 이상 이수 권장", recommended: ["일본어", "중국어", "한문", "일본어Ⅰ", "중국어Ⅰ", "한문Ⅰ", "일본어Ⅱ", "중국어Ⅱ", "한문Ⅱ"] },
+          { dept: "경영대학", note: "제2외국어/한문 교과(군)에서 1과목 이상 이수 권장", recommended: ["일본어", "중국어", "한문", "일본어Ⅰ", "중국어Ⅰ", "한문Ⅰ", "일본어Ⅱ", "중국어Ⅱ", "한문Ⅱ"] },
+          { dept: "사범대학(인문)", note: "제2외국어/한문 교과(군)에서 1과목 이상 이수 권장", recommended: ["일본어", "중국어", "한문", "일본어Ⅰ", "중국어Ⅰ", "한문Ⅰ", "일본어Ⅱ", "중국어Ⅱ", "한문Ⅱ"] },
+          { dept: "생활과학대학(인문)", note: "제2외국어/한문 교과(군)에서 1과목 이상 이수 권장", recommended: ["일본어", "중국어", "한문", "일본어Ⅰ", "중국어Ⅰ", "한문Ⅰ"] },
+          { dept: "농업생명과학대학 농경제사회학부", note: "제2외국어/한문 교과(군)에서 1과목 이상 이수 권장", recommended: ["일본어", "중국어", "한문", "일본어Ⅰ", "중국어Ⅰ", "한문Ⅰ"] },
+          // 유형 B: 수학·과학 권장
+          { dept: "자연과학대학(물리·천문)", note: "기하, 미적분Ⅱ + 물리학(일반선택) 우선 이수 권장 + 과학 진로선택 3과목 이상", recommended: ["기하", "미적분Ⅱ", "물리학", "역학과 에너지", "전자기와 양자"] },
+          { dept: "자연과학대학(화학)", note: "기하, 미적분Ⅱ + 화학(일반선택) 우선 이수 권장 + 과학 진로선택 3과목 이상", recommended: ["기하", "미적분Ⅱ", "화학", "물질과 에너지", "화학 반응의 세계"] },
+          { dept: "자연과학대학(생명과학)", note: "기하, 미적분Ⅱ + 생명과학(일반선택) 우선 이수 권장 + 과학 진로선택 3과목 이상", recommended: ["기하", "미적분Ⅱ", "생명과학", "세포와 물질대사", "생물의 유전"] },
+          { dept: "자연과학대학(지구환경)", note: "기하, 미적분Ⅱ + 지구과학(일반선택) 우선 이수 권장 + 과학 진로선택 3과목 이상", recommended: ["기하", "미적분Ⅱ", "지구과학", "지구시스템과학", "행성우주과학"] },
+          { dept: "공과대학(기계·전기·조선·항공)", note: "기하, 미적분Ⅱ + 물리학(일반선택) 우선 이수 권장 + 과학 진로선택 3과목 이상", recommended: ["기하", "미적분Ⅱ", "물리학", "역학과 에너지", "전자기와 양자"] },
+          { dept: "공과대학(기타)", note: "기하, 미적분Ⅱ + 과학 진로선택 3과목 이상 이수 권장", recommended: ["기하", "미적분Ⅱ", "역학과 에너지", "물질과 에너지", "세포와 물질대사"] },
+          { dept: "의과대학", note: "기하, 미적분Ⅱ + 생명과학(일반선택) 우선 + 세포와 물질대사·생물의 유전 포함하여 과학 진로선택 3과목 이상", recommended: ["기하", "미적분Ⅱ", "생명과학", "세포와 물질대사", "생물의 유전"] },
+          { dept: "치의학대학원 치의학과", note: "기하 또는 미적분Ⅱ + 과학 진로선택 3과목 이상", recommended: ["기하", "미적분Ⅱ", "생명과학", "화학", "세포와 물질대사"] },
+          { dept: "약학대학", note: "기하, 미적분Ⅱ + 화학 또는 생명과학 우선 이수 권장 + 과학 진로선택 3과목 이상", recommended: ["기하", "미적분Ⅱ", "화학", "생명과학", "화학 반응의 세계", "세포와 물질대사"] },
+          { dept: "수의과대학", note: "기하, 미적분Ⅱ + 생명과학 우선 이수 권장 + 과학 진로선택 3과목 이상", recommended: ["기하", "미적분Ⅱ", "생명과학", "세포와 물질대사", "생물의 유전"] },
+          { dept: "간호대학", note: "기하 또는 미적분Ⅱ + 과학 진로선택 3과목 이상", recommended: ["기하", "미적분Ⅱ", "생명과학", "세포와 물질대사"] },
+          { dept: "사범대학(수학·과학교육)", note: "기하, 미적분Ⅱ + 과학 진로선택 3과목 이상 + 교육 전공 과목 우선 이수 권장", recommended: ["기하", "미적분Ⅱ", "물리학", "화학", "생명과학", "지구과학"] },
+          { dept: "농업생명과학대학(자연)", note: "기하, 미적분Ⅱ + 과학 진로선택 3과목 이상", recommended: ["기하", "미적분Ⅱ", "생명과학", "화학", "세포와 물질대사"] },
+          { dept: "권장과목 미제시", note: "권장과목을 별도로 제시하지 않은 모집단위로, 학생이 자신의 진로와 적성에 따라 과목을 선택하기를 권장합니다.", recommended: [] },
+        ]
+      },
+      "연세대학교": {
+        departments: [
+          { dept: "문과대학", note: "전공연계과목 미제시 — 자신의 진로와 적성에 따라 과목 선택 및 이수 권장", recommended: [] },
+          { dept: "상경대학", note: "전공연계과목 미제시 — 자신의 진로와 적성에 따라 과목 선택 및 이수 권장", recommended: [] },
+          { dept: "경영대학", note: "전공연계과목 미제시 — 자신의 진로와 적성에 따라 과목 선택 및 이수 권장", recommended: [] },
+          { dept: "사회과학대학", note: "전공연계과목 미제시 — 자신의 진로와 적성에 따라 과목 선택 및 이수 권장", recommended: [] },
+          { dept: "음악대학", note: "전공연계과목 미제시 — 자신의 진로와 적성에 따라 과목 선택 및 이수 권장", recommended: [] },
+          { dept: "교육과학대학", note: "전공연계과목 미제시 — 자신의 진로와 적성에 따라 과목 선택 및 이수 권장", recommended: [] },
+          { dept: "생활과학대학", note: "전공연계과목 미제시 — 자신의 진로와 적성에 따라 과목 선택 및 이수 권장", recommended: [] },
+          { dept: "신과대학", note: "전공연계과목 미제시 — 자신의 진로와 적성에 따라 과목 선택 및 이수 권장", recommended: [] },
+          { dept: "간호대학", note: "전공연계과목 미제시 — 자신의 진로와 적성에 따라 과목 선택 및 이수 권장", recommended: [] },
+          { dept: "언더우드학부(인문·사회)", note: "전공연계과목 미제시 — 자신의 진로와 적성에 따라 과목 선택 및 이수 권장", recommended: [] },
+          { dept: "이과대학 수학과", note: "기하, 미적분Ⅱ + 과학 일반선택 자율선택 + 과학 진로선택 3과목 이상", recommended: ["기하", "미적분Ⅱ"] },
+          { dept: "이과대학 물리학과", note: "기하, 미적분Ⅱ + 물리학(일반선택) + 과학 진로선택 3과목 이상", recommended: ["기하", "미적분Ⅱ", "물리학", "역학과 에너지", "전자기와 양자"] },
+          { dept: "이과대학 화학과", note: "기하, 미적분Ⅱ + 화학(일반선택) + 과학 진로선택 3과목 이상", recommended: ["기하", "미적분Ⅱ", "화학", "물질과 에너지", "화학 반응의 세계"] },
+          { dept: "이과대학 지구·천문·대기과학", note: "기하, 미적분Ⅱ + 지구과학(일반선택) + 과학 진로선택 3과목 이상", recommended: ["기하", "미적분Ⅱ", "지구과학", "지구시스템과학", "행성우주과학"] },
+          { dept: "공과대학(전기·기계·시스템반도체·디스플레이)", note: "기하, 미적분Ⅱ + 물리학(일반선택) + 과학 진로선택 3과목 이상", recommended: ["기하", "미적분Ⅱ", "물리학", "역학과 에너지", "전자기와 양자"] },
+          { dept: "공과대학(화공생명·신소재)", note: "기하, 미적분Ⅱ + 화학(일반선택) + 과학 진로선택 3과목 이상", recommended: ["기하", "미적분Ⅱ", "화학", "물질과 에너지", "화학 반응의 세계"] },
+          { dept: "공과대학(건축·도시·사회환경·산업)", note: "기하, 미적분Ⅱ + 과학 일반선택 자율선택 + 과학 진로선택 3과목 이상", recommended: ["기하", "미적분Ⅱ"] },
+          { dept: "생명시스템대학(생명과학·생화학·생명공학)", note: "기하, 미적분Ⅱ + 생명과학(일반선택) + 과학 진로선택 3과목 이상", recommended: ["기하", "미적분Ⅱ", "생명과학", "세포와 물질대사", "생물의 유전"] },
+          { dept: "인공지능융합대학·컴퓨터과학", note: "기하, 미적분Ⅱ + 과학 일반선택 자율선택 + 과학 진로선택 3과목 이상", recommended: ["기하", "미적분Ⅱ"] },
+          { dept: "의과대학 의예과", note: "기하, 미적분Ⅱ + 생명과학(일반선택) + 과학 진로선택 3과목 이상", recommended: ["기하", "미적분Ⅱ", "생명과학", "세포와 물질대사", "생물의 유전"] },
+          { dept: "치과대학 치의예과", note: "기하, 미적분Ⅱ + 물리학·화학·생명과학 중 택1 + 과학 진로선택 3과목 이상", recommended: ["기하", "미적분Ⅱ", "물리학", "화학", "생명과학"] },
+          { dept: "약학대학", note: "기하, 미적분Ⅱ + 생명과학 또는 화학(일반선택) + 과학 진로선택 3과목 이상", recommended: ["기하", "미적분Ⅱ", "생명과학", "화학", "세포와 물질대사", "화학 반응의 세계"] },
+          { dept: "언더우드학부(자연·융합)", note: "기하, 미적분Ⅱ + 과학 일반선택 자율선택 + 과학 진로선택 3과목 이상", recommended: ["기하", "미적분Ⅱ"] },
+        ]
+      }
+    };
+
+    // 교육과정별 과목 계층 (세특 분석 탭에서 가져옴, 직접 참조)
+    const SP_CURRICULUM = {
+      "2022 개정": {
+        "국어과":    { order: 1, color: "#7c83fd", types: { "공통 과목": ["공통국어1","공통국어2"], "일반 선택": ["화법과 언어","독서와 작문","문학"], "진로 선택": ["주제 탐구 독서","문학과 영상","직무 의사소통"], "융합 선택": ["독서 토론과 글쓰기","매체 의사소통","언어생활 탐구"] } },
+        "수학과":    { order: 2, color: "#06b6d4", types: { "공통 과목": ["공통수학1","공통수학2","기본수학1","기본수학2"], "일반 선택": ["대수","미적분Ⅰ","확률과 통계"], "진로 선택": ["기하","미적분Ⅱ","경제 수학","인공지능 수학","직무 수학"], "융합 선택": ["수학과 문화","실용 통계","수학과제 탐구"] } },
+        "영어과":    { order: 3, color: "#10b981", types: { "공통 과목": ["공통영어1","공통영어2","기본영어1","기본영어2"], "일반 선택": ["영어Ⅰ","영어Ⅱ","영어 독해와 작문"], "진로 선택": ["영미 문학 읽기","영어 발표와 토론","심화 영어","심화 영어 독해와 작문","직무 영어"], "융합 선택": ["실생활 영어 회화","미디어 영어","세계 문화와 영어"] } },
+        "사회과":    { order: 4, color: "#f59e0b", types: { "공통 과목": ["한국사1","한국사2","통합사회1","통합사회2"], "일반 선택": ["세계시민과 지리","세계사","사회와 문화","현대사회와 윤리"], "진로 선택": ["한국지리 탐구","도시의 미래 탐구","동아시아 역사 기행","정치","법과 사회","경제","윤리와 사상","인문학과 윤리","국제 관계의 이해"], "융합 선택": ["여행지리","역사로 탐구하는 현대 세계","사회문제 탐구","금융과 경제생활","윤리문제 탐구","기후변화와 지속가능한 세계"] } },
+        "과학과":    { order: 5, color: "#8b5cf6", types: { "공통 과목": ["통합과학1","통합과학2","과학탐구실험1","과학탐구실험2"], "일반 선택": ["물리학","화학","생명과학","지구과학"], "진로 선택": ["역학과 에너지","전자기와 양자","물질과 에너지","화학 반응의 세계","세포와 물질대사","생물의 유전","지구시스템과학","행성우주과학"] } },
+        "정보·제2외국어과": { order: 6, color: "#ec4899", types: { "일반 선택": ["정보","일본어","중국어","한문"], "진로 선택": ["인공지능 기초","데이터 과학","일본어 회화","중국어 회화","심화 일본어","심화 중국어","한문 고전 읽기"], "융합 선택": ["소프트웨어와 생활","일본 문화","중국 문화","언어생활과 한자"] } },
+        "예체능과":  { order: 7, color: "#64748b", types: { "일반 선택": ["체육1","체육2","음악","미술"], "진로 선택": ["운동과 건강","스포츠 문화","스포츠 과학","음악 연주와 창작","음악 감상과 비평","미술 창작","미술 감상과 비평"], "융합 선택": ["스포츠 생활1","음악과 미디어","미술과 매체"] } },
+        "교양과":    { order: 8, color: "#94a3b8", types: { "일반 선택": ["진로와 직업","생태와 환경"], "진로 선택": ["인간과 철학","논리와 사고","인간과 심리","교육의 이해","삶과 종교","보건"], "융합 선택": ["인간과 경제활동","논술"] } }
+      },
+      "2015 개정": {
+        "국어과":    { order: 1, color: "#7c83fd", types: { "공통 과목": ["국어"], "일반 선택": ["독서","문학","화법과 작문","언어와 매체"], "진로 선택": ["실용 국어","심화 국어","고전 읽기"] } },
+        "수학과":    { order: 2, color: "#06b6d4", types: { "공통 과목": ["수학"], "일반 선택": ["수학Ⅰ","수학Ⅱ","미적분","확률과 통계"], "진로 선택": ["실용 수학","기하","경제 수학","수학과제 탐구","기본 수학"] } },
+        "영어과":    { order: 3, color: "#10b981", types: { "공통 과목": ["영어"], "일반 선택": ["영어Ⅰ","영어Ⅱ","영어 회화","영어 독해와 작문"], "진로 선택": ["실용 영어","영어권 문화","영미 문학 읽기","진로 영어"] } },
+        "사회과":    { order: 4, color: "#f59e0b", types: { "공통 과목": ["통합사회","한국사"], "일반 선택": ["사회문화","정치와법","경제","세계지리","한국지리","생활과 윤리","윤리와 사상","세계사","동아시아사"], "진로 선택": ["사회문제 탐구","여행지리","고전과 윤리"] } },
+        "과학과":    { order: 5, color: "#8b5cf6", types: { "공통 과목": ["통합과학","과학탐구실험"], "일반 선택": ["물리학Ⅰ","화학Ⅰ","생명과학Ⅰ","지구과학Ⅰ"], "진로 선택": ["물리학Ⅱ","화학Ⅱ","생명과학Ⅱ","지구과학Ⅱ","생활과 과학","과학사","융합과학"] } },
+        "정보·제2외국어과": { order: 6, color: "#ec4899", types: { "일반 선택": ["정보","일본어Ⅰ","중국어Ⅰ","한문Ⅰ"], "진로 선택": ["인공지능 기초","일본어Ⅱ","중국어Ⅱ","한문Ⅱ"] } },
+        "예체능과":  { order: 7, color: "#64748b", types: { "일반 선택": ["체육","운동과 건강","음악","미술"], "진로 선택": ["스포츠 생활","체육탐구","음악 연주","음악 감상과 비평","미술 창작","미술 감상과 비평"] } },
+        "교양과":    { order: 8, color: "#94a3b8", types: { "일반 선택": ["철학","논리학","심리학","교육학","종교학","진로와 직업","보건","환경","실용경제","논술"] } }
+      }
+    };
+
+    const TYPE_ORDER = ["공통 과목", "일반 선택", "진로 선택", "융합 선택"];
+    const TYPE_BADGE = { "공통 과목": "#475569", "일반 선택": "#1d4ed8", "진로 선택": "#7c3aed", "융합 선택": "#0891b2" };
+
+    let spCurriculum = "2022 개정";
+    let spStudentSubjects = new Map(); // 과목명 → courseDetail 객체
+    let spRecommended = new Set();
+    let spInitialized = false;
+
+    // ── 과학계열 진로선택·융합선택 과목 교육과정 정보 ──
+    const SCIENCE_TRACK_COURSES = {
+      '고급물리학': {
+        name: '고급 물리학', type: '과학계열 진로선택', csat: 'O',
+        summary: '물리학에 흥미와 관심이 있는 과학계열 학생이 심화된 수준의 물리학 학문 체계와 내용을 학습하기 위한 과목',
+        keyIdeas: [
+          '역학: 힘과 돌림힘, 선운동량과 각운동량, 일과 에너지로 질점·입자계 운동 기술',
+          '열역학: 제1·2법칙 기반 거시적 양들 사이 관계 기술',
+          '전자기학: 전기·자기 현상 탐구, 현대 정보과학 기술의 기반',
+          '광학: 빛의 거동과 특성 연구, 레이저·현미경·망원경 등 기반',
+          '현대 물리: 상대성 이론과 양자역학 포함'
+        ],
+        contents: {
+          '역학': '입자계의 운동 / 선운동량·각운동량 보존 / 이상기체·열역학 제1·2법칙·엔트로피',
+          '전자기학': '전기장·전기용량 / 전류의 자기 작용·전자기 유도 / 키르히호프 법칙·교류회로 / 맥스웰 방정식',
+          '광학': '거울·렌즈에 의한 상 / 빛의 간섭·회절·편광',
+          '현대 물리': '특수·일반 상대성 이론 / 상보성·불확정성 원리 / 핵분열·핵융합 / 물질의 기본 상호작용'
+        },
+        majors: '물리학과, 물리교육과, 기계공학과, 전기공학과, 전자공학과, 건축공학과, 산업공학과, 신소재공학과, 나노공학과, 화학공학과, 자동차공학과 등',
+        careers: '과학교사, 전자·반도체·디스플레이 연구원, 기계·우주항공·자동차·정보통신·컴퓨터·신소재·나노바이오 공학자'
+      },
+      '고급화학': {
+        name: '고급 화학', type: '과학계열 진로선택', csat: 'O',
+        summary: '핵심역량과 물질 현상을 과학적·창의적으로 분석·예측할 수 있는 화학적 소양을 함양하는 과목',
+        keyIdeas: [
+          '전자의 위치는 확률함수로 표현하며 화학 결합과 물질 특징 설명의 토대',
+          '입자 간 상호 작용에 의해 물질의 상태와 특성이 결정됨',
+          '열역학 함수로 물질 상태변화와 화학 반응 이해·예측',
+          '깁스 자유 에너지로 다양한 화학 반응 해석·예측',
+          '반응 속도는 온도·농도·촉매의 영향을 받음'
+        ],
+        contents: {
+          '물질의 구조': '원자 오비탈 / 루이스 구조·형식전하·공명 / 혼성 오비탈·분자 구조 / 탄화수소 구조와 성질',
+          '물질의 성질': '기체 분자 운동론 / 이상기체와 실제기체 / 분자 간 상호작용 / 고체 결정 / 용액과 총괄성',
+          '물질의 변화와 에너지': '엔탈피·헤스 법칙 / 엔트로피 / 깁스 자유에너지 / 산화수·산화환원 / 전기분해',
+          '물질의 변화와 화학평형': '질량 작용 법칙 / 산·염기 세기·중화적정 / 완충용액 / 반응 속도식·활성화 에너지'
+        },
+        majors: '화학과, 화학공학과, 화학생명공학과, 생화학과, 의예과, 약학과, 간호학과, 식품영양학과, 정밀화학과, 환경화학과, 화학교육과, 나노공학과, 신소재공학과, 재료공학과',
+        careers: '화학연구원, 자연과학연구원, 약사·한약사, 의사, 간호사, 화학제품제조원, 신재생에너지전문가, 화학교사, 석유화학기술사'
+      },
+      '고급생명과학': {
+        name: '고급 생명과학', type: '과학계열 진로선택', csat: 'O',
+        summary: '심화된 수준의 생명과학 학문 체계와 내용을 학습하기 위한 과목. 생물의 구조와 에너지, 생물의 조절과 방어, 생명의 연속성, 생명공학기술과 미래 4개 영역으로 구성',
+        keyIdeas: [
+          '생물은 생명 활동 유지를 위해 끊임없이 에너지와 물질을 필요로 함',
+          '신경계·내분비계·면역계의 작용으로 항상성 유지 및 병원체 방어',
+          '유전 정보는 DNA를 통해 부모에서 자식에게 전달',
+          '다세포 생명체는 선택적 유전자 발현으로 다양한 세포로 분화',
+          '생명공학기술은 보건·연료·식량 등 다양한 분야에 기여'
+        ],
+        contents: {
+          '생물의 구조와 에너지': '생명체 구성 분자 / ATP 합성 / 광인산화·캘빈회로 / 알로스테릭 효소 / C₃·C₄·CAM 식물',
+          '생물의 조절과 방어': '신경·호르몬 조절 / 흥분성·억제성 시냅스 / 림프구와 면역 반응 / 주조직적합성 복합체',
+          '생명의 연속성': 'DNA 교정·수선 / 전사 인자·RNA 가공 / 오페론 / 호메오 유전자',
+          '생명공학기술과 미래': '생명공학기술의 원리·발달과 전망'
+        },
+        majors: '생명과학과, 생명공학과, 생명자원학과, 생물교육과, 생물학과, 생화학과, 식품공학과, 약학과, 유전공학과, 응용미생물학과, 의학과, 임상병리학과, 화학생명공학과',
+        careers: '바이오에너지 연구원, 생명과학연구원, 생물학 연구원, 수산학연구원, 식품공학기술자, 약학연구원'
+      },
+      '고급지구과학': {
+        name: '고급 지구과학', type: '과학계열 진로선택', csat: 'O',
+        summary: '지구를 포함한 우주 공간 현상에 대한 기본 개념을 바탕으로 지구과학의 심화 개념과 탐구 능력을 활용하는 과목',
+        keyIdeas: [
+          '지진파와 역장 연구로 지구 내부구조·상태 파악 가능',
+          '지각은 다양한 광물과 암석으로 구성',
+          '대기·해양 작용에 의해 전 지구적 기후변화 초래',
+          '별은 다양한 물리량으로 분류되며 질량에 따라 진화 경로 상이',
+          '은하의 구조와 질량 분포는 별·성간물질 연구로 파악'
+        ],
+        contents: {
+          '고체 지구': '지구 내부·역장 / 고지자기·판구조론 / 광물·암석 / 지사 해석 / 지질시대·한반도 지체구조',
+          '대기와 해양': '단열변화 / 대기·해양의 순환 / 대기 안정도 / 해수의 성질 / 기조력 / ENSO',
+          '우주': '구면좌표계 / 별의 진화·성간물질 / 현대 우주론 / 행성의 운동 / 우리은하 구조·질량 / 대폭발 우주'
+        },
+        majors: '지구과학교육과, 지구시스템과학과, 지구환경과학과, 천문학과, 항공우주공학과, 대기과학과, 환경공학과, 해양학과, 지질학과, 에너지자원공학과, 지리학과, 환경생태공학과',
+        careers: '과학교사(지구과학교사), 지질연구원, 천문연구원, 기상연구원, 환경연구원, 자원개발 관련 종사원'
+      },
+      '과학과제연구': {
+        name: '과학과제 연구', type: '과학계열 진로선택', csat: 'O',
+        summary: '과학 핵심 개념의 통합적 이해 및 과학의 탐구 경험을 통해 다양한 탐구 중심 학습을 위한 과목',
+        keyIdeas: [
+          '과학 연구의 성과는 일련의 과정을 통해 얻을 수 있음',
+          '미래 사회에 대응할 수 있는 창의적 지식 생산은 과학 연구를 통해 이루어짐',
+          '과학 연구 과정에서 연구 윤리 준수는 과학의 가치를 높이는 데 기여'
+        ],
+        contents: {
+          '과학 연구의 문제 탐색 및 설정': '과학 연구 방법론 및 연구 윤리 / 문헌 조사 및 연구 주제 선정',
+          '과학 연구의 설계 및 수행': '연구 설계 / 연구 수행·자료 수집·자료 변환',
+          '과학 연구의 결론 도출 및 공유': '연구 결과 해석·결론 도출 / 연구 보고서 작성·발표'
+        },
+        majors: '자연 과학계열 전 학과',
+        careers: '과학교사, 자연계열 연구원'
+      },
+      '물리학실험': {
+        name: '물리학 실험', type: '과학계열 융합선택', csat: 'X',
+        summary: '역학·전자기·광학·현대 물리 관련 실험을 설계하고 수행하여 물리 현상에 대한 이해를 심화하는 과목',
+        keyIdeas: [
+          '모든 실험은 측정에서 시작하며 오차를 고려한 결과 해석이 중요',
+          '역학: 힘과 운동의 관계는 실험을 통한 정량적 측정으로 확립',
+          '전자기학: 실험에 기초하여 이론적으로 발전, 현대 첨단 기술의 기반',
+          '광학: 빛을 광선 또는 파동으로 취급하는 이론으로 실험 결과 해석',
+          '현대 물리: 원자 구조와 빛에 대한 새로운 이해에서 출발'
+        ],
+        contents: {
+          '물리 실험의 기초': '측정의 오차·유효 숫자 / 추세선·자료 해석 / 컴퓨터·센서 활용',
+          '역학': '마찰력·중력가속도 측정 / 운동량 보존 / 진자 주기운동·역학적 에너지 보존 / 원운동 / 열의 일당량·얼음 융해열',
+          '전자기학': '저항·휘트스톤 브리지 / 다이오드·정류 회로 / RL·RC 회로 / 유도 기전력 / 자기장 속 전류 / RLC 교류 특성',
+          '광학': '정상파·공명 / 거울·렌즈에 의한 상 / 빛의 굴절·전반사·간섭·회절·편광',
+          '현대 물리': '광전효과 / 음극선의 성질 / 전하의 비전하 / 전자의 에너지 준위'
+        },
+        majors: '물리학과, 물리교육과, 기계공학과, 전기공학과, 전자공학과, 건축공학과, 신소재공학과, 나노공학과, 화학공학과, 자동차공학과 등',
+        careers: '과학교사, 전자·반도체·디스플레이 연구원, 기계·우주항공·자동차·정보통신·신소재·나노바이오 공학자'
+      },
+      '화학실험': {
+        name: '화학 실험', type: '과학계열 융합선택', csat: 'X',
+        summary: '핵심역량과 화학적 소양을 함양하는 과학계열 융합 선택 과목. 화학 실험을 통해 물질 탐구 과정과 지식에 대한 통합적 이해 도모',
+        keyIdeas: [
+          '화학자들은 여러 실험 도구로 물질의 성질과 변화를 측정하여 미시 세계의 규칙성 탐구',
+          '기체·액체·고체의 기본 법칙은 순수한 물질을 탐구하여 완성됨',
+          '열역학과 반응 속도론으로 화학 반응의 방향성과 속도 설명·예측',
+          '화학자들은 분자 구조와 물질 성질 관계를 탐구하여 특정 물질 합성'
+        ],
+        contents: {
+          '화학 실험의 기초': '데이터 처리 / 여러 가지 도구의 특징과 사용법 / 첨단 기자재 사용법',
+          '물질의 성질': '물질의 세 가지 상태·특징 / 묽은 용액의 성질 / 혼합물의 분리',
+          '화학 반응': '화학 변화·반응열 측정 / 반응 속도 / 산화·환원 반응 / 산염기 평형 / 화학 평형',
+          '탄소 화합물의 합성과 특성': '탄화수소의 성질 / 탄화수소 유도체의 반응과 성질 / 방향족 탄화수소'
+        },
+        majors: '화학과, 화학공학과, 생화학과, 의예과, 약학과, 간호학과, 식품영양학과, 환경화학과, 화학교육과, 나노공학과, 신소재공학과, 재료공학과',
+        careers: '화학연구원, 자연과학연구원, 약사·한약사, 의사, 간호사, 화학제품제조원, 신재생에너지전문가, 화학교사, 석유화학기술사, 대체에너지개발연구원'
+      },
+      '생명과학실험': {
+        name: '생명과학 실험', type: '과학계열 융합선택', csat: 'X',
+        summary: '심화된 수준의 생명과학 학문 체계와 내용을 탐구하기 위한 과목. 생물의 구조와 에너지, 자극과 반응, 생명의 연속성과 다양성, 환경과 생태계, 생명공학 5개 영역으로 구성',
+        keyIdeas: [
+          '생명 시스템은 세포로부터 생태계까지 체계적으로 구성',
+          '생명체는 자극에 반응하여 항상성과 생명시스템 유지',
+          '유전 정보는 생명의 연속성 제공, 변이는 적응·진화에 영향',
+          '생물은 서로 상호 작용하며 생태계와 끊임없이 영향을 주고받음',
+          '생명공학 연구 성과는 인류 복지와 삶의 질 향상에 기여'
+        ],
+        contents: {
+          '생물의 구조와 에너지': '현미경 구조·원리 / 삼투·수분퍼텐셜 / 조직·기관 / 효소의 특성 / 광합성·발효·원심분리',
+          '자극과 반응': '동물의 반응 / 식물의 반응',
+          '생명의 연속성과 다양성': '세포분열 / 식물의 수분 / 수정·발생 / 염색체 / 유전 원리 / 진화 / 생물의 채집·분류',
+          '환경과 생태계': '개체군 / 군집',
+          '생명공학': '생명공학 연구방법 / 유전체 탐구'
+        },
+        majors: '생명과학과, 생명공학과, 생명자원학과, 생물교육과, 생물학과, 생화학과, 식품공학과, 약학과, 유전공학과, 응용미생물학과, 의학과, 임상병리학과, 화학생명공학과',
+        careers: '바이오에너지 연구원, 생명과학연구원, 생물학 연구원, 수산학연구원, 식품공학기술자, 약학연구원'
+      },
+      '지구과학실험': {
+        name: '지구과학 실험', type: '과학계열 융합선택', csat: 'X',
+        summary: '지구과학적 탐구를 직간접적으로 체험하고 고급 지구과학의 심화 개념과 탐구 능력을 활용하는 과목. 고체 지구·대기와 해양·우주 탐구 3개 영역으로 구성',
+        keyIdeas: [
+          '지진파와 역장 연구로 지구 내부구조·상태 탐구',
+          '편광현미경으로 드러나는 조직에 따라 암석 구분',
+          '지층의 기록을 통해 지질시대 동안 지구 환경·생물 변천 파악',
+          '압력경도력·전향력 등 여러 힘의 영향으로 바람과 해류 발생',
+          '별의 질량에 따라 내부구조·진화 경로 상이'
+        ],
+        contents: {
+          '고체 지구 탐구': '지구타원체·지오이드 / 진앙·진원 위치 결정 / 지구 중력 측정·보정 / 지질도 / 편광현미경·박편 관찰 / 고지자기',
+          '대기와 해양 탐구': '단열선도 / 수온·염분 자료 / 조석 / 기상 위성 사진 해석 / 전향력 시뮬레이션 / 대기 대순환',
+          '우주 탐구': '지평·적도 좌표계 / 인공위성·원격 탐사 / 별의 스펙트럼 / 쌍성의 질량 계산 / 변광성 / H-R도 / 은하 회전 곡선'
+        },
+        majors: '지구과학교육과, 지구시스템과학과, 지구환경과학과, 천문학과, 항공우주공학과, 대기과학과, 환경공학과, 해양학과, 지질학과, 에너지자원공학과, 지리학과',
+        careers: '과학교사(지구과학교사), 지질연구원, 천문연구원, 기상연구원, 환경연구원, 자원개발 관련 종사원'
+      }
+    };
+
+    // ── 과목명 정규화: 공백 제거 + 로마숫자 통일(Ⅰ/Ⅱ/Ⅲ → I/II/III) ──
+    function normSubj(s) {
+      return String(s).trim()
+        .replace(/\s+/g, '')
+        .replace(/[·・•]/g, '')   // 가운뎃점 제거 (사회·문화 → 사회문화)
+        .replace(/Ⅰ/g, 'I').replace(/Ⅱ/g, 'II').replace(/Ⅲ/g, 'III')
+        .replace(/ⅰ/g, 'i').replace(/ⅱ/g, 'ii').replace(/ⅲ/g, 'iii');
+    }
+
+    // 과목명으로 SCIENCE_TRACK_COURSES 검색
+    function findScienceCourse(subj) {
+      const key = normSubj(subj).replace(/\s+/g, '');
+      return SCIENCE_TRACK_COURSES[key] || null;
+    }
+
+    // ── 특정 학생의 이수과목을 extractCourseData와 동일한 로직으로 추출 ──
+    function extractSubjectsForSP(jsonData, studentName) {
+      const tgt = studentName.replace(/\s+/g, '');
+      const map = new Map(); // key: 원래 과목명, value: 상세 정보
+      if (!jsonData || !jsonData.length || !tgt) return map;
+
+      // 헤더 행 탐색 (extractCourseData 동일)
+      let headerRowIdx = -1, nameCol = -1;
+      let subjectCol = -1, subjectCol2 = -1, creditCol = -1, gradeCol = -1, achieveCol = -1, rawScoreCol = -1;
+
+      for (let i = 0; i < Math.min(jsonData.length, 15); i++) {
+        if (!jsonData[i]) continue;
+        for (let j = 0; j < jsonData[i].length; j++) {
+          const cell = String(jsonData[i][j] || '').replace(/\s+/g, '');
+          if (cell === '성명' || cell === '이름') { nameCol = j; headerRowIdx = i; break; }
+        }
+        if (headerRowIdx !== -1) break;
+      }
+      if (headerRowIdx === -1) return map;
+
+      const headerRow = jsonData[headerRowIdx] || [];
+      for (let j = 0; j < headerRow.length; j++) {
+        const cell = String(headerRow[j] || '').replace(/\s+/g, '');
+        if (!cell) continue;
+        if (subjectCol === -1 && (cell.includes('과목') || cell.includes('교과목'))) subjectCol = j;
+        else if (subjectCol2 === -1 && (cell.includes('교과') || cell.includes('과목군') || cell.includes('교과군'))) subjectCol2 = j;
+        if (creditCol === -1 && (cell.includes('단위') || cell.includes('단위수'))) creditCol = j;
+        if (gradeCol === -1 && (cell.includes('등급') || cell.includes('석차등급') || cell === '성적')) gradeCol = j;
+        if (achieveCol === -1 && cell.includes('성취도')) achieveCol = j;
+        if (rawScoreCol === -1 && cell.includes('원점수')) rawScoreCol = j;
+      }
+      // extractCourseData 동일 위치 기반 폴백
+      if (subjectCol === -1 && headerRow.length >= 6) subjectCol = 5;
+      if (creditCol === -1 && headerRow.length >= 7) creditCol = 6;
+      if (gradeCol === -1 && headerRow.length >= 10) gradeCol = 9;
+
+      let currentStudent = '';
+      for (let i = headerRowIdx + 1; i < jsonData.length; i++) {
+        const row = jsonData[i]; if (!row) continue;
+        const cn = String(row[nameCol] || '').replace(/\s+/g, '');
+        // 여러 시트 합산 시 헤더행 건너뜀
+        if (cn === '성명' || cn === '이름') { currentStudent = ''; continue; }
+        if (cn) currentStudent = cn;
+        if (!currentStudent || currentStudent !== tgt) continue;
+
+        let subject = subjectCol !== -1 ? String(row[subjectCol] || '').trim() : '';
+        if (!subject && subjectCol2 !== -1) subject = String(row[subjectCol2] || '').trim();
+        if (!subject || subject === 'undefined') continue;
+        if (subject.includes('평균') || subject.includes('합계') || subject.includes('소계') || subject === '계') continue;
+
+        let credit = '';
+        if (creditCol !== -1 && row[creditCol] != null) {
+          const m = String(row[creditCol]).match(/\d+(\.\d+)?/);
+          if (m) credit = m[0];
+        }
+
+        let grade = '';
+        if (gradeCol !== -1 && row[gradeCol] != null) {
+          const rawG = String(row[gradeCol]).trim();
+          const isP = /^[Pp]$/.test(rawG) || (rawG.toUpperCase().includes('P') && !/\d/.test(rawG));
+          if (!isP) { const gm = rawG.match(/^(\d+)(\.\d+)?$/); if (gm) grade = gm[1]; }
+        }
+
+        let achieve = '';
+        if (achieveCol !== -1 && row[achieveCol] != null) {
+          achieve = String(row[achieveCol]).trim().split('(')[0].trim();
+        }
+
+        let rawInfo = '', 수강자수 = '';
+        if (rawScoreCol !== -1 && row[rawScoreCol] != null) {
+          const rs = String(row[rawScoreCol]).trim();
+          const m = rs.match(/^(\d+)\s*\/\s*([\d.]+)(?:\(([\d.]+)\))?/);
+          if (m) rawInfo = `${m[1]}/${m[2]}${m[3] ? '('+m[3]+')' : ''}`;
+          else if (rs) rawInfo = rs;
+        }
+        if (achieveCol !== -1 && row[achieveCol] != null) {
+          수강자수 = String(row[achieveCol]).trim().match(/\((\d+)\)/)?.[1] || '';
+        }
+
+        map.set(subject, { subject, credit, grade, achieve, rawInfo, 수강자수 });
+      }
+      return map;
+    }
+
+    // ── 이수과목 전역 데이터에서 학생 목록 추출 (드롭다운용) ──
+    function getStudentListFromCourseData() {
+      const jsonData = window.spCourseJson;
+      const studentMap = new Map(); // key: 학생이름(공백제거), value: { name, cls, num }
+      if (!jsonData || !jsonData.length) return studentMap;
+
+      let headerRowIdx = -1, nameCol = -1, classCol = -1, numCol = -1;
+      for (let i = 0; i < Math.min(jsonData.length, 15); i++) {
+        if (!jsonData[i]) continue;
+        for (let j = 0; j < jsonData[i].length; j++) {
+          const c = String(jsonData[i][j] || '').replace(/\s+/g, '');
+          if (c === '성명' || c === '이름') { nameCol = j; headerRowIdx = i; break; }
+        }
+        if (headerRowIdx !== -1) break;
+      }
+      if (headerRowIdx === -1) return studentMap;
+
+      const hdr = jsonData[headerRowIdx] || [];
+      for (let j = 0; j < hdr.length; j++) {
+        const c = String(hdr[j] || '').replace(/\s+/g, '');
+        if (classCol === -1 && (c === '반' || c.includes('학반'))) classCol = j;
+        if (numCol === -1 && (c === '번호' || c === '번')) numCol = j;
+      }
+
+      let currentName = '', currentClass = '', currentNum = '';
+      for (let i = headerRowIdx + 1; i < jsonData.length; i++) {
+        const row = jsonData[i]; if (!row) continue;
+        const cn = String(row[nameCol] || '').replace(/\s+/g, '');
+        if (cn === '성명' || cn === '이름') { currentName = ''; currentClass = ''; currentNum = ''; continue; }
+        if (cn) currentName = cn;
+        if (classCol !== -1) { const v = String(row[classCol] || '').trim(); if (v && v !== '반') currentClass = v; }
+        if (numCol !== -1) { const v = String(row[numCol] || '').trim(); if (v && v !== '번호') currentNum = v; }
+        if (!currentName) continue;
+        if (!studentMap.has(currentName)) studentMap.set(currentName, { name: currentName, cls: currentClass, num: currentNum });
+      }
+      return studentMap;
+    }
+
+    // ── 학생 선택 드롭다운 채우기 ──
+    function fillStudentSelect() {
+      const sel = document.getElementById('sp-student-select');
+      if (!sel) return;
+      const studentMap = getStudentListFromCourseData();
+      if (studentMap.size === 0) {
+        sel.innerHTML = '<option value="">-- 이수과목 파일을 먼저 업로드하세요 --</option>';
+        return;
+      }
+      sel.innerHTML = '<option value="">학생을 선택하세요</option>';
+      for (const [key, info] of studentMap) {
+        const opt = document.createElement('option');
+        opt.value = key;
+        const prefix = [info.cls ? info.cls+'반' : '', info.num ? info.num+'번' : ''].filter(Boolean).join(' ');
+        opt.textContent = prefix ? `${prefix} ${info.name}` : info.name;
+        opt.dataset.key = key;
+        sel.appendChild(opt);
+      }
+    }
+
+    // ── 대학 드롭다운 → 모집단위 드롭다운 연동 ──
+    function fillDeptSelect(univName) {
+      const deptSel = document.getElementById('sp-dept-select');
+      if (!deptSel) return;
+      if (!univName || !UNIV_DATA[univName]) {
+        deptSel.innerHTML = '<option value="">대학을 먼저 선택하세요</option>';
+        return;
+      }
+      deptSel.innerHTML = '<option value="">모집단위 선택</option>';
+      for (const entry of UNIV_DATA[univName].departments) {
+        const opt = document.createElement('option');
+        opt.value = entry.dept;
+        opt.textContent = entry.dept;
+        deptSel.appendChild(opt);
+      }
+    }
+
+    // ── 권장과목 배너 표시 ──
+    function showUnivBanner(univName, deptName) {
+      const banner = document.getElementById('sp-univ-banner');
+      const bannerText = document.getElementById('sp-univ-banner-text');
+      if (!banner || !bannerText) return;
+      if (!univName || !deptName) { banner.classList.add('hidden'); return; }
+      const univDepts = UNIV_DATA[univName]?.departments || [];
+      const entry = univDepts.find(e => e.dept === deptName);
+      if (!entry) { banner.classList.add('hidden'); return; }
+
+      spRecommended = new Set(entry.recommended);
+      const takenNormSet = new Set([...spStudentSubjects.keys()].map(normSubj));
+
+      bannerText.innerHTML = `
+        <strong style="color:var(--accent-primary);">📍 ${univName} · ${deptName} 권장과목</strong><br>
+        <span style="color:var(--text-secondary); font-size:0.83rem;">${entry.note}</span>
+        ${entry.recommended.length > 0 ? `<div style="margin-top:0.6rem; display:flex; flex-wrap:wrap; gap:0.4rem;">
+          ${entry.recommended.map(r => {
+            const isTaken = takenNormSet.has(normSubj(r));
+            return `<span style="padding:2px 10px; border-radius:20px; font-size:0.8rem; font-weight:600;
+              background:${isTaken ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.12)'};
+              border:1px solid ${isTaken ? 'rgba(34,197,94,0.4)' : 'rgba(239,68,68,0.35)'};
+              color:${isTaken ? '#16a34a' : '#dc2626'};">${r} ${isTaken ? '✓' : '✗'}</span>`;
+          }).join('')}
+        </div>` : ''}
+      `;
+      banner.classList.remove('hidden');
+      document.getElementById('sp-ai-result')?.classList.add('hidden');
+      renderSubjectGrid();
+    }
+
+    // ── 과목 그리드 렌더링 ──
+    function renderSubjectGrid() {
+      const grid = document.getElementById('sp-subject-grid');
+      if (!grid) return;
+      const cur = SP_CURRICULUM[spCurriculum];
+      if (!cur) return;
+
+      const taken = spStudentSubjects;
+      const recommended = spRecommended;
+
+      // 정규화된 이수과목 Set (공백제거 + 로마숫자 통일)
+      const takenNormMap = new Map([...taken.entries()].map(([k, v]) => [normSubj(k), v]));
+      const recNorm = new Set([...recommended].map(normSubj));
+
+      const sortedSubjects = Object.entries(cur).sort((a, b) => a[1].order - b[1].order);
+
+      grid.innerHTML = sortedSubjects.map(([catName, catData]) => {
+        const color = catData.color;
+        const typesHtml = TYPE_ORDER
+          .filter(t => catData.types[t])
+          .map(typeName => {
+            const subjects = catData.types[typeName];
+            const badge = TYPE_BADGE[typeName] || '#475569';
+            const cells = subjects.map(subj => {
+              const subjN = normSubj(subj);
+              const isTaken = takenNormMap.has(subjN);
+              const isRec = recNorm.size > 0 && recNorm.has(subjN);
+              let bg, border, textColor;
+              if (isTaken && isRec) { bg = 'rgba(251,191,36,0.85)'; border = 'rgba(251,191,36,1)'; textColor = '#713f12'; }
+              else if (isTaken)    { bg = 'rgba(99,102,241,0.82)'; border = 'rgba(99,102,241,1)'; textColor = '#fff'; }
+              else if (isRec)     { bg = 'rgba(34,197,94,0.65)'; border = 'rgba(34,197,94,0.9)'; textColor = '#14532d'; }
+              else                { bg = 'var(--panel-bg)'; border = 'var(--panel-border)'; textColor = 'var(--text-secondary)'; }
+              const detail = isTaken ? takenNormMap.get(subjN) : null;
+              const dataAttr = detail ? `data-detail='${JSON.stringify(detail).replace(/'/g,"&#39;")}'` : '';
+              return `<button class="sp-subj-chip${isTaken ? ' sp-taken' : ''}${isRec ? ' sp-rec' : ''}"
+                style="background:${bg}; border:1.5px solid ${border}; color:${textColor}; padding:4px 10px; border-radius:20px; font-size:0.78rem; font-weight:${isTaken||isRec?'600':'400'}; cursor:${isTaken?'pointer':'default'}; white-space:nowrap; transition:all 0.2s; line-height:1.4;"
+                data-subj="${subj}" ${dataAttr}>${subj}${isTaken&&isRec?' ★':isTaken?' ✓':isRec?' ☆':''}</button>`;
+            }).join('');
+            return `<div style="margin-bottom:0.6rem;">
+              <span style="font-size:0.7rem; font-weight:700; color:${badge}; background:${badge}18; padding:2px 8px; border-radius:4px; margin-bottom:0.4rem; display:inline-block;">${typeName}</span>
+              <div style="display:flex; flex-wrap:wrap; gap:0.4rem; margin-top:0.3rem;">${cells}</div>
+            </div>`;
+          }).join('');
+
+        return `<div style="background:var(--panel-bg); border:1px solid var(--panel-border); border-radius:12px; padding:1rem 1.2rem; border-left:4px solid ${color};">
+          <div style="font-size:0.9rem; font-weight:700; color:${color}; margin-bottom:0.8rem;">${catName}</div>
+          ${typesHtml}
+        </div>`;
+      }).join('');
+
+      // 클릭 이벤트 위임
+      grid.querySelectorAll('.sp-subj-chip.sp-taken').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const subj = btn.dataset.subj;
+          const rawDetail = btn.dataset.detail;
+          let detail = null;
+          try { detail = rawDetail ? JSON.parse(rawDetail.replace(/&#39;/g, "'")) : null; } catch(e) {}
+          if (!detail) {
+            detail = spStudentSubjects.get(subj) || [...spStudentSubjects.entries()].find(([k]) => normSubj(k) === normSubj(subj))?.[1] || null;
+          }
+          showSubjectModal(subj, detail);
+        });
+      });
+    }
+
+    // ── 과목 상세 모달 ──
+    function showSubjectModal(subj, detail) {
+      const modal = document.getElementById('sp-subject-modal');
+      const content = document.getElementById('sp-modal-content');
+      if (!modal || !content) return;
+
+      const credit = detail?.credit || '-';
+      const grade = detail?.grade || '';
+      const achieve = detail?.achieve || '';
+      const rawInfo = detail?.rawInfo || '';
+      const 수강자수 = detail?.수강자수 || '';
+
+      let raw = '', avg = '', std = '';
+      if (rawInfo) {
+        const m = rawInfo.match(/(\d+(?:\.\d+)?)\s*\/\s*([\d.]+)(?:\s*[\(（]([\d.]+)[\)）])?/);
+        if (m) { raw = m[1]; avg = m[2]; std = m[3] || ''; }
+        else raw = rawInfo;
+      }
+
+      const gradeColor = grade ? (grade <= 2 ? '#f59e0b' : grade <= 4 ? '#06b6d4' : grade <= 6 ? '#8b5cf6' : '#64748b') : '#64748b';
+      const achieveColor = achieve === 'A' ? '#16a34a' : achieve === 'B' ? '#2563eb' : achieve === 'C' ? '#d97706' : '#64748b';
+
+      const sciInfo = findScienceCourse(subj);
+      const modalPanel = document.getElementById('sp-modal-panel');
+      if (modalPanel) {
+        modalPanel.style.maxWidth = sciInfo ? '640px' : '480px';
+      }
+
+      const studentInfoBodyHtml = `
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1.2rem;">
+          <div style="background:rgba(99,102,241,0.07); border-radius:10px; padding:0.9rem; text-align:center;">
+            <div style="font-size:0.72rem; color:var(--text-secondary); margin-bottom:4px;">이수단위(학점)</div>
+            <div style="font-size:1.6rem; font-weight:800; color:var(--accent-primary);">${credit}</div>
+            <div style="font-size:0.72rem; color:var(--text-secondary);">단위</div>
+          </div>
+          ${grade ? `<div style="background:rgba(245,158,11,0.07); border-radius:10px; padding:0.9rem; text-align:center;">
+            <div style="font-size:0.72rem; color:var(--text-secondary); margin-bottom:4px;">석차등급</div>
+            <div style="font-size:1.6rem; font-weight:800; color:${gradeColor};">${grade}</div>
+            <div style="font-size:0.72rem; color:var(--text-secondary);">등급</div>
+          </div>` : achieve ? `<div style="background:rgba(34,197,94,0.07); border-radius:10px; padding:0.9rem; text-align:center;">
+            <div style="font-size:0.72rem; color:var(--text-secondary); margin-bottom:4px;">성취도</div>
+            <div style="font-size:1.6rem; font-weight:800; color:${achieveColor};">${achieve}</div>
+            <div style="font-size:0.72rem; color:var(--text-secondary);">${수강자수 ? 수강자수+'명 수강' : ''}</div>
+          </div>` : '<div></div>'}
+        </div>
+        ${raw || avg ? `<div style="background:rgba(0,0,0,0.04); border-radius:10px; padding:1rem; border:1px solid var(--panel-border);">
+          <div style="font-size:0.75rem; color:var(--text-secondary); margin-bottom:0.6rem; font-weight:600;">원점수 / 과목평균(표준편차)</div>
+          <div style="display:flex; align-items:baseline; gap:0.5rem; flex-wrap:wrap;">
+            ${raw ? `<span style="font-size:1.3rem; font-weight:700; color:var(--text-primary);">${raw}점</span>` : ''}
+            ${avg ? `<span style="font-size:0.9rem; color:var(--text-secondary);">/ 평균 ${avg}점 ${std ? '(표준편차 '+std+')' : ''}</span>` : ''}
+          </div>
+        </div>` : ''}
+        ${수강자수 && !achieve ? `<div style="margin-top:0.8rem; font-size:0.82rem; color:var(--text-secondary); text-align:center;">수강자 수: ${수강자수}명</div>` : ''}
+      `;
+
+      const studentInfoHtml = `
+        <div style="text-align:center; margin-bottom:1rem;">
+          <div style="font-size:1.4rem; font-weight:800; color:var(--text-primary);">${subj}</div>
+          <div style="font-size:0.85rem; color:var(--text-secondary); margin-top:4px;">이수과목 상세 정보</div>
+        </div>
+        ${studentInfoBodyHtml}
+      `;
+
+      if (!sciInfo) {
+        content.innerHTML = studentInfoHtml;
+      } else {
+        const typeColor = sciInfo.type.includes('진로') ? '#6366f1' : '#0891b2';
+        const csatBadge = sciInfo.csat === 'O'
+          ? '<span style="background:#dcfce7;color:#166534;border-radius:6px;padding:2px 8px;font-size:0.75rem;font-weight:700;">수능 연계 O</span>'
+          : '<span style="background:#fee2e2;color:#991b1b;border-radius:6px;padding:2px 8px;font-size:0.75rem;font-weight:700;">수능 연계 X</span>';
+
+        const contentsHtml = Object.entries(sciInfo.contents).map(([cat, items]) => `
+          <div style="margin-bottom:0.6rem;">
+            <div style="font-size:0.78rem; font-weight:700; color:var(--text-primary); margin-bottom:2px;">${cat}</div>
+            <div style="font-size:0.75rem; color:var(--text-secondary); line-height:1.5;">${items}</div>
+          </div>`).join('');
+
+        const keyIdeasHtml = sciInfo.keyIdeas.map(k =>
+          `<li style="font-size:0.78rem; color:var(--text-secondary); margin-bottom:4px; line-height:1.5;">${k}</li>`).join('');
+
+        const sciCurriculumHtml = `
+          <div style="margin-bottom:1rem;">
+            <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.75rem;">
+              <span style="background:${typeColor}22; color:${typeColor}; border-radius:6px; padding:2px 10px; font-size:0.78rem; font-weight:700;">${sciInfo.type}</span>
+              ${csatBadge}
+              <span style="font-size:0.75rem; color:var(--text-secondary);">이수학점: 시·도 교육감이 정함</span>
+            </div>
+            <div style="font-size:0.82rem; color:var(--text-secondary); line-height:1.6; margin-bottom:1rem; background:rgba(0,0,0,0.03); border-radius:8px; padding:0.75rem;">${sciInfo.summary}</div>
+          </div>
+          <div style="margin-bottom:1rem;">
+            <div style="font-size:0.82rem; font-weight:700; color:var(--text-primary); margin-bottom:0.5rem;">핵심 아이디어</div>
+            <ul style="margin:0; padding-left:1.2rem;">${keyIdeasHtml}</ul>
+          </div>
+          <div style="margin-bottom:1rem;">
+            <div style="font-size:0.82rem; font-weight:700; color:var(--text-primary); margin-bottom:0.5rem;">내용 체계</div>
+            ${contentsHtml}
+          </div>
+          <div style="margin-bottom:0.75rem;">
+            <div style="font-size:0.82rem; font-weight:700; color:var(--text-primary); margin-bottom:0.3rem;">관련 학과</div>
+            <div style="font-size:0.75rem; color:var(--text-secondary); line-height:1.5;">${sciInfo.majors}</div>
+          </div>
+          <div>
+            <div style="font-size:0.82rem; font-weight:700; color:var(--text-primary); margin-bottom:0.3rem;">관련 직업</div>
+            <div style="font-size:0.75rem; color:var(--text-secondary); line-height:1.5;">${sciInfo.careers}</div>
+          </div>
+        `;
+
+        content.innerHTML = `
+          <div style="text-align:center; margin-bottom:1rem;">
+            <div style="font-size:1.4rem; font-weight:800; color:var(--text-primary);">${subj}</div>
+          </div>
+          <div style="display:flex; gap:0; border-bottom:2px solid var(--panel-border); margin-bottom:1rem;">
+            <button id="sp-modal-tab-info" style="flex:1; padding:0.5rem 0; background:transparent; border:none; border-bottom:2px solid var(--accent-primary); margin-bottom:-2px; color:var(--accent-primary); font-weight:700; cursor:pointer; font-size:0.85rem;">이수 정보</button>
+            <button id="sp-modal-tab-curr" style="flex:1; padding:0.5rem 0; background:transparent; border:none; border-bottom:2px solid transparent; margin-bottom:-2px; color:var(--text-secondary); font-weight:600; cursor:pointer; font-size:0.85rem;">교육과정 정보</button>
+          </div>
+          <div id="sp-modal-pane-info" style="max-height:55vh; overflow-y:auto;">${studentInfoBodyHtml}</div>
+          <div id="sp-modal-pane-curr" style="display:none; max-height:55vh; overflow-y:auto;">${sciCurriculumHtml}</div>
+        `;
+
+        content.querySelector('#sp-modal-tab-info').addEventListener('click', function() {
+          this.style.borderBottomColor = 'var(--accent-primary)';
+          this.style.color = 'var(--accent-primary)';
+          this.style.fontWeight = '700';
+          const tabCurr = content.querySelector('#sp-modal-tab-curr');
+          tabCurr.style.borderBottomColor = 'transparent';
+          tabCurr.style.color = 'var(--text-secondary)';
+          tabCurr.style.fontWeight = '600';
+          content.querySelector('#sp-modal-pane-info').style.display = '';
+          content.querySelector('#sp-modal-pane-curr').style.display = 'none';
+        });
+        content.querySelector('#sp-modal-tab-curr').addEventListener('click', function() {
+          this.style.borderBottomColor = 'var(--accent-primary)';
+          this.style.color = 'var(--accent-primary)';
+          this.style.fontWeight = '700';
+          const tabInfo = content.querySelector('#sp-modal-tab-info');
+          tabInfo.style.borderBottomColor = 'transparent';
+          tabInfo.style.color = 'var(--text-secondary)';
+          tabInfo.style.fontWeight = '600';
+          content.querySelector('#sp-modal-pane-info').style.display = 'none';
+          content.querySelector('#sp-modal-pane-curr').style.display = '';
+        });
+      }
+
+      modal.classList.remove('hidden');
+      modal.style.display = 'flex';
+    }
+
+    // ── AI 분석 ──
+    async function runAiAnalysis(univName, deptName) {
+      const btn = document.getElementById('sp-ai-analyze-btn');
+      const resultDiv = document.getElementById('sp-ai-result');
+      if (!btn || !resultDiv) return;
+
+      const apiKey = document.getElementById('sp-api-key')?.value.trim() || document.getElementById('uni-api-key')?.value.trim() || '';
+      if (!apiKey) { alert('Gemini API Key를 입력하세요.'); return; }
+
+      const univEntry = UNIV_DATA[univName]?.departments.find(e => e.dept === deptName);
+      if (!univEntry) return;
+
+      const takenList = [...spStudentSubjects.keys()];
+      const recList = univEntry.recommended;
+
+      btn.disabled = true;
+      btn.textContent = '⏳ 분석 중...';
+      resultDiv.classList.remove('hidden');
+      resultDiv.innerHTML = '<span style="color:var(--text-secondary);">분석 중입니다...</span>';
+
+      const prompt = `당신은 대입 진학 상담 전문가입니다.
+
+[목표 대학·학과]
+${univName} - ${deptName}
+
+[모집단위 권장과목 안내]
+${univEntry.note}
+권장 과목 목록: ${recList.length > 0 ? recList.join(', ') : '별도 지정 없음'}
+
+[학생 이수 과목 목록]
+${takenList.join(', ')}
+
+위 정보를 바탕으로 다음을 분석해 주세요:
+1. 학생이 이수한 과목 중 권장과목에 해당하는 것과 그 의미
+2. 권장과목 중 미이수한 과목과 대입에 미치는 영향
+3. 이 학생이 ${univName} ${deptName}에 지원하기 위한 과목 선택 전략과 조언
+
+분석 결과를 간결하고 명확하게, 학생과 교사가 이해하기 쉽게 설명해 주세요.`;
+
+      try {
+        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        });
+        const data = await resp.json();
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '분석 결과를 가져오지 못했습니다.';
+        resultDiv.innerHTML = `<div style="white-space:pre-wrap; line-height:1.8;">${text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\n/g,'<br>')}</div>`;
+      } catch(e) {
+        resultDiv.innerHTML = `<span style="color:var(--error-color);">오류: ${e.message}</span>`;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '✨ AI 맞춤 분석';
+      }
+    }
+
+    // ── 탭 초기화 ──
+    window.initSubjectPath = function() {
+      if (spInitialized) { fillStudentSelect(); return; }
+      spInitialized = true;
+
+      fillStudentSelect();
+
+      // 교육과정 버튼
+      document.querySelectorAll('.sp-cur-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          spCurriculum = btn.dataset.cur;
+          document.querySelectorAll('.sp-cur-btn').forEach(b => {
+            const isActive = b.dataset.cur === spCurriculum;
+            b.style.background = isActive ? 'var(--accent-primary)' : 'transparent';
+            b.style.color = isActive ? '#fff' : 'var(--text-secondary)';
+            b.style.borderColor = isActive ? 'var(--accent-primary)' : 'var(--panel-border)';
+            b.classList.toggle('active', isActive);
+          });
+          renderSubjectGrid();
+        });
+      });
+
+      // 학생 선택
+      document.getElementById('sp-student-select')?.addEventListener('change', function() {
+        const studentName = this.value;
+        if (!studentName) { spStudentSubjects = new Map(); renderSubjectGrid(); return; }
+        spStudentSubjects = extractSubjectsForSP(window.spCourseJson, studentName);
+        console.log('[SP] 이수과목:', [...spStudentSubjects.keys()]);
+        // 선택된 대학·모집단위 권장과목 갱신
+        const univName = document.getElementById('sp-univ-select')?.value || '';
+        const deptName = document.getElementById('sp-dept-select')?.value || '';
+        if (univName && deptName) showUnivBanner(univName, deptName);
+        else { spRecommended = new Set(); renderSubjectGrid(); }
+      });
+
+      // 대학 선택
+      document.getElementById('sp-univ-select')?.addEventListener('change', function() {
+        fillDeptSelect(this.value);
+        document.getElementById('sp-univ-banner')?.classList.add('hidden');
+        spRecommended = new Set();
+        renderSubjectGrid();
+      });
+
+      // 모집단위 선택
+      document.getElementById('sp-dept-select')?.addEventListener('change', function() {
+        const univName = document.getElementById('sp-univ-select')?.value || '';
+        showUnivBanner(univName, this.value);
+      });
+
+      // AI 분석 버튼
+      document.getElementById('sp-ai-analyze-btn')?.addEventListener('click', () => {
+        const univName = document.getElementById('sp-univ-select')?.value || '';
+        const deptName = document.getElementById('sp-dept-select')?.value || '';
+        runAiAnalysis(univName, deptName);
+      });
+
+      // 모달 닫기
+      document.getElementById('sp-modal-close')?.addEventListener('click', () => {
+        const modal = document.getElementById('sp-subject-modal');
+        if (modal) { modal.classList.add('hidden'); modal.style.display = 'none'; }
+      });
+      document.getElementById('sp-subject-modal')?.addEventListener('click', function(e) {
+        if (e.target === this) { this.classList.add('hidden'); this.style.display = 'none'; }
+      });
+
+      renderSubjectGrid();
+    };
+
+    // 이수과목 데이터 업로드 후 학생 목록 자동 갱신
+    const origExtract = window.extractCourseDataCallback;
+    window.spRefreshStudentList = function() {
+      if (viewSubjectPath && !viewSubjectPath.classList.contains('hidden')) fillStudentSelect();
+    };
+
+  })();
+
 });

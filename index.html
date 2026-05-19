@@ -138,17 +138,28 @@
         <!-- 성적 분석 파일 -->
         <div class="uni-upload-card" style="background: var(--upload-card-bg); padding: 1.2rem; border-radius: 12px; border: 1px solid var(--panel-border);">
           <h4 style="color: var(--clr-h4-blue); margin-bottom: 1rem; font-size: 1rem; border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem;">📈 모의고사 / 내신 분석용</h4>
-          <div class="form-group" style="margin-bottom: 0.8rem;">
-            <label style="font-size: 0.8rem; color: var(--text-secondary);">모의고사 성적표 학년 선택</label>
-            <select id="uni-mock-grade" style="background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-primary); border-radius: 8px; padding: 0.5rem 1rem; width: 100%; font-size: 0.8rem;">
-              <option value="1">1학년</option>
-              <option value="2">2학년</option>
-              <option value="3">3학년</option>
-            </select>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-bottom: 0.8rem;">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label style="font-size: 0.8rem; color: var(--text-secondary);">학년</label>
+              <select id="uni-mock-grade" style="background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-primary); border-radius: 8px; padding: 0.5rem 0.8rem; width: 100%; font-size: 0.8rem;">
+                <option value="1">1학년</option>
+                <option value="2">2학년</option>
+                <option value="3">3학년</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label style="font-size: 0.8rem; color: var(--text-secondary);">월</label>
+              <select id="uni-mock-month" style="background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-primary); border-radius: 8px; padding: 0.5rem 0.8rem; width: 100%; font-size: 0.8rem;">
+                <option value="3">3월</option>
+                <option value="6">6월</option>
+                <option value="9">9월</option>
+                <option value="11">11월</option>
+              </select>
+            </div>
           </div>
           <div class="form-group" style="margin-bottom: 0.8rem;">
-            <label style="font-size: 0.8rem; color: var(--text-secondary);">모의고사 성적표 (CSV, 다중) <span style="font-size: 0.7rem; color: #7cb9ff; display: block; margin-top: 2px;">(ilovepdf 등을 이용해 PDF → Excel 변환 후 한 시트에 모아 .csv로 저장)</span></label>
-            <input type="file" id="uni-mock-upload" accept=".csv" multiple style="font-size: 0.8rem; padding: 0.5rem; width: 100%;">
+            <label style="font-size: 0.8rem; color: var(--text-secondary);">모의고사 성적통지표 <span style="font-size: 0.7rem; color: #7cb9ff; display: block; margin-top: 2px;">PDF(성적통지표 원본) 또는 CSV 파일 — 다중 선택 가능</span></label>
+            <input type="file" id="uni-mock-upload" accept=".csv,.pdf" multiple style="font-size: 0.8rem; padding: 0.5rem; width: 100%;">
           </div>
           <div class="form-group" style="margin-bottom: 0;">
             <label style="font-size: 0.8rem; color: var(--text-secondary);">내신 석차 데이터 (CSV/JSON) <span style="font-size: 0.7rem; color: #7cb9ff; display: block; margin-top: 2px;">(경로: 나이스 - 학급담임 - 학교생활기록부 - 학생부 항목별 조회 - 교과학습발달상황 - 교과학습발달상황 → XLS 다운 후 CSV 변환)</span></label>
@@ -170,6 +181,7 @@
         <button id="tab-passfail" class="tab-btn">합불합 분석(결과기반)</button>
         <button id="tab-passfail-examples" class="tab-btn">📊 합불합 사례 확인하기</button>
         <button id="tab-setech" class="tab-btn">✏️ 세특 분석</button>
+        <button id="tab-subject-path" class="tab-btn">🎯 진로에 따른 과목 선택 확인하기</button>
         <button id="tab-csat" class="tab-btn">수능 최저 확인하기</button>
         <button id="tab-interview" class="tab-btn">🎤 면접 문항 생성</button>
         <button id="tab-mock-exam" class="tab-btn">📊 모의고사 문항 분석</button>
@@ -253,7 +265,7 @@
           <div class="form-group">
             <label style="color: var(--text-secondary); font-weight: 500;">교과 평균 등급 및 산출식</label>
             <div style="display: flex; gap: 10px;">
-              <input type="text" id="average-grade" readonly placeholder="자동 계산" style="background: var(--input-bg); border: 2px solid var(--accent-primary); color: #fff; border-radius: 8px; padding: 0.75rem 1rem; width: 40%; font-weight: bold; font-size: 1.1em; text-align: center;" title="교과 평균 등급 결과">
+              <input type="text" id="average-grade" readonly placeholder="자동 계산" style="background: var(--input-bg); border: 2px solid var(--accent-primary); color: var(--text-primary); border-radius: 8px; padding: 0.75rem 1rem; width: 40%; font-weight: bold; font-size: 1.1em; text-align: center;" title="교과 평균 등급 결과">
               <input type="text" id="average-formula" readonly placeholder="Σ(단위수×등급) / 총 단위" style="background: var(--glass-bg); border: 1px solid var(--glass-border); color: var(--text-secondary); border-radius: 8px; padding: 0.75rem 1rem; width: 60%; font-size: 0.9em; text-align: center;" title="산출식">
             </div>
             <div style="display: none; margin-top: 15px; height: 180px; width: 100%;">
@@ -397,9 +409,9 @@
             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
               <input type="text" id="pf-student-univ" readonly placeholder="지원 대학" style="background: var(--glass-bg); border: 1px solid var(--glass-border); color: var(--text-secondary); border-radius: 8px; padding: 0.75rem 1rem; flex: 2; min-width: 150px;">
               <input type="text" id="pf-student-dept" readonly placeholder="지원 학과" style="background: var(--glass-bg); border: 1px solid var(--glass-border); color: var(--text-secondary); border-radius: 8px; padding: 0.75rem 1rem; flex: 2; min-width: 150px;">
-              <input type="text" id="pf-student-general-grade" readonly placeholder="일반등급" title="수시진학관리 파일에서 추출된 일반등급" style="background: var(--input-bg); border: 2px solid #ffca28; color: #fff; border-radius: 8px; padding: 0.75rem 0.5rem; flex: 1; min-width: 60px; font-weight: bold; text-align: center; font-size: 0.9em;">
-              <input type="text" id="pf-student-general-grade5" readonly placeholder="5등급제" title="수시진학관리 파일에서 추출된 일반등급(5등급)" style="background: var(--input-bg); border: 2px solid #ffca28; color: #fff; border-radius: 8px; padding: 0.75rem 0.5rem; flex: 1; min-width: 60px; font-weight: bold; text-align: center; font-size: 0.9em;">
-              <input type="text" id="pf-student-result" readonly placeholder="합불 결과" style="background: var(--input-bg); border: 2px solid var(--accent-primary); color: #fff; border-radius: 8px; padding: 0.75rem 1rem; flex: 1; min-width: 100px; font-weight: bold; text-align: center;">
+              <input type="text" id="pf-student-general-grade" readonly placeholder="일반등급" title="수시진학관리 파일에서 추출된 일반등급" style="background: var(--input-bg); border: 2px solid #ffca28; color: var(--text-primary); border-radius: 8px; padding: 0.75rem 0.5rem; flex: 1; min-width: 60px; font-weight: bold; text-align: center; font-size: 0.9em;">
+              <input type="text" id="pf-student-general-grade5" readonly placeholder="5등급제" title="수시진학관리 파일에서 추출된 일반등급(5등급)" style="background: var(--input-bg); border: 2px solid #ffca28; color: var(--text-primary); border-radius: 8px; padding: 0.75rem 0.5rem; flex: 1; min-width: 60px; font-weight: bold; text-align: center; font-size: 0.9em;">
+              <input type="text" id="pf-student-result" readonly placeholder="합불 결과" style="background: var(--input-bg); border: 2px solid var(--accent-primary); color: var(--text-primary); border-radius: 8px; padding: 0.75rem 1rem; flex: 1; min-width: 100px; font-weight: bold; text-align: center;">
               <div id="pf-csat-badge" class="hidden" style="background: #ff4757; color: white; padding: 0.5rem 1rem; border-radius: 8px; font-weight: 800; font-size: 0.85rem; display: flex; align-items: center; gap: 5px; animation: pulse 2s infinite;">
                 <span style="font-size: 1.1rem;">⚠️</span> 최저미충족
               </div>
@@ -822,6 +834,83 @@
     </section>
   </main>
 
+  <!-- ===== 진로에 따른 과목 선택 확인하기 ===== -->
+  <main id="view-subject-path" class="main-container view-section hidden" style="display:none;">
+    <section class="glass-panel" style="grid-column:span 2; padding: 2rem;">
+
+      <h2 class="section-title" style="margin-bottom:0.3rem;">🎯 진로에 따른 과목 선택 확인하기</h2>
+      <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:1.5rem;">학생의 이수과목을 교육과정 전체 과목과 비교하고, 목표 대학·학과의 권장과목 충족 여부를 확인합니다.</p>
+
+      <!-- 상단 컨트롤 -->
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:1rem; margin-bottom:1.5rem; align-items:end;">
+        <div>
+          <label style="display:block; font-size:0.8rem; color:var(--text-secondary); margin-bottom:0.4rem;">학생 선택</label>
+          <select id="sp-student-select" class="form-select" style="width:100%; background:var(--input-bg); color:var(--text-primary); border:1px solid var(--panel-border); border-radius:8px; padding:0.5rem;">
+            <option value="">-- 이수과목 파일을 먼저 업로드하세요 --</option>
+          </select>
+        </div>
+        <div>
+          <label style="display:block; font-size:0.8rem; color:var(--text-secondary); margin-bottom:0.4rem;">대학 선택</label>
+          <select id="sp-univ-select" class="form-select" style="width:100%; background:var(--input-bg); color:var(--text-primary); border:1px solid var(--panel-border); border-radius:8px; padding:0.5rem;">
+            <option value="">대학 선택 (선택사항)</option>
+            <option value="서울대학교">서울대학교</option>
+            <option value="연세대학교">연세대학교</option>
+          </select>
+        </div>
+        <div>
+          <label style="display:block; font-size:0.8rem; color:var(--text-secondary); margin-bottom:0.4rem;">모집단위 선택</label>
+          <select id="sp-dept-select" class="form-select" style="width:100%; background:var(--input-bg); color:var(--text-primary); border:1px solid var(--panel-border); border-radius:8px; padding:0.5rem;">
+            <option value="">대학을 먼저 선택하세요</option>
+          </select>
+        </div>
+        <div>
+          <label style="display:block; font-size:0.8rem; color:var(--text-secondary); margin-bottom:0.4rem;">AI 분석 API Key</label>
+          <input id="sp-api-key" type="password" class="form-select" placeholder="Gemini API Key" style="width:100%; background:var(--input-bg); color:var(--text-primary); border:1px solid var(--panel-border); border-radius:8px; padding:0.5rem; min-width:200px;">
+        </div>
+      </div>
+
+      <!-- 대학 권장과목 안내 배너 -->
+      <div id="sp-univ-banner" class="hidden" style="margin-bottom:1.5rem; background:rgba(99,102,241,0.08); border:1px solid rgba(99,102,241,0.25); border-radius:12px; padding:1rem 1.5rem;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:1rem;">
+          <div id="sp-univ-banner-text" style="flex:1; font-size:0.88rem; line-height:1.7; color:var(--text-primary);"></div>
+          <button id="sp-ai-analyze-btn" class="btn-primary" style="white-space:nowrap; padding:0.5rem 1.2rem; font-size:0.85rem; width:auto; margin:0; flex-shrink:0;">
+            ✨ AI 맞춤 분석
+          </button>
+        </div>
+        <div id="sp-ai-result" class="hidden" style="margin-top:1rem; padding-top:1rem; border-top:1px solid rgba(99,102,241,0.2); font-size:0.87rem; line-height:1.8; color:var(--text-primary);"></div>
+      </div>
+
+      <!-- 교육과정 선택 -->
+      <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.2rem;">
+        <label style="font-size:0.85rem; color:var(--text-secondary); white-space:nowrap;">교육과정</label>
+        <div style="display:flex; gap:0.5rem;">
+          <button class="sp-cur-btn active" data-cur="2022 개정" style="padding:0.4rem 1rem; border-radius:6px; font-size:0.82rem; font-weight:600; cursor:pointer; border:1px solid var(--accent-primary); background:var(--accent-primary); color:#fff; transition:all 0.2s;">2022 개정</button>
+          <button class="sp-cur-btn" data-cur="2015 개정" style="padding:0.4rem 1rem; border-radius:6px; font-size:0.82rem; font-weight:600; cursor:pointer; border:1px solid var(--panel-border); background:transparent; color:var(--text-secondary); transition:all 0.2s;">2015 개정</button>
+        </div>
+        <div style="margin-left:auto; display:flex; gap:0.8rem; align-items:center; font-size:0.78rem; color:var(--text-secondary);">
+          <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:12px;height:12px;border-radius:3px;background:rgba(99,102,241,0.85);display:inline-block;"></span> 이수함</span>
+          <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:12px;height:12px;border-radius:3px;background:rgba(34,197,94,0.7);display:inline-block;"></span> 권장과목</span>
+          <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:12px;height:12px;border-radius:3px;background:rgba(251,191,36,0.85);display:inline-block;"></span> 이수+권장</span>
+          <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:12px;height:12px;border-radius:3px;background:var(--panel-border);display:inline-block;"></span> 미이수</span>
+        </div>
+      </div>
+
+      <!-- 과목 그리드 -->
+      <div id="sp-subject-grid" style="display:flex; flex-direction:column; gap:1.2rem;">
+        <div style="text-align:center; padding:3rem; color:var(--text-secondary); font-size:0.95rem;">학생을 선택하면 이수과목이 표시됩니다.</div>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- 과목 상세 모달 -->
+  <div id="sp-subject-modal" class="hidden" style="position:fixed;inset:0;z-index:3000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);">
+    <div id="sp-modal-panel" style="background:var(--panel-bg);border:1px solid var(--panel-border);border-radius:20px;padding:2rem;min-width:360px;max-width:480px;width:90%;position:relative;box-shadow:0 24px 60px rgba(0,0,0,0.4);transition:max-width 0.2s;">
+      <button id="sp-modal-close" style="position:absolute;top:1rem;right:1rem;background:transparent;border:none;color:var(--text-secondary);font-size:1.4rem;cursor:pointer;line-height:1;">✕</button>
+      <div id="sp-modal-content"></div>
+    </div>
+  </div>
+
   <main id="view-mock-exam" class="main-container view-section hidden">
     <section class="glass-panel form-section" style="grid-column: span 2;">
         <div style="margin-bottom: 1.2rem;">
@@ -922,16 +1011,16 @@
         </p>
 
         <!-- 파일 드롭 영역 -->
-        <div id="mockDropZone" class="drop-zone" style="display: none;">
+        <div id="mockDropZone" class="drop-zone" style="display:none;">
             <svg stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true" style="margin: 0 auto; display: block;">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" />
             </svg>
             <div class="upload-text" style="margin-top: 1rem;">
-                <label for="mockFileInput" class="upload-label"><span id="uploadMonthText">3</span>월 모의고사 성적표 CSV 선택</label>
+                <label for="mockFileInput" class="upload-label"><span id="uploadMonthText">3</span>월 모의고사 성적표 CSV / PDF 선택</label>
                 <span>또는 파일을 이곳으로 드래그 앤 드롭</span>
             </div>
-            <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem;">선택한 월에 해당하는 성적표 파일들을 통합하여 분석합니다.</p>
-            <input id="mockFileInput" name="mockFileInput" type="file" multiple accept=".csv" style="display: none;">
+            <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem;">성적통지표 PDF 또는 CSV 파일을 업로드하면 자동 분석됩니다.</p>
+            <input id="mockFileInput" name="mockFileInput" type="file" multiple accept=".csv,.pdf" style="display: none;">
         </div>
 
         <!-- 서버 데이터 상태 표시 -->
@@ -2646,7 +2735,7 @@
       mountAdmissionAnalysis();
     }
   </script>
-  <script src="app.js?v=7"></script>
+  <script src="app.js?v=8"></script>
   <script src="grade-rank.js"></script>
   <script src="admission_dist.js"></script>
   <script src="hexagon.js"></script>
