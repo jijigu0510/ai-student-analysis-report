@@ -963,15 +963,26 @@
             </div>
 
             <div style="display: flex; flex-direction: column; gap: 0.8rem; margin-bottom: 1.5rem;">
-                <!-- 3월 & 6월 (공통) -->
+                <!-- 3월 & 5월 (5월은 3학년 전용) -->
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                     <div style="display: flex; align-items: center; gap: 0.8rem; background: rgba(255,255,255,0.02); padding: 0.4rem 0.8rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
                         <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); min-width: 40px;">3월</label>
                         <input id="mockGasUrl_3" type="text" class="gas-month-input" placeholder="https://script.google.com/..." style="flex:1; border:none; background:transparent; font-size:0.8rem;">
                     </div>
+                    <div id="gasCell5" style="display: none; align-items: center; gap: 0.8rem; background: rgba(255,255,255,0.02); padding: 0.4rem 0.8rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                        <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); min-width: 40px;">5월</label>
+                        <input id="mockGasUrl_5" type="text" class="gas-month-input" placeholder="https://script.google.com/..." style="flex:1; border:none; background:transparent; font-size:0.8rem;">
+                    </div>
+                </div>
+                <!-- 6월 & 7월 (7월은 3학년 전용) -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                     <div style="display: flex; align-items: center; gap: 0.8rem; background: rgba(255,255,255,0.02); padding: 0.4rem 0.8rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
                         <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); min-width: 40px;">6월</label>
                         <input id="mockGasUrl_6" type="text" class="gas-month-input" placeholder="https://script.google.com/..." style="flex:1; border:none; background:transparent; font-size:0.8rem;">
+                    </div>
+                    <div id="gasCell7" style="display: none; align-items: center; gap: 0.8rem; background: rgba(255,255,255,0.02); padding: 0.4rem 0.8rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                        <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); min-width: 40px;">7월</label>
+                        <input id="mockGasUrl_7" type="text" class="gas-month-input" placeholder="https://script.google.com/..." style="flex:1; border:none; background:transparent; font-size:0.8rem;">
                     </div>
                 </div>
                 <!-- 9월 & 11월 (공통) -->
@@ -983,17 +994,6 @@
                     <div style="display: flex; align-items: center; gap: 0.8rem; background: rgba(255,255,255,0.02); padding: 0.4rem 0.8rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
                         <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); min-width: 40px;">11월</label>
                         <input id="mockGasUrl_11" type="text" class="gas-month-input" placeholder="https://script.google.com/..." style="flex:1; border:none; background:transparent; font-size:0.8rem;">
-                    </div>
-                </div>
-                <!-- 5월 & 7월 (3학년 전용) -->
-                <div id="gasRow57" style="display: none; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                    <div style="display: flex; align-items: center; gap: 0.8rem; background: rgba(255,255,255,0.02); padding: 0.4rem 0.8rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
-                        <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); min-width: 40px;">5월</label>
-                        <input id="mockGasUrl_5" type="text" class="gas-month-input" placeholder="https://script.google.com/..." style="flex:1; border:none; background:transparent; font-size:0.8rem;">
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 0.8rem; background: rgba(255,255,255,0.02); padding: 0.4rem 0.8rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
-                        <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); min-width: 40px;">7월</label>
-                        <input id="mockGasUrl_7" type="text" class="gas-month-input" placeholder="https://script.google.com/..." style="flex:1; border:none; background:transparent; font-size:0.8rem;">
                     </div>
                 </div>
             </div>

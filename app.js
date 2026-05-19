@@ -819,7 +819,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const DEFAULT_MOCK_GAS_URLS = {
     "1_3": "https://script.google.com/macros/s/AKfycbzDtgZjPR0VG4EEI6W0Nlxkqdp8X6m-sQGwqQKtmF39B-xujLZdrXMGUTB0hYNFHLzQ/exec",
     "2_3": "https://script.google.com/macros/s/AKfycbzDaNGMS0UHmB4Elj1FLJmw8LPUi1RxsrKvzYGfHPzNQHHetFxUcTo8qh8uyRHMKDUc/exec",
-    "3_3": "https://script.google.com/macros/s/AKfycbzUAyVobtXg6GgnKUuqajcytNZ1SX9g0zFNHroYX69CBosk8QJZYMVzIiTkjBd7hmpqJw/exec"
+    "3_3": "https://script.google.com/macros/s/AKfycbzUAyVobtXg6GgnKUuqajcytNZ1SX9g0zFNHroYX69CBosk8QJZYMVzIiTkjBd7hmpqJw/exec",
+    "3_5": "https://script.google.com/macros/s/AKfycbypV0Mc8SFv1Hj-GmrtCbhQhNZJNcX2XURwGYpybSOXoNQfysqQuoSgZBWqWfvf7s75AQ/exec"
   };
 
   function getMockGasUrl(grade, month) {
@@ -837,9 +838,11 @@ document.addEventListener("DOMContentLoaded", () => {
       const el = document.getElementById(`mockGasUrl_${m}`);
       if (el) el.value = months.includes(m) ? getMockGasUrl(grade, m) : '';
     });
-    // 5월/7월 행은 3학년만 표시
-    const row57 = document.getElementById('gasRow57');
-    if (row57) row57.style.display = grade === '3' ? 'grid' : 'none';
+    // 5월/7월 셀은 3학년만 표시
+    ['5', '7'].forEach(m => {
+      const cell = document.getElementById(`gasCell${m}`);
+      if (cell) cell.style.display = grade === '3' ? 'flex' : 'none';
+    });
   }
 
   const mockGasGradeSelectEl = document.getElementById('mockGasGradeSelect');
