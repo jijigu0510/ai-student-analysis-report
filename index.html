@@ -177,7 +177,7 @@
         <button id="toggle-tabs-btn" class="tab-btn" style="text-align:center; font-weight:700; color:var(--accent-primary); border-bottom: 2px solid rgba(255,255,255,0.1); display:flex; justify-content:center; align-items:center; gap:0.5rem; padding: 1rem;">
            <span class="btn-text">◀ 탭 숨기기</span>
         </button>
-        <button id="tab-individual" class="tab-btn active">개인 분석</button>
+        <button id="tab-individual" class="tab-btn active">학교생활기록부 정성평가 분석(전형 추천)</button>
         <button id="tab-passfail" class="tab-btn">합불합 분석(결과기반)</button>
         <button id="tab-passfail-examples" class="tab-btn">📊 합불합 사례 확인하기</button>
         <button id="tab-setech" class="tab-btn">✏️ 세특 분석</button>
@@ -364,6 +364,44 @@
         </div>
       </div>
     </section>
+
+    <!-- ====================================================
+         AI 전형별 지원 전략 분석 섹션
+    ===================================================== -->
+    <section class="glass-panel" style="margin-top:1.5rem;grid-column:1/-1;">
+      <h2 class="section-title">🎓 AI 전형별 지원 전략 분석</h2>
+      <p style="color:var(--text-secondary);margin-bottom:1.5rem;line-height:1.7;font-size:0.95rem;">
+        학생의 학교생활기록부(성적·이수과목·세특·창체·행특)를 종합 분석하여, 각 대학 학생부종합전형에 지원 시 적합성을 AI가 비교·평가합니다.
+        <br><span style="font-size:0.85rem;color:#96baff;">※ 먼저 위 개인 분석 폼에서 학생을 선택하고 생기부를 불러온 후 분석하세요.</span>
+      </p>
+
+      <!-- 학과 필터 입력 + 버튼 행 -->
+      <div style="display:flex;gap:0.75rem;align-items:flex-end;flex-wrap:wrap;margin-bottom:1.2rem;">
+        <div style="flex:1;min-width:260px;">
+          <label style="color:var(--text-secondary);font-size:0.88rem;font-weight:500;display:block;margin-bottom:0.4rem;">희망 학과/계열 <span style="color:#96baff;font-weight:normal;">(선택)</span></label>
+          <input type="text" id="strat-major-hint" placeholder="예: 컴퓨터공학, 의대, 경영 등 (비워두면 생기부 기반 자동 판단)"
+            style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.65rem 1rem;width:100%;font-size:0.9rem;">
+        </div>
+        <button id="strat-analyze-btn" type="button" onclick="window.analyzeAdmissionStrategy()"
+          class="btn-primary" style="padding:0.68rem 1.6rem;white-space:nowrap;flex-shrink:0;">
+          🔍 AI 지원 전략 분석하기
+        </button>
+        <button id="strat-pdf-btn" type="button" onclick="window.downloadStrategyPDF()"
+          style="display:none;padding:0.68rem 1.4rem;white-space:nowrap;flex-shrink:0;
+            background:var(--accent-gradient);color:#fff;border:none;border-radius:8px;
+            font-size:0.9rem;font-weight:600;cursor:pointer;
+            box-shadow:0 4px 15px rgba(124,131,253,0.3);display:none;align-items:center;gap:0.45rem;">
+          📄 PDF로 다운로드
+        </button>
+      </div>
+
+      <!-- 결과 영역 -->
+      <div id="strat-result-container" style="min-height:60px;">
+        <div style="color:var(--text-secondary);font-size:0.9rem;padding:0.5rem 0;">
+          학생을 선택하고 분석 버튼을 클릭하면 대학별 학생부종합전형 지원 전략을 제시합니다.
+        </div>
+      </div>
+    </section>
   </main>
   <main id="view-passfail" class="main-container view-section hidden">
     <section class="glass-panel form-section">
@@ -398,10 +436,26 @@
               <input type="file" id="pf-upload-behavior" accept=".xlsx, .xls" multiple style="background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-primary); border-radius: 8px; padding: 0.75rem 1rem; width: 100%;">
             </div>
           </div>
+          <!-- GAS 연동: 연도 선택 + 불러오기 -->
+          <div class="form-group" style="background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 10px; padding: 1rem 1.2rem; margin-bottom: 0.5rem;">
+            <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+              <span style="font-size: 0.88rem; color: var(--text-secondary); font-weight: 500;">📅 연도</span>
+              <select id="pf-year-select" style="padding: 0.4rem 0.8rem; border-radius: 8px; border: 1px solid var(--input-border); background: var(--input-bg); color: var(--text-primary); font-size: 0.9rem; font-weight: 700; cursor: pointer;">
+                <option value="2025">2025년</option>
+                <option value="2024">2024년</option>
+              </select>
+              <button type="button" onclick="loadPfDataFromGAS(document.getElementById('pf-year-select').value)"
+                style="padding: 0.4rem 1.1rem; background: var(--accent-primary); color: #fff; border: none; border-radius: 8px; font-size: 0.875rem; font-weight: 600; cursor: pointer;">
+                🔄 스프레드시트에서 불러오기
+              </button>
+              <span id="pf-gas-status" style="font-size: 0.82rem; color: var(--text-secondary);"></span>
+            </div>
+          </div>
+
           <div class="form-group">
             <label for="pf-student-select" style="color: var(--text-secondary); font-weight: 500;">분석 대상 학생 선택</label>
             <select id="pf-student-select" required style="background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-primary); border-radius: 8px; padding: 0.75rem 1rem; width: 100%;">
-              <option value="" disabled selected>수시진학관리 엑셀을 업로드하면 목록이 표시됩니다</option>
+              <option value="" disabled selected>위 버튼으로 스프레드시트에서 불러오세요</option>
             </select>
           </div>
           <div class="form-group">
@@ -839,65 +893,93 @@
     <section class="glass-panel" style="grid-column:span 2; padding: 2rem;">
 
       <h2 class="section-title" style="margin-bottom:0.3rem;">🎯 진로에 따른 과목 선택 확인하기</h2>
-      <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:1.5rem;">학생의 이수과목을 교육과정 전체 과목과 비교하고, 목표 대학·학과의 권장과목 충족 여부를 확인합니다.</p>
+      <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:1.2rem;">학생의 이수과목을 교육과정 전체 과목과 비교하고, 목표 대학·학과의 핵심·권장과목 충족 여부를 확인합니다.</p>
 
-      <!-- 상단 컨트롤 -->
-      <div style="display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:1rem; margin-bottom:1.5rem; align-items:end;">
+      <!-- GAS 설정 영역 -->
+      <div style="margin-bottom:1.2rem; background:rgba(255,255,255,0.03); border:1px solid var(--panel-border); border-radius:12px; padding:1rem 1.2rem;">
+        <div style="display:flex; align-items:center; gap:0.6rem; margin-bottom:0.6rem;">
+          <span style="font-size:0.8rem; font-weight:700; color:var(--accent-primary);">🌐 스프레드시트 연동</span>
+          <span style="font-size:0.72rem; color:var(--text-secondary);">2028학년도 권역별 대학별 권장과목 데이터를 불러옵니다.</span>
+        </div>
+        <div style="display:flex; gap:0.6rem; align-items:center;">
+          <input id="sp-gas-url-input" type="text" placeholder="GAS 웹 앱 URL (https://script.google.com/...)" style="flex:1; background:var(--input-bg); color:var(--text-primary); border:1px solid var(--panel-border); border-radius:8px; padding:0.45rem 0.8rem; font-size:0.82rem; min-width:0;">
+          <button id="sp-gas-load-btn" class="btn-primary" style="white-space:nowrap; padding:0.45rem 1.1rem; font-size:0.82rem; width:auto; margin:0; flex-shrink:0;">🔄 불러오기</button>
+          <span id="sp-gas-status" style="font-size:0.78rem; white-space:nowrap;"></span>
+        </div>
+      </div>
+
+      <!-- 상단 컨트롤: 학생 + 계층형 드롭다운 -->
+      <div style="display:grid; grid-template-columns:1.2fr 1fr 1fr 1.3fr 1.5fr; gap:0.7rem; margin-bottom:1rem; align-items:end;">
         <div>
-          <label style="display:block; font-size:0.8rem; color:var(--text-secondary); margin-bottom:0.4rem;">학생 선택</label>
-          <select id="sp-student-select" class="form-select" style="width:100%; background:var(--input-bg); color:var(--text-primary); border:1px solid var(--panel-border); border-radius:8px; padding:0.5rem;">
+          <label style="display:block; font-size:0.78rem; color:var(--text-secondary); margin-bottom:0.3rem;">학생 선택</label>
+          <select id="sp-student-select" class="form-select" style="width:100%; background:var(--input-bg); color:var(--text-primary); border:1px solid var(--panel-border); border-radius:8px; padding:0.45rem 0.5rem; font-size:0.83rem;">
             <option value="">-- 이수과목 파일을 먼저 업로드하세요 --</option>
           </select>
         </div>
         <div>
-          <label style="display:block; font-size:0.8rem; color:var(--text-secondary); margin-bottom:0.4rem;">대학 선택</label>
-          <select id="sp-univ-select" class="form-select" style="width:100%; background:var(--input-bg); color:var(--text-primary); border:1px solid var(--panel-border); border-radius:8px; padding:0.5rem;">
-            <option value="">대학 선택 (선택사항)</option>
-            <option value="서울대학교">서울대학교</option>
-            <option value="연세대학교">연세대학교</option>
+          <label style="display:block; font-size:0.78rem; color:var(--text-secondary); margin-bottom:0.3rem;">권역</label>
+          <select id="sp-region-select" class="form-select" disabled style="width:100%; background:var(--input-bg); color:var(--text-primary); border:1px solid var(--panel-border); border-radius:8px; padding:0.45rem 0.5rem; font-size:0.83rem; opacity:0.6;">
+            <option value="">권역 선택</option>
           </select>
         </div>
         <div>
-          <label style="display:block; font-size:0.8rem; color:var(--text-secondary); margin-bottom:0.4rem;">모집단위 선택</label>
-          <select id="sp-dept-select" class="form-select" style="width:100%; background:var(--input-bg); color:var(--text-primary); border:1px solid var(--panel-border); border-radius:8px; padding:0.5rem;">
-            <option value="">대학을 먼저 선택하세요</option>
+          <label style="display:block; font-size:0.78rem; color:var(--text-secondary); margin-bottom:0.3rem;">지역</label>
+          <select id="sp-area-select" class="form-select" disabled style="width:100%; background:var(--input-bg); color:var(--text-primary); border:1px solid var(--panel-border); border-radius:8px; padding:0.45rem 0.5rem; font-size:0.83rem; opacity:0.6;">
+            <option value="">지역 선택</option>
           </select>
         </div>
         <div>
-          <label style="display:block; font-size:0.8rem; color:var(--text-secondary); margin-bottom:0.4rem;">AI 분석 API Key</label>
-          <input id="sp-api-key" type="password" class="form-select" placeholder="Gemini API Key" style="width:100%; background:var(--input-bg); color:var(--text-primary); border:1px solid var(--panel-border); border-radius:8px; padding:0.5rem; min-width:200px;">
+          <label style="display:block; font-size:0.78rem; color:var(--text-secondary); margin-bottom:0.3rem;">대학</label>
+          <select id="sp-univ-select" class="form-select" disabled style="width:100%; background:var(--input-bg); color:var(--text-primary); border:1px solid var(--panel-border); border-radius:8px; padding:0.45rem 0.5rem; font-size:0.83rem; opacity:0.6;">
+            <option value="">대학 선택</option>
+          </select>
+        </div>
+        <div>
+          <label style="display:block; font-size:0.78rem; color:var(--text-secondary); margin-bottom:0.3rem;">모집단위</label>
+          <select id="sp-dept-select" class="form-select" disabled style="width:100%; background:var(--input-bg); color:var(--text-primary); border:1px solid var(--panel-border); border-radius:8px; padding:0.45rem 0.5rem; font-size:0.83rem; opacity:0.6;">
+            <option value="">모집단위 선택</option>
+          </select>
         </div>
       </div>
 
-      <!-- 대학 권장과목 안내 배너 -->
-      <div id="sp-univ-banner" class="hidden" style="margin-bottom:1.5rem; background:rgba(99,102,241,0.08); border:1px solid rgba(99,102,241,0.25); border-radius:12px; padding:1rem 1.5rem;">
+      <!-- AI 분석 API Key (한 줄) -->
+      <div style="display:flex; align-items:center; gap:0.6rem; margin-bottom:1.2rem;">
+        <label style="font-size:0.78rem; color:var(--text-secondary); white-space:nowrap; flex-shrink:0;">AI 분석 API Key</label>
+        <input id="sp-api-key" type="password" class="form-select" placeholder="Gemini API Key (AI 맞춤 분석 기능 사용 시)" style="flex:1; background:var(--input-bg); color:var(--text-primary); border:1px solid var(--panel-border); border-radius:8px; padding:0.4rem 0.7rem; font-size:0.82rem; max-width:340px;">
+      </div>
+
+      <!-- 대학 핵심·권장과목 안내 배너 -->
+      <div id="sp-univ-banner" class="hidden" style="margin-bottom:1.5rem; background:rgba(99,102,241,0.07); border:1px solid rgba(99,102,241,0.22); border-radius:12px; padding:1rem 1.5rem;">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:1rem;">
-          <div id="sp-univ-banner-text" style="flex:1; font-size:0.88rem; line-height:1.7; color:var(--text-primary);"></div>
-          <button id="sp-ai-analyze-btn" class="btn-primary" style="white-space:nowrap; padding:0.5rem 1.2rem; font-size:0.85rem; width:auto; margin:0; flex-shrink:0;">
-            ✨ AI 맞춤 분석
-          </button>
+          <div id="sp-univ-banner-text" style="flex:1; font-size:0.87rem; line-height:1.75; color:var(--text-primary);"></div>
+          <button id="sp-ai-analyze-btn" class="btn-primary" style="white-space:nowrap; padding:0.5rem 1.2rem; font-size:0.85rem; width:auto; margin:0; flex-shrink:0;">✨ AI 맞춤 분석</button>
         </div>
+        <div style="margin-top:0.5rem; min-height:1.2rem;"><span id="sp-ai-expand-status"></span></div>
         <div id="sp-ai-result" class="hidden" style="margin-top:1rem; padding-top:1rem; border-top:1px solid rgba(99,102,241,0.2); font-size:0.87rem; line-height:1.8; color:var(--text-primary);"></div>
       </div>
 
-      <!-- 교육과정 선택 -->
-      <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.2rem;">
+      <!-- 교육과정 선택 + 범례 -->
+      <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.2rem; flex-wrap:wrap;">
         <label style="font-size:0.85rem; color:var(--text-secondary); white-space:nowrap;">교육과정</label>
         <div style="display:flex; gap:0.5rem;">
           <button class="sp-cur-btn active" data-cur="2022 개정" style="padding:0.4rem 1rem; border-radius:6px; font-size:0.82rem; font-weight:600; cursor:pointer; border:1px solid var(--accent-primary); background:var(--accent-primary); color:#fff; transition:all 0.2s;">2022 개정</button>
           <button class="sp-cur-btn" data-cur="2015 개정" style="padding:0.4rem 1rem; border-radius:6px; font-size:0.82rem; font-weight:600; cursor:pointer; border:1px solid var(--panel-border); background:transparent; color:var(--text-secondary); transition:all 0.2s;">2015 개정</button>
         </div>
-        <div style="margin-left:auto; display:flex; gap:0.8rem; align-items:center; font-size:0.78rem; color:var(--text-secondary);">
-          <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:12px;height:12px;border-radius:3px;background:rgba(99,102,241,0.85);display:inline-block;"></span> 이수함</span>
-          <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:12px;height:12px;border-radius:3px;background:rgba(34,197,94,0.7);display:inline-block;"></span> 권장과목</span>
-          <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:12px;height:12px;border-radius:3px;background:rgba(251,191,36,0.85);display:inline-block;"></span> 이수+권장</span>
-          <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:12px;height:12px;border-radius:3px;background:var(--panel-border);display:inline-block;"></span> 미이수</span>
+        <div style="margin-left:auto; display:flex; flex-wrap:wrap; gap:0.7rem; align-items:center; font-size:0.76rem; color:var(--text-secondary);">
+          <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:12px;height:12px;border-radius:3px;background:rgba(251,191,36,0.9);display:inline-block;border:1px solid rgba(251,191,36,1);"></span> 핵심 이수 ★</span>
+          <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:12px;height:12px;border-radius:3px;background:rgba(34,197,94,0.85);display:inline-block;border:1px solid rgba(34,197,94,1);"></span> 권장 이수 ✓</span>
+          <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:12px;height:12px;border-radius:3px;background:rgba(14,165,233,0.82);display:inline-block;border:1px solid rgba(14,165,233,1);"></span> 비고 이수 ✓</span>
+          <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:12px;height:12px;border-radius:3px;background:rgba(99,102,241,0.82);display:inline-block;border:1px solid rgba(99,102,241,1);"></span> 일반 이수 ✓</span>
+          <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:12px;height:12px;border-radius:3px;background:rgba(239,68,68,0.1);display:inline-block;border:1.5px solid rgba(239,68,68,0.55);"></span> 핵심 미이수 ✗</span>
+          <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:12px;height:12px;border-radius:3px;background:rgba(34,197,94,0.1);display:inline-block;border:1.5px solid rgba(34,197,94,0.5);"></span> 권장 미이수 ☆</span>
+          <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:12px;height:12px;border-radius:3px;background:rgba(14,165,233,0.08);display:inline-block;border:1.5px solid rgba(14,165,233,0.45);"></span> 비고 미이수 ☆</span>
+          <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:12px;height:12px;border-radius:3px;background:var(--panel-bg);display:inline-block;border:1px solid var(--panel-border);"></span> 미이수</span>
         </div>
       </div>
 
       <!-- 과목 그리드 -->
-      <div id="sp-subject-grid" style="display:flex; flex-direction:column; gap:1.2rem;">
-        <div style="text-align:center; padding:3rem; color:var(--text-secondary); font-size:0.95rem;">학생을 선택하면 이수과목이 표시됩니다.</div>
+      <div id="sp-subject-grid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:1rem;">
+        <div style="text-align:center; padding:3rem; color:var(--text-secondary); font-size:0.95rem; grid-column:1/-1;">학생을 선택하면 이수과목이 표시됩니다.</div>
       </div>
 
     </section>
@@ -1917,6 +1999,8 @@
     const { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } = Recharts;
 
     // ─── 상수 ───────────────────────────────────────────────────────────────────
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbyFmjavISW4Xux2vJWpUdqKmjo7VBYN_kDtXyFhZlhOAfnOFY86REFDqmGsKwN_LrgAmQ/exec';
+    const YEAR_OPTIONS = ['2025', '2024'];
     const COLORS = { '합격': '#10B981', '충원합격': '#3B82F6', '불합격': '#EF4444', '기타': '#9CA3AF' };
     const RESULT_CATEGORIES = ['합격', '충원합격', '불합격', '기타'];
     const CHART_TYPES = ['학생부위주(교과)', '학생부위주(종합)', '실기/실적위주'];
@@ -1943,13 +2027,57 @@
       if (result.includes('불합격') || result.includes('탈락')) return '불합격';
       if (result.includes('충원') || result.includes('추가') || result.includes('예비')) return '충원합격';
       if (result.includes('합격') || result.includes('최초')) return '합격';
-      return result || '기타'; // resultRaw 보존 위해 수정
+      return result || '기타';
     };
+
+    // ─── 공통 파싱 함수 ──────────────────────────────────────────────────────────
+    function getVal(row, keywords) {
+      const key = Object.keys(row).find(k =>
+        keywords.some(kw => typeof k === 'string' && k.replace(/\s+/g, '').includes(kw))
+      );
+      return key ? String(row[key]).trim() : '';
+    }
+
+    function parseAdmissionRows(rows) {
+      return rows
+        .filter(row => {
+          const hasType  = Object.keys(row).some(k => typeof k === 'string' && k.includes('전형'));
+          const hasGrade = Object.keys(row).some(k => typeof k === 'string' && k.includes('등급'));
+          return hasType && hasGrade;
+        })
+        .map((row, idx) => {
+          const gradeRaw  = getVal(row, ['일반등급', '등급']);
+          const resultRaw = getVal(row, ['최종단계', '결과', '합격여부', '상태', '판정']);
+          return {
+            id:          idx,
+            uni:         getVal(row, ['대학명', '대학교', '대학']) || '-',
+            type:        getVal(row, ['전형유형', '전형구분'])      || '기타',
+            typeDetail:  getVal(row, ['세부유형', '전형세부'])      || '-',
+            major:       getVal(row, ['모집단위', '학과', '학부', '전공']) || '-',
+            count:       getVal(row, ['모집인원'])                 || '-',
+            grade:       parseFloat(gradeRaw) || 9.0,
+            result: (() => {
+              if (!resultRaw) return '기타';
+              if (resultRaw.includes('불합격') || resultRaw.includes('탈락')) return '불합격';
+              if (resultRaw.includes('충원') || resultRaw.includes('추가') || resultRaw.includes('예비')) return '충원합격';
+              if (resultRaw.includes('합격') || resultRaw.includes('최초')) return '합격';
+              return resultRaw || '기타';
+            })(),
+            reason:      getVal(row, ['불합격사유', '사유'])        || '',
+            rank:        getVal(row, ['최초후보순위', '후보순위', '예비번호']) || '-',
+            admName:     getVal(row, ['전형명(대)', '전형명'])      || '-',
+            minStandard: getVal(row, ['최저학력기준', '수능최저'])  || '',
+          };
+        })
+        .filter(item => item.uni !== '-');
+    }
 
     // ─── 메인 컴포넌트 ───────────────────────────────────────────────────────────
     const AdmissionAnalysis = () => {
       const [data, setData]                   = useState([]);
       const [loading, setLoading]             = useState(false);
+      const [gasError, setGasError]           = useState('');
+      const [selectedYear, setSelectedYear]   = useState(() => localStorage.getItem('reactPfYear') || '2025');
       const [selectedPoint, setSelectedPoint] = useState(null);
       const [selectedUniPassData, setSelectedUniPassData]   = useState(null);
       const [selectedUniChartData, setSelectedUniChartData] = useState(null);
@@ -1987,6 +2115,34 @@
         chartGrid: '#e2e8f0', chartText: '#64748b',
       };
 
+      // ─── GAS에서 데이터 로드 ──────────────────────────────────────────────────
+      const loadDataFromGAS = async (year) => {
+        if (!GAS_URL) return;
+        setLoading(true);
+        setGasError('');
+        try {
+          const res = await fetch(`${GAS_URL}?action=admission&year=${year}`);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const json = await res.json();
+          if (json.error) throw new Error(json.error);
+          const parsed = parseAdmissionRows(json.data || []);
+          if (parsed.length > 0) {
+            setData(parsed);
+            setYDomain([1, 9]);
+            localStorage.setItem('reactPfData', JSON.stringify(parsed));
+            localStorage.setItem('reactPfYear', year);
+          } else {
+            setGasError(`${year}년 시트에 파싱 가능한 데이터가 없습니다. '전형', '등급' 열이 있는지 확인해주세요.`);
+            setData([]);
+          }
+        } catch (err) {
+          console.error('GAS fetch error:', err);
+          setGasError('데이터 로드 실패: ' + (err.message || String(err)));
+        } finally {
+          setLoading(false);
+        }
+      };
+
       // ─── 파일 파싱 ──────────────────────────────────────────────────────────
       const loadDataFromFile = (file) => {
         if (!file) return;
@@ -1999,44 +2155,7 @@
             wb.SheetNames.forEach(name =>
               allRows = allRows.concat(window.XLSX.utils.sheet_to_json(wb.Sheets[name], { defval: '' }))
             );
-            const getVal = (row, keywords) => {
-              const key = Object.keys(row).find(k =>
-                keywords.some(kw => typeof k === 'string' && k.replace(/\s+/g, '').includes(kw))
-              );
-              return key ? String(row[key]).trim() : '';
-            };
-            const parsed = allRows
-              .filter(row => {
-                const hasType  = Object.keys(row).some(k => typeof k === 'string' && k.includes('전형'));
-                const hasGrade = Object.keys(row).some(k => typeof k === 'string' && k.includes('등급'));
-                return hasType && hasGrade;
-              })
-              .map((row, idx) => {
-                const gradeRaw  = getVal(row, ['일반등급', '등급']);
-                const resultRaw = getVal(row, ['최종단계', '결과', '합격여부', '상태', '판정']);
-                return {
-                  id:          idx,
-                  uni:         getVal(row, ['대학명', '대학교', '대학']) || '-',
-                  type:        getVal(row, ['전형유형', '전형구분'])      || '기타',
-                  typeDetail:  getVal(row, ['세부유형', '전형세부'])      || '-',
-                  major:       getVal(row, ['모집단위', '학과', '학부', '전공']) || '-',
-                  count:       getVal(row, ['모집인원'])                 || '-',
-                  grade:       parseFloat(gradeRaw) || 9.0,
-                  result: (() => {
-                    if (!resultRaw) return '기타';
-                    if (resultRaw.includes('불합격') || resultRaw.includes('탈락')) return '불합격';
-                    if (resultRaw.includes('충원') || resultRaw.includes('추가') || resultRaw.includes('예비')) return '충원합격';
-                    if (resultRaw.includes('합격') || resultRaw.includes('최초')) return '합격';
-                    return resultRaw || '기타';
-                  })(),
-                  reason:      getVal(row, ['불합격사유', '사유'])        || '',
-                  rank:        getVal(row, ['최초후보순위', '후보순위', '예비번호']) || '-',
-                  admName:     getVal(row, ['전형명(대)', '전형명'])      || '-',
-                  minStandard: getVal(row, ['최저학력기준', '수능최저'])  || '',
-                };
-              })
-              .filter(item => !isNaN(item.grade) && item.uni !== '-');
-
+            const parsed = parseAdmissionRows(allRows);
             if (parsed.length > 0) {
               setData(parsed);
               setYDomain([1, 9]);
@@ -2050,11 +2169,18 @@
       };
 
       useEffect(() => {
-        // 1) localStorage 즉시 복원
+        // localStorage 즉시 복원
         const saved = localStorage.getItem('reactPfData');
         if (saved) { try { setData(JSON.parse(saved)); } catch (e) {} }
 
-        // 2) 파일 있으면 즉시 로드
+        // GAS URL이 있으면 자동 로드 (파일 업로드 불필요)
+        if (GAS_URL) {
+          const initYear = localStorage.getItem('reactPfYear') || '2025';
+          loadDataFromGAS(initYear);
+          return;
+        }
+
+        // GAS 없으면 기존 파일 업로드 방식
         const tryLoad = () => {
           var src = document.getElementById('pf-results-upload')
                  || document.getElementById('uni-pf-results-upload');
@@ -2065,12 +2191,8 @@
           return false;
         };
         tryLoad();
-
-        // 3) 지연 로드 시도
         var t1 = setTimeout(tryLoad, 500);
         var t2 = setTimeout(tryLoad, 1500);
-
-        // 4) change 이벤트 감지
         var handler = function(e) {
           var files = e.target && e.target.files;
           if (files && files.length > 0) loadDataFromFile(files[0]);
@@ -2079,13 +2201,21 @@
         var fi2 = document.getElementById('uni-pf-results-upload');
         if (fi1) fi1.addEventListener('change', handler);
         if (fi2) fi2.addEventListener('change', handler);
-
         return function() {
           clearTimeout(t1); clearTimeout(t2);
           if (fi1) fi1.removeEventListener('change', handler);
           if (fi2) fi2.removeEventListener('change', handler);
         };
       }, []);
+
+      // 연도 변경 시 GAS 재로드
+      const gasYearRef = React.useRef(null);
+      useEffect(() => {
+        if (gasYearRef.current === null) { gasYearRef.current = selectedYear; return; }
+        if (gasYearRef.current === selectedYear) return;
+        gasYearRef.current = selectedYear;
+        if (GAS_URL) loadDataFromGAS(selectedYear);
+      }, [selectedYear]);
 
       // ─── 파생 데이터 ─────────────────────────────────────────────────────────
       const filteredData = useMemo(() => {
@@ -2195,6 +2325,7 @@
 
       // ─── 빈 상태 ────────────────────────────────────────────────────────────
       const manualLoad = () => {
+        if (GAS_URL) { loadDataFromGAS(selectedYear); return; }
         var src = document.getElementById('pf-results-upload')
                || document.getElementById('uni-pf-results-upload');
         if (src && src.files && src.files.length > 0) {
@@ -2208,21 +2339,36 @@
       if (data.length === 0 && !loading) return (
         <div style={{ backgroundColor: t.bg, minHeight: '60vh', display: 'flex',
           alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
-          <div style={{ textAlign: 'center', padding: '3rem 2rem', maxWidth: '520px', width: '100%',
+          <div style={{ textAlign: 'center', padding: '3rem 2rem', maxWidth: '560px', width: '100%',
             backgroundColor: t.bgCard, borderRadius: '14px', border: '1px solid ' + t.border,
             boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.4)' : '0 2px 12px rgba(0,0,0,0.07)' }}>
             <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📊</div>
-            <h3 style={{ fontSize: '1.2rem', color: t.textHeading, margin: '0 0 0.6rem' }}>합불합 사례 데이터가 없습니다</h3>
-            <p style={{ fontSize: '0.875rem', color: t.textMuted, lineHeight: 1.8, margin: '0 0 1.25rem' }}>
-              왼쪽 사이드바의 <b style={{ color: t.text }}>통합 파일 업로드하기</b> →<br/>
-              <b style={{ color: t.text }}>합불합 분석용 → 수시진학관리</b> 엑셀 파일을 업로드해주세요.
-            </p>
-            <button onClick={manualLoad}
-              style={{ padding: '0.6rem 1.4rem', backgroundColor: t.btnActive, color: t.btnActiveTxt,
-                border: 'none', borderRadius: '8px', fontSize: '0.875rem', fontWeight: 600,
-                cursor: 'pointer' }}>
-              📂 파일 다시 불러오기
-            </button>
+            <h3 style={{ fontSize: '1.2rem', color: t.textHeading, margin: '0 0 0.8rem' }}>합불합 사례 분석</h3>
+            {gasError && (
+              <div style={{ margin: '0 0 1rem', padding: '0.6rem 0.9rem', borderRadius: '8px',
+                backgroundColor: isDark ? '#3b0a0a' : '#fef2f2', border: '1px solid #fca5a5',
+                fontSize: '0.82rem', color: isDark ? '#fca5a5' : '#b91c1c', textAlign: 'left' }}>
+                ⚠ {gasError}
+              </div>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+              <span style={{ fontSize: '0.875rem', color: t.textMuted }}>연도 선택</span>
+              <select value={selectedYear} onChange={e => setSelectedYear(e.target.value)}
+                style={{ padding: '0.35rem 0.8rem', borderRadius: '8px', border: `1px solid ${t.border}`,
+                  backgroundColor: t.bgSub, color: t.text, fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', outline: 'none' }}>
+                {YEAR_OPTIONS.map(y => <option key={y} value={y}>{y}년</option>)}
+              </select>
+              <button onClick={() => GAS_URL ? loadDataFromGAS(selectedYear) : manualLoad()}
+                style={{ padding: '0.45rem 1.2rem', backgroundColor: t.btnActive, color: t.btnActiveTxt,
+                  border: 'none', borderRadius: '8px', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer' }}>
+                {GAS_URL ? '🔄 불러오기' : '📂 파일 불러오기'}
+              </button>
+            </div>
+            {!GAS_URL && (
+              <p style={{ fontSize: '0.82rem', color: t.textMuted, lineHeight: 1.7, margin: 0 }}>
+                또는 사이드바 → 통합 파일 업로드 → 수시진학관리 엑셀 파일 업로드
+              </p>
+            )}
           </div>
         </div>
       );
@@ -2238,7 +2384,7 @@
 
           {loading && (
             <div style={{ textAlign: 'center', padding: '3rem', color: '#6366f1', fontSize: '1rem' }}>
-              데이터 분석 중...
+              {GAS_URL ? `${selectedYear}년 데이터 불러오는 중...` : '데이터 분석 중...'}
             </div>
           )}
 
@@ -2256,7 +2402,22 @@
                     <span style={{ fontSize: '1rem', fontWeight: 400, opacity: 0.7, marginLeft: '0.4rem' }}>/ {data.length} 건</span>
                   </p>
                 </div>
-                <div style={{ display: 'flex', gap: '2.5rem', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                  {GAS_URL && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <span style={{ fontSize: '0.78rem', color: '#c7d2fe' }}>연도</span>
+                      <select
+                        value={selectedYear}
+                        onChange={e => setSelectedYear(e.target.value)}
+                        style={{ padding: '0.3rem 0.7rem', borderRadius: '8px',
+                          border: '1px solid rgba(255,255,255,0.3)',
+                          backgroundColor: 'rgba(255,255,255,0.15)', color: '#fff',
+                          fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', outline: 'none' }}
+                      >
+                        {YEAR_OPTIONS.map(y => <option key={y} value={y} style={{ color: '#1e293b' }}>{y}년</option>)}
+                      </select>
+                    </div>
+                  )}
                   {[['평균 등급', avgGrade], ['총 대학 수', uniDistribution.length + '개']].map(([lbl, val]) => (
                     <div key={lbl} style={{ textAlign: 'right' }}>
                       <p style={{ margin: '0 0 0.15rem', fontSize: '0.76rem', color: '#a5b4fc' }}>{lbl}</p>
@@ -2735,7 +2896,7 @@
       mountAdmissionAnalysis();
     }
   </script>
-  <script src="app.js?v=8"></script>
+  <script src="app.js?v=22"></script>
   <script src="grade-rank.js"></script>
   <script src="admission_dist.js"></script>
   <script src="hexagon.js"></script>

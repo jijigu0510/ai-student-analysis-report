@@ -2999,6 +2999,108 @@ document.addEventListener("DOMContentLoaded", () => {
   let students = [];
   let pfDetails = { grades: [], subjects: [], creatives: [], behaviors: [] };
 
+  // ── GAS 연동 ────────────────────────────────────────────────────────────────
+  const PF_GAS_URL = 'https://script.google.com/macros/s/AKfycbyFmjavISW4Xux2vJWpUdqKmjo7VBYN_kDtXyFhZlhOAfnOFY86REFDqmGsKwN_LrgAmQ/exec';
+
+  function _pfGasGetVal(row, keywords) {
+    for (const kw of keywords) {
+      const ck = kw.replace(/\s/g, '');
+      const key = Object.keys(row).find(k => k.replace(/\s/g, '').includes(ck));
+      if (key && row[key] !== '' && row[key] !== null && row[key] !== undefined) return String(row[key]).trim();
+    }
+    return '';
+  }
+
+  function _parsePfStudents(rows) {
+    const result = [];
+    rows.forEach(row => {
+      const name = _pfGasGetVal(row, ['성명', '이름', '학생명', '수험생명']);
+      if (!name) return;
+      const univ     = _pfGasGetVal(row, ['대학교', '대학명', '대학']);
+      const dept     = _pfGasGetVal(row, ['모집단위', '학과', '학부', '전공', '지원학과']);
+      const admType  = _pfGasGetVal(row, ['전형유형', '전형구분', '전형종류', '전형명', '전형']);
+      const isComp   = !admType || admType.includes('종합') || admType.includes('학종') || admType.includes('서류');
+      if (!isComp) return;
+      const raw = _pfGasGetVal(row, ['최종단계', '합격여부', '결과', '합불', '판정', '상태']).replace(/\s/g, '');
+      let res = raw || '확인불가';
+      if (raw.includes('불합격') || raw.includes('탈락') || raw.includes('불합')) res = '불합격';
+      else if (raw.includes('충원') || raw.includes('추가') || raw.includes('예비')) res = '충원합격';
+      else if (raw.includes('최초') || raw.includes('합격')) res = '합격';
+      const genGrade = _pfGasGetVal(row, ['일반등급']);
+      const g5Key = Object.keys(row).find(k => { const c = k.replace(/\s/g,''); return c.includes('일반등급') && (c.includes('5등급')||c.includes('(5)')||c.includes('5급')); });
+      const genGrade5 = g5Key ? String(row[g5Key]||'').trim() : '-';
+      result.push({ name, univ, dept, result: res, type: admType, genGrade, genGrade5, failReason: '' });
+    });
+    return result;
+  }
+
+  function _populatePfSelect(students) {
+    pfStudentSelect.innerHTML = '<option value="" disabled selected>학생을 선택하세요</option>';
+    students.forEach((s, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = `[${s.result}] ${s.name} | ${s.univ} (${s.dept})`;
+      pfStudentSelect.appendChild(opt);
+    });
+  }
+
+  async function loadPfDataFromGAS(year) {
+    const statusEl = document.getElementById('pf-gas-status');
+    const setStatus = (msg, color) => { if (statusEl) { statusEl.textContent = msg; statusEl.style.color = color || 'var(--text-secondary)'; } };
+    setStatus(`${year}년 스프레드시트에서 불러오는 중...`, '#96baff');
+    try {
+      const res = await fetch(`${PF_GAS_URL}?action=all&year=${year}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      if (json.error) throw new Error(json.error);
+
+      // 수시진학관리 → pfStudents
+      const admRows = (json.admission && json.admission.data) || [];
+      pfStudents = _parsePfStudents(admRows);
+      _populatePfSelect(pfStudents);
+
+      // 성적·세특·창체·행특 → pfDetails
+      const gs = (json.grades && json.grades.sheets) || {};
+      pfDetails.grades   = [
+        ...(gs['일반과목성적']?.data || []),
+        ...(gs['진로선택과목성적']?.data || []),
+        ...(gs['체육음악미술과목성적']?.data || []),
+      ];
+      pfDetails.subjects   = gs['일반과목성적']?.data || [];
+      pfDetails.creatives  = gs['창체']?.data || [];
+      pfDetails.behaviors  = gs['행특']?.data || [];
+
+      await StorageManager.save('pfStudents', pfStudents);
+      await StorageManager.save('pfDetails', pfDetails);
+      localStorage.setItem('pfStudentsData', JSON.stringify(pfStudents));
+      localStorage.setItem('pfGasYear', year);
+
+      setStatus(`✓ ${year}년 데이터 로드 완료 — 학생 ${pfStudents.length}명`, '#10B981');
+    } catch (err) {
+      console.error('[PF-GAS]', err);
+      setStatus('로드 실패: ' + err.message, '#EF4444');
+    }
+  }
+
+  // 탭 전환 시 자동 로드 (처음 한 번만)
+  (function() {
+    const tabBtn = document.getElementById('tab-passfail');
+    if (!tabBtn) return;
+    let loaded = false;
+    tabBtn.addEventListener('click', () => {
+      if (!loaded && pfStudents.length === 0) {
+        loaded = true;
+        const yr = localStorage.getItem('pfGasYear') || '2025';
+        const sel = document.getElementById('pf-year-select');
+        if (sel) sel.value = yr;
+        loadPfDataFromGAS(yr);
+      }
+    });
+  })();
+
+  window.loadPfDataFromGAS = loadPfDataFromGAS;
+  // ────────────────────────────────────────────────────────────────────────────
+
   if (pfResultsUpload) {
     pfResultsUpload.addEventListener("change", (e) => {
       const file = e.target.files[0];
@@ -8108,6 +8210,282 @@ overallEvaluation 필드는 아래 형식을 반드시 따르십시오:
   };
 
   // =========================================================
+  // AI 전형별 지원 전략 분석
+  // =========================================================
+  function renderStrategyResult(data, container) {
+    const ratingConfig = {
+      '강추천': { color: '#22c55e', bg: 'rgba(34,197,94,0.12)', border: 'rgba(34,197,94,0.35)', label: '강추천 ★★★' },
+      '추천':   { color: '#3b82f6', bg: 'rgba(59,130,246,0.10)', border: 'rgba(59,130,246,0.35)', label: '추천 ★★' },
+      '보통':   { color: '#f59e0b', bg: 'rgba(245,158,11,0.09)', border: 'rgba(245,158,11,0.30)', label: '보통 ★' },
+      '비추천': { color: '#ef4444', bg: 'rgba(239,68,68,0.09)', border: 'rgba(239,68,68,0.30)', label: '비추천 ✗' },
+    };
+    const order = { '강추천': 0, '추천': 1, '보통': 2, '비추천': 3 };
+    const sorted = (data.universities || []).slice().sort((a, b) => (order[a.rating] ?? 9) - (order[b.rating] ?? 9));
+
+    let html = `
+      <div style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.22);border-radius:12px;padding:1.1rem 1.3rem;margin-bottom:1.3rem;">
+        <h4 style="margin:0 0 0.45rem;color:var(--accent-primary);font-size:0.95rem;">📋 학생 생기부 종합 특성</h4>
+        <p style="margin:0;color:var(--text-secondary);line-height:1.7;font-size:0.9rem;">${data.summary || ''}</p>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem;">
+    `;
+    for (const u of sorted) {
+      const cfg = ratingConfig[u.rating] || ratingConfig['보통'];
+      const typeTags = (u.recommendedTypes || []).map(t =>
+        `<span style="display:inline-block;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);
+          color:var(--text-primary);padding:2px 9px;border-radius:20px;font-size:0.73rem;font-weight:500;
+          line-height:1.5;word-break:keep-all;">${t}</span>`
+      ).join(' ');
+      html += `
+        <div style="background:${cfg.bg};border:1.5px solid ${cfg.border};border-radius:12px;padding:1.1rem;display:flex;flex-direction:column;gap:0.55rem;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;">
+            <span style="font-size:1rem;font-weight:700;color:var(--text-primary);">${u.university}</span>
+            <span style="background:${cfg.color};color:#fff;padding:3px 11px;border-radius:20px;font-size:0.78rem;font-weight:700;white-space:nowrap;flex-shrink:0;">${cfg.label}</span>
+          </div>
+          ${typeTags ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:-2px;">🎯 <span style="font-size:0.73rem;color:var(--text-secondary);align-self:center;margin-right:2px;">추천 전형:</span>${typeTags}</div>` : ''}
+          <p style="margin:0;font-size:0.83rem;color:var(--text-secondary);line-height:1.65;">${u.reasoning || ''}</p>
+          <div style="font-size:0.8rem;border-top:1px solid rgba(255,255,255,0.08);padding-top:0.5rem;display:flex;flex-direction:column;gap:0.3rem;">
+            <div style="color:#4ade80;">✅ <strong>강점:</strong> ${u.strength || '-'}</div>
+            <div style="color:#f87171;">⚠️ <strong>보완:</strong> ${u.weakness || '-'}</div>
+          </div>
+        </div>
+      `;
+    }
+    html += '</div>';
+    container.innerHTML = html;
+
+    // PDF 버튼 표시
+    const pdfBtn = document.getElementById('strat-pdf-btn');
+    if (pdfBtn) { pdfBtn.style.display = 'inline-flex'; }
+  }
+
+  let lastStrategyData = null;
+
+  window.downloadStrategyPDF = function() {
+    if (!lastStrategyData) { alert('먼저 AI 지원 전략 분석을 실행해주세요.'); return; }
+    const d = lastStrategyData;
+    const ratingMeta = {
+      '강추천': { color: '#16a34a', bg: '#dcfce7', border: '#86efac' },
+      '추천':   { color: '#1d4ed8', bg: '#dbeafe', border: '#93c5fd' },
+      '보통':   { color: '#b45309', bg: '#fef3c7', border: '#fcd34d' },
+      '비추천': { color: '#dc2626', bg: '#fee2e2', border: '#fca5a5' },
+    };
+    const order = { '강추천': 0, '추천': 1, '보통': 2, '비추천': 3 };
+    const sorted = (d.universities || []).slice().sort((a, b) => (order[a.rating] ?? 9) - (order[b.rating] ?? 9));
+
+    const cardsHtml = sorted.map(u => {
+      const m = ratingMeta[u.rating] || ratingMeta['보통'];
+      const typeLine = (u.recommendedTypes || []).length
+        ? `<div style="margin-bottom:7px;font-size:11px;color:#1d4ed8;">🎯 <strong>추천 전형:</strong> ${(u.recommendedTypes).join(' / ')}</div>`
+        : '';
+      return `
+        <div style="background:${m.bg};border:1.5px solid ${m.border};border-radius:10px;padding:14px 16px;break-inside:avoid;margin-bottom:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <strong style="font-size:15px;color:#111;">${u.university}</strong>
+            <span style="background:${m.color};color:#fff;padding:2px 12px;border-radius:20px;font-size:12px;font-weight:700;">${u.rating}</span>
+          </div>
+          ${typeLine}
+          <p style="margin:0 0 8px;font-size:13px;color:#333;line-height:1.65;">${u.reasoning || ''}</p>
+          <div style="font-size:12px;border-top:1px solid rgba(0,0,0,0.1);padding-top:7px;display:flex;flex-direction:column;gap:4px;">
+            <div style="color:#15803d;"><strong>✅ 강점:</strong> ${u.strength || '-'}</div>
+            <div style="color:#b91c1c;"><strong>⚠️ 보완:</strong> ${u.weakness || '-'}</div>
+          </div>
+        </div>`;
+    }).join('');
+
+    const studentName = document.getElementById('student-name')?.value || '';
+    const avgGrade = document.getElementById('average-grade')?.value || '';
+    const majorHint = document.getElementById('strat-major-hint')?.value.trim() || '';
+    const now = new Date().toLocaleDateString('ko-KR');
+
+    const html = `
+      <div class="print-header" style="display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #5e6ad2;padding-bottom:12px;margin-bottom:24px;">
+        <div>
+          <h1 style="margin:0;font-size:20px;color:#5e6ad2;">🎓 AI 전형별 지원 전략 분석 리포트</h1>
+          <p style="margin:4px 0 0;font-size:13px;color:#666;">부안고등학교 진학지도 프로그램</p>
+        </div>
+        <div style="text-align:right;font-size:12px;color:#888;">
+          ${studentName ? `학생: ${studentName}<br>` : ''}
+          ${avgGrade ? `교과 평균: ${avgGrade}등급<br>` : ''}
+          ${majorHint ? `희망 계열: ${majorHint}<br>` : ''}
+          출력일: ${now}
+        </div>
+      </div>
+
+      <div style="background:#eef2ff;border:1px solid #c7d2fe;border-radius:10px;padding:14px 16px;margin-bottom:20px;">
+        <h3 style="margin:0 0 6px;font-size:14px;color:#4338ca;">📋 학생 생기부 종합 특성</h3>
+        <p style="margin:0;font-size:13px;color:#374151;line-height:1.7;">${d.summary || ''}</p>
+      </div>
+
+      <h3 style="font-size:14px;color:#374151;margin-bottom:12px;border-left:4px solid #5e6ad2;padding-left:10px;">대학별 학생부종합전형 지원 적합성 평가</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        ${cardsHtml}
+      </div>
+    `;
+    printWithIframe(html);
+  };
+
+  window.analyzeAdmissionStrategy = async function() {
+    const apiKey = (document.getElementById('api-key') || { value: '' }).value.trim()
+                 || localStorage.getItem('uni-api-key') || '';
+    if (!apiKey) {
+      alert('API 키를 먼저 입력해주세요 (상단 API 키 설정 또는 개인 분석 탭 API 키 입력란).');
+      return;
+    }
+    const avgGrade    = document.getElementById('average-grade')?.value || '';
+    const coursesRaw  = document.getElementById('courses')?.value || '';
+    const subjectRec  = document.getElementById('subject-records')?.value || '';
+    const creative    = document.getElementById('creative-activities')?.value || '';
+    const behavioral  = document.getElementById('behavioral-records')?.value || '';
+    const majorHint   = document.getElementById('strat-major-hint')?.value.trim() || '';
+
+    if (!avgGrade && !subjectRec && !coursesRaw) {
+      alert('먼저 위 개인 분석 폼에서 학생을 선택하고 생기부 데이터를 불러오세요.');
+      return;
+    }
+
+    const btn = document.getElementById('strat-analyze-btn');
+    const container = document.getElementById('strat-result-container');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner" style="width:18px;height:18px;border-width:2px;margin:0;display:inline-block;"></span> AI 분석 중...';
+    container.innerHTML = '<div style="text-align:center;padding:2.5rem;color:var(--text-secondary);">🤖 AI가 전형별 지원 전략을 분석 중입니다...<br><span style="font-size:0.82rem;">대학 수에 따라 30~60초 소요될 수 있습니다.</span></div>';
+
+    try {
+      const uniList = Object.keys(universityEvalCriteria);
+      const uniCriteriaText = uniList.map(u => {
+        const crit = universityEvalCriteria[u];
+        const factorsSnippet = (crit.factors || '').substring(0, 500).replace(/\n{3,}/g, '\n\n');
+        const weights = crit.weights ? `(학업:${Math.round(crit.weights.academic*100)}% 진로:${Math.round(crit.weights.career*100)}% 공동체:${Math.round(crit.weights.community*100)}%)` : '';
+        return `【${u}】 ${weights}\n${factorsSnippet}`;
+      }).join('\n\n---\n\n');
+
+      const majorLine = majorHint ? `희망 학과/계열 힌트: ${majorHint}` : '(희망 학과 미지정 — 생기부 내 진로 방향 자동 파악)';
+
+      // 대학별 주요 전형 안내 (프롬프트에 제공)
+      const uniTypeGuide = `
+■ 대학별 주요 학생부종합전형 목록 (2026학년도 기준)
+서울대학교: 지역균형(교사추천·면접X·수능최저O), 일반전형(1단계 서류→2단계 면접)
+연세대학교: 활동우수형(면접O), 국제형(영어인터뷰), 기회균형Ⅰ
+고려대학교: 학업우수형(수능최저O), 계열적합형(면접O·수능최저X), 기회균형특별전형
+서강대학교: 학생부종합(일반형·면접O), 학생부종합(기회균형)
+성균관대학교: 탐구형인재(면접O), 계열모집(면접O), 기회균형(면접O)
+한양대학교: 학생부종합(서류100%·면접X·수능최저X), 지역균형발전(교사추천)
+중앙대학교: CAU융합형인재(서류100%·탐구역량 중심), CAU탐구형인재(면접O·전공적합성 중심)
+건국대학교: KU자기추천(면접O), KU지역균형(교사추천·서류100%)
+서울과학기술대학교: 학교생활우수자(1단계 서류→2단계 면접)
+한국교원대학교: 학생부종합(일반학생), 학생부종합(사범대학특별전형·지역인재)
+경희대학교: 네오르네상스(면접O), 고교연계(교사추천·서류100%)
+한국외국어대학교: 학생부종합(면접형·서류형), 기회균형Ⅰ
+이화여자대학교: 미래인재(서류100%), 고교추천(교사추천·면접O)
+숙명여자대학교: 숙명인재Ⅰ(면접O), 숙명인재Ⅱ(서류100%)
+인하대학교: 인하미래인재(면접O), 지역추천인재(교사추천)
+아주대학교: ACE(면접O), 고교추천(교사추천·서류100%)
+가톨릭대학교: 학교장추천(교사추천·면접X), 잠재능력우수자(면접O)
+`;
+
+      const prompt = `당신은 대한민국 대학 입시 전문가입니다. 아래 학생의 학교생활기록부 데이터를 분석하여, 각 대학 학생부종합전형에 지원 시 적합성과 최적 전형을 함께 추천하세요.
+
+[학생 데이터]
+${majorLine}
+교과 평균 등급: ${avgGrade}
+이수과목 및 성적(요약): ${coursesRaw.substring(0, 2000)}
+교과 세특: ${subjectRec.substring(0, 3500)}
+창체특기: ${creative.substring(0, 800)}
+행동특성 및 종합의견: ${behavioral.substring(0, 500)}
+
+[평가 대상 대학 및 학생부종합전형 기준]
+${uniCriteriaText.substring(0, 8000)}
+
+${uniTypeGuide}
+
+[지시사항]
+1. 위 학생의 학생부 데이터를 각 대학의 학생부종합전형 평가 기준(학업역량·진로역량·공동체역량 비율)에 비추어 정밀 분석하세요.
+2. 각 대학에 대해 "강추천", "추천", "보통", "비추천" 중 하나로 평가하세요.
+   - 강추천: 학생의 생기부가 해당 대학 기준에 매우 부합, 합격 가능성 높음
+   - 추천: 부합하는 요소가 많으나 일부 보완 필요
+   - 보통: 부합 요소와 부족 요소가 혼재
+   - 비추천: 해당 대학 기준에 현저히 미달하거나 불일치
+3. 각 대학에 대해 학생에게 가장 유리한 전형을 1~2개 골라 recommendedTypes에 담으세요.
+   - 전형명과 함께 선택 이유를 간략히 적으세요 (예: "활동우수형 — 탐구 활동이 풍부하여 서류 경쟁력 우수")
+   - 수능최저 충족 여부, 면접 유불리, 서류100% 여부 등을 고려하세요.
+4. 학생의 실명을 노출하지 마세요.`;
+
+      const modelsToTry = ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.5-flash-lite'];
+      let resultText = null;
+
+      const responseSchema = {
+        type: 'OBJECT',
+        properties: {
+          summary: { type: 'STRING' },
+          universities: {
+            type: 'ARRAY',
+            items: {
+              type: 'OBJECT',
+              properties: {
+                university:       { type: 'STRING' },
+                rating:           { type: 'STRING' },
+                recommendedTypes: { type: 'ARRAY', items: { type: 'STRING' } },
+                strength:         { type: 'STRING' },
+                weakness:         { type: 'STRING' },
+                reasoning:        { type: 'STRING' }
+              },
+              required: ['university', 'rating', 'recommendedTypes', 'strength', 'weakness', 'reasoning']
+            }
+          }
+        },
+        required: ['summary', 'universities']
+      };
+
+      for (const model of modelsToTry) {
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+        const body = {
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.3,
+            maxOutputTokens: 8192,
+            responseMimeType: 'application/json',
+            responseSchema
+          }
+        };
+        try {
+          const resp = await fetchWithRetry(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+            timeout: 90000
+          });
+          if (resp.ok) {
+            const data = await resp.json();
+            const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (text) { resultText = text; break; }
+          }
+        } catch (e) { continue; }
+      }
+
+      if (!resultText) throw new Error('AI 응답을 받지 못했습니다. API 키나 네트워크 상태를 확인해주세요.');
+
+      let parsed;
+      try {
+        parsed = JSON.parse(resultText);
+      } catch (e) {
+        // 스키마 미지원 구모델 폴백: 텍스트 클리닝 후 재시도
+        try { parsed = JSON.parse(cleanAIJsonResponse(resultText)); }
+        catch (e2) { throw new Error('AI 응답 형식 오류: ' + e2.message); }
+      }
+      lastStrategyData = parsed;
+      renderStrategyResult(parsed, container);
+
+    } catch (err) {
+      container.innerHTML = `<div style="color:var(--error-color);background:rgba(255,71,87,0.06);border:1px solid rgba(255,71,87,0.2);border-radius:10px;padding:1.2rem;">
+        <strong>⚠️ 분석 오류</strong><br><span style="font-size:0.88rem;">${err.message}</span>
+      </div>`;
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '🔍 AI 지원 전략 분석하기';
+    }
+  };
+
+  // =========================================================
   // 세특 분석 — Gemini API 호출
   // =========================================================
   async function generateSetechReport(fd) {
@@ -12798,8 +13176,10 @@ ${univPromptSupplement}
       const isActive = key === activeThKey;
       const sortMark = isActive ? (sortKey === 'selavg' ? ' (평균▼)' : ' ▼') : '';
       th.textContent = label + sortMark;
-      th.style.color = isActive ? 'var(--accent-primary)' : '';
+      const isLightNow = document.body.classList.contains('light-mode');
+      th.style.color = isActive ? (isLightNow ? '#3a3f7a' : '#96baff') : '';
       th.style.fontWeight = isActive ? '700' : '';
+      th.style.textDecoration = isActive ? 'underline' : '';
     });
 
     // 행 렌더링
@@ -12998,7 +13378,7 @@ ${univPromptSupplement}
         onmouseover="this.style.background='rgba(124,131,253,0.08)'" onmouseout="this.style.background=''">
         <td style="${tdR}">${i + 1}</td>
         <td style="${tdR}">${s.grade}-${s.classNum}-${s.studentNum}</td>
-        <td style="padding:8px 10px;border:1px solid var(--panel-border);font-weight:700;color:var(--accent-primary);">${s.name}</td>
+        <td style="padding:8px 10px;border:1px solid var(--panel-border);font-weight:700;color:var(--text-primary);">${s.name}</td>
         ${makeRankCell(bests[2])}${makeRankCell(bests[3])}${makeRankCell(bests[4])}
       </tr>`;
     });
@@ -13327,6 +13707,11 @@ ${univPromptSupplement}
     const ctx = document.getElementById('schoolMockDistChart').getContext('2d');
     if (schoolMockDistChart) schoolMockDistChart.destroy();
 
+    const isLight = document.body.classList.contains('light-mode');
+    const tickClr = isLight ? '#444' : '#ccc';
+    const gridClr = isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.06)';
+    const ttBg = isLight ? 'rgba(30,30,50,0.92)' : 'rgba(15,23,42,0.9)';
+
     schoolMockDistChart = new Chart(ctx, {
       type: 'bar',
       data: {
@@ -13345,24 +13730,26 @@ ${univPromptSupplement}
         maintainAspectRatio: false,
         onClick: (evt, elements) => {
           if (!elements.length) return;
-          const label = schoolMockDistChart.data.labels[elements[0].index]; // e.g. "200~210"
+          const label = schoolMockDistChart.data.labels[elements[0].index];
           const [loStr, hiStr] = label.split('~');
           const lo = parseFloat(loStr), hi = parseFloat(hiStr);
           const matched = _currentStudentScores.filter(s => s.rawSum >= lo && s.rawSum < hi);
           showStudentModal(`원점수 합 ${label} 구간 학생`, matched);
         },
         scales: {
-          x: { grid: { display: false }, ticks: { color: '#ccc', font: { size: 10 } } },
+          x: { grid: { display: false }, ticks: { color: tickClr, font: { size: 10 } } },
           y: {
             beginAtZero: true,
-            ticks: { color: '#ccc', stepSize: 1 },
-            grid: { color: 'rgba(255,255,255,0.05)' }
+            ticks: { color: tickClr, stepSize: 1 },
+            grid: { color: gridClr }
           }
         },
         plugins: {
           legend: { display: false },
           tooltip: {
-            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+            backgroundColor: ttBg,
+            titleColor: '#fff',
+            bodyColor: '#e0e0e0',
             callbacks: {
               label: (c) => ` 👥 ${c.raw}명`
             }
@@ -13373,16 +13760,38 @@ ${univPromptSupplement}
   }
 
   const SOCIAL_SUBJECTS = new Set(['생활과윤리', '윤리와사상', '한국지리', '세계지리', '동아시아사', '세계사', '정치와법', '경제', '사회문화']);
-  // 로마숫자 Ⅰ/Ⅱ와 라틴 I/II 둘 다 허용
-  const SCIENCE_SUBJECTS = new Set([
-    '물리학Ⅰ', '물리학Ⅱ', '화학Ⅰ', '화학Ⅱ', '생명과학Ⅰ', '생명과학Ⅱ', '지구과학Ⅰ', '지구과학Ⅱ',
-    '물리학I', '물리학II', '화학I', '화학II', '생명과학I', '생명과학II', '지구과학I', '지구과학II'
-  ]);
-  // 과목명 표기 정규화: 라틴 I/II → 로마숫자 Ⅰ/Ⅱ (출력용)
+
+  // 사회탐구 과목명 정규화: 공백 + 가운뎃점 제거 (사회·문화 → 사회문화, 생활과 윤리 → 생활과윤리 등)
+  function socialKey(s) {
+    return String(s || '').trim().replace(/[\s·・•·]/g, '');
+  }
+
+  // 과학탐구 과목명 정규화 키 생성: 공백 제거 + 숫자/로마자 → "1"/"2"로 통일
+  function sciKey(s) {
+    return String(s || '').trim().replace(/\s/g, '')
+      .replace(/[Ⅱ２]|II$|2$/i, '2')   // Ⅱ, ２(전각), II, 2 → '2'
+      .replace(/[Ⅰ１]|I$|1$/i, '1');    // Ⅰ, １(전각), I, 1 → '1'
+  }
+
+  // 정규화된 키로 과학탐구 과목 집합 구성
+  const SCIENCE_BASE = ['물리학', '화학', '생명과학', '지구과학'];
+  const SCIENCE_KEYS = new Set(SCIENCE_BASE.flatMap(b => [b + '1', b + '2']));
+
+  function isScienceSubj(rawName) { return SCIENCE_KEYS.has(sciKey(rawName)); }
+
+  // 정규화된 과학탐구 과목 표시명 (Ⅰ/Ⅱ 형식)
+  function sciDisplayName(rawName) {
+    const k = sciKey(rawName);
+    return k.endsWith('2') ? k.slice(0, -1) + 'Ⅱ' : k.endsWith('1') ? k.slice(0, -1) + 'Ⅰ' : rawName.trim();
+  }
+
+  // 과목명 표기 정규화: 표시용 (라틴 I/II + 아라비아 1/2 + 공백 → 로마숫자 Ⅰ/Ⅱ)
   function normSubjName(s) {
-    return String(s || '').trim()
-      .replace(/II$/, 'Ⅱ').replace(/I$/, 'Ⅰ')
-      .replace(/II(\s)/g, 'Ⅱ$1').replace(/I(\s)/g, 'Ⅰ$1');
+    const trimmed = String(s || '').trim();
+    if (isScienceSubj(trimmed)) return sciDisplayName(trimmed);
+    return trimmed
+      .replace(/\s*[Ⅱ２]$|(\s*II)$|\s*2$/i, 'Ⅱ')
+      .replace(/\s*[Ⅰ１]$|(\s*I)$|\s*1$/i, 'Ⅰ');
   }
 
   function renderSchoolMockChoices(studentScores) {
@@ -13405,9 +13814,10 @@ ${univPromptSupplement}
         } else if (domain === '수학') {
           mathChoices[subjName] = (mathChoices[subjName] || 0) + 1;
         } else if (domain.startsWith('탐구')) {
-          if (SOCIAL_SUBJECTS.has(subjName)) {
-            socialChoices[subjName] = (socialChoices[subjName] || 0) + 1;
-          } else if (SCIENCE_SUBJECTS.has(rawName.trim()) || SCIENCE_SUBJECTS.has(subjName)) {
+          if (SOCIAL_SUBJECTS.has(socialKey(subjName))) {
+            const socKey = socialKey(subjName);
+            socialChoices[socKey] = (socialChoices[socKey] || 0) + 1;
+          } else if (isScienceSubj(rawName)) {
             scienceChoices[subjName] = (scienceChoices[subjName] || 0) + 1;
           }
         }
@@ -13415,8 +13825,8 @@ ${univPromptSupplement}
         // 평균 집계 — 탐구는 사회/과학 구분, 탐구영역1/2 구분 없이 과목명 기준 합산
         let domainLabel;
         if (domain.startsWith('탐구')) {
-          domainLabel = SOCIAL_SUBJECTS.has(subjName) ? '사회탐구'
-            : (SCIENCE_SUBJECTS.has(rawName.trim()) || SCIENCE_SUBJECTS.has(subjName)) ? '과학탐구'
+          domainLabel = SOCIAL_SUBJECTS.has(socialKey(subjName)) ? '사회탐구'
+            : isScienceSubj(rawName) ? '과학탐구'
               : '탐구';
         } else {
           domainLabel = domain;
@@ -13504,23 +13914,25 @@ ${univPromptSupplement}
 
         let domainLabel;
         if (domain.startsWith('탐구')) {
-          domainLabel = SOCIAL_SUBJECTS.has(subjName) ? '사회탐구'
-            : (SCIENCE_SUBJECTS.has(rawName.trim()) || SCIENCE_SUBJECTS.has(subjName)) ? '과학탐구'
+          domainLabel = SOCIAL_SUBJECTS.has(socialKey(subjName)) ? '사회탐구'
+            : isScienceSubj(rawName) ? '과학탐구'
               : '탐구';
         } else {
           domainLabel = domain;
         }
 
-        if (!_subjDistData[subjName]) _subjDistData[subjName] = { domain: domainLabel, grade: [], raw: [], std: [], pct: [], students: [] };
+        // 사회탐구 과목은 가운뎃점 유무 무관하게 동일 키로 집계
+        const distKey = SOCIAL_SUBJECTS.has(socialKey(subjName)) ? socialKey(subjName) : subjName;
+        if (!_subjDistData[distKey]) _subjDistData[distKey] = { domain: domainLabel, grade: [], raw: [], std: [], pct: [], students: [] };
         const grade = parseFloat(d.grade || d.등급);
         const raw = parseFloat(d.raw || d.원점수);
         const std = parseFloat(d.std || d.표준점수);
         const pct = parseFloat(d.percentile || d.전국백분위);
-        if (!isNaN(grade)) _subjDistData[subjName].grade.push(grade);
-        if (!isNaN(raw)) _subjDistData[subjName].raw.push(raw);
-        if (!isNaN(std)) _subjDistData[subjName].std.push(std);
-        if (!isNaN(pct)) _subjDistData[subjName].pct.push(pct);
-        _subjDistData[subjName].students.push({ student: s, grade, raw, std, pct });
+        if (!isNaN(grade)) _subjDistData[distKey].grade.push(grade);
+        if (!isNaN(raw)) _subjDistData[distKey].raw.push(raw);
+        if (!isNaN(std)) _subjDistData[distKey].std.push(std);
+        if (!isNaN(pct)) _subjDistData[distKey].pct.push(pct);
+        _subjDistData[distKey].students.push({ student: s, grade, raw, std, pct });
       });
     });
 
@@ -13577,6 +13989,11 @@ ${univPromptSupplement}
     const typeSelect = document.getElementById('subjDistTypeSelect');
     const grid = document.getElementById('subjDistGrid');
     if (!typeSelect || !grid) return;
+
+    const isLight = document.body.classList.contains('light-mode');
+    const tickClr = isLight ? '#444' : '#aaa';
+    const gridClr = isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.06)';
+    const ttBg = isLight ? 'rgba(30,30,50,0.92)' : 'rgba(15,23,42,0.9)';
 
     const type = typeSelect.value;
 
@@ -13657,7 +14074,9 @@ ${univPromptSupplement}
           plugins: {
             legend: { display: false },
             tooltip: {
-              backgroundColor: 'rgba(15,23,42,0.9)',
+              backgroundColor: ttBg,
+              titleColor: '#fff',
+              bodyColor: '#e0e0e0',
               callbacks: {
                 title: (items) => `${subj} — ${items[0].label}`,
                 label: (c) => ` ${c.raw}명`
@@ -13665,8 +14084,8 @@ ${univPromptSupplement}
             }
           },
           scales: {
-            x: { ticks: { color: '#aaa', font: { size: 9 }, maxRotation: 45 }, grid: { display: false } },
-            y: { beginAtZero: true, ticks: { color: '#aaa', font: { size: 9 }, stepSize: 1, precision: 0 }, grid: { color: 'rgba(255,255,255,0.05)' } }
+            x: { ticks: { color: tickClr, font: { size: 9 }, maxRotation: 45 }, grid: { display: false } },
+            y: { beginAtZero: true, ticks: { color: tickClr, font: { size: 9 }, stepSize: 1, precision: 0 }, grid: { color: gridClr } }
           }
         }
       });
@@ -13683,6 +14102,8 @@ ${univPromptSupplement}
     }
     const canvas = document.getElementById(canvasId);
     if (!canvas) return;
+    const ttBg = document.body.classList.contains('light-mode')
+      ? 'rgba(30,30,50,0.92)' : 'rgba(15,23,42,0.9)';
 
     const sorted = Object.entries(choiceMap).sort((a, b) => b[1] - a[1]);
     if (sorted.length === 0) return;
@@ -13712,27 +14133,11 @@ ${univPromptSupplement}
           showStudentModal(`${clickedSubj} 선택 학생`, matched);
         },
         plugins: {
-          legend: {
-            position: 'right',
-            labels: {
-              color: '#ccc',
-              font: { size: 10 },
-              boxWidth: 10,
-              generateLabels: (chart) => {
-                const ds = chart.data.datasets[0];
-                return chart.data.labels.map((label, i) => ({
-                  text: `${label}  ${ds.data[i]}명`,
-                  fillStyle: ds.backgroundColor[i % ds.backgroundColor.length],
-                  strokeStyle: 'transparent',
-                  lineWidth: 0,
-                  index: i,
-                  hidden: false
-                }));
-              }
-            }
-          },
+          legend: { display: false },
           tooltip: {
-            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+            backgroundColor: ttBg,
+            titleColor: '#fff',
+            bodyColor: '#e0e0e0',
             callbacks: {
               label: (c) => ` ${c.label}: ${c.raw}명 (${(c.raw / total * 100).toFixed(1)}%) — 클릭하면 학생 목록`
             }
@@ -13740,6 +14145,33 @@ ${univPromptSupplement}
         }
       }
     });
+
+    // HTML 범례: Canvas 기본 범례는 다크모드에서 색이 깨지므로 HTML로 렌더링
+    // canvas.parentElement = height 고정 div → 그 뒤에 삽입해야 겹치지 않음
+    const legendId = canvasId + '_legend';
+    let legendEl = document.getElementById(legendId);
+    if (!legendEl) {
+      legendEl = document.createElement('div');
+      legendEl.id = legendId;
+      legendEl.style.cssText = 'margin-top:6px;display:flex;flex-wrap:wrap;gap:4px 10px;justify-content:center;';
+      canvas.parentElement.insertAdjacentElement('afterend', legendEl);
+    }
+    legendEl.innerHTML = labels.map((lbl, i) => {
+      const color = bgColors[i % bgColors.length];
+      const pct = (data[i] / total * 100).toFixed(1);
+      return `<span style="display:inline-flex;align-items:center;gap:4px;font-size:0.78rem;color:var(--text-primary);cursor:pointer;"
+        onclick="(function(){
+          var matched=(_currentStudentScores||[]).filter(function(s){
+            return ['국어','수학','탐구영역1','탐구영역2'].some(function(d){
+              var dd=s[d]||{};return normSubjName(dd.subjectName||'')==='${lbl.replace(/'/g, "\\'")}';
+            });
+          });
+          showStudentModal('${lbl.replace(/'/g, "\\'")} 선택 학생',matched);
+        })()">
+        <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${color};flex-shrink:0;"></span>
+        <span>${lbl}&nbsp;${data[i]}명(${pct}%)</span>
+      </span>`;
+    }).join('');
   }
 
   // ═══════════════════════════════════════════════════════
@@ -13833,8 +14265,16 @@ ${univPromptSupplement}
 
     let spCurriculum = "2022 개정";
     let spStudentSubjects = new Map(); // 과목명 → courseDetail 객체
-    let spRecommended = new Set();
+    let spCoreSubjects = new Set();       // 핵심과목
+    let spRecommended = new Set();        // 권장과목
+    let spNoteSubs = new Set();           // 비고 언급 과목
+    let spCurrentNote = '';
     let spInitialized = false;
+
+    // GAS 연동 상태
+    let spGasUrl = localStorage.getItem('spGasUrl') || 'https://script.google.com/macros/s/AKfycby27jVGduT6RPjwxSxdVZ74Pf1vIH3c4gXwITX6UXCnCN2QYy_VKERqKNiz183YsLOD/exec';
+    let spGasData = null;
+    let spRegionMap = {};
 
     // ── 과학계열 진로선택·융합선택 과목 교육과정 정보 ──
     const SCIENCE_TRACK_COURSES = {
@@ -14164,21 +14604,144 @@ ${univPromptSupplement}
       }
     }
 
-    // ── 대학 드롭다운 → 모집단위 드롭다운 연동 ──
-    function fillDeptSelect(univName) {
-      const deptSel = document.getElementById('sp-dept-select');
-      if (!deptSel) return;
-      if (!univName || !UNIV_DATA[univName]) {
-        deptSel.innerHTML = '<option value="">대학을 먼저 선택하세요</option>';
-        return;
+    // ── GAS에서 대학 권장과목 데이터 로드 ──
+    async function loadSpUnivDataFromGAS(url) {
+      const statusEl = document.getElementById('sp-gas-status');
+      if (!url) { if (statusEl) statusEl.textContent = 'GAS URL을 먼저 입력하세요.'; return; }
+      if (statusEl) statusEl.innerHTML = '<span style="color:var(--text-secondary);">⏳ 데이터 불러오는 중...</span>';
+      try {
+        const res = await fetch(url);
+        const json = await res.json();
+        if (!json.success || !Array.isArray(json.data)) throw new Error(json.error || '응답 형식 오류');
+        spGasData = json.data;
+        spRegionMap = buildRegionMap(json.data);
+        spGasUrl = url;
+        localStorage.setItem('spGasUrl', url);
+        if (statusEl) statusEl.innerHTML = `<span style="color:var(--success-color);">✅ ${json.count}개 모집단위 로드 완료</span>`;
+        fillRegionSelect();
+      } catch(e) {
+        console.error('[SP] GAS 로드 오류:', e);
+        if (statusEl) statusEl.innerHTML = `<span style="color:var(--error-color);">오류: ${e.message}</span>`;
       }
-      deptSel.innerHTML = '<option value="">모집단위 선택</option>';
-      for (const entry of UNIV_DATA[univName].departments) {
+    }
+
+    function buildRegionMap(data) {
+      const map = {};
+      for (const row of data) {
+        const region = row['권역'] || '기타';
+        const area   = row['지역'] || '기타';
+        const univ   = row['대학명'] || '';
+        const dept   = row['모집단위'] || '';
+        if (!univ || !dept) continue;
+        if (!map[region]) map[region] = {};
+        if (!map[region][area]) map[region][area] = {};
+        if (!map[region][area][univ]) map[region][area][univ] = [];
+        map[region][area][univ].push({
+          모집단위: dept,
+          핵심과목: Array.isArray(row['핵심과목']) ? row['핵심과목'] : [],
+          권장과목: Array.isArray(row['권장과목']) ? row['권장과목'] : [],
+          비고: row['비고'] || '',
+        });
+      }
+      return map;
+    }
+
+    // ── 계층형 드롭다운 채우기 ──
+    function _enableSel(id) {
+      const s = document.getElementById(id);
+      if (s) { s.disabled = false; s.style.opacity = '1'; }
+    }
+    function _disableSel(id) {
+      const s = document.getElementById(id);
+      if (s) { s.disabled = true; s.style.opacity = '0.5'; }
+    }
+
+    function fillRegionSelect() {
+      const sel = document.getElementById('sp-region-select');
+      if (!sel) return;
+      const prevVal = sel.value;
+      sel.innerHTML = '<option value="">권역 선택</option>';
+      Object.keys(spRegionMap).sort().forEach(r => {
         const opt = document.createElement('option');
-        opt.value = entry.dept;
-        opt.textContent = entry.dept;
-        deptSel.appendChild(opt);
-      }
+        opt.value = r; opt.textContent = r;
+        if (r === prevVal) opt.selected = true;
+        sel.appendChild(opt);
+      });
+      _enableSel('sp-region-select');
+      if (prevVal && spRegionMap[prevVal]) fillAreaSelect(prevVal);
+      else resetAreaSelect();
+    }
+
+    function fillAreaSelect(region) {
+      const sel = document.getElementById('sp-area-select');
+      if (!sel) return;
+      if (!region || !spRegionMap[region]) { resetAreaSelect(); return; }
+      const prevVal = sel.value;
+      sel.innerHTML = '<option value="">지역 선택</option>';
+      Object.keys(spRegionMap[region]).sort().forEach(a => {
+        const opt = document.createElement('option');
+        opt.value = a; opt.textContent = a;
+        if (a === prevVal) opt.selected = true;
+        sel.appendChild(opt);
+      });
+      _enableSel('sp-area-select');
+      if (prevVal && spRegionMap[region][prevVal]) fillUnivSelect(region, prevVal);
+      else resetUnivSelect();
+    }
+
+    function fillUnivSelect(region, area) {
+      const sel = document.getElementById('sp-univ-select');
+      if (!sel) return;
+      if (!region || !area || !spRegionMap[region]?.[area]) { resetUnivSelect(); return; }
+      const prevVal = sel.value;
+      sel.innerHTML = '<option value="">대학 선택</option>';
+      Object.keys(spRegionMap[region][area]).sort().forEach(u => {
+        const opt = document.createElement('option');
+        opt.value = u; opt.textContent = u;
+        if (u === prevVal) opt.selected = true;
+        sel.appendChild(opt);
+      });
+      _enableSel('sp-univ-select');
+      if (prevVal && spRegionMap[region][area][prevVal]) fillDeptSelect(region, area, prevVal);
+      else resetDeptSelect();
+    }
+
+    function fillDeptSelect(region, area, univ) {
+      const sel = document.getElementById('sp-dept-select');
+      if (!sel) return;
+      if (!region || !area || !univ || !spRegionMap[region]?.[area]?.[univ]) { resetDeptSelect(); return; }
+      const prevVal = sel.value;
+      const depts = spRegionMap[region][area][univ];
+      sel.innerHTML = '<option value="">모집단위 선택</option>';
+      depts.forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d.모집단위; opt.textContent = d.모집단위;
+        if (d.모집단위 === prevVal) opt.selected = true;
+        sel.appendChild(opt);
+      });
+      _enableSel('sp-dept-select');
+      if (prevVal) showUnivBanner(univ, prevVal);
+    }
+
+    function resetAreaSelect() {
+      _disableSel('sp-area-select');
+      const s = document.getElementById('sp-area-select');
+      if (s) s.innerHTML = '<option value="">지역 선택</option>';
+      resetUnivSelect();
+    }
+    function resetUnivSelect() {
+      _disableSel('sp-univ-select');
+      const s = document.getElementById('sp-univ-select');
+      if (s) s.innerHTML = '<option value="">대학 선택</option>';
+      resetDeptSelect();
+    }
+    function resetDeptSelect() {
+      _disableSel('sp-dept-select');
+      const s = document.getElementById('sp-dept-select');
+      if (s) s.innerHTML = '<option value="">모집단위 선택</option>';
+      document.getElementById('sp-univ-banner')?.classList.add('hidden');
+      spCoreSubjects = new Set(); spRecommended = new Set(); spNoteSubs = new Set(); spCurrentNote = '';
+      renderSubjectGrid();
     }
 
     // ── 권장과목 배너 표시 ──
@@ -14187,29 +14750,130 @@ ${univPromptSupplement}
       const bannerText = document.getElementById('sp-univ-banner-text');
       if (!banner || !bannerText) return;
       if (!univName || !deptName) { banner.classList.add('hidden'); return; }
-      const univDepts = UNIV_DATA[univName]?.departments || [];
-      const entry = univDepts.find(e => e.dept === deptName);
+
+      const region = document.getElementById('sp-region-select')?.value || '';
+      const area   = document.getElementById('sp-area-select')?.value || '';
+      const depts  = spRegionMap[region]?.[area]?.[univName] || [];
+      const entry  = depts.find(d => d.모집단위 === deptName);
       if (!entry) { banner.classList.add('hidden'); return; }
 
-      spRecommended = new Set(entry.recommended);
+      spCoreSubjects = new Set(entry.핵심과목);
+      spRecommended  = new Set(entry.권장과목);
+      // 비고에서 교육과정 과목명 추출 (핵심/권장 중복 제외)
+      const noteSubjList = parseNoteSubjects(entry.비고).filter(
+        s => !spCoreSubjects.has(s) && !spRecommended.has(s)
+      );
+      spNoteSubs    = new Set(noteSubjList);
+      spCurrentNote = entry.비고 || '';
       const takenNormSet = new Set([...spStudentSubjects.keys()].map(normSubj));
 
+      const chipHtml = (subjects, type) => subjects.map(r => {
+        const isTaken = takenNormSet.has(normSubj(r));
+        const isCore = type === 'core';
+        let bg, border, color;
+        if (isTaken && isCore)  { bg = 'rgba(251,191,36,0.25)'; border = 'rgba(251,191,36,0.9)'; color = '#92400e'; }
+        else if (isTaken)       { bg = 'rgba(34,197,94,0.18)'; border = 'rgba(34,197,94,0.5)'; color = '#16a34a'; }
+        else if (isCore)        { bg = 'rgba(239,68,68,0.12)'; border = 'rgba(239,68,68,0.45)'; color = '#dc2626'; }
+        else                    { bg = 'rgba(99,102,241,0.1)'; border = 'rgba(99,102,241,0.35)'; color = '#6366f1'; }
+        const icon = isTaken ? (isCore ? ' ★' : ' ✓') : (isCore ? ' ✗' : ' ☆');
+        return `<span style="padding:2px 10px;border-radius:20px;font-size:0.8rem;font-weight:600;background:${bg};border:1px solid ${border};color:${color};">${r}${icon}</span>`;
+      }).join('');
+
       bannerText.innerHTML = `
-        <strong style="color:var(--accent-primary);">📍 ${univName} · ${deptName} 권장과목</strong><br>
-        <span style="color:var(--text-secondary); font-size:0.83rem;">${entry.note}</span>
-        ${entry.recommended.length > 0 ? `<div style="margin-top:0.6rem; display:flex; flex-wrap:wrap; gap:0.4rem;">
-          ${entry.recommended.map(r => {
-            const isTaken = takenNormSet.has(normSubj(r));
-            return `<span style="padding:2px 10px; border-radius:20px; font-size:0.8rem; font-weight:600;
-              background:${isTaken ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.12)'};
-              border:1px solid ${isTaken ? 'rgba(34,197,94,0.4)' : 'rgba(239,68,68,0.35)'};
-              color:${isTaken ? '#16a34a' : '#dc2626'};">${r} ${isTaken ? '✓' : '✗'}</span>`;
-          }).join('')}
+        <strong style="color:var(--accent-primary);">📍 ${univName} · ${deptName}</strong>
+        ${spCurrentNote ? `<br><span style="color:var(--text-secondary);font-size:0.83rem;">${spCurrentNote}</span>` : ''}
+        ${entry.핵심과목.length > 0 ? `<div style="margin-top:0.5rem;">
+          <span style="font-size:0.74rem;font-weight:700;color:#d97706;background:rgba(251,191,36,0.15);padding:2px 7px;border-radius:4px;display:inline-block;margin-bottom:0.3rem;">🔑 핵심과목</span>
+          <div style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-top:0.25rem;">${chipHtml(entry.핵심과목,'core')}</div>
         </div>` : ''}
+        ${entry.권장과목.length > 0 ? `<div style="margin-top:0.5rem;">
+          <span style="font-size:0.74rem;font-weight:700;color:#6366f1;background:rgba(99,102,241,0.12);padding:2px 7px;border-radius:4px;display:inline-block;margin-bottom:0.3rem;">📚 권장과목</span>
+          <div style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-top:0.25rem;">${chipHtml(entry.권장과목,'rec')}</div>
+        </div>` : ''}
+        ${entry.핵심과목.length === 0 && entry.권장과목.length === 0
+          ? '<br><span style="color:var(--text-secondary);font-size:0.83rem;">이 모집단위는 별도의 핵심·권장과목을 제시하지 않습니다.</span>' : ''}
       `;
       banner.classList.remove('hidden');
       document.getElementById('sp-ai-result')?.classList.add('hidden');
       renderSubjectGrid();
+
+      // API Key 있으면 광범위 카테고리를 AI로 확장
+      const apiKey = document.getElementById('sp-api-key')?.value.trim() || '';
+      const broadCore = entry.핵심과목.filter(isBroadCategory);
+      const broadRec  = entry.권장과목.filter(isBroadCategory);
+      const broadNote = [...spNoteSubs].filter(isBroadCategory);
+      if (apiKey && (broadCore.length || broadRec.length || broadNote.length)) {
+        const statusEl = document.getElementById('sp-ai-expand-status');
+        if (statusEl) statusEl.innerHTML = '<span style="color:var(--text-secondary);font-size:0.75rem;">⏳ AI로 세부 과목 분석 중…</span>';
+        expandBroadCategoriesWithAI(univName, deptName, broadCore, broadRec, broadNote, entry.비고, apiKey)
+          .then(result => {
+            if (!result) return;
+            (result.핵심 || []).forEach(s => spCoreSubjects.add(s));
+            (result.권장 || []).forEach(s => spRecommended.add(s));
+            (result.비고 || []).forEach(s => spNoteSubs.add(s));
+            renderSubjectGrid();
+            if (statusEl) statusEl.innerHTML = '<span style="color:var(--success-color);font-size:0.75rem;">✅ AI 과목 분석 완료</span>';
+          })
+          .catch(e => {
+            if (statusEl) statusEl.innerHTML = `<span style="color:var(--error-color);font-size:0.75rem;">AI 오류: ${e.message}</span>`;
+          });
+      }
+    }
+
+    // ── 전체 교육과정 과목 Set 반환 ──
+    function getAllCurriculumSubjects() {
+      const all = new Set();
+      for (const curData of Object.values(SP_CURRICULUM)) {
+        for (const catData of Object.values(curData)) {
+          for (const subjects of Object.values(catData.types || {})) {
+            if (Array.isArray(subjects)) subjects.forEach(s => all.add(s));
+          }
+        }
+      }
+      return all;
+    }
+
+    // ── 광범위 교과 카테고리 판별 ──
+    const BROAD_CATS = new Set(['국어','수학','영어','사회','과학','한국사','역사','지리','윤리','물리','화학','생명과학','지구과학','정보','기술','체육','음악','미술','한문','제2외국어','기술가정']);
+    function isBroadCategory(s) { return BROAD_CATS.has(String(s).trim()); }
+
+    // ── 비고 텍스트에서 교육과정 과목명 추출 ──
+    function parseNoteSubjects(noteText) {
+      if (!noteText) return [];
+      const all = getAllCurriculumSubjects();
+      return [...all].filter(s => noteText.includes(s));
+    }
+
+    // ── AI로 광범위 카테고리 → 구체 과목 변환 ──
+    async function expandBroadCategoriesWithAI(univName, deptName, broadCore, broadRec, broadNote, note, apiKey) {
+      const prompt = `당신은 대입 진학 전문가입니다. 반드시 JSON만 출력하세요.
+
+대학: ${univName}
+모집단위: ${deptName}
+비고: ${note || '없음'}
+
+아래 교과 카테고리명을 이 모집단위 지원에 가장 적합한 2022 개정 교육과정 구체 과목명 배열로 변환하세요.
+해당 없으면 빈 배열로 답변하세요.
+
+핵심과목 카테고리: [${broadCore.join(', ')}]
+권장과목 카테고리: [${broadRec.join(', ')}]
+비고 언급 카테고리: [${broadNote.join(', ')}]
+
+사용 가능한 2022 개정 과목 예시: 공통수학1, 공통수학2, 대수, 미적분Ⅰ, 확률과 통계, 기하, 미적분Ⅱ, 경제 수학, 인공지능 수학, 물리학, 화학, 생명과학, 지구과학, 역학과 에너지, 전자기와 양자, 물질과 에너지, 화학 반응의 세계, 세포와 물질대사, 생물의 유전, 지구시스템과학, 행성우주과학, 공통국어1, 공통국어2, 화법과 언어, 독서와 작문, 문학, 공통영어1, 공통영어2, 영어Ⅰ, 영어Ⅱ, 세계시민과 지리, 세계사, 사회와 문화, 현대사회와 윤리, 정치, 법과 사회, 경제, 윤리와 사상, 정보, 인공지능 기초, 데이터 과학
+
+답변 형식 (JSON만):
+{"핵심": ["과목명1", "과목명2"], "권장": ["과목명1"], "비고": ["과목명1"]}`;
+
+      const resp = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+        { method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) }
+      );
+      const data = await resp.json();
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      const m = text.match(/\{[\s\S]*\}/);
+      if (!m) return null;
+      try { return JSON.parse(m[0]); } catch(e) { return null; }
     }
 
     // ── 과목 그리드 렌더링 ──
@@ -14220,11 +14884,13 @@ ${univPromptSupplement}
       if (!cur) return;
 
       const taken = spStudentSubjects;
-      const recommended = spRecommended;
+      const hasSelection = spCoreSubjects.size > 0 || spRecommended.size > 0 || spNoteSubs.size > 0;
 
-      // 정규화된 이수과목 Set (공백제거 + 로마숫자 통일)
+      // 정규화된 이수과목 Map (과목명 → detail)
       const takenNormMap = new Map([...taken.entries()].map(([k, v]) => [normSubj(k), v]));
-      const recNorm = new Set([...recommended].map(normSubj));
+      const coreNorm = new Set([...spCoreSubjects].map(normSubj));
+      const recNorm  = new Set([...spRecommended].map(normSubj));
+      const noteNorm = new Set([...spNoteSubs].map(normSubj));
 
       const sortedSubjects = Object.entries(cur).sort((a, b) => a[1].order - b[1].order);
 
@@ -14238,26 +14904,64 @@ ${univPromptSupplement}
             const cells = subjects.map(subj => {
               const subjN = normSubj(subj);
               const isTaken = takenNormMap.has(subjN);
-              const isRec = recNorm.size > 0 && recNorm.has(subjN);
-              let bg, border, textColor;
-              if (isTaken && isRec) { bg = 'rgba(251,191,36,0.85)'; border = 'rgba(251,191,36,1)'; textColor = '#713f12'; }
-              else if (isTaken)    { bg = 'rgba(99,102,241,0.82)'; border = 'rgba(99,102,241,1)'; textColor = '#fff'; }
-              else if (isRec)     { bg = 'rgba(34,197,94,0.65)'; border = 'rgba(34,197,94,0.9)'; textColor = '#14532d'; }
-              else                { bg = 'var(--panel-bg)'; border = 'var(--panel-border)'; textColor = 'var(--text-secondary)'; }
+              const isCore  = hasSelection && coreNorm.has(subjN);
+              const isRec   = hasSelection && recNorm.has(subjN);
+              const isNote  = hasSelection && !isCore && !isRec && noteNorm.has(subjN);
+
+              let bg, border, textColor, icon;
+              if (isTaken && isCore) {
+                // 핵심과목 이수 → 금색
+                bg = 'rgba(251,191,36,0.92)'; border = 'rgba(251,191,36,1)'; textColor = '#78350f'; icon = ' ★';
+              } else if (isTaken && isRec) {
+                // 권장과목 이수 → 밝은 초록
+                bg = 'rgba(34,197,94,0.85)'; border = 'rgba(34,197,94,1)'; textColor = '#14532d'; icon = ' ✓';
+              } else if (isTaken && isNote) {
+                // 비고 언급 이수 → 하늘색
+                bg = 'rgba(14,165,233,0.82)'; border = 'rgba(14,165,233,1)'; textColor = '#fff'; icon = ' ✓';
+              } else if (isTaken) {
+                // 일반 이수 → 보라
+                bg = 'rgba(99,102,241,0.82)'; border = 'rgba(99,102,241,1)'; textColor = '#fff'; icon = ' ✓';
+              } else if (isCore) {
+                // 핵심과목 미이수 → 연빨강
+                bg = 'rgba(239,68,68,0.1)'; border = 'rgba(239,68,68,0.55)'; textColor = '#dc2626'; icon = ' ✗';
+              } else if (isRec) {
+                // 권장과목 미이수 → 연초록
+                bg = 'rgba(34,197,94,0.1)'; border = 'rgba(34,197,94,0.5)'; textColor = '#16a34a'; icon = ' ☆';
+              } else if (isNote) {
+                // 비고 언급 미이수 → 연하늘
+                bg = 'rgba(14,165,233,0.08)'; border = 'rgba(14,165,233,0.45)'; textColor = '#0369a1'; icon = ' ☆';
+              } else {
+                // 일반 미이수 → 회색
+                bg = 'var(--panel-bg)'; border = 'var(--panel-border)'; textColor = 'var(--text-secondary)'; icon = '';
+              }
+
               const detail = isTaken ? takenNormMap.get(subjN) : null;
               const dataAttr = detail ? `data-detail='${JSON.stringify(detail).replace(/'/g,"&#39;")}'` : '';
-              return `<button class="sp-subj-chip${isTaken ? ' sp-taken' : ''}${isRec ? ' sp-rec' : ''}"
-                style="background:${bg}; border:1.5px solid ${border}; color:${textColor}; padding:4px 10px; border-radius:20px; font-size:0.78rem; font-weight:${isTaken||isRec?'600':'400'}; cursor:${isTaken?'pointer':'default'}; white-space:nowrap; transition:all 0.2s; line-height:1.4;"
-                data-subj="${subj}" ${dataAttr}>${subj}${isTaken&&isRec?' ★':isTaken?' ✓':isRec?' ☆':''}</button>`;
+              const fw = (isTaken || isCore || isRec || isNote) ? '600' : '400';
+              const cursor = isTaken ? 'pointer' : 'default';
+              const cls = `sp-subj-chip${isTaken?' sp-taken':''}${isCore?' sp-core':''}${isRec?' sp-rec':''}${isNote?' sp-note':''}`;
+              // 이수 여부 및 특이사항에 따른 보조 텍스트 (작은 글씨)
+              const sub = isCore ? '핵심' : isRec ? '권장' : isNote ? '비고' : '';
+              const subHtml = sub ? `<span style="display:block;font-size:0.62rem;opacity:0.85;margin-top:1px;font-weight:500;">${sub}</span>` : '';
+              return `<button class="${cls}"
+                style="background:${bg};border:1.5px solid ${border};color:${textColor};
+                  padding:6px 8px;border-radius:10px;font-size:0.78rem;font-weight:${fw};
+                  cursor:${cursor};transition:all 0.2s;line-height:1.35;
+                  text-align:center;width:100%;overflow:hidden;
+                  display:flex;flex-direction:column;align-items:center;justify-content:center;
+                  min-height:44px;"
+                data-subj="${subj}" ${dataAttr}>
+                <span style="word-break:keep-all;">${subj}${icon}</span>${subHtml}
+              </button>`;
             }).join('');
-            return `<div style="margin-bottom:0.6rem;">
-              <span style="font-size:0.7rem; font-weight:700; color:${badge}; background:${badge}18; padding:2px 8px; border-radius:4px; margin-bottom:0.4rem; display:inline-block;">${typeName}</span>
-              <div style="display:flex; flex-wrap:wrap; gap:0.4rem; margin-top:0.3rem;">${cells}</div>
+            return `<div style="margin-bottom:0.9rem;">
+              <span style="font-size:0.7rem;font-weight:700;color:${badge};background:${badge}18;padding:2px 8px;border-radius:4px;margin-bottom:0.5rem;display:inline-block;">${typeName}</span>
+              <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:0.45rem;margin-top:0.35rem;">${cells}</div>
             </div>`;
           }).join('');
 
-        return `<div style="background:var(--panel-bg); border:1px solid var(--panel-border); border-radius:12px; padding:1rem 1.2rem; border-left:4px solid ${color};">
-          <div style="font-size:0.9rem; font-weight:700; color:${color}; margin-bottom:0.8rem;">${catName}</div>
+        return `<div style="background:var(--panel-bg);border:1px solid var(--panel-border);border-radius:12px;padding:1rem 1.2rem;border-left:4px solid ${color};">
+          <div style="font-size:0.9rem;font-weight:700;color:${color};margin-bottom:0.8rem;">${catName}</div>
           ${typesHtml}
         </div>`;
       }).join('');
@@ -14433,11 +15137,15 @@ ${univPromptSupplement}
       const apiKey = document.getElementById('sp-api-key')?.value.trim() || document.getElementById('uni-api-key')?.value.trim() || '';
       if (!apiKey) { alert('Gemini API Key를 입력하세요.'); return; }
 
-      const univEntry = UNIV_DATA[univName]?.departments.find(e => e.dept === deptName);
+      const region = document.getElementById('sp-region-select')?.value || '';
+      const area   = document.getElementById('sp-area-select')?.value || '';
+      const depts  = spRegionMap[region]?.[area]?.[univName] || [];
+      const univEntry = depts.find(d => d.모집단위 === deptName);
       if (!univEntry) return;
 
       const takenList = [...spStudentSubjects.keys()];
-      const recList = univEntry.recommended;
+      const coreList = univEntry.핵심과목;
+      const recList  = univEntry.권장과목;
 
       btn.disabled = true;
       btn.textContent = '⏳ 분석 중...';
@@ -14449,16 +15157,17 @@ ${univPromptSupplement}
 [목표 대학·학과]
 ${univName} - ${deptName}
 
-[모집단위 권장과목 안내]
-${univEntry.note}
-권장 과목 목록: ${recList.length > 0 ? recList.join(', ') : '별도 지정 없음'}
+[모집단위 과목 안내]
+비고: ${univEntry.비고 || '없음'}
+핵심과목(반드시 이수 권장): ${coreList.length > 0 ? coreList.join(', ') : '별도 지정 없음'}
+권장과목(이수 권장): ${recList.length > 0 ? recList.join(', ') : '별도 지정 없음'}
 
 [학생 이수 과목 목록]
 ${takenList.join(', ')}
 
 위 정보를 바탕으로 다음을 분석해 주세요:
-1. 학생이 이수한 과목 중 권장과목에 해당하는 것과 그 의미
-2. 권장과목 중 미이수한 과목과 대입에 미치는 영향
+1. 학생이 이수한 핵심과목·권장과목과 그 의미
+2. 미이수한 핵심과목·권장과목과 대입에 미치는 영향
 3. 이 학생이 ${univName} ${deptName}에 지원하기 위한 과목 선택 전략과 조언
 
 분석 결과를 간결하고 명확하게, 학생과 교사가 이해하기 쉽게 설명해 주세요.`;
@@ -14502,28 +15211,44 @@ ${takenList.join(', ')}
         });
       });
 
+      // GAS 불러오기 버튼
+      document.getElementById('sp-gas-load-btn')?.addEventListener('click', () => {
+        const url = (document.getElementById('sp-gas-url-input')?.value || '').trim() || spGasUrl;
+        if (url) loadSpUnivDataFromGAS(url);
+      });
+
+      // GAS URL 입력 필드에 기존 URL 자동 채우기
+      const gasUrlInput = document.getElementById('sp-gas-url-input');
+      if (gasUrlInput && spGasUrl) {
+        gasUrlInput.value = spGasUrl;
+        loadSpUnivDataFromGAS(spGasUrl);
+      }
+
       // 학생 선택
       document.getElementById('sp-student-select')?.addEventListener('change', function() {
         const studentName = this.value;
         if (!studentName) { spStudentSubjects = new Map(); renderSubjectGrid(); return; }
         spStudentSubjects = extractSubjectsForSP(window.spCourseJson, studentName);
-        console.log('[SP] 이수과목:', [...spStudentSubjects.keys()]);
-        // 선택된 대학·모집단위 권장과목 갱신
+        // 선택된 모집단위 권장과목 갱신
         const univName = document.getElementById('sp-univ-select')?.value || '';
         const deptName = document.getElementById('sp-dept-select')?.value || '';
         if (univName && deptName) showUnivBanner(univName, deptName);
-        else { spRecommended = new Set(); renderSubjectGrid(); }
+        else renderSubjectGrid();
       });
 
-      // 대학 선택
+      // 계층형 드롭다운 연동
+      document.getElementById('sp-region-select')?.addEventListener('change', function() {
+        fillAreaSelect(this.value);
+      });
+      document.getElementById('sp-area-select')?.addEventListener('change', function() {
+        const region = document.getElementById('sp-region-select')?.value || '';
+        fillUnivSelect(region, this.value);
+      });
       document.getElementById('sp-univ-select')?.addEventListener('change', function() {
-        fillDeptSelect(this.value);
-        document.getElementById('sp-univ-banner')?.classList.add('hidden');
-        spRecommended = new Set();
-        renderSubjectGrid();
+        const region = document.getElementById('sp-region-select')?.value || '';
+        const area   = document.getElementById('sp-area-select')?.value || '';
+        fillDeptSelect(region, area, this.value);
       });
-
-      // 모집단위 선택
       document.getElementById('sp-dept-select')?.addEventListener('change', function() {
         const univName = document.getElementById('sp-univ-select')?.value || '';
         showUnivBanner(univName, this.value);
