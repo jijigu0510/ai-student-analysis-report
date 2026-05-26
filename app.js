@@ -466,25 +466,6 @@ document.addEventListener("DOMContentLoaded", () => {
       if (uniInput && targetInput) {
         uniInput.addEventListener('change', async (e) => {
           if (e.target.files && e.target.files.length > 0) {
-            // 모의고사 업로드 시 학년 동기화
-            if (mapping.uniId === 'uni-mock-upload') {
-              const uniMockGradeEl = document.getElementById('uni-mock-grade');
-              const uniMockMonthEl = document.getElementById('uni-mock-month');
-              if (uniMockGradeEl && uniMockGradeEl.value) {
-                currentMockGrade = uniMockGradeEl.value;
-                const mockGradeSelectEl = document.getElementById('mockGradeSelect');
-                if (mockGradeSelectEl) mockGradeSelectEl.value = currentMockGrade;
-                updateMonthSelectForGrade(currentMockGrade);
-              }
-              if (uniMockMonthEl && uniMockMonthEl.value) {
-                currentMockMonth = uniMockMonthEl.value;
-                const mockMonthSelectEl = document.getElementById('mockMonthSelect');
-                if (mockMonthSelectEl) mockMonthSelectEl.value = currentMockMonth;
-                const uploadMonthTextEl = document.getElementById('uploadMonthText');
-                if (uploadMonthTextEl) uploadMonthTextEl.innerText = currentMockMonth;
-              }
-            }
-
             // 향후 유지를 위해 IndexedDB에 파일 보관
             await saveFilesToDB(mapping.uniId, e.target.files);
 
@@ -514,21 +495,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
 
-    // 학년 변경 시 uni-mock-month 옵션 업데이트
-    const uniMockGradeEl = document.getElementById('uni-mock-grade');
-    const uniMockMonthEl = document.getElementById('uni-mock-month');
-    function updateUniMockMonthOptions(grade) {
-      if (!uniMockMonthEl) return;
-      const monthsByGrade = { '1': ['3','6','9','11'], '2': ['3','6','9','11'], '3': ['3','5','6','7','9','11'] };
-      const months = monthsByGrade[grade] || ['3','6','9','11'];
-      const prev = uniMockMonthEl.value;
-      uniMockMonthEl.innerHTML = months.map(m => `<option value="${m}">${m}월</option>`).join('');
-      if (months.includes(prev)) uniMockMonthEl.value = prev;
-    }
-    if (uniMockGradeEl) {
-      uniMockGradeEl.addEventListener('change', (e) => updateUniMockMonthOptions(e.target.value));
-      updateUniMockMonthOptions(uniMockGradeEl.value);
-    }
   }
 
   function setupUniversalApiKey() {
@@ -934,22 +900,57 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function processMockFiles(files) {
-    const key = dataKey();
-    mockDataByMonth[key] = [];
+    const addedKeys = new Set();
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       const fname = file.name.toLowerCase();
       try {
         if (fname.endsWith('.pdf')) {
-          const extracted = await parseMockPDF(file);
-          mockDataByMonth[key] = mockDataByMonth[key].concat(extracted);
+          const { data: extracted, detected } = await parseMockPDF(file);
+          if (extracted.length === 0) {
+            alert(`추출 자료가 없습니다 (${file.name}). 성적표 파일이 맞는지 확인해 주세요.`);
+            continue;
+          }
+          // 학년별로 그룹화: detected.grade 우선, 없으면 student.학년 사용
+          const grouped = {};
+          for (const rec of extracted) {
+            const grade = (detected && detected.grade) || rec.학년 || currentMockGrade;
+            const month = (detected && detected.month) || currentMockMonth;
+            const key = `${grade}_${month}`;
+            if (!grouped[key]) grouped[key] = [];
+            grouped[key].push(rec);
+          }
+          for (const [key, records] of Object.entries(grouped)) {
+            if (!mockDataByMonth[key]) mockDataByMonth[key] = [];
+            // 같은 학생 중복 제거 후 추가
+            const existingKeys = new Set(mockDataByMonth[key].map(r => `${r.학년}_${r.반}_${r.번호}_${r.과목}`));
+            const newRecs = records.filter(r => !existingKeys.has(`${r.학년}_${r.반}_${r.번호}_${r.과목}`));
+            mockDataByMonth[key] = mockDataByMonth[key].concat(newRecs);
+            addedKeys.add(key);
+            console.log(`[PDF] ${key} 누적 → 총 ${mockDataByMonth[key].length}건 (신규 ${newRecs.length}건)`);
+          }
+          // 현재 뷰 학년·월을 감지된 값으로 맞춤
+          if (detected) {
+            currentMockGrade = detected.grade;
+            currentMockMonth = detected.month;
+            const mockGradeSelectEl = document.getElementById('mockGradeSelect');
+            if (mockGradeSelectEl) { mockGradeSelectEl.value = currentMockGrade; }
+            updateMonthSelectForGrade(currentMockGrade);
+            const mockMonthSelectEl = document.getElementById('mockMonthSelect');
+            if (mockMonthSelectEl) { mockMonthSelectEl.value = currentMockMonth; }
+          }
         } else if (fname.endsWith('.csv')) {
           let text = await readFileAsText(file);
           text = text.replace(/❹/g, '우').replace(/④/g, '우');
-          const data = parseCSVString(text);
-          const extracted = extractMockStudentData(data);
-          mockDataByMonth[key] = mockDataByMonth[key].concat(extracted);
+          const csvData = parseCSVString(text);
+          const extracted = extractMockStudentData(csvData);
+          const key = dataKey();
+          if (!mockDataByMonth[key]) mockDataByMonth[key] = [];
+          const existingKeys = new Set(mockDataByMonth[key].map(r => `${r.학년}_${r.반}_${r.번호}_${r.과목}`));
+          const newRecs = extracted.filter(r => !existingKeys.has(`${r.학년}_${r.반}_${r.번호}_${r.과목}`));
+          mockDataByMonth[key] = mockDataByMonth[key].concat(newRecs);
+          addedKeys.add(key);
         }
       } catch (err) {
         console.error(`Error processing file ${file.name}:`, err);
@@ -957,18 +958,34 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    if (mockDataByMonth[key].length > 0) {
+    if (addedKeys.size > 0) {
       showMockResults();
       await StorageManager.save("mockDataByMonth", mockDataByMonth);
       refreshMockServerStatus();
+      // 누적 현황 알림
+      const summary = [...addedKeys].map(k => {
+        const [g, m] = k.split('_');
+        return `${g}학년 ${m}월: ${mockDataByMonth[k].length}건`;
+      }).join(', ');
+      console.log(`[모의고사] 누적 현황: ${summary}`);
     } else {
-      alert(`${currentMockGrade}학년 ${currentMockMonth}월 추출 자료가 없습니다. 성적표 파일이 맞는지 확인해 주세요.`);
+      alert('추출 자료가 없습니다. 성적표 파일이 맞는지 확인해 주세요.');
     }
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
   // 성적통지표 PDF 파싱
   // ─────────────────────────────────────────────────────────────────────────────
+  // PDF 텍스트에서 모의고사 학년·월 자동 감지
+  // "2026학년도 3월 고3 전국연합학력평가" → { grade: '3', month: '3' }
+  function detectExamGradeMonth(pageText) {
+    const norm = pageText.replace(/\s/g, '');
+    const gradeM = norm.match(/고([123])전국연합/);
+    const monthM = norm.match(/학년도(\d+)월/);
+    if (!gradeM || !monthM) return null;
+    return { grade: gradeM[1], month: monthM[1] };
+  }
+
   async function parseMockPDF(file) {
     const lib = window.pdfjsLib || window['pdfjs-dist/build/pdf'];
     if (!lib) throw new Error('PDF.js가 로드되지 않았습니다. 페이지를 새로고침 후 다시 시도하세요.');
@@ -979,6 +996,19 @@ document.addEventListener("DOMContentLoaded", () => {
     const data = new Uint8Array(await file.arrayBuffer());
     const pdf = await lib.getDocument({ data }).promise;
     console.log(`[PDF] ${file.name} — 총 ${pdf.numPages}페이지`);
+
+    // 첫 페이지 텍스트에서 학년·월 감지
+    let detectedInfo = null;
+    try {
+      const firstPage = await pdf.getPage(1);
+      const firstTC = await firstPage.getTextContent();
+      const firstText = firstTC.items.map(i => i.str).join(' ');
+      detectedInfo = detectExamGradeMonth(firstText);
+      if (detectedInfo) {
+        console.log(`[PDF] 자동 감지: ${detectedInfo.grade}학년 ${detectedInfo.month}월`);
+      }
+    } catch (_) {}
+
     const results = [];
     for (let p = 1; p <= pdf.numPages; p++) {
       try {
@@ -994,7 +1024,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
     console.log(`[PDF] 파싱 완료 — 총 ${results.length}건`, results);
-    return results;
+    return { data: results, detected: detectedInfo };
   }
 
   function parseSungsekPage(rawItems) {
@@ -1091,6 +1121,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Column layout: 배점@133 | 득점(원점수)@174 | 범위@205 | 표준점수@250 | 학급@287 | 학교@321 | 백분위@359 | 등급@406
     const scores = {};
     const ALL_SUBJS = ['국어', '수학', '영어', '한국사',
+      '통합사회', '통합과학', '사회', '과학',
       '사회·문화', '한국지리', '세계지리', '생활과윤리', '윤리와사상',
       '동아시아사', '세계사', '경제', '정치와법',
       '물리학Ⅰ', '물리학Ⅱ', '화학Ⅰ', '화학Ⅱ', '생명과학Ⅰ', '생명과학Ⅱ', '지구과학Ⅰ', '지구과학Ⅱ',
@@ -1121,6 +1152,18 @@ document.addEventListener("DOMContentLoaded", () => {
         cleanSubj = '영어';
       } else if (/^한국사\d/.test(nosp)) {
         cleanSubj = '한국사';
+      } else if (/^국어\d/.test(nosp)) {
+        cleanSubj = '국어';  // 1/2학년: 선택과목 없이 단독 표기
+      } else if (/^수학\d/.test(nosp)) {
+        cleanSubj = '수학';  // 1/2학년: 선택과목 없이 단독 표기
+      } else if (/^사회\d/.test(nosp)) {
+        cleanSubj = '사회';  // 1/2학년 탐구 사회
+      } else if (/^과학\d/.test(nosp)) {
+        cleanSubj = '과학';  // 1/2학년 탐구 과학
+      } else if (/^통합사회\d/.test(nosp)) {
+        cleanSubj = '통합사회';
+      } else if (/^통합과학\d/.test(nosp)) {
+        cleanSubj = '통합과학';
       } else {
         // nosp-based first: normalized prefix match (handles Roman numeral I/Ⅰ, middle dot differences)
         const lineNorm = normSubj(line.text);
@@ -1223,32 +1266,71 @@ document.addEventListener("DOMContentLoaded", () => {
       if (numCells.length < 5) continue;
       const nums = numCells.map(c => parseInt(c.str));
       const maxN = Math.max(...nums);
-      if (maxN <= 5 || maxN > 50) continue;
+      if (maxN <= 10 || maxN > 50) continue;
       const sorted = [...nums].sort((a, b) => a - b);
+      const uniq = [...new Set(sorted)];
+      // 탐구 2열 그리드(1-20이 좌우로 두 번 반복)는 중복 제거 후 순열 체크
+      const isDualGrid = uniq.length < nums.length * 0.7;
+      const seqArr = isDualGrid ? uniq : sorted;
       let seq = 0;
-      for (let i = 1; i < sorted.length; i++) if (sorted[i] === sorted[i - 1] + 1) seq++;
-      if (seq >= numCells.length * 0.6) {
+      for (let i = 1; i < seqArr.length; i++) if (seqArr[i] === seqArr[i - 1] + 1) seq++;
+      if (seq >= seqArr.length * 0.6) {
         qColMaps.push({ y: line.y, entries: numCells.map(c => ({ x: c.x, n: parseInt(c.str) })) });
       }
     }
 
     // ── 5. Build 탐구 subject x-split from "과목" label row ──
-    // e.g., "과목 생활과윤리 윤리와사상" → two subjects with x-position split at midpoint
-    const tangoSubjs = []; // [{name, idx}]
-    let tangoXSplit = -1;  // x midpoint between subject1 and subject2 columns
+    // 3학년: "과목 생활과윤리 윤리와사상" → 한 행에 두 탐구 과목
+    // 1/2학년: 사회탐구/과학탐구 섹션별로 별도 "과목" 행이 있을 수 있어 누적 처리
+    const tangoSubjs = [];
+    let tangoXSplit = -1;
+    // 1/2학년 단독 과목명(2글자: 사회, 과학)도 인식하기 위해 별도 처리
+    const TANGO_SHORT_NAMES = new Set(['사회', '과학', '통합사회', '통합과학']);
     for (const line of lines) {
       const nosp = line.text.replace(/\s/g, '');
       if (!nosp.startsWith('과목')) continue;
-      const sCells = line.cells.filter(c => ALL_SUBJS.some(k => k.length >= 3 && normSubj(c.str) === normSubj(k)));
-      if (sCells.length >= 2) {
-        // Map back to canonical ALL_SUBJS name (preserving Ⅰ/Ⅱ/· in the stored name)
-        sCells.forEach(c => {
-          const canonical = ALL_SUBJS.find(k => k.length >= 3 && normSubj(c.str) === normSubj(k));
-          tangoSubjs.push({ name: canonical || c.str.replace(/\s/g,''), x: c.x });
-        });
-        tangoXSplit = (sCells[0].x + sCells[1].x) / 2;
+      const sCells = line.cells.filter(c => {
+        const sn = normSubj(c.str);
+        return TANGO_SHORT_NAMES.has(sn) || ALL_SUBJS.some(k => k.length >= 3 && normSubj(k) === sn);
+      });
+      sCells.forEach(c => {
+        const sn = normSubj(c.str);
+        const canonical = TANGO_SHORT_NAMES.has(sn)
+          ? sn
+          : ALL_SUBJS.find(k => k.length >= 3 && normSubj(k) === sn);
+        if (canonical && !tangoSubjs.some(t => t.name === canonical)) {
+          tangoSubjs.push({ name: canonical, x: c.x });
+        }
+      });
+      if (tangoSubjs.length >= 2) break;
+    }
+    if (tangoSubjs.length >= 2) {
+      tangoSubjs.sort((a, b) => a.x - b.x); // 좌(사회) → 우(과학) 순 정렬
+      tangoXSplit = (tangoSubjs[0].x + tangoSubjs[1].x) / 2;
+    }
+
+    // ── 폴백: "과목" 행 미감지 시 성적에서 사회/과학 탐구 과목 추론 (1/2학년) ──
+    if (tangoSubjs.length < 2) {
+      const SOCIAL_NAMES = ['사회', '통합사회', '사회·문화', '한국지리', '세계지리', '생활과윤리', '윤리와사상', '동아시아사', '세계사', '경제', '정치와법'];
+      const SCIENCE_NAMES = ['과학', '통합과학', '물리학Ⅰ', '물리학Ⅱ', '화학Ⅰ', '화학Ⅱ', '생명과학Ⅰ', '생명과학Ⅱ', '지구과학Ⅰ', '지구과학Ⅱ', '물리학', '화학', '생명과학', '지구과학'];
+      const socialKey = Object.keys(scores).find(k => SOCIAL_NAMES.includes(k));
+      const scienceKey = Object.keys(scores).find(k => SCIENCE_NAMES.includes(k));
+      if (socialKey && scienceKey) {
+        tangoSubjs.push({ name: socialKey, x: 0 });       // 좌측(사회) — x는 아래에서 보정
+        tangoSubjs.push({ name: scienceKey, x: 999999 }); // 우측(과학)
       }
-      break;
+    }
+    // 탐구 2열 그리드: Q1이 두 위치에 있는 헤더에서 tangoXSplit 자동 계산
+    if (tangoSubjs.length >= 2 && tangoXSplit < 0) {
+      for (const h of qColMaps) {
+        const q1s = h.entries.filter(e => e.n === 1).sort((a, b) => a.x - b.x);
+        if (q1s.length >= 2) {
+          tangoSubjs[0].x = q1s[0].x;
+          tangoSubjs[1].x = q1s[q1s.length - 1].x;
+          tangoXSplit = (q1s[0].x + q1s[q1s.length - 1].x) / 2;
+          break;
+        }
+      }
     }
 
     // ── 6. Parse 채점결과(O/X) and 정답률(A-E) rows ──
@@ -1269,6 +1351,14 @@ document.addEventListener("DOMContentLoaded", () => {
       if (/^국어정답/.test(nosp)) { lastAnswerSubj = Object.keys(scores).find(k => k.startsWith('국어')) || '국어'; continue; }
       if (/^수학정답/.test(nosp)) { lastAnswerSubj = Object.keys(scores).find(k => k.startsWith('수학')) || '수학'; continue; }
       if (/^탐구정답/.test(nosp)) { lastAnswerSubj = '탐구'; continue; }
+      // 1/2학년: 순수 레이블 행 (OX 없는 과목 표기)
+      if (/^국어$/.test(nosp)) { lastAnswerSubj = Object.keys(scores).find(k => k.startsWith('국어')) || '국어'; continue; }
+      if (/^수학$/.test(nosp) || /^수학\d/.test(nosp)) { lastAnswerSubj = Object.keys(scores).find(k => k.startsWith('수학')) || '수학'; continue; }
+      if (/^사회$/.test(nosp)) { lastAnswerSubj = Object.keys(scores).find(k => k === '사회' || k === '통합사회') || '사회'; continue; }
+      if (/^과학$/.test(nosp)) { lastAnswerSubj = Object.keys(scores).find(k => k === '과학' || k === '통합과학') || '과학'; continue; }
+      // 1/2학년: 사회탐구/과학탐구 섹션 레이블 — 채점결과가 같은 행에 있을 수 있어 continue 없이 처리
+      if (/^사회탐구/.test(nosp)) lastAnswerSubj = '사회탐구';
+      else if (/^과학탐구/.test(nosp)) lastAnswerSubj = '과학탐구';
 
       const oxCells = line.cells.filter(c => c.str === 'O' || c.str === 'X');
       const aeCells = line.cells.filter(c => /^[A-E]$/.test(c.str));
@@ -1296,6 +1386,11 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       else if (/^영어채점결과|^영어정답률/.test(nosp)) foundSubj = '영어';
       else if (/^한국사채점결과|^한국사정답률/.test(nosp)) foundSubj = '한국사';
+      // 1/2학년: 선택과목 없는 국어/수학, 사회/과학 탐구 채점결과
+      else if (/^국어채점결과|^국어정답률/.test(nosp)) foundSubj = Object.keys(scores).find(k => k.startsWith('국어')) || '국어';
+      else if (/^수학채점결과|^수학정답률/.test(nosp)) foundSubj = Object.keys(scores).find(k => k.startsWith('수학')) || '수학';
+      else if (/^사회채점결과|^사회정답률/.test(nosp)) foundSubj = Object.keys(scores).find(k => k === '사회' || k === '통합사회') || '사회';
+      else if (/^과학채점결과|^과학정답률/.test(nosp)) foundSubj = Object.keys(scores).find(k => k === '과학' || k === '통합과학') || '과학';
       else if (nosp.includes('영어') && !nosp.includes('제2외국어') && oxCount >= 10) foundSubj = '영어';
       else {
         const nospNorm = normSubj(nosp);
@@ -1309,48 +1404,52 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const isMathCtx = subjName.startsWith('수학');
 
-      // ── 객관식 grid 처리용 헤더 탐색 ──
-      let bestHeader = null, minDist = Infinity;
-      for (const h of qColMaps) {
-        const dist = h.y - line.y;
-        if (dist >= 0 && dist < minDist) { minDist = dist; bestHeader = h; }
-      }
+      // ── 객관식 grid 처리용 헤더 목록 (위에서 가까운 순) ──
+      // 1/2학년에서 과목별 Q헤더가 Q22-30만 있는 경우 Q1-21은 Q1-45 전역 헤더로 fallback
+      const sortedHeaders = qColMaps
+        .filter(h => h.y >= line.y)
+        .sort((a, b) => (a.y - line.y) - (b.y - line.y));
 
       const isTango = subjName === '탐구' || (!(/국어|수학|영어|한국사/.test(subjName)) && tangoSubjs.length >= 2);
 
       // 과목별 최대 문항 수 (그리드 경로에서 범위 초과 Q번호 차단)
-      const subjectMaxQ = subjName.startsWith('수학') ? 15  // 그리드 경로: Q1-15만 허용 (Q16-30은 인라인 파싱)
+      // 3학년 수학: Q1-15 MC + Q16-30 단답형(인라인) → 그리드는 15까지
+      // 1/2학년 수학: Q1-21 MC + Q22-30 단답형 → 전체 30문항
+      const subjectMaxQ = subjName.startsWith('수학')
+        ? (student.학년 === '3' ? 15 : 30)
         : subjName.startsWith('국어') ? 45
         : subjName === '영어' ? 45
-        : 20; // 한국사, 탐구, 직업탐구, 제2외국어
+        : 20; // 한국사, 탐구, 사회, 과학, 직업탐구, 제2외국어
 
       const resolveCell = (cell) => {
-        if (!bestHeader) return null;
-        let bestQ = null, bestD = 14;
-        for (const e of bestHeader.entries) {
-          const d = Math.abs(cell.x - e.x);
-          if (d < bestD) { bestD = d; bestQ = e.n; }
-        }
-        if (bestQ === null) return null;
-
-        let finalSubj = subjName, finalQ = bestQ;
-        if (isTango && tangoSubjs.length >= 2) {
-          if (cell.x <= tangoXSplit || bestQ <= 20) {
-            finalSubj = tangoSubjs[0].name;
-            finalQ = bestQ <= 20 ? bestQ : bestQ - 20;
-          } else {
-            finalSubj = tangoSubjs[1].name;
-            finalQ = bestQ > 20 ? bestQ - 20 : bestQ;
+        for (const h of sortedHeaders) {
+          let bestQ = null, bestD = 14;
+          for (const e of h.entries) {
+            const d = Math.abs(cell.x - e.x);
+            if (d < bestD) { bestD = d; bestQ = e.n; }
           }
-        } else if (isTango && tangoSubjs.length === 1) {
-          finalSubj = tangoSubjs[0].name;
-          if (finalQ > 20) finalQ = (finalQ - 1) % 20 + 1;
-        } else if (!(/국어|수학|영어|한국사/.test(subjName)) && finalQ > 20) {
-          finalQ = (finalQ - 1) % 20 + 1;
+          if (bestQ === null) continue;
+
+          let finalSubj = subjName, finalQ = bestQ;
+          if (isTango && tangoSubjs.length >= 2) {
+            if (cell.x <= tangoXSplit || bestQ <= 20) {
+              finalSubj = tangoSubjs[0].name;
+              finalQ = bestQ <= 20 ? bestQ : bestQ - 20;
+            } else {
+              finalSubj = tangoSubjs[1].name;
+              finalQ = bestQ > 20 ? bestQ - 20 : bestQ;
+            }
+          } else if (isTango && tangoSubjs.length === 1) {
+            finalSubj = tangoSubjs[0].name;
+            if (finalQ > 20) finalQ = (finalQ - 1) % 20 + 1;
+          } else if (!(/국어|수학|영어|한국사/.test(subjName)) && finalQ > 20) {
+            finalQ = (finalQ - 1) % 20 + 1;
+          }
+          // 과목 최대 문항 수 초과 시 다음 헤더로 시도
+          if (finalQ > subjectMaxQ || finalQ < 1) continue;
+          return { finalSubj, finalQ };
         }
-        // 과목 최대 문항 수 초과 시 무효
-        if (finalQ > subjectMaxQ || finalQ < 1) return null;
-        return { finalSubj, finalQ };
+        return null;
       };
 
       if (doOX) {
@@ -1423,9 +1522,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ── 7. Compile ──
+    // 과목이 아닌 카테고리 레이블(탐구/사회탐구/과학탐구 등)은 결과에서 제외
+    const LABEL_ONLY = new Set(['탐구', '사회탐구', '과학탐구', '직업탐구', '제2외국어']);
     const allSubjsInResults = new Set([...Object.keys(scores), ...Object.keys(itemAnalysis)]);
     const results = [];
     for (const subj of allSubjsInResults) {
+      if (LABEL_ONLY.has(subj)) continue;
       const sd = scores[subj] || {};
       const wrongs = (itemAnalysis[subj] || []).sort((a, b) => a - b);
       const rates = rateAnalysis[subj] || {};

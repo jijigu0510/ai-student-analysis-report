@@ -138,27 +138,8 @@
         <!-- 성적 분석 파일 -->
         <div class="uni-upload-card" style="background: var(--upload-card-bg); padding: 1.2rem; border-radius: 12px; border: 1px solid var(--panel-border);">
           <h4 style="color: var(--clr-h4-blue); margin-bottom: 1rem; font-size: 1rem; border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem;">📈 모의고사 / 내신 분석용</h4>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-bottom: 0.8rem;">
-            <div class="form-group" style="margin-bottom: 0;">
-              <label style="font-size: 0.8rem; color: var(--text-secondary);">학년</label>
-              <select id="uni-mock-grade" style="background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-primary); border-radius: 8px; padding: 0.5rem 0.8rem; width: 100%; font-size: 0.8rem;">
-                <option value="1">1학년</option>
-                <option value="2">2학년</option>
-                <option value="3">3학년</option>
-              </select>
-            </div>
-            <div class="form-group" style="margin-bottom: 0;">
-              <label style="font-size: 0.8rem; color: var(--text-secondary);">월</label>
-              <select id="uni-mock-month" style="background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-primary); border-radius: 8px; padding: 0.5rem 0.8rem; width: 100%; font-size: 0.8rem;">
-                <option value="3">3월</option>
-                <option value="6">6월</option>
-                <option value="9">9월</option>
-                <option value="11">11월</option>
-              </select>
-            </div>
-          </div>
           <div class="form-group" style="margin-bottom: 0.8rem;">
-            <label style="font-size: 0.8rem; color: var(--text-secondary);">모의고사 성적통지표 <span style="font-size: 0.7rem; color: #7cb9ff; display: block; margin-top: 2px;">PDF(성적통지표 원본) 또는 CSV 파일 — 다중 선택 가능</span></label>
+            <label style="font-size: 0.8rem; color: var(--text-secondary);">모의고사 성적통지표 <span style="font-size: 0.7rem; color: #7cb9ff; display: block; margin-top: 2px;">PDF(성적통지표 원본) 또는 CSV 파일 — 다중 선택, 누적 저장됩니다. 학년·월은 PDF에서 자동 감지</span></label>
             <input type="file" id="uni-mock-upload" accept=".csv,.pdf" multiple style="font-size: 0.8rem; padding: 0.5rem; width: 100%;">
           </div>
           <div class="form-group" style="margin-bottom: 0;">
@@ -2896,7 +2877,7 @@
       mountAdmissionAnalysis();
     }
   </script>
-  <script src="app.js?v=22"></script>
+  <script src="app.js?v=29"></script>
   <script src="grade-rank.js"></script>
   <script src="admission_dist.js"></script>
   <script src="hexagon.js"></script>
