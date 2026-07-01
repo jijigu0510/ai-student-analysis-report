@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
@@ -20,6 +20,15 @@
   <script crossorigin src="https://unpkg.com/prop-types/prop-types.min.js"></script>
   <script crossorigin src="https://cdn.jsdelivr.net/npm/recharts@2.10.3/umd/Recharts.js"></script>
   <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script>
+    // @babel/preset-react 최신버전이 기본 runtime을 'automatic'으로 바꿔
+    // 변환된 코드에 import 문이 자동으로 추가되어 오류 발생 → classic 으로 고정
+    Babel.registerPreset('classic-react', {
+      presets: [
+        [Babel.availablePresets['react'], { runtime: 'classic' }]
+      ]
+    });
+  </script>
 
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -168,9 +177,11 @@
         <button id="tab-mock-exam" class="tab-btn">📊 모의고사 문항 분석</button>
         <button id="tab-gpa-mock-compare" class="tab-btn">📈 내신 & 모의고사 분석</button>
         <button id="tab-grade-rank" class="tab-btn">📊 내신 분석하기(대학별 교과 점수 확인)</button>
+        <button id="tab-univ-score" class="tab-btn">🎓 대학별 교과 점수 확인하기</button>
         <button id="tab-admission-dist" class="tab-btn">📊 대학별 입결 분포도</button>
         <button id="tab-school-mock-status" class="tab-btn">🏫 우리 학교 모의고사 성적 현황</button>
         <button id="tab-hexagon" class="tab-btn">🔷 육각형 인재 확인하기</button>
+        <button id="tab-admission-analysis" class="tab-btn">📋 수시 전형 분석하기</button>
       </nav>
 
 
@@ -1467,6 +1478,71 @@
 
 
 
+  <!-- ===== 대학별 교과 점수 확인하기 탭 뷰 ===== -->
+  <main id="view-univ-score" class="main-container view-section hidden" style="display:none; padding:1.5rem;">
+    <div style="margin-bottom:1.5rem;">
+      <h1 class="section-title" style="border-bottom:none; margin-bottom:0.4rem;">🎓 대학별 교과 점수 확인하기</h1>
+      <p style="color:var(--text-secondary); font-size:0.9rem; margin:0;">등록된 학생들의 대학별 교과 점수를 자동 산출합니다.</p>
+    </div>
+    <!-- 대학 선택 -->
+    <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem; flex-wrap:wrap;">
+      <label style="font-weight:600; color:var(--text-primary); white-space:nowrap;">대학 선택</label>
+      <select id="univ-score-selector" onchange="renderUnivScoreTab()" style="font-size:0.95rem; padding:0.5rem 1rem; border:1px solid var(--input-border); border-radius:8px; background:var(--input-bg); color:var(--text-primary); cursor:pointer; outline:none; font-weight:500;">
+        <option value="korea">고려대학교 [학생부교과 학교추천전형]</option>
+        <option value="yonsei">연세대학교 [학생부교과 추천형]</option>
+        <option value="sogang">서강대학교 [학생부교과 지역균형전형]</option>
+        <option value="sungkyunkwan">성균관대학교 [학생부교과 추천인재전형]</option>
+        <option value="hanyang">한양대학교 [학생부교과 추천형]</option>
+        <option value="cau">중앙대학교 [학생부교과 지역균형]</option>
+        <option value="khu">경희대학교 [학생부교과 지역균형전형]</option>
+        <option value="hufs">한국외국어대학교 [학생부교과 학교장추천전형]</option>
+        <option value="uos">서울시립대학교 [학생부(교과) 고교추천전형]</option>
+        <option value="kku">건국대학교 [학생부교과(KU지역균형)]</option>
+        <option value="dgu">동국대학교 [학생부교과 학교장추천인재]</option>
+        <option value="hgu">홍익대학교 [학교장추천자전형]</option>
+        <option value="kmu">국민대학교 [교과우수자(학교장추천)전형]</option>
+        <option value="ssu">숭실대학교 [학생부교과(교과우수자-학교장추천)전형]</option>
+        <option value="sju">세종대학교 [학생부교과 지역균형전형]</option>
+        <option value="dku">단국대학교(죽전) [학생부교과 지역균형선발전형]</option>
+        <option value="kwu">광운대학교 [학생부교과 지역균형전형]</option>
+        <option value="mju">명지대학교 [학생부교과 학교장추천전형]</option>
+        <option value="smu">상명대학교(서울) [학생부교과 고교추천전형]</option>
+        <option value="cuk">가톨릭대학교 [학생부교과 지역균형전형]</option>
+        <option value="pnu">부산대학교 [학생부교과전형]</option>
+        <option value="kut">한국기술교육대학교 [학생부교과전형]</option>
+        <option value="hye">한양대학교 ERICA [학생부교과 지역균형선발전형]</option>
+        <option value="kus">고려대학교(세종) [학생부교과 일반전형]</option>
+        <option value="aju">아주대학교 [학생부교과 고교추천전형]</option>
+        <option value="inu">인하대학교 [학생부교과 지역균형전형]</option>
+        <option value="inch">인천대학교 [학생부교과 교과성적우수자·지역균형·사회통합전형]</option>
+        <option value="kgu">경기대학교 [학생부교과전형]</option>
+        <option value="jbnu">전북대학교 [학생부교과전형]</option>
+        <option value="cnnu">전남대학교 [학생부교과전형(일괄선발)]</option>
+        <option value="knu">경북대학교 [학생부교과(교과우수자전형)]</option>
+        <option value="cbnu">충북대학교 [학생부교과전형]</option>
+        <option value="cnu">충남대학교 [학생부교과(일반전형)]</option>
+        <option value="gnu">경상국립대학교 [학생부교과(일반전형)]</option>
+      </select>
+    </div>
+    <!-- 결과 영역 -->
+    <div id="univ-score-content"></div>
+  </main>
+
+  <!-- 세부 과목 모달 -->
+  <div id="univ-score-detail-overlay" onclick="if(event.target===this)closeUnivScoreDetail()"
+       style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.65); z-index:9998; align-items:center; justify-content:center; padding:1.5rem; box-sizing:border-box;">
+    <div style="background:var(--panel-bg,#1a2035); border-radius:16px; max-width:900px; width:100%; max-height:85vh; display:flex; flex-direction:column; overflow:hidden; border:1px solid rgba(148,163,184,0.2);">
+      <div style="background:rgba(30,58,138,0.5); padding:1rem 1.5rem; display:flex; align-items:center; justify-content:space-between;">
+        <strong id="univ-score-detail-title" style="color:#f1f5f9; font-size:1rem;">교과 점수 세부 내역</strong>
+        <button onclick="closeUnivScoreDetail()" style="background:none; border:none; color:#94a3b8; font-size:1.6rem; cursor:pointer; line-height:1; padding:0;">×</button>
+      </div>
+      <div id="univ-score-detail-body" style="padding:1.5rem; overflow-y:auto; color:var(--text-primary,#e2e8f0);"></div>
+      <div style="padding:1rem 1.5rem; border-top:1px solid rgba(148,163,184,0.15); text-align:right;">
+        <button onclick="closeUnivScoreDetail()" style="background:rgba(30,58,138,0.6); color:#93c5fd; border:1px solid rgba(30,58,138,0.6); padding:0.5rem 1.5rem; border-radius:8px; font-size:0.9rem; cursor:pointer; font-weight:600;">닫기</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ===== 대학별 입결 분포도 탭 뷰 ===== -->
   <main id="view-admission-dist" class="main-container view-section hidden" style="padding: 0; background: none; box-shadow: none; border: none; display: none;">
     <div id="adist-root" style="width: 100%; padding: 1.5rem 0;"></div>
@@ -1794,6 +1870,55 @@
     </section>
   </main>
 
+  <!-- ===== 수시 전형 분석하기 탭 뷰 ===== -->
+  <main id="view-admission-analysis" class="main-container view-section hidden" style="display:none;">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;padding:1rem 1.5rem;background:rgba(255,255,255,0.03);border-bottom:1px solid rgba(255,255,255,0.06);">
+      <div style="display:flex;align-items:center;gap:0.75rem;">
+        <span style="font-size:1.1rem;font-weight:800;color:var(--text-primary);">📋 수시 전형 분석하기</span>
+        <span style="font-size:0.82rem;color:var(--text-secondary);">대학별 일정·모집인원·평가방법 분석</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.75rem;">
+        <label style="color:var(--text-secondary);font-size:0.85rem;font-weight:600;white-space:nowrap;">대학 선택</label>
+        <select id="admission-analysis-selector" onchange="renderAdmissionAnalysisTab()" style="font-size:0.9rem;padding:0.45rem 0.9rem;border:1px solid var(--input-border);border-radius:8px;background:var(--input-bg);color:var(--text-primary);cursor:pointer;outline:none;font-weight:500;min-width:200px;">
+          <option value="">-- 대학을 선택하세요 --</option>
+          <option value="snu">서울대학교</option>
+          <option value="ynu">연세대학교</option>
+          <option value="ku">고려대학교</option>
+          <option value="sgu">서강대학교</option>
+          <option value="skku">성균관대학교</option>
+          <option value="hyu">한양대학교</option>
+          <option value="cau">중앙대학교</option>
+          <option value="khu">경희대학교</option>
+          <option value="hufs">한국외국어대학교</option>
+          <option value="uos">서울시립대학교</option>
+          <option value="kku">건국대학교</option>
+          <option value="dgu">동국대학교</option>
+          <option value="hiu">홍익대학교</option>
+          <option value="kmu">국민대학교</option>
+          <option value="ssu">숭실대학교</option>
+          <option value="sju">세종대학교</option>
+          <option value="dku">단국대학교(죽전)</option>
+          <option value="kwu">광운대학교</option>
+          <option value="mju">명지대학교</option>
+          <option value="smu">상명대학교(서울)</option>
+          <option value="cu">가톨릭대학교</option>
+          <option value="snut">서울과학기술대학교</option>
+          <option value="jnu">전북대학교</option>
+          <option value="cnu">전남대학교</option>
+          <option value="cbnu">충북대학교</option>
+          <option value="cnnu">충남대학교</option>
+          <option value="pnu">부산대학교</option>
+          <option value="knu">경북대학교</option>
+          <option value="jju">전주대학교</option>
+          <option value="wku">원광대학교</option>
+          <option value="csu">조선대학교</option>
+          <option value="scu">순천향대학교</option>
+        </select>
+      </div>
+    </div>
+    <div id="admission-analysis-content"></div>
+  </main>
+
   <!-- ===== 육각형 인재 확인하기 탭 뷰 ===== -->
   <main id="view-hexagon" class="main-container view-section hidden" style="display:none;">
     <section class="glass-panel" style="padding:1.5rem 2rem; margin-bottom:1.5rem;">
@@ -1974,515 +2099,675 @@
       </div>
     </div>
   </footer>
-  <script type="text/babel">
-    console.log("AdmissionAnalysis: Babel script started");
-    const { useState, useEffect, useMemo } = React;
-    const { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } = Recharts;
+  <script type="text/babel" data-presets="classic-react">
+console.log('[AA] Babel script started');
+const { useState, useEffect, useMemo, useRef } = React;
+console.log('[AA] React destructured OK');
+const { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } = Recharts;
 
-    // ─── 상수 ───────────────────────────────────────────────────────────────────
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbyFmjavISW4Xux2vJWpUdqKmjo7VBYN_kDtXyFhZlhOAfnOFY86REFDqmGsKwN_LrgAmQ/exec';
-    const YEAR_OPTIONS = ['2025', '2024'];
-    const COLORS = { '합격': '#10B981', '충원합격': '#3B82F6', '불합격': '#EF4444', '기타': '#9CA3AF' };
-    const RESULT_CATEGORIES = ['합격', '충원합격', '불합격', '기타'];
-    const CHART_TYPES = ['학생부위주(교과)', '학생부위주(종합)', '실기/실적위주'];
+// ▼ 앱스크립트 배포 후 아래 URL을 붙여넣으세요
+//   (admission_gas.gs 배포 → 웹 앱 URL 복사)
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyFmjavISW4Xux2vJWpUdqKmjo7VBYN_kDtXyFhZlhOAfnOFY86REFDqmGsKwN_LrgAmQ/exec';
 
-    // ─── SVG 아이콘 ─────────────────────────────────────────────────────────────
-    const Icons = {
-      Filter:   () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>,
-      BarChart: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>,
-      Landmark: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/><polygon points="12 2 20 7 4 7"/></svg>,
-      Trophy:   () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>,
-      ZoomIn:   () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>,
-    };
+// ─── 상수 ───────────────────────────────────────────────────────────────────
+const COLORS = { '합격': '#10B981', '충원합격': '#3B82F6', '불합격': '#EF4444', '기타': '#9CA3AF' };
+const RESULT_CATEGORIES = ['합격', '충원합격', '불합격', '기타'];
+const CHART_TYPES = ['학생부위주(교과)', '학생부위주(종합)', '실기/실적위주'];
+const YEAR_OPTIONS = ['2025', '2024'];
 
-    // ─── 헬퍼 함수 ──────────────────────────────────────────────────────────────
-    const getChartType = (type) => {
-      if (!type) return '실기/실적위주';
-      if (type.includes('교과')) return '학생부위주(교과)';
-      if (type.includes('종합') || type.includes('학종') || type.includes('서류')) return '학생부위주(종합)';
-      return '실기/실적위주';
-    };
+// ─── SVG 아이콘 ─────────────────────────────────────────────────────────────
+const Icons = {
+  Filter:   () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>,
+  BarChart: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>,
+  Landmark: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/><polygon points="12 2 20 7 4 7"/></svg>,
+  Trophy:   () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>,
+  ZoomIn:   () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>,
+  XCircle:  () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>,
+};
 
-    const getResultCategory = (result) => {
-      if (!result) return '기타';
-      if (result.includes('불합격') || result.includes('탈락')) return '불합격';
-      if (result.includes('충원') || result.includes('추가') || result.includes('예비')) return '충원합격';
-      if (result.includes('합격') || result.includes('최초')) return '합격';
-      return result || '기타';
-    };
+// ─── 헬퍼 함수 ──────────────────────────────────────────────────────────────
+const getChartType = (type) => {
+  if (!type) return '실기/실적위주';
+  if (type.includes('교과')) return '학생부위주(교과)';
+  if (type.includes('종합') || type.includes('학종') || type.includes('서류')) return '학생부위주(종합)';
+  return '실기/실적위주';
+};
 
-    // ─── 공통 파싱 함수 ──────────────────────────────────────────────────────────
-    function getVal(row, keywords) {
-      const key = Object.keys(row).find(k =>
-        keywords.some(kw => typeof k === 'string' && k.replace(/\s+/g, '').includes(kw))
-      );
-      return key ? String(row[key]).trim() : '';
-    }
+const getResultCategory = (result) => {
+  if (!result) return '기타';
+  if (result.includes('불합격') || result.includes('탈락')) return '불합격';
+  if (result.includes('충원') || result.includes('추가') || result.includes('예비')) return '충원합격';
+  if (result.includes('합격') || result.includes('최초')) return '합격';
+  return '기타';
+};
 
-    function parseAdmissionRows(rows) {
-      return rows
-        .filter(row => {
-          const hasType  = Object.keys(row).some(k => typeof k === 'string' && k.includes('전형'));
-          const hasGrade = Object.keys(row).some(k => typeof k === 'string' && k.includes('등급'));
-          return hasType && hasGrade;
-        })
-        .map((row, idx) => {
-          const gradeRaw  = getVal(row, ['일반등급', '등급']);
-          const resultRaw = getVal(row, ['최종단계', '결과', '합격여부', '상태', '판정']);
-          return {
-            id:          idx,
-            uni:         getVal(row, ['대학명', '대학교', '대학']) || '-',
-            type:        getVal(row, ['전형유형', '전형구분'])      || '기타',
-            typeDetail:  getVal(row, ['세부유형', '전형세부'])      || '-',
-            major:       getVal(row, ['모집단위', '학과', '학부', '전공']) || '-',
-            count:       getVal(row, ['모집인원'])                 || '-',
-            grade:       parseFloat(gradeRaw) || 9.0,
-            result: (() => {
-              if (!resultRaw) return '기타';
-              if (resultRaw.includes('불합격') || resultRaw.includes('탈락')) return '불합격';
-              if (resultRaw.includes('충원') || resultRaw.includes('추가') || resultRaw.includes('예비')) return '충원합격';
-              if (resultRaw.includes('합격') || resultRaw.includes('최초')) return '합격';
-              return resultRaw || '기타';
-            })(),
-            reason:      getVal(row, ['불합격사유', '사유'])        || '',
-            rank:        getVal(row, ['최초후보순위', '후보순위', '예비번호']) || '-',
-            admName:     getVal(row, ['전형명(대)', '전형명'])      || '-',
-            minStandard: getVal(row, ['최저학력기준', '수능최저'])  || '',
-          };
-        })
-        .filter(item => item.uni !== '-');
-    }
+// ─── 공통 파싱 함수 (파일·GAS 공용) ────────────────────────────────────────
+function getVal(row, keywords) {
+  const key = Object.keys(row).find(k =>
+    keywords.some(kw => typeof k === 'string' && k.replace(/\s+/g, '').includes(kw))
+  );
+  return key ? String(row[key]).trim() : '';
+}
 
-    // ─── 메인 컴포넌트 ───────────────────────────────────────────────────────────
-    const AdmissionAnalysis = () => {
-      const [data, setData]                   = useState([]);
-      const [loading, setLoading]             = useState(false);
-      const [gasError, setGasError]           = useState('');
-      const [selectedYear, setSelectedYear]   = useState(() => localStorage.getItem('reactPfYear') || '2025');
-      const [selectedPoint, setSelectedPoint] = useState(null);
-      const [selectedUniPassData, setSelectedUniPassData]   = useState(null);
-      const [selectedUniChartData, setSelectedUniChartData] = useState(null);
-      const [activeFilters, setActiveFilters] = useState([...RESULT_CATEGORIES]);
-      const [yDomain, setYDomain]             = useState([1, 9]);
-      const [tempYDomain, setTempYDomain]     = useState([1, 9]);
-
-      useEffect(() => setTempYDomain(yDomain), [yDomain]);
-
-      // ─── 다크모드 감지 ────────────────────────────────────────────────────────
-      const [isDark, setIsDark] = useState(() => !document.body.classList.contains('light-mode'));
-      useEffect(() => {
-        const check = () => setIsDark(!document.body.classList.contains('light-mode'));
-        const obs = new MutationObserver(check);
-        obs.observe(document.body, { attributes: true, attributeFilter: ['class'] });
-        return () => obs.disconnect();
-      }, []);
-
-      // ─── 테마 팔레트 ─────────────────────────────────────────────────────────
-      const t = isDark ? {
-        bg: '#1a2035', bgSub: '#111827', bgCard: '#1e2a40',
-        text: '#e2e8f0', textMuted: '#8892a8', textHeading: '#f0f4ff',
-        border: '#2a3a5c',
-        btnActive: '#6366f1', btnActiveTxt: '#fff',
-        btnInactive: '#1a2035', btnInactiveTxt: '#8892a8',
-        tagBg: '#2d3a6b', tagTxt: '#a5b4fc',
-        chartGrid: '#243050', chartText: '#7a8aa8',
-      } : {
-        bg: '#ffffff', bgSub: '#f8fafc', bgCard: '#f1f5f9',
-        text: '#1e293b', textMuted: '#64748b', textHeading: '#0f172a',
-        border: '#e2e8f0',
-        btnActive: '#1e293b', btnActiveTxt: '#fff',
-        btnInactive: '#ffffff', btnInactiveTxt: '#64748b',
-        tagBg: '#e0e7ff', tagTxt: '#4338ca',
-        chartGrid: '#e2e8f0', chartText: '#64748b',
+function parseAdmissionRows(rows) {
+  return rows
+    .filter(row => {
+      const hasType  = Object.keys(row).some(k => typeof k === 'string' && k.includes('전형'));
+      const hasGrade = Object.keys(row).some(k => typeof k === 'string' && k.includes('등급'));
+      return hasType && hasGrade;
+    })
+    .map((row, idx) => {
+      const gradeRaw  = getVal(row, ['일반등급', '등급']);
+      const resultRaw = getVal(row, ['최종단계', '결과', '합격여부', '상태', '판정']);
+      return {
+        id:          idx,
+        uni:         getVal(row, ['대학명', '대학교', '대학']) || '-',
+        type:        getVal(row, ['전형유형', '전형구분'])      || '기타',
+        typeDetail:  getVal(row, ['세부유형', '전형세부'])      || '-',
+        major:       getVal(row, ['모집단위', '학과', '학부', '전공']) || '-',
+        count:       getVal(row, ['모집인원'])                 || '-',
+        grade:       parseFloat(gradeRaw) || 9.0,
+        result: (() => {
+          if (!resultRaw) return '기타';
+          if (resultRaw.includes('불합격') || resultRaw.includes('탈락')) return '불합격';
+          if (resultRaw.includes('충원') || resultRaw.includes('추가') || resultRaw.includes('예비')) return '충원합격';
+          if (resultRaw.includes('합격') || resultRaw.includes('최초')) return '합격';
+          return resultRaw || '기타';
+        })(),
+        reason:      getVal(row, ['불합격사유', '사유'])        || '',
+        rank:        getVal(row, ['최초후보순위', '후보순위', '예비번호']) || '-',
+        admName:     getVal(row, ['전형명(대)', '전형명'])      || '-',
+        minStandard: getVal(row, ['최저학력기준', '수능최저'])  || '',
       };
+    })
+    .filter(item => item.uni !== '-');
+}
 
-      // ─── GAS에서 데이터 로드 ──────────────────────────────────────────────────
-      const loadDataFromGAS = async (year) => {
-        if (!GAS_URL) return;
-        setLoading(true);
-        setGasError('');
-        try {
-          const res = await fetch(`${GAS_URL}?action=admission&year=${year}`);
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          const json = await res.json();
-          if (json.error) throw new Error(json.error);
-          const parsed = parseAdmissionRows(json.data || []);
-          if (parsed.length > 0) {
-            setData(parsed);
-            setYDomain([1, 9]);
-            localStorage.setItem('reactPfData', JSON.stringify(parsed));
-            localStorage.setItem('reactPfYear', year);
-          } else {
-            setGasError(`${year}년 시트에 파싱 가능한 데이터가 없습니다. '전형', '등급' 열이 있는지 확인해주세요.`);
-            setData([]);
-          }
-        } catch (err) {
-          console.error('GAS fetch error:', err);
-          setGasError('데이터 로드 실패: ' + (err.message || String(err)));
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      // ─── 파일 파싱 ──────────────────────────────────────────────────────────
-      const loadDataFromFile = (file) => {
-        if (!file) return;
-        setLoading(true);
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          try {
-            const wb = window.XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
-            let allRows = [];
-            wb.SheetNames.forEach(name =>
-              allRows = allRows.concat(window.XLSX.utils.sheet_to_json(wb.Sheets[name], { defval: '' }))
-            );
-            const parsed = parseAdmissionRows(allRows);
-            if (parsed.length > 0) {
-              setData(parsed);
-              setYDomain([1, 9]);
-              localStorage.setItem('reactPfData', JSON.stringify(parsed));
-            }
-          } catch (err) { console.error('Parse error:', err); }
-          finally { setLoading(false); }
-        };
-        reader.onerror = () => setLoading(false);
-        reader.readAsArrayBuffer(file);
-      };
-
-      useEffect(() => {
-        // localStorage 즉시 복원
-        const saved = localStorage.getItem('reactPfData');
-        if (saved) { try { setData(JSON.parse(saved)); } catch (e) {} }
-
-        // GAS URL이 있으면 자동 로드 (파일 업로드 불필요)
-        if (GAS_URL) {
-          const initYear = localStorage.getItem('reactPfYear') || '2025';
-          loadDataFromGAS(initYear);
-          return;
-        }
-
-        // GAS 없으면 기존 파일 업로드 방식
-        const tryLoad = () => {
-          var src = document.getElementById('pf-results-upload')
-                 || document.getElementById('uni-pf-results-upload');
-          if (src && src.files && src.files.length > 0) {
-            loadDataFromFile(src.files[0]);
-            return true;
-          }
-          return false;
-        };
-        tryLoad();
-        var t1 = setTimeout(tryLoad, 500);
-        var t2 = setTimeout(tryLoad, 1500);
-        var handler = function(e) {
-          var files = e.target && e.target.files;
-          if (files && files.length > 0) loadDataFromFile(files[0]);
-        };
-        var fi1 = document.getElementById('pf-results-upload');
-        var fi2 = document.getElementById('uni-pf-results-upload');
-        if (fi1) fi1.addEventListener('change', handler);
-        if (fi2) fi2.addEventListener('change', handler);
-        return function() {
-          clearTimeout(t1); clearTimeout(t2);
-          if (fi1) fi1.removeEventListener('change', handler);
-          if (fi2) fi2.removeEventListener('change', handler);
-        };
-      }, []);
-
-      // 연도 변경 시 GAS 재로드
-      const gasYearRef = React.useRef(null);
-      useEffect(() => {
-        if (gasYearRef.current === null) { gasYearRef.current = selectedYear; return; }
-        if (gasYearRef.current === selectedYear) return;
-        gasYearRef.current = selectedYear;
-        if (GAS_URL) loadDataFromGAS(selectedYear);
-      }, [selectedYear]);
-
-      // ─── 파생 데이터 ─────────────────────────────────────────────────────────
-      const filteredData = useMemo(() => {
-        const base = data
-          .filter(item =>
-            activeFilters.includes(getResultCategory(item.result)) &&
-            item.grade >= yDomain[0] && item.grade <= yDomain[1]
-          )
-          .map(item => {
-            const ct = getChartType(item.type);
-            return { ...item, chartType: ct, chartTypeX: CHART_TYPES.indexOf(ct) };
-          });
-
-        const existing = new Set(base.map(d => d.chartType));
-        CHART_TYPES.forEach(ct => {
-          if (!existing.has(ct))
-            base.push({ id: `dummy-${ct}`, chartType: ct, chartTypeX: CHART_TYPES.indexOf(ct), grade: null, _dummy: true });
-        });
-
-        const groups = {};
-        base.forEach(item => {
-          if (item._dummy) return;
-          const key = `${item.chartType}-${Number(item.grade).toFixed(2)}`;
-          if (!groups[key]) groups[key] = [];
-          groups[key].push(item);
-        });
-        Object.values(groups).forEach(group =>
-          group.forEach((item, i) => { item.xOffset = (i - (group.length - 1) / 2) * 12; })
-        );
-        return base;
-      }, [data, activeFilters, yDomain]);
-
-      const yTicks = useMemo(() => {
-        const range = yDomain[1] - yDomain[0];
-        const step  = range <= 1 ? 0.1 : range <= 2.5 ? 0.25 : 0.5;
-        const ticks = [];
-        for (let v = Math.ceil(yDomain[0] / step) * step; v <= yDomain[1]; v += step)
-          ticks.push(Number(v.toFixed(2)));
-        if (!ticks.includes(yDomain[0])) ticks.unshift(yDomain[0]);
-        if (!ticks.includes(yDomain[1])) ticks.push(yDomain[1]);
-        return ticks.sort((a, b) => a - b);
-      }, [yDomain]);
-
-      const gradeDistribution = useMemo(() => {
-        const dist = Array.from({ length: 9 }, (_, i) => ({ name: `${i+1}등급`, subject: 0, comprehensive: 0 }));
-        data.forEach(item => {
-          const g = Math.floor(item.grade);
-          if (g >= 1 && g <= 9) {
-            if (item.type.includes('교과')) dist[g-1].subject++;
-            else if (item.type.includes('종합') || item.type.includes('학종') || item.type.includes('서류')) dist[g-1].comprehensive++;
-          }
-        });
-        return dist;
-      }, [data]);
-
-      const uniDistribution = useMemo(() => {
-        const map = {};
-        data.forEach(item => {
-          if (!map[item.uni]) map[item.uni] = { name: item.uni, '합격': 0, '충원합격': 0, '불합격': 0, '기타': 0, total: 0 };
-          map[item.uni][getResultCategory(item.result)]++;
-          map[item.uni].total++;
-        });
-        return Object.values(map).sort((a, b) => b.total - a.total);
-      }, [data]);
-
-      const passDataByGrade = useMemo(() => {
-        const agg = {};
-        for (let i = 1; i <= 9; i++) agg[i] = [];
-        data.forEach(item => {
-          const cat = getResultCategory(item.result);
-          const g   = Math.floor(item.grade);
-          if ((cat === '합격' || cat === '충원합격') && g >= 1 && g <= 9) {
-            const entry = agg[g].find(e => e.uni === item.uni);
-            if (entry) { entry.count++; entry.students.push(item); }
-            else agg[g].push({ uni: item.uni, count: 1, students: [item] });
-          }
-        });
-        for (let i = 1; i <= 9; i++) agg[i].sort((a, b) => b.count - a.count);
-        return agg;
-      }, [data]);
-
-      const toggleFilter = (c) =>
-        setActiveFilters(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]);
-
-      // ─── 공통 카드 스타일 ───────────────────────────────────────────────────
-      const card = {
+// ─── 연도 선택 드롭다운 ──────────────────────────────────────────────────────
+const YearSelector = ({ year, onChange, isDark, t }) => (
+  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+    <span style={{ fontSize: '0.82rem', color: t.textMuted, fontWeight: 500 }}>연도</span>
+    <select
+      value={year}
+      onChange={e => onChange(e.target.value)}
+      style={{
+        padding: '0.3rem 0.7rem',
+        borderRadius: '8px',
+        border: `1px solid ${t.border}`,
         backgroundColor: t.bgCard,
         color: t.text,
-        borderRadius: '14px',
-        border: `1px solid ${t.border}`,
-        boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.4)' : '0 2px 12px rgba(0,0,0,0.07)',
-        padding: '1.25rem',
-      };
+        fontSize: '0.875rem',
+        fontWeight: 700,
+        cursor: 'pointer',
+        outline: 'none',
+      }}
+    >
+      {YEAR_OPTIONS.map(y => (
+        <option key={y} value={y}>{y}년</option>
+      ))}
+    </select>
+  </div>
+);
 
-      const ModalRow = ({ label, value, highlight }) => (
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          padding: '0.45rem 0', borderBottom: `1px solid ${t.border}` }}>
-          <span style={{ fontSize: '0.78rem', color: t.textMuted, minWidth: '5.5rem', flexShrink: 0 }}>{label}</span>
-          {highlight
-            ? <span style={{ fontSize: '0.82rem', fontWeight: 700, backgroundColor: isDark ? '#431407' : '#fff7ed',
-                color: '#ea580c', padding: '0.1rem 0.5rem', borderRadius: '0.3rem' }}>{value || '-'}</span>
-            : <span style={{ fontSize: '0.85rem', fontWeight: 500, color: t.text,
-                textAlign: 'right', wordBreak: 'break-all' }}>{value || '-'}</span>
-          }
-        </div>
-      );
+// ─── 메인 컴포넌트 ───────────────────────────────────────────────────────────
+const AdmissionAnalysis = () => {
+  const [data, setData]                   = useState([]);
+  const [loading, setLoading]             = useState(false);
+  const [gasError, setGasError]           = useState('');
+  const [selectedYear, setSelectedYear]   = useState(() => localStorage.getItem('reactPfYear') || '2025');
+  const [selectedPoint, setSelectedPoint] = useState(null);
+  const [selectedUniPassData, setSelectedUniPassData]   = useState(null);
+  const [selectedUniChartData, setSelectedUniChartData] = useState(null);
+  const [activeFilters, setActiveFilters] = useState([...RESULT_CATEGORIES]);
+  const [yDomain, setYDomain]             = useState([1, 9]);
+  const [tempYDomain, setTempYDomain]     = useState([1, 9]);
+  const [majorSearch, setMajorSearch]     = useState('');
+  const [scatterMode, setScatterMode]     = useState('type'); // 'type' | 'uni'
+  const [uniSearch, setUniSearch]         = useState('');
 
-      // ─── 빈 상태 ────────────────────────────────────────────────────────────
-      const manualLoad = () => {
-        if (GAS_URL) { loadDataFromGAS(selectedYear); return; }
-        var src = document.getElementById('pf-results-upload')
-               || document.getElementById('uni-pf-results-upload');
-        if (src && src.files && src.files.length > 0) {
-          loadDataFromFile(src.files[0]);
-        } else {
-          var inp = document.getElementById('uni-pf-results-upload');
-          if (inp) inp.click();
+  useEffect(() => setTempYDomain(yDomain), [yDomain]);
+
+  // ─── 다크모드 ────────────────────────────────────────────────────────────
+  const [isDark, setIsDark] = useState(() => !document.body.classList.contains('light-mode'));
+  useEffect(() => {
+    const check = () => setIsDark(!document.body.classList.contains('light-mode'));
+    const obs = new MutationObserver(check);
+    obs.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    return () => obs.disconnect();
+  }, []);
+
+  // ─── 테마 팔레트 ─────────────────────────────────────────────────────────
+  const t = isDark ? {
+    bg: '#1a2035', bgSub: '#111827', bgCard: '#1e2a40',
+    text: '#e2e8f0', textMuted: '#8892a8', textHeading: '#f0f4ff',
+    border: '#2a3a5c',
+    btnActive: '#6366f1', btnActiveTxt: '#fff',
+    btnInactive: '#1a2035', btnInactiveTxt: '#8892a8',
+    tagBg: '#2d3a6b', tagTxt: '#a5b4fc',
+    chartGrid: '#243050', chartText: '#7a8aa8',
+  } : {
+    bg: '#ffffff', bgSub: '#f8fafc', bgCard: '#f1f5f9',
+    text: '#1e293b', textMuted: '#64748b', textHeading: '#0f172a',
+    border: '#e2e8f0',
+    btnActive: '#1e293b', btnActiveTxt: '#fff',
+    btnInactive: '#ffffff', btnInactiveTxt: '#64748b',
+    tagBg: '#e0e7ff', tagTxt: '#4338ca',
+    chartGrid: '#e2e8f0', chartText: '#64748b',
+  };
+
+  // ─── GAS에서 데이터 로드 ─────────────────────────────────────────────────
+  const loadDataFromGAS = async (year) => {
+    if (!GAS_URL) return;
+    setLoading(true);
+    setGasError('');
+    try {
+      const res = await fetch(`${GAS_URL}?action=admission&year=${year}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      if (json.error) throw new Error(json.error);
+
+      const parsed = parseAdmissionRows(json.data || []);
+      if (parsed.length > 0) {
+        setData(parsed);
+        setYDomain([1, 9]);
+        localStorage.setItem('reactPfData', JSON.stringify(parsed));
+        localStorage.setItem('reactPfYear', year);
+      } else {
+        setGasError(`${year}년 시트에 파싱 가능한 데이터가 없습니다. 헤더(전형, 등급 등)를 확인해주세요.`);
+        setData([]);
+      }
+    } catch (err) {
+      console.error('GAS fetch error:', err);
+      setGasError('데이터 로드 실패: ' + (err.message || err.toString()));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ─── 파일에서 데이터 로드 ────────────────────────────────────────────────
+  const loadDataFromFile = (file) => {
+    if (!file) return;
+    setLoading(true);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const wb = window.XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+        let allRows = [];
+        wb.SheetNames.forEach(name =>
+          allRows = allRows.concat(window.XLSX.utils.sheet_to_json(wb.Sheets[name], { defval: '' }))
+        );
+        const parsed = parseAdmissionRows(allRows);
+        if (parsed.length > 0) {
+          setData(parsed);
+          setYDomain([1, 9]);
+          localStorage.setItem('reactPfData', JSON.stringify(parsed));
         }
-      };
+      } catch (err) { console.error('Parse error:', err); }
+      finally { setLoading(false); }
+    };
+    reader.onerror = () => setLoading(false);
+    reader.readAsArrayBuffer(file);
+  };
 
-      if (data.length === 0 && !loading) return (
-        <div style={{ backgroundColor: t.bg, minHeight: '60vh', display: 'flex',
-          alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
-          <div style={{ textAlign: 'center', padding: '3rem 2rem', maxWidth: '560px', width: '100%',
-            backgroundColor: t.bgCard, borderRadius: '14px', border: '1px solid ' + t.border,
-            boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.4)' : '0 2px 12px rgba(0,0,0,0.07)' }}>
-            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📊</div>
-            <h3 style={{ fontSize: '1.2rem', color: t.textHeading, margin: '0 0 0.8rem' }}>합불합 사례 분석</h3>
+  // ─── 초기화 ──────────────────────────────────────────────────────────────
+  useEffect(() => {
+    // localStorage 즉시 복원
+    const saved = localStorage.getItem('reactPfData');
+    if (saved) { try { setData(JSON.parse(saved)); } catch (e) {} }
+
+    // GAS URL이 있으면 자동 로드 (파일 업로드 불필요)
+    if (GAS_URL) {
+      const savedYear = localStorage.getItem('reactPfYear') || '2025';
+      loadDataFromGAS(savedYear);
+      return;
+    }
+
+    // GAS 없으면 기존 파일 업로드 방식
+    const tryLoad = () => {
+      const src = document.getElementById('pf-results-upload')
+               || document.getElementById('uni-pf-results-upload');
+      if (src && src.files && src.files.length > 0) {
+        loadDataFromFile(src.files[0]);
+        return true;
+      }
+      return false;
+    };
+    tryLoad();
+    const t1 = setTimeout(tryLoad, 500);
+    const t2 = setTimeout(tryLoad, 1500);
+
+    const handler = (e) => {
+      const files = e.target && e.target.files;
+      if (files && files.length > 0) loadDataFromFile(files[0]);
+    };
+    const fi1 = document.getElementById('pf-results-upload');
+    const fi2 = document.getElementById('uni-pf-results-upload');
+    if (fi1) fi1.addEventListener('change', handler);
+    if (fi2) fi2.addEventListener('change', handler);
+
+    return () => {
+      clearTimeout(t1); clearTimeout(t2);
+      if (fi1) fi1.removeEventListener('change', handler);
+      if (fi2) fi2.removeEventListener('change', handler);
+    };
+  }, []);
+
+  // ─── 연도 변경 시 GAS 재로드 ────────────────────────────────────────────
+  const isFirstRender = useRef(true);
+  useEffect(() => {
+    if (isFirstRender.current) { isFirstRender.current = false; return; }
+    if (GAS_URL) loadDataFromGAS(selectedYear);
+  }, [selectedYear]);
+
+  // ─── 파생 데이터 ─────────────────────────────────────────────────────────
+  const uniList = useMemo(() =>
+    [...new Set(data.map(d => d.uni))].sort((a, b) => a.localeCompare(b, 'ko'))
+  , [data]);
+
+  const filteredData = useMemo(() => {
+    const q = majorSearch.toLowerCase();
+    const base = data
+      .filter(item =>
+        activeFilters.includes(getResultCategory(item.result)) &&
+        item.grade >= yDomain[0] && item.grade <= yDomain[1] &&
+        (q === '' || item.major.toLowerCase().includes(q) || item.uni.toLowerCase().includes(q))
+      )
+      .map(item => {
+        const ct = getChartType(item.type);
+        return { ...item, chartType: ct, chartTypeX: CHART_TYPES.indexOf(ct) };
+      });
+
+    const existing = new Set(base.map(d => d.chartType));
+    CHART_TYPES.forEach(ct => {
+      if (!existing.has(ct))
+        base.push({ id: `dummy-${ct}`, chartType: ct, chartTypeX: CHART_TYPES.indexOf(ct), grade: null, _dummy: true });
+    });
+
+    const groups = {};
+    base.forEach(item => {
+      if (item._dummy) return;
+      const key = `${item.chartType}-${Number(item.grade).toFixed(2)}`;
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(item);
+    });
+    Object.values(groups).forEach(group =>
+      group.forEach((item, i) => { item.xOffset = (i - (group.length - 1) / 2) * 12; })
+    );
+    return base;
+  }, [data, activeFilters, yDomain, majorSearch]);
+
+  // 대학별 산점도 데이터
+  const uniFilteredData = useMemo(() => {
+    const q = majorSearch.toLowerCase();
+    const base = data
+      .filter(item =>
+        activeFilters.includes(getResultCategory(item.result)) &&
+        item.grade >= yDomain[0] && item.grade <= yDomain[1] &&
+        (q === '' || item.major.toLowerCase().includes(q) || item.uni.toLowerCase().includes(q))
+      )
+      .map(item => ({
+        ...item,
+        uniX: uniList.indexOf(item.uni),
+      }));
+    const groups = {};
+    base.forEach(item => {
+      const key = `${item.uniX}-${Number(item.grade).toFixed(2)}`;
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(item);
+    });
+    Object.values(groups).forEach(group =>
+      group.forEach((item, i) => { item.xOffset = (i - (group.length - 1) / 2) * 8; })
+    );
+    return base;
+  }, [data, activeFilters, yDomain, majorSearch, uniList]);
+
+  const yTicks = useMemo(() => {
+    const range = yDomain[1] - yDomain[0];
+    const step  = range <= 1 ? 0.1 : range <= 2.5 ? 0.25 : 0.5;
+    const ticks = [];
+    for (let v = Math.ceil(yDomain[0] / step) * step; v <= yDomain[1]; v += step)
+      ticks.push(Number(v.toFixed(2)));
+    if (!ticks.includes(yDomain[0])) ticks.unshift(yDomain[0]);
+    if (!ticks.includes(yDomain[1])) ticks.push(yDomain[1]);
+    return ticks.sort((a, b) => a - b);
+  }, [yDomain]);
+
+  const gradeDistribution = useMemo(() => {
+    const dist = Array.from({ length: 9 }, (_, i) => ({ name: `${i+1}등급`, subject: 0, comprehensive: 0 }));
+    data.forEach(item => {
+      const g = Math.floor(item.grade);
+      if (g >= 1 && g <= 9) {
+        if (item.type.includes('교과')) dist[g-1].subject++;
+        else if (item.type.includes('종합') || item.type.includes('학종') || item.type.includes('서류')) dist[g-1].comprehensive++;
+      }
+    });
+    return dist;
+  }, [data]);
+
+  const uniDistribution = useMemo(() => {
+    const map = {};
+    data.forEach(item => {
+      if (!map[item.uni]) map[item.uni] = { name: item.uni, '합격': 0, '충원합격': 0, '불합격': 0, '기타': 0, total: 0 };
+      map[item.uni][getResultCategory(item.result)]++;
+      map[item.uni].total++;
+    });
+    return Object.values(map).sort((a, b) => b.total - a.total);
+  }, [data]);
+
+  const filteredUniDistribution = useMemo(() => {
+    if (!uniSearch) return uniDistribution;
+    const q = uniSearch.toLowerCase();
+    return uniDistribution.filter(d => d.name.toLowerCase().includes(q));
+  }, [uniDistribution, uniSearch]);
+
+  const passDataByGrade = useMemo(() => {
+    const agg = {};
+    for (let i = 1; i <= 9; i++) agg[i] = [];
+    data.forEach(item => {
+      const cat = getResultCategory(item.result);
+      const g   = Math.floor(item.grade);
+      if ((cat === '합격' || cat === '충원합격') && g >= 1 && g <= 9) {
+        const entry = agg[g].find(e => e.uni === item.uni);
+        if (entry) { entry.count++; entry.students.push(item); }
+        else agg[g].push({ uni: item.uni, count: 1, students: [item] });
+      }
+    });
+    for (let i = 1; i <= 9; i++) agg[i].sort((a, b) => b.count - a.count);
+    return agg;
+  }, [data]);
+
+  const failDataByGrade = useMemo(() => {
+    const agg = {};
+    for (let i = 1; i <= 9; i++) agg[i] = [];
+    data.forEach(item => {
+      const cat = getResultCategory(item.result);
+      const g   = Math.floor(item.grade);
+      if (cat === '불합격' && g >= 1 && g <= 9) {
+        const entry = agg[g].find(e => e.uni === item.uni);
+        if (entry) { entry.count++; entry.students.push(item); }
+        else agg[g].push({ uni: item.uni, count: 1, students: [item] });
+      }
+    });
+    for (let i = 1; i <= 9; i++) agg[i].sort((a, b) => b.count - a.count);
+    return agg;
+  }, [data]);
+
+  const toggleFilter = (c) =>
+    setActiveFilters(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]);
+
+  // ─── 공통 카드 스타일 ───────────────────────────────────────────────────
+  const card = {
+    backgroundColor: t.bgCard,
+    color: t.text,
+    borderRadius: '14px',
+    border: `1px solid ${t.border}`,
+    boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.4)' : '0 2px 12px rgba(0,0,0,0.07)',
+    padding: '1.25rem',
+  };
+
+  const ModalRow = ({ label, value, highlight }) => (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+      padding: '0.45rem 0', borderBottom: `1px solid ${t.border}` }}>
+      <span style={{ fontSize: '0.78rem', color: t.textMuted, minWidth: '5.5rem', flexShrink: 0 }}>{label}</span>
+      {highlight
+        ? <span style={{ fontSize: '0.82rem', fontWeight: 700, backgroundColor: isDark ? '#431407' : '#fff7ed',
+            color: '#ea580c', padding: '0.1rem 0.5rem', borderRadius: '0.3rem' }}>{value || '-'}</span>
+        : <span style={{ fontSize: '0.85rem', fontWeight: 500, color: t.text,
+            textAlign: 'right', wordBreak: 'break-all' }}>{value || '-'}</span>
+      }
+    </div>
+  );
+
+  // ─── 빈 상태 ────────────────────────────────────────────────────────────
+  const manualLoad = () => {
+    if (GAS_URL) { loadDataFromGAS(selectedYear); return; }
+    const src = document.getElementById('pf-results-upload')
+             || document.getElementById('uni-pf-results-upload');
+    if (src && src.files && src.files.length > 0) {
+      loadDataFromFile(src.files[0]);
+    } else {
+      const inp = document.getElementById('uni-pf-results-upload');
+      if (inp) inp.click();
+    }
+  };
+
+  if (data.length === 0 && !loading) return (
+    <div style={{ backgroundColor: t.bg, minHeight: '60vh', display: 'flex',
+      alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+      <div style={{ textAlign: 'center', padding: '3rem 2rem', maxWidth: '560px', width: '100%',
+        backgroundColor: t.bgCard, borderRadius: '14px', border: '1px solid ' + t.border,
+        boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.4)' : '0 2px 12px rgba(0,0,0,0.07)' }}>
+        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📊</div>
+        <h3 style={{ fontSize: '1.2rem', color: t.textHeading, margin: '0 0 0.6rem' }}>합불합 사례 데이터</h3>
+
+        {GAS_URL ? (
+          <>
+            <p style={{ fontSize: '0.875rem', color: t.textMuted, lineHeight: 1.8, margin: '0 0 1.25rem' }}>
+              스프레드시트에서 데이터를 불러옵니다.
+            </p>
             {gasError && (
               <div style={{ margin: '0 0 1rem', padding: '0.6rem 0.9rem', borderRadius: '8px',
-                backgroundColor: isDark ? '#3b0a0a' : '#fef2f2', border: '1px solid #fca5a5',
-                fontSize: '0.82rem', color: isDark ? '#fca5a5' : '#b91c1c', textAlign: 'left' }}>
+                backgroundColor: isDark ? '#3b0a0a' : '#fef2f2',
+                border: '1px solid #fca5a5', fontSize: '0.82rem', color: isDark ? '#fca5a5' : '#b91c1c',
+                textAlign: 'left' }}>
                 ⚠ {gasError}
               </div>
             )}
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
-              <span style={{ fontSize: '0.875rem', color: t.textMuted }}>연도 선택</span>
-              <select value={selectedYear} onChange={e => setSelectedYear(e.target.value)}
-                style={{ padding: '0.35rem 0.8rem', borderRadius: '8px', border: `1px solid ${t.border}`,
-                  backgroundColor: t.bgSub, color: t.text, fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', outline: 'none' }}>
-                {YEAR_OPTIONS.map(y => <option key={y} value={y}>{y}년</option>)}
-              </select>
-              <button onClick={() => GAS_URL ? loadDataFromGAS(selectedYear) : manualLoad()}
-                style={{ padding: '0.45rem 1.2rem', backgroundColor: t.btnActive, color: t.btnActiveTxt,
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+              <YearSelector year={selectedYear} onChange={setSelectedYear} isDark={isDark} t={t} />
+              <button onClick={manualLoad}
+                style={{ padding: '0.6rem 1.4rem', backgroundColor: t.btnActive, color: t.btnActiveTxt,
                   border: 'none', borderRadius: '8px', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer' }}>
-                {GAS_URL ? '🔄 불러오기' : '📂 파일 불러오기'}
+                🔄 다시 불러오기
               </button>
             </div>
-            {!GAS_URL && (
-              <p style={{ fontSize: '0.82rem', color: t.textMuted, lineHeight: 1.7, margin: 0 }}>
-                또는 사이드바 → 통합 파일 업로드 → 수시진학관리 엑셀 파일 업로드
-              </p>
-            )}
-          </div>
-        </div>
-      );
-
-      const displayedCount = filteredData.filter(d => !d._dummy).length;
-      const avgGrade = (() => {
-        const rd = filteredData.filter(d => !d._dummy && d.grade != null);
-        return rd.length ? (rd.reduce((s, c) => s + c.grade, 0) / rd.length).toFixed(2) : '-';
-      })();
-
-      return (
-        <div style={{ backgroundColor: t.bg, color: t.text, padding: '1.25rem', paddingBottom: '5rem', minHeight: '100vh' }}>
-
-          {loading && (
-            <div style={{ textAlign: 'center', padding: '3rem', color: '#6366f1', fontSize: '1rem' }}>
-              {GAS_URL ? `${selectedYear}년 데이터 불러오는 중...` : '데이터 분석 중...'}
+          </>
+        ) : (
+          <>
+            <p style={{ fontSize: '0.875rem', color: t.textMuted, lineHeight: 1.8, margin: '0 0 0.75rem' }}>
+              <b style={{ color: isDark ? '#a5b4fc' : '#4f46e5' }}>방법 1.</b> 사이드바 → 통합 파일 업로드 →<br/>
+              합불합 분석용 → 수시진학관리 엑셀 파일 업로드
+            </p>
+            <div style={{ margin: '0 0 1.25rem', padding: '0.7rem 1rem', borderRadius: '8px',
+              backgroundColor: isDark ? '#1a2035' : '#f0f4ff', border: `1px solid ${t.border}`,
+              fontSize: '0.82rem', color: t.textMuted, textAlign: 'left', lineHeight: 1.7 }}>
+              <b style={{ color: isDark ? '#a5b4fc' : '#4f46e5', display: 'block', marginBottom: '0.25rem' }}>
+                방법 2. 앱스크립트 연동 (자동 로드)
+              </b>
+              1. <code>admission_gas.gs</code> 내용을 Google Apps Script에 붙여넣기<br/>
+              2. 웹 앱으로 배포 → URL 복사<br/>
+              3. <code>admission_analysis.jsx</code> 맨 위 <code>GAS_URL = ''</code> 에 URL 붙여넣기
             </div>
-          )}
+            <button onClick={manualLoad}
+              style={{ padding: '0.6rem 1.4rem', backgroundColor: t.btnActive, color: t.btnActiveTxt,
+                border: 'none', borderRadius: '8px', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer' }}>
+              📂 파일 불러오기
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
 
-          {!loading && data.length > 0 && (
-            <>
-              {/* ── 통계 헤더 ── */}
-              <div style={{ borderRadius: '14px', padding: '1.25rem 1.5rem', marginBottom: '1.25rem',
-                backgroundColor: isDark ? '#1e1e5a' : '#312e81', color: '#fff', border: 'none',
-                boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.4)' : '0 4px 20px rgba(49,46,129,0.25)',
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
-                <div>
-                  <p style={{ margin: 0, fontSize: '0.78rem', color: '#c7d2fe' }}>표시된 데이터</p>
-                  <p style={{ margin: '0.15rem 0 0', fontSize: '2.2rem', fontWeight: 800, lineHeight: 1 }}>
-                    {displayedCount}
-                    <span style={{ fontSize: '1rem', fontWeight: 400, opacity: 0.7, marginLeft: '0.4rem' }}>/ {data.length} 건</span>
-                  </p>
+  const displayedCount = filteredData.filter(d => !d._dummy).length;
+  const avgGrade = (() => {
+    const rd = filteredData.filter(d => !d._dummy && d.grade != null);
+    return rd.length ? (rd.reduce((s, c) => s + c.grade, 0) / rd.length).toFixed(2) : '-';
+  })();
+
+  return (
+    <div style={{ backgroundColor: t.bg, color: t.text, padding: '1.25rem', paddingBottom: '5rem', minHeight: '100vh' }}>
+
+      {loading && (
+        <div style={{ textAlign: 'center', padding: '3rem', color: '#6366f1', fontSize: '1rem' }}>
+          {GAS_URL ? '스프레드시트에서 데이터 불러오는 중...' : '데이터 분석 중...'}
+        </div>
+      )}
+
+      {!loading && data.length > 0 && (
+        <>
+          {/* ── 통계 헤더 ── */}
+          <div style={{ borderRadius: '14px', padding: '1.25rem 1.5rem', marginBottom: '1.25rem',
+            backgroundColor: isDark ? '#1e1e5a' : '#312e81', color: '#fff', border: 'none',
+            boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.4)' : '0 4px 20px rgba(49,46,129,0.25)',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+            <div>
+              <p style={{ margin: 0, fontSize: '0.78rem', color: '#c7d2fe' }}>표시된 데이터</p>
+              <p style={{ margin: '0.15rem 0 0', fontSize: '2.2rem', fontWeight: 800, lineHeight: 1 }}>
+                {displayedCount}
+                <span style={{ fontSize: '1rem', fontWeight: 400, opacity: 0.7, marginLeft: '0.4rem' }}>/ {data.length} 건</span>
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap', alignItems: 'center' }}>
+              {/* 연도 드롭다운 */}
+              {GAS_URL && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ fontSize: '0.78rem', color: '#c7d2fe' }}>연도</span>
+                  <select
+                    value={selectedYear}
+                    onChange={e => setSelectedYear(e.target.value)}
+                    style={{
+                      padding: '0.3rem 0.7rem',
+                      borderRadius: '8px',
+                      border: '1px solid rgba(255,255,255,0.3)',
+                      backgroundColor: 'rgba(255,255,255,0.15)',
+                      color: '#fff',
+                      fontSize: '0.9rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      outline: 'none',
+                    }}
+                  >
+                    {YEAR_OPTIONS.map(y => <option key={y} value={y} style={{ color: '#1e293b' }}>{y}년</option>)}
+                  </select>
                 </div>
-                <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                  {GAS_URL && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <span style={{ fontSize: '0.78rem', color: '#c7d2fe' }}>연도</span>
-                      <select
-                        value={selectedYear}
-                        onChange={e => setSelectedYear(e.target.value)}
-                        style={{ padding: '0.3rem 0.7rem', borderRadius: '8px',
-                          border: '1px solid rgba(255,255,255,0.3)',
-                          backgroundColor: 'rgba(255,255,255,0.15)', color: '#fff',
-                          fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', outline: 'none' }}
-                      >
-                        {YEAR_OPTIONS.map(y => <option key={y} value={y} style={{ color: '#1e293b' }}>{y}년</option>)}
-                      </select>
-                    </div>
+              )}
+              {[['평균 등급', avgGrade], ['총 대학 수', uniDistribution.length + '개']].map(([lbl, val]) => (
+                <div key={lbl} style={{ textAlign: 'right' }}>
+                  <p style={{ margin: '0 0 0.15rem', fontSize: '0.76rem', color: '#a5b4fc' }}>{lbl}</p>
+                  <p style={{ margin: 0, fontWeight: 700, fontSize: '1.4rem' }}>{val}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ── 산점도 + 사이드바 ── */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,3fr) minmax(0,1fr)',
+            gap: '1.25rem', marginBottom: '1.25rem', alignItems: 'start' }}>
+
+            {/* 산점도 카드 */}
+            <div style={{ ...card, display: 'flex', flexDirection: 'column', height: '1050px' }}>
+
+              {/* 모드 토글 */}
+              <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.75rem' }}>
+                {[['type','전형별 산포도'],['uni','대학별 산포도']].map(([mode, label]) => {
+                  const on = scatterMode === mode;
+                  return (
+                    <button key={mode} onClick={() => setScatterMode(mode)} style={{
+                      padding: '0.3rem 0.9rem', borderRadius: '8px', fontSize: '0.82rem', fontWeight: 700,
+                      border: `1px solid ${on ? t.btnActive : t.border}`,
+                      backgroundColor: on ? t.btnActive : t.btnInactive,
+                      color: on ? t.btnActiveTxt : t.textMuted,
+                      cursor: 'pointer',
+                    }}>{label}</button>
+                  );
+                })}
+              </div>
+
+              {/* 필터 버튼 + 학과 검색 */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem',
+                    fontWeight: 700, fontSize: '0.9rem', color: t.textHeading }}>
+                    <Icons.Filter /> 결과 필터
+                  </span>
+                  {RESULT_CATEGORIES.map(cat => {
+                    const on = activeFilters.includes(cat);
+                    return (
+                      <button key={cat} onClick={() => toggleFilter(cat)} style={{
+                        display: 'flex', alignItems: 'center', gap: '0.25rem',
+                        padding: '0.25rem 0.7rem', borderRadius: '999px', fontSize: '0.78rem', fontWeight: 600,
+                        border: `1px solid ${on ? t.btnActive : t.border}`,
+                        backgroundColor: on ? t.btnActive : t.btnInactive,
+                        color: on ? t.btnActiveTxt : t.btnInactiveTxt,
+                        cursor: 'pointer', whiteSpace: 'nowrap',
+                      }}>
+                        <span style={{ width: '7px', height: '7px', borderRadius: '50%', flexShrink: 0,
+                          backgroundColor: on ? '#fff' : COLORS[cat] }}/>
+                        {cat}
+                      </button>
+                    );
+                  })}
+                </div>
+                {/* 학과 검색 */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem',
+                  backgroundColor: t.bgSub, border: `1px solid ${majorSearch ? t.btnActive : t.border}`,
+                  borderRadius: '8px', padding: '0.25rem 0.6rem', minWidth: '200px' }}>
+                  <span style={{ color: t.textMuted, fontSize: '0.88rem' }}>🔍</span>
+                  <input
+                    type="text"
+                    value={majorSearch}
+                    onChange={e => setMajorSearch(e.target.value)}
+                    placeholder="학과 또는 대학명 검색..."
+                    style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent',
+                      color: t.text, fontSize: '0.82rem', minWidth: 0 }}
+                  />
+                  {majorSearch && (
+                    <button onClick={() => setMajorSearch('')}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer',
+                        color: t.textMuted, fontSize: '0.85rem', padding: 0, lineHeight: 1 }}>✕</button>
                   )}
-                  {[['평균 등급', avgGrade], ['총 대학 수', uniDistribution.length + '개']].map(([lbl, val]) => (
-                    <div key={lbl} style={{ textAlign: 'right' }}>
-                      <p style={{ margin: '0 0 0.15rem', fontSize: '0.76rem', color: '#a5b4fc' }}>{lbl}</p>
-                      <p style={{ margin: 0, fontWeight: 700, fontSize: '1.4rem' }}>{val}</p>
-                    </div>
+                </div>
+              </div>
+              {majorSearch && (
+                <div style={{ fontSize: '0.78rem', color: '#7c83fd', marginBottom: '0.5rem' }}>
+                  "{majorSearch}" 검색 결과: {uniFilteredData.length}건
+                </div>
+              )}
+
+              {/* 확대 컨트롤 */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap',
+                backgroundColor: t.bgSub, border: `1px solid ${t.border}`,
+                borderRadius: '10px', padding: '0.6rem 0.9rem', marginBottom: '0.75rem' }}>
+                <Icons.ZoomIn />
+                <span style={{ fontSize: '0.82rem', fontWeight: 600, color: t.text }}>등급대 확대</span>
+                {[[1,9,'전체'],[1,3,'1~3'],[3,6,'3~6'],[6,9,'6~9']].map(([mn,mx,lbl]) => {
+                  const on = yDomain[0]===mn && yDomain[1]===mx;
+                  return (
+                    <button key={lbl} onClick={() => setYDomain([mn,mx])} style={{
+                      padding: '0.15rem 0.55rem', borderRadius: '6px', fontSize: '0.78rem',
+                      backgroundColor: on ? t.btnActive : t.btnInactive,
+                      color: on ? t.btnActiveTxt : t.text,
+                      border: `1px solid ${on ? t.btnActive : t.border}`, cursor: 'pointer',
+                    }}>{lbl}</button>
+                  );
+                })}
+                <div style={{ display: 'flex', gap: '0.3rem', marginLeft: 'auto', alignItems: 'center' }}>
+                  {[
+                    [tempYDomain[0], v => setTempYDomain([parseFloat(v)||1, tempYDomain[1]])],
+                    [tempYDomain[1], v => setTempYDomain([tempYDomain[0], parseFloat(v)||9])],
+                  ].map(([val, setter], i) => (
+                    <React.Fragment key={i}>
+                      {i===1 && <span style={{ color: t.textMuted }}>~</span>}
+                      <input type="number" step="0.5" value={val}
+                        onChange={e => setter(e.target.value)}
+                        style={{ width: '50px', textAlign: 'center', fontSize: '0.82rem',
+                          padding: '0.15rem 0.3rem', backgroundColor: t.bgSub, color: t.text,
+                          border: `1px solid ${t.border}`, borderRadius: '5px' }}/>
+                    </React.Fragment>
                   ))}
+                  <button onClick={() => setYDomain([Math.min(...tempYDomain), Math.max(...tempYDomain)])}
+                    style={{ padding: '0.15rem 0.6rem', borderRadius: '5px', fontSize: '0.78rem',
+                      backgroundColor: t.btnActive, color: t.btnActiveTxt, border: 'none', cursor: 'pointer' }}>
+                    적용
+                  </button>
                 </div>
               </div>
 
-              {/* ── 산점도 + 사이드바 ── */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,3fr) minmax(0,1fr)',
-                gap: '1.25rem', marginBottom: '1.25rem', alignItems: 'start' }}>
-
-                {/* 산점도 카드 */}
-                <div style={{ ...card, display: 'flex', flexDirection: 'column', height: '1050px' }}>
-
-                  {/* 필터 버튼 */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem',
-                      fontWeight: 700, fontSize: '0.9rem', color: t.textHeading }}>
-                      <Icons.Filter /> 결과 필터
-                    </span>
-                    <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap' }}>
-                      {RESULT_CATEGORIES.map(cat => {
-                        const on = activeFilters.includes(cat);
-                        return (
-                          <button key={cat} onClick={() => toggleFilter(cat)} style={{
-                            display: 'flex', alignItems: 'center', gap: '0.25rem',
-                            padding: '0.25rem 0.7rem', borderRadius: '999px', fontSize: '0.78rem', fontWeight: 600,
-                            border: `1px solid ${on ? t.btnActive : t.border}`,
-                            backgroundColor: on ? t.btnActive : t.btnInactive,
-                            color: on ? t.btnActiveTxt : t.btnInactiveTxt,
-                            cursor: 'pointer', whiteSpace: 'nowrap',
-                          }}>
-                            <span style={{ width: '7px', height: '7px', borderRadius: '50%', flexShrink: 0,
-                              backgroundColor: on ? '#fff' : COLORS[cat] }}/>
-                            {cat}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* 확대 컨트롤 */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap',
-                    backgroundColor: t.bgSub, border: `1px solid ${t.border}`,
-                    borderRadius: '10px', padding: '0.6rem 0.9rem', marginBottom: '0.75rem' }}>
-                    <Icons.ZoomIn />
-                    <span style={{ fontSize: '0.82rem', fontWeight: 600, color: t.text }}>등급대 확대</span>
-                    {[[1,9,'전체'],[1,2,'1-2'],[2,3,'2-3'],[3,4,'3-4'],[4,5,'4-5'],[5,6,'5-6'],[6,7,'6-7'],[7,8,'7-8'],[8,9,'8-9']].map(([mn,mx,lbl]) => {
-                      const on = yDomain[0]===mn && yDomain[1]===mx;
-                      return (
-                        <button key={lbl} onClick={() => setYDomain([mn,mx])} style={{
-                          padding: '0.15rem 0.55rem', borderRadius: '6px', fontSize: '0.78rem',
-                          backgroundColor: on ? t.btnActive : t.btnInactive,
-                          color: on ? t.btnActiveTxt : t.text,
-                          border: `1px solid ${on ? t.btnActive : t.border}`, cursor: 'pointer',
-                        }}>{lbl}</button>
-                      );
-                    })}
-                    <div style={{ display: 'flex', gap: '0.3rem', marginLeft: 'auto', alignItems: 'center' }}>
-                      {[
-                        [tempYDomain[0], v => setTempYDomain([parseFloat(v)||1, tempYDomain[1]])],
-                        [tempYDomain[1], v => setTempYDomain([tempYDomain[0], parseFloat(v)||9])],
-                      ].map(([val, setter], i) => (
-                        <React.Fragment key={i}>
-                          {i===1 && <span style={{ color: t.textMuted }}>~</span>}
-                          <input type="number" step="0.5" value={val}
-                            onChange={e => setter(e.target.value)}
-                            style={{ width: '50px', textAlign: 'center', fontSize: '0.82rem',
-                              padding: '0.15rem 0.3rem', backgroundColor: t.bgSub, color: t.text,
-                              border: `1px solid ${t.border}`, borderRadius: '5px' }}/>
-                        </React.Fragment>
-                      ))}
-                      <button onClick={() => setYDomain([Math.min(...tempYDomain), Math.max(...tempYDomain)])}
-                        style={{ padding: '0.15rem 0.6rem', borderRadius: '5px', fontSize: '0.78rem',
-                          backgroundColor: t.btnActive, color: t.btnActiveTxt, border: 'none', cursor: 'pointer' }}>
-                        적용
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* 산점도 */}
+              {/* 산점도 */}
+              {scatterMode === 'type' ? (
+                <>
                   <div style={{ flex: 1, minHeight: 0 }}>
                     <ResponsiveContainer width="100%" height="100%">
                       <ScatterChart margin={{ top: 20, right: 40, bottom: 50, left: 10 }}>
@@ -2550,337 +2835,483 @@
                   <p style={{ textAlign: 'center', fontSize: '0.74rem', color: t.textMuted, margin: '0.5rem 0 0' }}>
                     * 점을 클릭하면 상세 정보를 확인할 수 있습니다. 겹친 점들은 양옆으로 펼쳐집니다.
                   </p>
-                </div>
-
-                {/* 사이드바 */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                  {/* 범례 */}
-                  <div style={card}>
-                    <p style={{ margin: '0 0 0.6rem', fontSize: '0.82rem', fontWeight: 700, color: t.textHeading }}>색상 범례</p>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                      {RESULT_CATEGORIES.map(cat => (
-                        <div key={cat} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.82rem' }}>
-                          <span style={{ width: '10px', height: '10px', borderRadius: '50%',
-                            backgroundColor: COLORS[cat], flexShrink: 0 }}/>
-                          <span style={{ color: t.text }}>{cat}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* 등급별 지원 현황 */}
-                  <div style={{ ...card }}>
-                    <p style={{ margin: '0 0 0.75rem', fontWeight: 700, fontSize: '0.9rem', color: t.textHeading,
-                      display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <Icons.BarChart /> 등급별 지원 현황
-                    </p>
-                    <div style={{ height: '380px' }}>
+                </>
+              ) : (
+                /* 대학별 산포도 */
+                <>
+                  <div style={{ flex: 1, minHeight: 0, overflowX: 'auto', overflowY: 'hidden' }}>
+                    <div style={{ width: Math.max(700, uniList.length * 55) + 'px', height: '100%' }}>
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={gradeDistribution} layout="vertical"
-                          margin={{ left: 0, right: 15, top: 5, bottom: 5 }}>
-                          <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={t.chartGrid} />
-                          <XAxis type="number" hide />
-                          <YAxis dataKey="name" type="category" width={52}
+                        <ScatterChart margin={{ top: 20, right: 30, bottom: 90, left: 10 }}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={t.chartGrid} />
+                          <XAxis
+                            type="number"
+                            dataKey="uniX"
+                            domain={[-0.5, uniList.length - 0.5]}
+                            ticks={uniList.map((_, i) => i)}
+                            tickFormatter={(v) => uniList[v] || ''}
+                            tickLine={false}
+                            axisLine={{ stroke: t.border }}
+                            tick={{ fill: t.chartText, fontSize: 10, fontWeight: 500 }}
+                            interval={0}
+                            angle={-45}
+                            textAnchor="end"
+                            height={90}
+                          />
+                          <YAxis
+                            type="number"
+                            dataKey="grade"
+                            domain={yDomain}
+                            reversed={true}
+                            ticks={yTicks}
+                            tickLine={false}
+                            axisLine={{ stroke: t.border }}
                             tick={{ fill: t.chartText, fontSize: 11 }}
-                            axisLine={false} tickLine={false} />
+                          />
                           <Tooltip
-                            contentStyle={{ backgroundColor: t.bgCard, color: t.text,
-                              border: `1px solid ${t.border}`, borderRadius: '8px', fontSize: '0.8rem' }}
-                            itemStyle={{ color: t.text }}
-                            labelStyle={{ color: t.textHeading, fontWeight: 600 }}
+                            cursor={{ strokeDasharray: '3 3', stroke: t.border }}
+                            content={({ active, payload }) => {
+                              if (!active || !payload || !payload.length) return null;
+                              const d = payload[0].payload;
+                              const cat = getResultCategory(d.result);
+                              return (
+                                <div style={{ backgroundColor: t.bgCard, color: t.text, padding: '0.7rem 0.9rem',
+                                  borderRadius: '8px', border: `1px solid ${t.border}`,
+                                  boxShadow: '0 4px 20px rgba(0,0,0,0.3)', fontSize: '0.82rem', maxWidth: '240px' }}>
+                                  <p style={{ margin: '0 0 0.2rem', fontWeight: 700, color: t.textHeading }}>{d.uni}</p>
+                                  <p style={{ margin: '0 0 0.08rem', color: t.text, fontSize: '0.8rem' }}>{d.major}</p>
+                                  <p style={{ margin: '0 0 0.08rem', color: t.textMuted, fontSize: '0.75rem' }}>{d.type}</p>
+                                  <p style={{ margin: 0, fontWeight: 700, color: COLORS[cat] }}>
+                                    {d.grade}등급 · {d.result}
+                                  </p>
+                                </div>
+                              );
+                            }}
                           />
-                          <Legend
-                            wrapperStyle={{ fontSize: '0.78rem' }}
-                            formatter={(v) => <span style={{ color: t.textMuted }}>{v}</span>}
+                          <Scatter
+                            data={uniFilteredData}
+                            shape={(props) => {
+                              const { cx, cy, payload } = props;
+                              if (payload.grade == null) return null;
+                              const fill = COLORS[getResultCategory(payload.result)];
+                              return (
+                                <circle
+                                  cx={cx + (payload.xOffset || 0)} cy={cy} r={6}
+                                  fill={fill} fillOpacity={0.82} stroke={fill} strokeWidth={1.5}
+                                  onClick={e => { e.stopPropagation(); setSelectedPoint(payload); }}
+                                  style={{ cursor: 'pointer' }}
+                                />
+                              );
+                            }}
                           />
-                          <Bar dataKey="subject"       name="교과" fill="#6366f1" radius={[0,4,4,0]} barSize={11} />
-                          <Bar dataKey="comprehensive" name="종합" fill="#10b981" radius={[0,4,4,0]} barSize={11} />
-                        </BarChart>
+                        </ScatterChart>
                       </ResponsiveContainer>
                     </div>
                   </div>
-                </div>
-              </div>
+                  <p style={{ textAlign: 'center', fontSize: '0.74rem', color: t.textMuted, margin: '0.5rem 0 0' }}>
+                    * 가로 스크롤로 전체 대학을 확인하세요. 점을 클릭하면 상세 정보를 볼 수 있습니다.
+                  </p>
+                </>
+              )}
+            </div>
 
-              {/* 대학별 현황 ── */}
-              <div style={{ ...card, marginBottom: '1.25rem' }}>
-                <p style={{ margin: '0 0 0.75rem', fontWeight: 700, fontSize: '1rem', color: t.textHeading,
-                  display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <Icons.Landmark /> 대학별 지원 현황
-                  <span style={{ fontSize: '0.78rem', color: t.textMuted, fontWeight: 400, marginLeft: '0.2rem' }}>
-                    ({uniDistribution.length}개 대학)
-                  </span>
-                </p>
-                <div style={{ overflowX: 'auto', paddingBottom: '0.5rem' }}>
-                  <div style={{ width: Math.max(700, uniDistribution.length * 72) + 'px', height: '390px' }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={uniDistribution}
-                        margin={{ top: 10, right: 20, left: 0, bottom: 90 }}
-                        onClick={(cd) => { if (cd && cd.activeLabel) setSelectedUniChartData(cd.activeLabel); }}
-                        style={{ cursor: 'pointer' }}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={t.chartGrid} />
-                        <XAxis dataKey="name" angle={-45} textAnchor="end"
-                          tick={{ fill: t.chartText, fontSize: 11 }} height={90}
-                          axisLine={{ stroke: t.border }} tickLine={false} />
-                        <YAxis tick={{ fill: t.chartText, fontSize: 11 }}
-                          axisLine={{ stroke: t.border }} tickLine={false} />
-                        <Tooltip
-                          contentStyle={{ backgroundColor: t.bgCard, color: t.text,
-                            border: `1px solid ${t.border}`, borderRadius: '8px', fontSize: '0.82rem' }}
-                          itemStyle={{ color: t.text }}
-                          labelStyle={{ color: t.textHeading, fontWeight: 600 }}
-                        />
-                        <Legend verticalAlign="top"
-                          wrapperStyle={{ fontSize: '0.78rem', paddingBottom: '0.5rem' }}
-                          formatter={(v) => <span style={{ color: t.textMuted }}>{v}</span>}
-                        />
-                        <Bar dataKey="합격"    stackId="a" fill={COLORS['합격']} />
-                        <Bar dataKey="충원합격" stackId="a" fill={COLORS['충원합격']} />
-                        <Bar dataKey="불합격"  stackId="a" fill={COLORS['불합격']} radius={[4,4,0,0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-                <p style={{ textAlign: 'center', fontSize: '0.74rem', color: t.textMuted, margin: '0.3rem 0 0' }}>
-                  * 막대를 클릭하면 해당 대학 지원자 전체 현황을 볼 수 있습니다.
-                </p>
-              </div>
-
-              {/* 등급대별 합격 순위 ── */}
+            {/* 사이드바 */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              {/* 범례 */}
               <div style={card}>
-                <p style={{ margin: '0 0 0.75rem', fontWeight: 700, fontSize: '1rem', color: t.textHeading,
+                <p style={{ margin: '0 0 0.6rem', fontSize: '0.82rem', fontWeight: 700, color: t.textHeading }}>색상 범례</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  {RESULT_CATEGORIES.map(cat => (
+                    <div key={cat} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.82rem' }}>
+                      <span style={{ width: '10px', height: '10px', borderRadius: '50%',
+                        backgroundColor: COLORS[cat], flexShrink: 0 }}/>
+                      <span style={{ color: t.text }}>{cat}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 등급별 지원 현황 */}
+              <div style={{ ...card }}>
+                <p style={{ margin: '0 0 0.75rem', fontWeight: 700, fontSize: '0.9rem', color: t.textHeading,
                   display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <Icons.Trophy /> 등급대별 합격 순위
-                  <span style={{ fontSize: '0.78rem', color: t.textMuted, fontWeight: 400, marginLeft: '0.2rem' }}>
-                    (합격·충원합격 기준)
-                  </span>
+                  <Icons.BarChart /> 등급별 지원 현황
                 </p>
-                <div style={{ overflowX: 'auto' }}>
-                  <table style={{ borderCollapse: 'collapse', minWidth: '100%', width: 'max-content' }}>
-                    <thead>
-                      <tr style={{ backgroundColor: t.bgSub, borderBottom: `2px solid ${t.border}` }}>
-                        <th style={{ padding: '0.6rem 1rem', fontSize: '0.82rem', fontWeight: 700,
-                          color: t.textMuted, textAlign: 'left', whiteSpace: 'nowrap', minWidth: '80px' }}>등급대</th>
-                        <th style={{ padding: '0.6rem 1rem', fontSize: '0.82rem', fontWeight: 700,
-                          color: t.textMuted, textAlign: 'left' }}>합격 대학 목록 (클릭 시 상세)</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {[1,2,3,4,5,6,7,8,9].map(g => (
-                        <tr key={g} style={{ borderBottom: `1px solid ${t.border}` }}>
-                          <td style={{ padding: '0.55rem 1rem', fontWeight: 700, fontSize: '0.85rem',
-                            color: t.text, whiteSpace: 'nowrap', verticalAlign: 'middle' }}>{g}등급대</td>
-                          <td style={{ padding: '0.45rem 1rem' }}>
-                            <div style={{ display: 'flex', flexWrap: 'nowrap', gap: '0.35rem', alignItems: 'center' }}>
-                              {passDataByGrade[g] && passDataByGrade[g].length > 0
-                                ? passDataByGrade[g].map((ud, idx) => (
-                                    <button key={idx} onClick={() => setSelectedUniPassData({ grade: g, ...ud })}
-                                      style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
-                                        padding: '0.25rem 0.55rem', whiteSpace: 'nowrap',
-                                        backgroundColor: t.bgSub, color: t.text,
-                                        border: `1px solid ${t.border}`, borderRadius: '7px',
-                                        cursor: 'pointer', fontSize: '0.82rem', fontWeight: 500 }}>
-                                      {ud.uni}
-                                      <span style={{ backgroundColor: t.tagBg, color: t.tagTxt,
-                                        padding: '0.05rem 0.35rem', borderRadius: '4px',
-                                        fontWeight: 700, fontSize: '0.72rem' }}>{ud.count}</span>
-                                    </button>
-                                  ))
-                                : <span style={{ color: t.textMuted, fontSize: '0.82rem' }}>데이터 없음</span>
-                              }
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div style={{ height: '380px' }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={gradeDistribution} layout="vertical"
+                      margin={{ left: 0, right: 15, top: 5, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={t.chartGrid} />
+                      <XAxis type="number" hide />
+                      <YAxis dataKey="name" type="category" width={52}
+                        tick={{ fill: t.chartText, fontSize: 11 }}
+                        axisLine={false} tickLine={false} />
+                      <Tooltip
+                        contentStyle={{ backgroundColor: t.bgCard, color: t.text,
+                          border: `1px solid ${t.border}`, borderRadius: '8px', fontSize: '0.8rem' }}
+                        itemStyle={{ color: t.text }}
+                        labelStyle={{ color: t.textHeading, fontWeight: 600 }}
+                      />
+                      <Legend
+                        wrapperStyle={{ fontSize: '0.78rem' }}
+                        formatter={(v) => <span style={{ color: t.textMuted }}>{v}</span>}
+                      />
+                      <Bar dataKey="subject"       name="교과" fill="#6366f1" radius={[0,4,4,0]} barSize={11} />
+                      <Bar dataKey="comprehensive" name="종합" fill="#10b981" radius={[0,4,4,0]} barSize={11} />
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
               </div>
-            </>
-          )}
+            </div>
+          </div>
 
-          {/* ──── 단일 점 클릭 모달 ──── */}
-          {selectedPoint && !selectedPoint._dummy && (() => {
-            const cat = getResultCategory(selectedPoint.result);
-            const catColor = COLORS[cat] || '#9CA3AF';
-            const resultBg = isDark
-              ? (cat==='합격' ? '#052e16' : cat==='충원합격' ? '#0c2149' : cat==='불합격' ? '#3b0a0a' : t.bgCard)
-              : (cat==='합격' ? '#ecfdf5' : cat==='충원합격' ? '#eff6ff' : cat==='불합격' ? '#fef2f2' : t.bgSub);
-            const hasRank = selectedPoint.rank && selectedPoint.rank !== '-' && selectedPoint.rank !== '후보순위없음';
-            return (
-              <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.65)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1rem' }}
-                onClick={() => setSelectedPoint(null)}>
-                <div style={{ backgroundColor: t.bg, borderRadius: '14px', maxWidth: '440px', width: '100%',
-                  maxHeight: '90vh', display: 'flex', flexDirection: 'column',
-                  boxShadow: '0 24px 64px rgba(0,0,0,0.5)', border: `1px solid ${t.border}`, overflow: 'hidden' }}
-                  onClick={e => e.stopPropagation()}>
+          {/* ── 대학별 현황 ── */}
+          <div style={{ ...card, marginBottom: '1.25rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.75rem' }}>
+              <p style={{ margin: 0, fontWeight: 700, fontSize: '1rem', color: t.textHeading,
+                display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <Icons.Landmark /> 대학별 지원 현황
+                <span style={{ fontSize: '0.78rem', color: t.textMuted, fontWeight: 400, marginLeft: '0.2rem' }}>
+                  ({filteredUniDistribution.length}{uniSearch ? `/${uniDistribution.length}` : ''}개 대학)
+                </span>
+              </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem',
+                backgroundColor: t.bgSub, border: `1px solid ${uniSearch ? t.btnActive : t.border}`,
+                borderRadius: '8px', padding: '0.25rem 0.6rem', minWidth: '180px' }}>
+                <span style={{ color: t.textMuted, fontSize: '0.88rem' }}>🔍</span>
+                <input
+                  type="text"
+                  value={uniSearch}
+                  onChange={e => setUniSearch(e.target.value)}
+                  placeholder="대학명 검색..."
+                  style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent',
+                    color: t.text, fontSize: '0.82rem', minWidth: 0 }}
+                />
+                {uniSearch && (
+                  <button onClick={() => setUniSearch('')}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer',
+                      color: t.textMuted, fontSize: '0.85rem', padding: 0, lineHeight: 1 }}>✕</button>
+                )}
+              </div>
+            </div>
+            <div style={{ overflowX: 'auto', paddingBottom: '0.5rem' }}>
+              <div style={{ width: Math.max(700, filteredUniDistribution.length * 72) + 'px', height: '390px' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={filteredUniDistribution}
+                    margin={{ top: 10, right: 20, left: 0, bottom: 90 }}
+                    onClick={(cd) => { if (cd && cd.activeLabel) setSelectedUniChartData(cd.activeLabel); }}
+                    style={{ cursor: 'pointer' }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={t.chartGrid} />
+                    <XAxis dataKey="name" angle={-45} textAnchor="end"
+                      tick={{ fill: t.chartText, fontSize: 11 }} height={90}
+                      axisLine={{ stroke: t.border }} tickLine={false} />
+                    <YAxis tick={{ fill: t.chartText, fontSize: 11 }}
+                      axisLine={{ stroke: t.border }} tickLine={false} />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: t.bgCard, color: t.text,
+                        border: `1px solid ${t.border}`, borderRadius: '8px', fontSize: '0.82rem' }}
+                      itemStyle={{ color: t.text }}
+                      labelStyle={{ color: t.textHeading, fontWeight: 600 }}
+                    />
+                    <Legend verticalAlign="top"
+                      wrapperStyle={{ fontSize: '0.78rem', paddingBottom: '0.5rem' }}
+                      formatter={(v) => <span style={{ color: t.textMuted }}>{v}</span>}
+                    />
+                    <Bar dataKey="합격"    stackId="a" fill={COLORS['합격']} />
+                    <Bar dataKey="충원합격" stackId="a" fill={COLORS['충원합격']} />
+                    <Bar dataKey="불합격"  stackId="a" fill={COLORS['불합격']} radius={[4,4,0,0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+            <p style={{ textAlign: 'center', fontSize: '0.74rem', color: t.textMuted, margin: '0.3rem 0 0' }}>
+              * 막대를 클릭하면 해당 대학 지원자 전체 현황을 볼 수 있습니다.
+            </p>
+          </div>
 
-                  <div style={{ backgroundColor: t.bgSub, padding: '1rem 1.25rem',
-                    borderBottom: `1px solid ${t.border}`, display: 'flex',
-                    justifyContent: 'space-between', alignItems: 'flex-start', flexShrink: 0 }}>
-                    <div style={{ flex: 1, marginRight: '0.5rem' }}>
-                      <p style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: t.textHeading }}>{selectedPoint.uni}</p>
-                      <p style={{ margin: '0.2rem 0 0', fontSize: '0.875rem', color: '#7c83fd', fontWeight: 600 }}>{selectedPoint.major}</p>
-                    </div>
-                    <button onClick={() => setSelectedPoint(null)}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer',
-                        color: t.textMuted, fontSize: '1.2rem', lineHeight: 1, flexShrink: 0, padding: 0 }}>✕</button>
-                  </div>
-
-                  <div style={{ overflowY: 'auto', flex: 1 }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem',
-                      padding: '1rem 1.25rem 0.5rem' }}>
-                      <div style={{ backgroundColor: isDark ? t.bgCard : '#f0f0ff', padding: '0.8rem',
-                        borderRadius: '10px', border: `1px solid ${isDark ? t.border : '#c7d2fe'}` }}>
-                        <p style={{ margin: '0 0 0.2rem', fontSize: '0.72rem', color: t.textMuted, fontWeight: 500 }}>일반등급</p>
-                        <p style={{ margin: 0, fontSize: '1.8rem', fontWeight: 800, color: '#7c83fd' }}>{selectedPoint.grade}</p>
-                      </div>
-                      <div style={{ backgroundColor: resultBg, padding: '0.8rem', borderRadius: '10px',
-                        border: `1px solid ${catColor}33` }}>
-                        <p style={{ margin: '0 0 0.2rem', fontSize: '0.72rem', color: t.textMuted, fontWeight: 500 }}>최종단계</p>
-                        <p style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: catColor }}>{selectedPoint.result || '-'}</p>
-                      </div>
-                    </div>
-
-                    {selectedPoint.reason && (
-                      <div style={{ margin: '0 1.25rem 0.5rem',
-                        backgroundColor: isDark ? '#3b0a0a' : '#fff1f2',
-                        border: '1px solid #fca5a5', borderRadius: '8px', padding: '0.6rem 0.8rem' }}>
-                        <p style={{ margin: '0 0 0.2rem', fontSize: '0.72rem', color: '#f87171', fontWeight: 700 }}>⚠ 불합격 사유</p>
-                        <p style={{ margin: 0, fontSize: '0.875rem', fontWeight: 500,
-                          color: isDark ? '#fca5a5' : '#b91c1c' }}>{selectedPoint.reason}</p>
-                      </div>
-                    )}
-
-                    <div style={{ padding: '0.5rem 1.25rem 1.25rem' }}>
-                      <ModalRow label="전형유형"    value={selectedPoint.type} />
-                      <ModalRow label="전형명"       value={selectedPoint.admName} />
-                      <ModalRow label="세부유형"     value={selectedPoint.typeDetail} />
-                      <ModalRow label="모집인원"     value={selectedPoint.count ? `${selectedPoint.count}명` : null} />
-                      <ModalRow label="최초후보순위" value={selectedPoint.rank} highlight={hasRank} />
-                      {selectedPoint.minStandard && (
-                        <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: `1px solid ${t.border}` }}>
-                          <p style={{ margin: '0 0 0.35rem', fontSize: '0.72rem', fontWeight: 700, color: t.textMuted }}>최저학력기준</p>
-                          <div style={{ backgroundColor: isDark ? '#1a1f3a' : '#eef2ff',
-                            border: `1px solid ${isDark ? '#3730a3' : '#c7d2fe'}`, borderRadius: '7px',
-                            padding: '0.6rem 0.8rem', fontSize: '0.8rem',
-                            color: isDark ? '#a5b4fc' : '#3730a3', whiteSpace: 'pre-wrap', lineHeight: 1.7 }}>
-                            {selectedPoint.minStandard}
-                          </div>
+          {/* ── 등급대별 합격 순위 ── */}
+          <div style={card}>
+            <p style={{ margin: '0 0 0.75rem', fontWeight: 700, fontSize: '1rem', color: t.textHeading,
+              display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <Icons.Trophy /> 등급대별 합격 순위
+              <span style={{ fontSize: '0.78rem', color: t.textMuted, fontWeight: 400, marginLeft: '0.2rem' }}>
+                (합격·충원합격 기준)
+              </span>
+            </p>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ borderCollapse: 'collapse', minWidth: '100%', width: 'max-content' }}>
+                <thead>
+                  <tr style={{ backgroundColor: t.bgSub, borderBottom: `2px solid ${t.border}` }}>
+                    <th style={{ padding: '0.6rem 1rem', fontSize: '0.82rem', fontWeight: 700,
+                      color: t.textMuted, textAlign: 'left', whiteSpace: 'nowrap', minWidth: '80px' }}>등급대</th>
+                    <th style={{ padding: '0.6rem 1rem', fontSize: '0.82rem', fontWeight: 700,
+                      color: t.textMuted, textAlign: 'left' }}>합격 대학 목록 (클릭 시 상세)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[1,2,3,4,5,6,7,8,9].map(g => (
+                    <tr key={g} style={{ borderBottom: `1px solid ${t.border}` }}>
+                      <td style={{ padding: '0.55rem 1rem', fontWeight: 700, fontSize: '0.85rem',
+                        color: t.text, whiteSpace: 'nowrap', verticalAlign: 'middle' }}>{g}등급대</td>
+                      <td style={{ padding: '0.45rem 1rem' }}>
+                        <div style={{ display: 'flex', flexWrap: 'nowrap', gap: '0.35rem', alignItems: 'center' }}>
+                          {passDataByGrade[g] && passDataByGrade[g].length > 0
+                            ? passDataByGrade[g].map((ud, idx) => (
+                                <button key={idx} onClick={() => setSelectedUniPassData({ grade: g, ...ud, label: '합격' })}
+                                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+                                    padding: '0.25rem 0.55rem', whiteSpace: 'nowrap',
+                                    backgroundColor: t.bgSub, color: t.text,
+                                    border: `1px solid ${t.border}`, borderRadius: '7px',
+                                    cursor: 'pointer', fontSize: '0.82rem', fontWeight: 500 }}>
+                                  {ud.uni}
+                                  <span style={{ backgroundColor: t.tagBg, color: t.tagTxt,
+                                    padding: '0.05rem 0.35rem', borderRadius: '4px',
+                                    fontWeight: 700, fontSize: '0.72rem' }}>{ud.count}</span>
+                                </button>
+                              ))
+                            : <span style={{ color: t.textMuted, fontSize: '0.82rem' }}>데이터 없음</span>
+                          }
                         </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
 
-          {/* ──── 대학 목록 모달 ──── */}
-          {(selectedUniChartData || selectedUniPassData) && (() => {
-            const uName = selectedUniChartData || selectedUniPassData.uni;
-            const students = selectedUniChartData
-              ? data.filter(d => d.uni === uName).sort((a, b) => a.grade - b.grade)
-              : [...selectedUniPassData.students].sort((a, b) => a.grade - b.grade);
-            const close = () => { setSelectedUniChartData(null); setSelectedUniPassData(null); };
-            return (
-              <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.65)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1rem' }}
-                onClick={close}>
-                <div style={{ backgroundColor: t.bg, borderRadius: '14px', maxWidth: '580px', width: '100%',
-                  maxHeight: '90vh', display: 'flex', flexDirection: 'column',
-                  boxShadow: '0 24px 64px rgba(0,0,0,0.5)', border: `1px solid ${t.border}`, overflow: 'hidden' }}
-                  onClick={e => e.stopPropagation()}>
-
-                  <div style={{ backgroundColor: t.bgSub, padding: '1rem 1.25rem',
-                    borderBottom: `1px solid ${t.border}`, display: 'flex',
-                    justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
-                    <div>
-                      <p style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: t.textHeading }}>
-                        {uName} {selectedUniPassData ? '합격' : '지원자'} 현황
-                      </p>
-                      <p style={{ margin: '0.15rem 0 0', fontSize: '0.8rem', color: '#7c83fd' }}>
-                        총 {students.length}건 · 성적순
-                      </p>
-                    </div>
-                    <button onClick={close}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer',
-                        color: t.textMuted, fontSize: '1.2rem', padding: 0 }}>✕</button>
-                  </div>
-
-                  <div style={{ overflowY: 'auto', padding: '0.75rem 1.25rem',
-                    display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    {students.map((s, i) => {
-                      const cat = getResultCategory(s.result);
-                      const bc  = COLORS[cat] || '#9CA3AF';
-                      const bbg = isDark
-                        ? (cat==='합격' ? '#052e16' : cat==='충원합격' ? '#0c2149' : cat==='불합격' ? '#3b0a0a' : t.bgCard)
-                        : (cat==='합격' ? '#d1fae5' : cat==='충원합격' ? '#dbeafe' : cat==='불합격' ? '#fee2e2' : t.bgSub);
-                      return (
-                        <div key={i} style={{ border: `1px solid ${t.border}`, padding: '0.7rem 0.9rem',
-                          borderRadius: '10px', display: 'flex', justifyContent: 'space-between',
-                          alignItems: 'center', gap: '0.75rem', backgroundColor: t.bgSub }}>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem',
-                              marginBottom: '0.2rem', flexWrap: 'wrap' }}>
-                              <span style={{ backgroundColor: bbg, color: bc, padding: '0.05rem 0.45rem',
-                                borderRadius: '4px', fontSize: '0.72rem', fontWeight: 700, whiteSpace: 'nowrap' }}>{s.result}</span>
-                              <span style={{ fontSize: '0.78rem', color: t.textMuted }}>{s.type}</span>
-                            </div>
-                            <p style={{ margin: 0, fontWeight: 600, color: t.text, fontSize: '0.875rem' }}>{s.major}</p>
-                            <p style={{ margin: '0.1rem 0 0', fontSize: '0.72rem', color: t.textMuted }}>{s.admName}</p>
-                          </div>
-                          <div style={{ backgroundColor: t.bg, border: `1px solid ${t.border}`,
-                            borderRadius: '8px', padding: '0.35rem 0.65rem',
-                            textAlign: 'center', flexShrink: 0, minWidth: '60px' }}>
-                            <p style={{ margin: 0, fontSize: '0.68rem', color: t.textMuted }}>등급</p>
-                            <p style={{ margin: 0, fontWeight: 800, fontSize: '1.1rem', color: '#7c83fd' }}>{s.grade}</p>
-                          </div>
+          {/* ── 등급대별 불합격 순위 ── */}
+          <div style={{ ...card, marginTop: '1.25rem' }}>
+            <p style={{ margin: '0 0 0.75rem', fontWeight: 700, fontSize: '1rem', color: t.textHeading,
+              display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <Icons.XCircle /> 등급대별 불합격 순위
+              <span style={{ fontSize: '0.78rem', color: t.textMuted, fontWeight: 400, marginLeft: '0.2rem' }}>
+                (불합격 기준)
+              </span>
+            </p>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ borderCollapse: 'collapse', minWidth: '100%', width: 'max-content' }}>
+                <thead>
+                  <tr style={{ backgroundColor: t.bgSub, borderBottom: `2px solid ${t.border}` }}>
+                    <th style={{ padding: '0.6rem 1rem', fontSize: '0.82rem', fontWeight: 700,
+                      color: t.textMuted, textAlign: 'left', whiteSpace: 'nowrap', minWidth: '80px' }}>등급대</th>
+                    <th style={{ padding: '0.6rem 1rem', fontSize: '0.82rem', fontWeight: 700,
+                      color: t.textMuted, textAlign: 'left' }}>불합격 대학 목록 (클릭 시 상세)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[1,2,3,4,5,6,7,8,9].map(g => (
+                    <tr key={g} style={{ borderBottom: `1px solid ${t.border}` }}>
+                      <td style={{ padding: '0.55rem 1rem', fontWeight: 700, fontSize: '0.85rem',
+                        color: t.text, whiteSpace: 'nowrap', verticalAlign: 'middle' }}>{g}등급대</td>
+                      <td style={{ padding: '0.45rem 1rem' }}>
+                        <div style={{ display: 'flex', flexWrap: 'nowrap', gap: '0.35rem', alignItems: 'center' }}>
+                          {failDataByGrade[g] && failDataByGrade[g].length > 0
+                            ? failDataByGrade[g].map((ud, idx) => (
+                                <button key={idx} onClick={() => setSelectedUniPassData({ grade: g, ...ud, label: '불합격' })}
+                                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+                                    padding: '0.25rem 0.55rem', whiteSpace: 'nowrap',
+                                    backgroundColor: t.bgSub, color: t.text,
+                                    border: `1px solid ${t.border}`, borderRadius: '7px',
+                                    cursor: 'pointer', fontSize: '0.82rem', fontWeight: 500 }}>
+                                  {ud.uni}
+                                  <span style={{ backgroundColor: isDark ? '#3b0a0a' : '#fee2e2', color: COLORS['불합격'],
+                                    padding: '0.05rem 0.35rem', borderRadius: '4px',
+                                    fontWeight: 700, fontSize: '0.72rem' }}>{ud.count}</span>
+                                </button>
+                              ))
+                            : <span style={{ color: t.textMuted, fontSize: '0.82rem' }}>데이터 없음</span>
+                          }
                         </div>
-                      );
-                    })}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ──── 단일 점 클릭 모달 ──── */}
+      {selectedPoint && !selectedPoint._dummy && (() => {
+        const cat = getResultCategory(selectedPoint.result);
+        const catColor = COLORS[cat] || '#9CA3AF';
+        const resultBg = isDark
+          ? (cat==='합격' ? '#052e16' : cat==='충원합격' ? '#0c2149' : cat==='불합격' ? '#3b0a0a' : t.bgCard)
+          : (cat==='합격' ? '#ecfdf5' : cat==='충원합격' ? '#eff6ff' : cat==='불합격' ? '#fef2f2' : t.bgSub);
+        const hasRank = selectedPoint.rank && selectedPoint.rank !== '-' && selectedPoint.rank !== '후보순위없음';
+        return (
+          <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.65)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1rem' }}
+            onClick={() => setSelectedPoint(null)}>
+            <div style={{ backgroundColor: t.bg, borderRadius: '14px', maxWidth: '440px', width: '100%',
+              maxHeight: '90vh', display: 'flex', flexDirection: 'column',
+              boxShadow: '0 24px 64px rgba(0,0,0,0.5)', border: `1px solid ${t.border}`, overflow: 'hidden' }}
+              onClick={e => e.stopPropagation()}>
+
+              <div style={{ backgroundColor: t.bgSub, padding: '1rem 1.25rem',
+                borderBottom: `1px solid ${t.border}`, display: 'flex',
+                justifyContent: 'space-between', alignItems: 'flex-start', flexShrink: 0 }}>
+                <div style={{ flex: 1, marginRight: '0.5rem' }}>
+                  <p style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: t.textHeading }}>{selectedPoint.uni}</p>
+                  <p style={{ margin: '0.2rem 0 0', fontSize: '0.875rem', color: '#7c83fd', fontWeight: 600 }}>{selectedPoint.major}</p>
+                </div>
+                <button onClick={() => setSelectedPoint(null)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer',
+                    color: t.textMuted, fontSize: '1.2rem', lineHeight: 1, flexShrink: 0, padding: 0 }}>✕</button>
+              </div>
+
+              <div style={{ overflowY: 'auto', flex: 1 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem',
+                  padding: '1rem 1.25rem 0.5rem' }}>
+                  <div style={{ backgroundColor: isDark ? t.bgCard : '#f0f0ff', padding: '0.8rem',
+                    borderRadius: '10px', border: `1px solid ${isDark ? t.border : '#c7d2fe'}` }}>
+                    <p style={{ margin: '0 0 0.2rem', fontSize: '0.72rem', color: t.textMuted, fontWeight: 500 }}>일반등급</p>
+                    <p style={{ margin: 0, fontSize: '1.8rem', fontWeight: 800, color: '#7c83fd' }}>{selectedPoint.grade}</p>
+                  </div>
+                  <div style={{ backgroundColor: resultBg, padding: '0.8rem', borderRadius: '10px',
+                    border: `1px solid ${catColor}33` }}>
+                    <p style={{ margin: '0 0 0.2rem', fontSize: '0.72rem', color: t.textMuted, fontWeight: 500 }}>최종단계</p>
+                    <p style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: catColor }}>{selectedPoint.result || '-'}</p>
                   </div>
                 </div>
-              </div>
-            );
-          })()}
-        </div>
-      );
-    };
 
-    // ─── React 마운트 ────────────────────────────────────────────────────────────
-    function mountAdmissionAnalysis() {
-      console.log("AdmissionAnalysis: Attempting to mount...");
-      var el = document.getElementById('react-passfail-root');
-      if (el && !el._reactRootContainer && !el._reactFiber) {
-        try {
-          console.log("AdmissionAnalysis: Creating root and rendering...");
-          ReactDOM.createRoot(el).render(<AdmissionAnalysis />);
-          console.log("AdmissionAnalysis: Render call completed");
-        } catch(e) {
-          console.error('AdmissionAnalysis mount error:', e);
-        }
-      } else {
-        console.warn("AdmissionAnalysis: Root element not found or already mounted", !!el);
-      }
-    }
-    // ─── 우리 학교 모의고사 성적 현황 전용 ─────────────────────────────────────────
-    function mountSchoolMockStatus() {
-      // 이 부분은 app.js에서 직접 처리하거나 별도 파일로 분리 가능
-      // 여기서는 app.js에서 처리하도록 함
-    }
-    
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', mountAdmissionAnalysis);
-    } else {
-      mountAdmissionAnalysis();
-    }
+                {selectedPoint.reason && (
+                  <div style={{ margin: '0 1.25rem 0.5rem',
+                    backgroundColor: isDark ? '#3b0a0a' : '#fff1f2',
+                    border: '1px solid #fca5a5', borderRadius: '8px', padding: '0.6rem 0.8rem' }}>
+                    <p style={{ margin: '0 0 0.2rem', fontSize: '0.72rem', color: '#f87171', fontWeight: 700 }}>⚠ 불합격 사유</p>
+                    <p style={{ margin: 0, fontSize: '0.875rem', fontWeight: 500,
+                      color: isDark ? '#fca5a5' : '#b91c1c' }}>{selectedPoint.reason}</p>
+                  </div>
+                )}
+
+                <div style={{ padding: '0.5rem 1.25rem 1.25rem' }}>
+                  <ModalRow label="전형유형"    value={selectedPoint.type} />
+                  <ModalRow label="전형명"       value={selectedPoint.admName} />
+                  <ModalRow label="세부유형"     value={selectedPoint.typeDetail} />
+                  <ModalRow label="모집인원"     value={selectedPoint.count ? `${selectedPoint.count}명` : null} />
+                  <ModalRow label="최초후보순위" value={selectedPoint.rank} highlight={hasRank} />
+                  {selectedPoint.minStandard && (
+                    <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: `1px solid ${t.border}` }}>
+                      <p style={{ margin: '0 0 0.35rem', fontSize: '0.72rem', fontWeight: 700, color: t.textMuted }}>최저학력기준</p>
+                      <div style={{ backgroundColor: isDark ? '#1a1f3a' : '#eef2ff',
+                        border: `1px solid ${isDark ? '#3730a3' : '#c7d2fe'}`, borderRadius: '7px',
+                        padding: '0.6rem 0.8rem', fontSize: '0.8rem',
+                        color: isDark ? '#a5b4fc' : '#3730a3', whiteSpace: 'pre-wrap', lineHeight: 1.7 }}>
+                        {selectedPoint.minStandard}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ──── 대학 목록 모달 ──── */}
+      {(selectedUniChartData || selectedUniPassData) && (() => {
+        const uName = selectedUniChartData || selectedUniPassData.uni;
+        const students = selectedUniChartData
+          ? data.filter(d => d.uni === uName).sort((a, b) => a.grade - b.grade)
+          : [...selectedUniPassData.students].sort((a, b) => a.grade - b.grade);
+        const close = () => { setSelectedUniChartData(null); setSelectedUniPassData(null); };
+        return (
+          <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.65)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1rem' }}
+            onClick={close}>
+            <div style={{ backgroundColor: t.bg, borderRadius: '14px', maxWidth: '580px', width: '100%',
+              maxHeight: '90vh', display: 'flex', flexDirection: 'column',
+              boxShadow: '0 24px 64px rgba(0,0,0,0.5)', border: `1px solid ${t.border}`, overflow: 'hidden' }}
+              onClick={e => e.stopPropagation()}>
+
+              <div style={{ backgroundColor: t.bgSub, padding: '1rem 1.25rem',
+                borderBottom: `1px solid ${t.border}`, display: 'flex',
+                justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+                <div>
+                  <p style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: t.textHeading }}>
+                    {uName} {selectedUniPassData ? (selectedUniPassData.label || '합격') : '지원자'} 현황
+                  </p>
+                  <p style={{ margin: '0.15rem 0 0', fontSize: '0.8rem', color: '#7c83fd' }}>
+                    총 {students.length}건 · 성적순
+                  </p>
+                </div>
+                <button onClick={close}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer',
+                    color: t.textMuted, fontSize: '1.2rem', padding: 0 }}>✕</button>
+              </div>
+
+              <div style={{ overflowY: 'auto', padding: '0.75rem 1.25rem',
+                display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                {students.map((s, i) => {
+                  const cat = getResultCategory(s.result);
+                  const bc  = COLORS[cat] || '#9CA3AF';
+                  const bbg = isDark
+                    ? (cat==='합격' ? '#052e16' : cat==='충원합격' ? '#0c2149' : cat==='불합격' ? '#3b0a0a' : t.bgCard)
+                    : (cat==='합격' ? '#d1fae5' : cat==='충원합격' ? '#dbeafe' : cat==='불합격' ? '#fee2e2' : t.bgSub);
+                  return (
+                    <div key={i} style={{ border: `1px solid ${t.border}`, padding: '0.7rem 0.9rem',
+                      borderRadius: '10px', display: 'flex', justifyContent: 'space-between',
+                      alignItems: 'center', gap: '0.75rem', backgroundColor: t.bgSub }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem',
+                          marginBottom: '0.2rem', flexWrap: 'wrap' }}>
+                          <span style={{ backgroundColor: bbg, color: bc, padding: '0.05rem 0.45rem',
+                            borderRadius: '4px', fontSize: '0.72rem', fontWeight: 700, whiteSpace: 'nowrap' }}>{s.result}</span>
+                          <span style={{ fontSize: '0.78rem', color: t.textMuted }}>{s.type}</span>
+                        </div>
+                        <p style={{ margin: 0, fontWeight: 600, color: t.text, fontSize: '0.875rem' }}>{s.major}</p>
+                        <p style={{ margin: '0.1rem 0 0', fontSize: '0.72rem', color: t.textMuted }}>{s.admName}</p>
+                      </div>
+                      <div style={{ backgroundColor: t.bg, border: `1px solid ${t.border}`,
+                        borderRadius: '8px', padding: '0.35rem 0.65rem',
+                        textAlign: 'center', flexShrink: 0, minWidth: '60px' }}>
+                        <p style={{ margin: 0, fontSize: '0.68rem', color: t.textMuted }}>등급</p>
+                        <p style={{ margin: 0, fontWeight: 800, fontSize: '1.1rem', color: '#7c83fd' }}>{s.grade}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+    </div>
+  );
+};
+
+// ─── React 마운트 ────────────────────────────────────────────────────────────
+function mountAdmissionAnalysis() {
+  console.log('[AA] mountAdmissionAnalysis called');
+  var el = document.getElementById('react-passfail-root');
+  if (!el) { console.error('[AA] react-passfail-root not found!'); return; }
+  if (el._reactRootContainer || el._reactFiber) { console.warn('[AA] already mounted'); return; }
+  try {
+    console.log('[AA] calling ReactDOM.createRoot...');
+    ReactDOM.createRoot(el).render(<AdmissionAnalysis />);
+    console.log('[AA] render called successfully');
+  } catch(e) {
+    console.error('[AA] mount error:', e);
+  }
+}
+console.log('[AA] readyState:', document.readyState);
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', mountAdmissionAnalysis);
+} else {
+  mountAdmissionAnalysis();
+}
+
   </script>
-  <script src="app.js?v=29"></script>
+  <script src="app.js?v=61"></script>
   <script src="grade-rank.js"></script>
+  <script src="univ-score.js"></script>
   <script src="admission_dist.js"></script>
   <script src="hexagon.js"></script>
+  <script src="admission-analysis.js?v=12"></script>
   <script type="module" src="firebase-visitors.js"></script>
 
   <!-- 인쇄용 히든 컨테이너 -->
