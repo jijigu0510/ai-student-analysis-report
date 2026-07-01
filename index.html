@@ -168,15 +168,14 @@
            <span class="btn-text">◀ 탭 숨기기</span>
         </button>
         <button id="tab-individual" class="tab-btn active">학교생활기록부 정성평가 분석(전형 추천)</button>
-        <button id="tab-passfail" class="tab-btn">합불합 분석(결과기반)</button>
-        <button id="tab-passfail-examples" class="tab-btn">📊 합불합 사례 확인하기</button>
-        <button id="tab-setech" class="tab-btn">✏️ 세특 분석</button>
-        <button id="tab-subject-path" class="tab-btn">🎯 진로에 따른 과목 선택 확인하기</button>
-        <button id="tab-csat" class="tab-btn">수능 최저 확인하기</button>
+        <button id="tab-passfail" class="tab-btn">과거 학생부종합전형 합불 분석 리포트</button>
+        <button id="tab-passfail-examples" class="tab-btn">📊 과거 합불 사례 확인하기</button>
+        <button id="tab-setech" class="tab-btn">✏️ 세특 작성 및 분석</button>
+        <button id="tab-csat" class="tab-btn">🎯 수능 최저 확인하기</button>
         <button id="tab-interview" class="tab-btn">🎤 면접 문항 생성</button>
         <button id="tab-mock-exam" class="tab-btn">📊 모의고사 문항 분석</button>
         <button id="tab-gpa-mock-compare" class="tab-btn">📈 내신 & 모의고사 분석</button>
-        <button id="tab-grade-rank" class="tab-btn">📊 내신 분석하기(대학별 교과 점수 확인)</button>
+        <button id="tab-grade-rank" class="tab-btn">📊 내신 점수 확인하기</button>
         <button id="tab-univ-score" class="tab-btn">🎓 대학별 교과 점수 확인하기</button>
         <button id="tab-admission-dist" class="tab-btn">📊 대학별 입결 분포도</button>
         <button id="tab-school-mock-status" class="tab-btn">🏫 우리 학교 모의고사 성적 현황</button>
@@ -880,453 +879,12 @@
     </section>
   </main>
 
-  <!-- ===== 진로에 따른 과목 선택 확인하기 ===== -->
-  <main id="view-subject-path" class="main-container view-section hidden" style="display:none;">
-    <section class="glass-panel" style="grid-column:span 2; padding: 2rem;">
-
-      <h2 class="section-title" style="margin-bottom:0.3rem;">🎯 진로에 따른 과목 선택 확인하기</h2>
-      <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:1.2rem;">학생의 이수과목을 교육과정 전체 과목과 비교하고, 목표 대학·학과의 핵심·권장과목 충족 여부를 확인합니다.</p>
-
-      <!-- GAS 설정 영역 -->
-      <div style="margin-bottom:1.2rem; background:rgba(255,255,255,0.03); border:1px solid var(--panel-border); border-radius:12px; padding:1rem 1.2rem;">
-        <div style="display:flex; align-items:center; gap:0.6rem; margin-bottom:0.6rem;">
-          <span style="font-size:0.8rem; font-weight:700; color:var(--accent-primary);">🌐 스프레드시트 연동</span>
-          <span style="font-size:0.72rem; color:var(--text-secondary);">2028학년도 권역별 대학별 권장과목 데이터를 불러옵니다.</span>
-        </div>
-        <div style="display:flex; gap:0.6rem; align-items:center;">
-          <input id="sp-gas-url-input" type="text" placeholder="GAS 웹 앱 URL (https://script.google.com/...)" style="flex:1; background:var(--input-bg); color:var(--text-primary); border:1px solid var(--panel-border); border-radius:8px; padding:0.45rem 0.8rem; font-size:0.82rem; min-width:0;">
-          <button id="sp-gas-load-btn" class="btn-primary" style="white-space:nowrap; padding:0.45rem 1.1rem; font-size:0.82rem; width:auto; margin:0; flex-shrink:0;">🔄 불러오기</button>
-          <span id="sp-gas-status" style="font-size:0.78rem; white-space:nowrap;"></span>
-        </div>
-      </div>
-
-      <!-- 상단 컨트롤: 학생 + 계층형 드롭다운 -->
-      <div style="display:grid; grid-template-columns:1.2fr 1fr 1fr 1.3fr 1.5fr; gap:0.7rem; margin-bottom:1rem; align-items:end;">
-        <div>
-          <label style="display:block; font-size:0.78rem; color:var(--text-secondary); margin-bottom:0.3rem;">학생 선택</label>
-          <select id="sp-student-select" class="form-select" style="width:100%; background:var(--input-bg); color:var(--text-primary); border:1px solid var(--panel-border); border-radius:8px; padding:0.45rem 0.5rem; font-size:0.83rem;">
-            <option value="">-- 이수과목 파일을 먼저 업로드하세요 --</option>
-          </select>
-        </div>
-        <div>
-          <label style="display:block; font-size:0.78rem; color:var(--text-secondary); margin-bottom:0.3rem;">권역</label>
-          <select id="sp-region-select" class="form-select" disabled style="width:100%; background:var(--input-bg); color:var(--text-primary); border:1px solid var(--panel-border); border-radius:8px; padding:0.45rem 0.5rem; font-size:0.83rem; opacity:0.6;">
-            <option value="">권역 선택</option>
-          </select>
-        </div>
-        <div>
-          <label style="display:block; font-size:0.78rem; color:var(--text-secondary); margin-bottom:0.3rem;">지역</label>
-          <select id="sp-area-select" class="form-select" disabled style="width:100%; background:var(--input-bg); color:var(--text-primary); border:1px solid var(--panel-border); border-radius:8px; padding:0.45rem 0.5rem; font-size:0.83rem; opacity:0.6;">
-            <option value="">지역 선택</option>
-          </select>
-        </div>
-        <div>
-          <label style="display:block; font-size:0.78rem; color:var(--text-secondary); margin-bottom:0.3rem;">대학</label>
-          <select id="sp-univ-select" class="form-select" disabled style="width:100%; background:var(--input-bg); color:var(--text-primary); border:1px solid var(--panel-border); border-radius:8px; padding:0.45rem 0.5rem; font-size:0.83rem; opacity:0.6;">
-            <option value="">대학 선택</option>
-          </select>
-        </div>
-        <div>
-          <label style="display:block; font-size:0.78rem; color:var(--text-secondary); margin-bottom:0.3rem;">모집단위</label>
-          <select id="sp-dept-select" class="form-select" disabled style="width:100%; background:var(--input-bg); color:var(--text-primary); border:1px solid var(--panel-border); border-radius:8px; padding:0.45rem 0.5rem; font-size:0.83rem; opacity:0.6;">
-            <option value="">모집단위 선택</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- AI 분석 API Key (한 줄) -->
-      <div style="display:flex; align-items:center; gap:0.6rem; margin-bottom:1.2rem;">
-        <label style="font-size:0.78rem; color:var(--text-secondary); white-space:nowrap; flex-shrink:0;">AI 분석 API Key</label>
-        <input id="sp-api-key" type="password" class="form-select" placeholder="Gemini API Key (AI 맞춤 분석 기능 사용 시)" style="flex:1; background:var(--input-bg); color:var(--text-primary); border:1px solid var(--panel-border); border-radius:8px; padding:0.4rem 0.7rem; font-size:0.82rem; max-width:340px;">
-      </div>
-
-      <!-- 대학 핵심·권장과목 안내 배너 -->
-      <div id="sp-univ-banner" class="hidden" style="margin-bottom:1.5rem; background:rgba(99,102,241,0.07); border:1px solid rgba(99,102,241,0.22); border-radius:12px; padding:1rem 1.5rem;">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:1rem;">
-          <div id="sp-univ-banner-text" style="flex:1; font-size:0.87rem; line-height:1.75; color:var(--text-primary);"></div>
-          <button id="sp-ai-analyze-btn" class="btn-primary" style="white-space:nowrap; padding:0.5rem 1.2rem; font-size:0.85rem; width:auto; margin:0; flex-shrink:0;">✨ AI 맞춤 분석</button>
-        </div>
-        <div style="margin-top:0.5rem; min-height:1.2rem;"><span id="sp-ai-expand-status"></span></div>
-        <div id="sp-ai-result" class="hidden" style="margin-top:1rem; padding-top:1rem; border-top:1px solid rgba(99,102,241,0.2); font-size:0.87rem; line-height:1.8; color:var(--text-primary);"></div>
-      </div>
-
-      <!-- 교육과정 선택 + 범례 -->
-      <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.2rem; flex-wrap:wrap;">
-        <label style="font-size:0.85rem; color:var(--text-secondary); white-space:nowrap;">교육과정</label>
-        <div style="display:flex; gap:0.5rem;">
-          <button class="sp-cur-btn active" data-cur="2022 개정" style="padding:0.4rem 1rem; border-radius:6px; font-size:0.82rem; font-weight:600; cursor:pointer; border:1px solid var(--accent-primary); background:var(--accent-primary); color:#fff; transition:all 0.2s;">2022 개정</button>
-          <button class="sp-cur-btn" data-cur="2015 개정" style="padding:0.4rem 1rem; border-radius:6px; font-size:0.82rem; font-weight:600; cursor:pointer; border:1px solid var(--panel-border); background:transparent; color:var(--text-secondary); transition:all 0.2s;">2015 개정</button>
-        </div>
-        <div style="margin-left:auto; display:flex; flex-wrap:wrap; gap:0.7rem; align-items:center; font-size:0.76rem; color:var(--text-secondary);">
-          <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:12px;height:12px;border-radius:3px;background:rgba(251,191,36,0.9);display:inline-block;border:1px solid rgba(251,191,36,1);"></span> 핵심 이수 ★</span>
-          <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:12px;height:12px;border-radius:3px;background:rgba(34,197,94,0.85);display:inline-block;border:1px solid rgba(34,197,94,1);"></span> 권장 이수 ✓</span>
-          <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:12px;height:12px;border-radius:3px;background:rgba(14,165,233,0.82);display:inline-block;border:1px solid rgba(14,165,233,1);"></span> 비고 이수 ✓</span>
-          <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:12px;height:12px;border-radius:3px;background:rgba(99,102,241,0.82);display:inline-block;border:1px solid rgba(99,102,241,1);"></span> 일반 이수 ✓</span>
-          <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:12px;height:12px;border-radius:3px;background:rgba(239,68,68,0.1);display:inline-block;border:1.5px solid rgba(239,68,68,0.55);"></span> 핵심 미이수 ✗</span>
-          <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:12px;height:12px;border-radius:3px;background:rgba(34,197,94,0.1);display:inline-block;border:1.5px solid rgba(34,197,94,0.5);"></span> 권장 미이수 ☆</span>
-          <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:12px;height:12px;border-radius:3px;background:rgba(14,165,233,0.08);display:inline-block;border:1.5px solid rgba(14,165,233,0.45);"></span> 비고 미이수 ☆</span>
-          <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:12px;height:12px;border-radius:3px;background:var(--panel-bg);display:inline-block;border:1px solid var(--panel-border);"></span> 미이수</span>
-        </div>
-      </div>
-
-      <!-- 과목 그리드 -->
-      <div id="sp-subject-grid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:1rem;">
-        <div style="text-align:center; padding:3rem; color:var(--text-secondary); font-size:0.95rem; grid-column:1/-1;">학생을 선택하면 이수과목이 표시됩니다.</div>
-      </div>
-
-    </section>
-  </main>
-
-  <!-- 과목 상세 모달 -->
-  <div id="sp-subject-modal" class="hidden" style="position:fixed;inset:0;z-index:3000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);">
-    <div id="sp-modal-panel" style="background:var(--panel-bg);border:1px solid var(--panel-border);border-radius:20px;padding:2rem;min-width:360px;max-width:480px;width:90%;position:relative;box-shadow:0 24px 60px rgba(0,0,0,0.4);transition:max-width 0.2s;">
-      <button id="sp-modal-close" style="position:absolute;top:1rem;right:1rem;background:transparent;border:none;color:var(--text-secondary);font-size:1.4rem;cursor:pointer;line-height:1;">✕</button>
-      <div id="sp-modal-content"></div>
-    </div>
-  </div>
-
-  <main id="view-mock-exam" class="main-container view-section hidden">
-    <section class="glass-panel form-section" style="grid-column: span 2;">
-        <div style="margin-bottom: 1.2rem;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
-            <h2 class="section-title" style="margin-bottom: 0;">📊 모의고사 문항 및 성적 분석</h2>
-            <div style="display: flex; gap: 0.5rem; align-items: center;">
-                <select id="mockGradeSelect" class="form-select" style="padding: 0.4rem 1.2rem 0.4rem 1rem; font-size: 0.85rem; background-color: rgba(99,102,241,0.7); border: 1px solid var(--accent-primary); color: white; font-weight: 600; border-radius: 8px;">
-                    <option value="1">1학년</option>
-                    <option value="2">2학년</option>
-                    <option value="3">3학년</option>
-                </select>
-                <select id="mockMonthSelect" class="form-select" style="padding: 0.4rem 2rem 0.4rem 1rem; font-size: 0.85rem; background-color: var(--accent-primary); border: none; color: white; font-weight: 600; border-radius: 8px;">
-                    <option value="3">3월 모의고사</option>
-                    <option value="6">6월 모의고사</option>
-                    <option value="9">9월 모의고사</option>
-                    <option value="11">11월 모의고사</option>
-                </select>
-                <button id="mockGasSettingsBtn" class="btn-secondary" style="padding: 0.5rem 1rem; border-radius: 8px; display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; white-space: nowrap; min-width: max-content;" title="GAS 연동 설정">
-                    <span>⚙️</span> 연동 설정
-                </button>
-                <button id="mockClearDataBtn" class="btn-secondary" style="padding: 0.5rem 1rem; border-radius: 8px; display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; white-space: nowrap; min-width: max-content; background: rgba(220,38,38,0.15); border-color: rgba(220,38,38,0.4); color: #f87171;" title="현재 선택된 학년의 업로드 데이터 삭제">
-                    <span>🗑️</span> 데이터 삭제
-                </button>
-            </div>
-          </div>
-          <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6; margin: 0;">
-            학년·월별 모의고사 성적표(CSV)를 업로드하면 학생별 오답 문항을 자동으로 추출합니다.<br>
-            분석 결과는 기기에 저장되며, <b style="color: var(--accent-secondary);">서버에 저장하기</b>를 눌러야 다른 기기에서도 공유됩니다.
-          </p>
-        </div>
-
-        <!-- GAS 설정 레이어 (월별 URL 입력) -->
-        <div id="mockGasSettingsArea" class="hidden" style="margin-bottom: 1.5rem; background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 16px; border: 1px solid var(--panel-border); box-shadow: 0 8px 32px rgba(0,0,0,0.2); backdrop-filter: blur(8px);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.8rem;">
-                <p style="font-size: 0.9rem; font-weight: 700; color: var(--accent-primary); display:flex; align-items:center; gap:0.5rem; margin:0;">
-                    <span style="font-size: 1.2rem;">🌐</span> 학년별 Google Apps Script 연동 및 분석 설정
-                </p>
-                <span style="font-size:0.75rem; color:var(--text-secondary);">각 월의 오답 분석 데이터가 담긴 시트 URL을 입력하세요.</span>
-            </div>
-
-            <!-- 학년 선택 -->
-            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.2rem; padding: 0.6rem 1rem; background: rgba(99,102,241,0.08); border-radius: 10px; border: 1px solid rgba(99,102,241,0.2);">
-                <label style="font-size: 0.85rem; font-weight: 600; color: var(--accent-primary); white-space: nowrap;">설정 학년</label>
-                <select id="mockGasGradeSelect" class="form-select" style="padding: 0.3rem 1rem; font-size: 0.85rem; background: var(--input-bg); border: 1px solid var(--panel-border); color: var(--text-primary); border-radius: 8px; width: auto;">
-                    <option value="1">1학년</option>
-                    <option value="2">2학년</option>
-                    <option value="3">3학년</option>
-                </select>
-                <span style="font-size: 0.75rem; color: var(--text-secondary);">선택한 학년의 GAS 웹 앱 URL을 입력하세요</span>
-            </div>
-
-            <div style="display: flex; flex-direction: column; gap: 0.8rem; margin-bottom: 1.5rem;">
-                <!-- 3월 & 5월 (5월은 3학년 전용) -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                    <div style="display: flex; align-items: center; gap: 0.8rem; background: rgba(255,255,255,0.02); padding: 0.4rem 0.8rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
-                        <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); min-width: 40px;">3월</label>
-                        <input id="mockGasUrl_3" type="text" class="gas-month-input" placeholder="https://script.google.com/..." style="flex:1; border:none; background:transparent; font-size:0.8rem;">
-                    </div>
-                    <div id="gasCell5" style="display: none; align-items: center; gap: 0.8rem; background: rgba(255,255,255,0.02); padding: 0.4rem 0.8rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
-                        <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); min-width: 40px;">5월</label>
-                        <input id="mockGasUrl_5" type="text" class="gas-month-input" placeholder="https://script.google.com/..." style="flex:1; border:none; background:transparent; font-size:0.8rem;">
-                    </div>
-                </div>
-                <!-- 6월 & 7월 (7월은 3학년 전용) -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                    <div style="display: flex; align-items: center; gap: 0.8rem; background: rgba(255,255,255,0.02); padding: 0.4rem 0.8rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
-                        <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); min-width: 40px;">6월</label>
-                        <input id="mockGasUrl_6" type="text" class="gas-month-input" placeholder="https://script.google.com/..." style="flex:1; border:none; background:transparent; font-size:0.8rem;">
-                    </div>
-                    <div id="gasCell7" style="display: none; align-items: center; gap: 0.8rem; background: rgba(255,255,255,0.02); padding: 0.4rem 0.8rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
-                        <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); min-width: 40px;">7월</label>
-                        <input id="mockGasUrl_7" type="text" class="gas-month-input" placeholder="https://script.google.com/..." style="flex:1; border:none; background:transparent; font-size:0.8rem;">
-                    </div>
-                </div>
-                <!-- 9월 & 11월 (공통) -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                    <div style="display: flex; align-items: center; gap: 0.8rem; background: rgba(255,255,255,0.02); padding: 0.4rem 0.8rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
-                        <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); min-width: 40px;">9월</label>
-                        <input id="mockGasUrl_9" type="text" class="gas-month-input" placeholder="https://script.google.com/..." style="flex:1; border:none; background:transparent; font-size:0.8rem;">
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 0.8rem; background: rgba(255,255,255,0.02); padding: 0.4rem 0.8rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
-                        <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); min-width: 40px;">11월</label>
-                        <input id="mockGasUrl_11" type="text" class="gas-month-input" placeholder="https://script.google.com/..." style="flex:1; border:none; background:transparent; font-size:0.8rem;">
-                    </div>
-                </div>
-            </div>
-
-            <div style="display: flex; justify-content: flex-end; gap: 0.5rem; align-items: center;">
-                <div id="mockSheetStatus" style="font-size: 0.75rem; color: var(--success-color); margin-right: auto;"></div>
-                <button id="mockGasUrlSaveBtn" class="btn-primary" style="padding: 0.5rem 1.5rem; font-size: 0.85rem; width: auto; margin: 0;">설정 저장</button>
-                <button id="mockLoadSheetsBtn" class="btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.85rem;">연동 테스트</button>
-            </div>
-            <p style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 10px;">※ 각 월별로 분석할 시트가 있는 GAS 웹 앱 URL을 입력하고 저장을 눌러주세요.</p>
-        </div>
-
-        <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.9rem; display: none;">
-            모의고사 성적표 CSV 파일 업로드
-        </p>
-
-        <!-- 파일 드롭 영역 -->
-        <div id="mockDropZone" class="drop-zone" style="display:none;">
-            <svg stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true" style="margin: 0 auto; display: block;">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" />
-            </svg>
-            <div class="upload-text" style="margin-top: 1rem;">
-                <label for="mockFileInput" class="upload-label"><span id="uploadMonthText">3</span>월 모의고사 성적표 CSV / PDF 선택</label>
-                <span>또는 파일을 이곳으로 드래그 앤 드롭</span>
-            </div>
-            <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem;">성적통지표 PDF 또는 CSV 파일을 업로드하면 자동 분석됩니다.</p>
-            <input id="mockFileInput" name="mockFileInput" type="file" multiple accept=".csv,.pdf" style="display: none;">
-        </div>
-
-        <!-- 서버 데이터 상태 표시 -->
-        <div id="mockServerStatus" style="margin-top: 0.8rem; min-height: 1.4rem; font-size: 0.8rem; color: var(--text-secondary);"></div>
-
-        <!-- 결과 표시 영역 -->
-        <div id="mockResultArea" class="hidden">
-            <div class="mock-result-header">
-                <div>
-                    <h3 style="font-size: 1.1rem; font-weight: 600; color: #fff;">분석 완료! 🎉</h3>
-                    <p id="mockResultText" style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 2px;">N명의 학생 데이터가 성공적으로 추출되었습니다.</p>
-                </div>
-                <div style="display: flex; gap: 0.5rem; align-items: center;">
-                    <button id="mockFirebaseSaveBtn" class="btn-secondary" style="padding: 0.5rem 1rem; border-radius: 8px; display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; background: rgba(34,197,94,0.15); border-color: rgba(34,197,94,0.4); color: #4ade80;">
-                        <span>☁️</span> 서버에 저장하기
-                    </button>
-                    <button id="mockFirebaseDeleteBtn" class="btn-secondary" style="padding: 0.5rem 1rem; border-radius: 8px; display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; background: rgba(220,38,38,0.15); border-color: rgba(220,38,38,0.4); color: #f87171;">
-                        <span>🗑️</span> 서버에서 삭제하기
-                    </button>
-                    <button id="mockDownloadBtn" class="btn-pdf">
-                        <span>📥</span> 통합 결과(CSV) 다운로드
-                    </button>
-                </div>
-            </div>
-
-            <!-- 계층형 선택 영역 -->
-            <div class="mock-selectors" style="display: flex; gap: 1rem; margin-bottom: 1.5rem; padding: 1rem; border-radius: 12px; border: 1px solid var(--panel-border);">
-                <div style="flex: 1;">
-                    <label for="mockGradeFilterSelect" style="display: block; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.5rem;">학년 선택</label>
-                    <select id="mockGradeFilterSelect" class="form-select" style="width: 100%; background: var(--input-bg); color: var(--text-primary); border: 1px solid var(--panel-border); border-radius: 8px; padding: 0.5rem;">
-                        <option value="all">전체 학년</option>
-                    </select>
-                </div>
-                <div style="flex: 1;">
-                    <label for="mockClassSelect" style="display: block; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.5rem;">반 선택</label>
-                    <select id="mockClassSelect" class="form-select" style="width: 100%; background: var(--input-bg); color: var(--text-primary); border: 1px solid var(--panel-border); border-radius: 8px; padding: 0.5rem;">
-                        <option value="all">전체 반</option>
-                    </select>
-                </div>
-                <div style="flex: 2;">
-                    <label for="mockStudentSelect" style="display: block; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.5rem;">학생 선택 (번호 성명)</label>
-                    <select id="mockStudentSelect" class="form-select" style="width: 100%; background: var(--input-bg); color: var(--text-primary); border: 1px solid var(--panel-border); border-radius: 8px; padding: 0.5rem;">
-                        <option value="all">반을 먼저 선택하세요</option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- 개별 학생 요약 카드 -->
-            <div id="mockSummaryCard" class="hidden" style="margin-bottom: 1.5rem; background: var(--accent-primary); color: #fff; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <h4 id="summaryStudentName" style="font-size: 1.3rem; font-weight: 700;">홍길동 학생 성적 요약</h4>
-                        <p id="summaryStudentInfo" style="font-size: 0.9rem; opacity: 0.9; margin-top: 4px;">1학년 3반 15번</p>
-                    </div>
-                    <div id="summaryGradeBadges" style="display: flex; gap: 0.5rem;">
-                        <!-- JS로 등급 배지 채워짐 -->
-                    </div>
-                </div>
-                <!-- 개별 리포트 인쇄 버튼 추가 -->
-                <div style="margin-top: 1.2rem; display: flex; justify-content: flex-end; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem;">
-                    <button id="mockPrintReportBtn" class="btn-secondary" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: #fff; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s;">
-                        <span>📄</span> 개별 리포트 인쇄 (PDF)
-                    </button>
-                </div>
-            </div>
-
-            <!-- 전체 데이터 표 영역 -->
-            <div id="mockTableView" class="mock-table-wrapper">
-                <table class="mock-table" id="mockPreviewTable">
-                    <thead>
-                        <tr>
-                            <th>학년</th>
-                            <th>반</th>
-                            <th>번호</th>
-                            <th>성명</th>
-                            <th>과목</th>
-                            <th>등급</th>
-                            <th>원점수</th>
-                            <th>표준점수</th>
-                            <th>백분위</th>
-                            <th>오답문항</th>
-                            <th>정답률</th>
-                        </tr>
-                    </thead>
-                    <tbody id="mockPreviewBody">
-                        <!-- JS로 내용 채워짐 -->
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- 개별 리포트 전용 영역 (기본적으로 숨김) -->
-            <div id="mockIndividualView" class="hidden" style="margin-top: 1rem;">
-                <div id="individualReportGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
-                    <!-- JS로 개별 과목 카드들이 채워짐 -->
-                </div>
-            </div>
-        </div>
-    </section>
-  </main>
-
-  <main id="view-gpa-mock-compare" class="main-container view-section hidden">
-    <section class="glass-panel" style="grid-column: span 2;">
-      <!-- GAS 연동 설정 (로컬 실행 시 필요) -->
-      <div id="compareGasSettings" class="glass-panel" style="margin-bottom: 2rem; border-color: var(--panel-border);">
-        <h4 style="font-size: 0.95rem; font-weight: 700; color: #96baff; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
-          📡 구글 앱스크립트(GAS) 연동 설정 <small style="font-weight: 400; color: var(--text-secondary);">(로컬 파일에서 열 때만 필요)</small>
-        </h4>
-        <div style="display: flex; gap: 0.8rem; margin-bottom: 0.8rem;">
-          <input type="text" id="compareGasUrl" class="form-select" style="flex: 1; font-size: 0.85rem;" placeholder="여기에 웹 앱 URL을 입력하세요 (예: https://script.google.com/macros/s/.../exec)">
-          <button id="compareGasUrlSaveBtn" class="btn-primary" style="padding: 0.5rem 1.5rem; font-size: 0.85rem; width: auto; margin: 0;">설정 저장</button>
-          <button id="compareLoadDataBtn" class="btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.85rem;">연동 테스트</button>
-        </div>
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 0;">※ 분석할 시트가 있는 구글 앱스크립트를 [웹 앱]으로 배포한 후 URL을 입력하고 저장을 눌러주세요.</p>
-          <div id="compareGasStatus" style="font-size: 0.75rem; color: var(--success-color); font-weight: 600;"></div>
-        </div>
-      </div>
-
-      <div class="header-content" style="margin-bottom: 2rem;">
-        <h2 class="section-title">📈 내신 성적 및 모의고사 성적 비교 분석</h2>
-        <p style="color: var(--text-secondary); margin-bottom: 2.2rem; line-height: 1.7; font-size: 0.95rem;">내신 등급과 모의고사 성취도를 입체적으로 비교하여, 수시와 정시 중 학생에게 유리한 최적의 입시 전형 비율을 가이드합니다.</p>
-      </div>
-
-      <div class="control-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--panel-border);">
-        <!-- 주요 필터 (계층형) -->
-        <div class="filter-group">
-          <label style="color: var(--accent-primary); font-weight: 700; margin-bottom: 0.8rem; display: block;">📍 학생 및 시점 선택 (계층형)</label>
-          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.8rem; margin-bottom: 0.8rem;">
-            <div>
-              <label style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.4rem; display: block;">학년</label>
-              <select id="compareGrade" class="form-select" style="width: 100%;"><option value="all">전체 학년</option></select>
-            </div>
-            <div>
-              <label style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.4rem; display: block;">시행 연도</label>
-              <select id="compareYear" class="form-select" style="width: 100%;"><option value="all">전체 연도</option></select>
-            </div>
-            <div>
-              <label style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.4rem; display: block;">시행 회차</label>
-              <select id="compareMockRound" class="form-select" style="width: 100%;"><option value="all">전체 회차</option></select>
-            </div>
-          </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;">
-            <div>
-              <label style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.4rem; display: block;">학생 반</label>
-              <select id="compareClassFilter" class="form-select" style="width: 100%;"><option value="all">전체 반</option></select>
-            </div>
-            <div>
-              <label style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.4rem; display: block;">학생 이름</label>
-              <select id="compareStudent" class="form-select" style="width: 100%; background: rgba(124, 185, 253, 0.1); border-color: var(--accent-primary);">
-                <option value="all">전체 학생 (차트보기)</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <!-- 분석 기준 설정 -->
-        <div class="filter-group">
-          <label style="color: #ff6b81; font-weight: 700; margin-bottom: 0.8rem; display: block;">📊 분석 기준 설정</label>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; margin-bottom: 0.8rem;">
-            <div>
-              <label style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.4rem; display: block;">X축 (내신 기준)</label>
-              <select id="compareXType" class="form-select" style="width: 100%;">
-                <option value="전체내신">전체내신</option>
-                <option value="국영수">국영수</option>
-                <option value="국영수과">국영수과</option>
-                <option value="국영수사">국영수사</option>
-                <option value="국영수사과">국영수사과</option>
-                <option value="수영과">수영과</option>
-                <option value="국영사">국영사</option>
-              </select>
-            </div>
-            <div>
-              <label style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.4rem; display: block;">Y축 (모의고사 기준)</label>
-              <select id="compareScoreType" class="form-select" style="width: 100%;">
-                <option value="grade">등급 합 (낮을수록 우수)</option>
-                <option value="best_grade">최고 등급 합 (최저용)</option>
-                <option value="raw">원점수 합</option>
-                <option value="std">표준점수 합</option>
-              </select>
-            </div>
-          </div>
-          <div id="compareBestNContainer" class="hidden">
-            <label style="font-size: 0.8rem; color: #ffc107; margin-bottom: 0.4rem; display: block;">최고 등급 과목 수 (N합)</label>
-            <select id="compareBestN" class="form-select" style="width: 100%; background: rgba(255, 193, 7, 0.1); border-color: #ffc107;">
-              <option value="2">2개 과목 합</option>
-              <option value="3">3개 과목 합</option>
-              <option value="4">4개 과목 합</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- 과목 선택 -->
-        <div class="filter-group">
-          <label style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.8rem; display: block;">비교 반영 과목 (체크 해제 시 합계 제외)</label>
-          <div id="compareSubjectCheckboxes" class="checkbox-group" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; background: rgba(255,255,255,0.02); padding: 0.8rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
-            <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; cursor: pointer;"><input type="checkbox" name="compareSubject" value="국어" checked> 국어</label>
-            <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; cursor: pointer;"><input type="checkbox" name="compareSubject" value="수학" checked> 수학</label>
-            <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; cursor: pointer;"><input type="checkbox" name="compareSubject" value="영어" checked> 영어</label>
-            <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; cursor: pointer;"><input type="checkbox" name="compareSubject" value="한국사"> 한국사</label>
-            <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; cursor: pointer;"><input type="checkbox" name="compareSubject" value="탐구영역1" checked> 탐구1</label>
-            <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; cursor: pointer;"><input type="checkbox" name="compareSubject" value="탐구영역2" checked> 탐구2</label>
-          </div>
-        </div>
-      </div>
-
-      <!-- 성적 리포트 영역 (전체: 차트 / 개별: 상세 리포트) -->
-      <div id="compareMainView" style="position: relative;">
-        <!-- 전체 학생 차트 뷰 -->
-        <div id="compareChartView" style="position: relative; height: 75vh; background: rgba(255,255,255,0.02); border-radius: 12px; padding: 1.5rem; border: 1px solid var(--panel-border); box-shadow: inset 0 0 20px rgba(0,0,0,0.2);">
-          <div id="compareChartLoader" class="hidden" style="position: absolute; inset: 0; background: rgba(0,0,0,0.4); z-index: 10; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); border-radius: 12px;">
-            <div class="spinner"></div>
-            <p style="margin-left: 1rem; font-weight: 700; color: #fff;">데이터를 불러오는 중...</p>
-          </div>
-          <canvas id="compareScatterChart"></canvas>
-          <div style="margin-top: 1rem; font-size: 0.9rem; color: var(--accent-primary); text-align: center; font-weight: 600;">
-            💡 팁: 차트 위의 점을 클릭하거나 '학생 이름'을 선택하면 상세 성적 리포트가 표시됩니다.
-          </div>
-        </div>
-
-        <!-- 개별 학생 히스토리 뷰 (기본 숨김) -->
-        <div id="compareIndividualView" class="hidden">
-           <!-- JS에서 동적으로 채워짐 -->
-        </div>
-      </div>
-    </section>
-  </main>
   <main id="view-grade-rank" class="main-container view-section hidden">
 <div class="gr-container">
     <div class="gr-header">
         <div class="header-title">
-            <h1 class="section-title" style="border-bottom: none; margin-bottom: 0.5rem;">📊 대학별 교과 점수 및 석차 백분율 산출</h1>
-            <p style="color: var(--text-secondary); margin-bottom: 2.2rem; line-height: 1.7; font-size: 0.95rem;">대학마다 다른 복잡한 내신 산출 방식을 자동 적용하여, 지원 희망 대학별 실제 전형 점수와 전교 석차 백분율을 정확히 계산합니다.</p>
+            <h1 class="section-title" style="border-bottom: none; margin-bottom: 0.5rem;">📊 내신 점수 확인하기</h1>
+            <p style="color: var(--text-secondary); margin-bottom: 2.2rem; line-height: 1.7; font-size: 0.95rem;">학생별 내신 등급을 자동 산출하여 분포도와 전교 석차를 확인합니다.</p>
         </div>
         <div class="header-right">
             <div id="saveStatus" class="save-status"><span>💾 브라우저에 저장됨</span></div>
@@ -1359,28 +917,6 @@
                 <select id="grClassSelect" class="gr-select" onchange="onHierarchicalChange('class')" style="font-size: 0.8rem; padding: 0.3rem 0.5rem; max-width: 70px;">
                     <option value="all">전체 반</option>
                 </select>
-                <select id="grStudentSelect" class="gr-select gr-student-select" onchange="onHierarchicalChange('student')" style="font-size: 0.8rem; padding: 0.3rem 0.5rem; max-width: 90px;">
-                    <option value="none">학생 선택</option>
-                </select>
-                <select id="univSelector" class="gr-select" onchange="" style="font-size: 0.8rem; padding: 0.3rem 0.5rem; max-width: 120px;">
-                    <option value="yonsei">연세대 [추천형]</option>
-                    <option value="korea">고려대 [학교추천]</option>
-                    <option value="sogang">서강대 [지역균형]</option>
-                    <option value="sungkyunkwan">성균관대 [학교장]</option>
-                    <option value="chungang">중앙대 [지역균형]</option>
-                    <option value="kyunghee">경희대 [지역균형]</option>
-                    <option value="hufs">한국외대 [학교장]</option>
-                    <option value="uos">서울시립대 [지역]</option>
-                    <option value="konkuk">건국대 [KU지역]</option>
-                    <option value="dongguk">동국대 [학교장]</option>
-                    <option value="hongik">홍익대 [학교장]</option>
-                    <option value="kookmin">국민대 [교과]</option>
-                    <option value="soongsil">숭실대 [학생부]</option>
-                    <option value="sejong">세종대 [지역균형]</option>
-                    <option value="dankook">단국대 [지역균형]</option>
-                    <option value="kwangwoon">광운대 [지역균형]</option>
-                </select>
-                <button id="openUnivCalcBtn" class="btn btn-blue" onclick="openUnivCalcModal()" style="font-size: 0.8rem; padding: 0.35rem 0.8rem; white-space: nowrap; visibility: hidden;">교과전형 점수 확인</button>
             </div>
         </div>
         <div id="statusMsg" style="margin-left: 10px; font-size: 0.9rem; color: var(--primary);"></div>
@@ -1433,45 +969,6 @@
 
 <!-- 상세 정보 모달 -->
 
-<!-- 대학별 교과점수 시뮬레이터 모달 -->
-<div id="univCalcModalOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999; overflow-y:auto; padding:2rem 1rem; box-sizing:border-box;">
-    <div style="background:#fff; border-radius:16px; max-width:1140px; width:100%; margin:0 auto; box-shadow:0 8px 40px rgba(0,0,0,0.35); overflow:hidden;">
-        <div style="background:#1e293b; padding:1.2rem 1.5rem; display:flex; align-items:center; justify-content:space-between; gap:1rem;">
-            <div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
-                <h3 style="margin:0; font-size:1.1rem; color:#fff;">🎓 대학별 교과점수 시뮬레이터</h3>
-                <span id="univCalcModalStudentName" style="font-size:0.9rem; color:#94a3b8; font-weight:500;"></span>
-            </div>
-            <button onclick="closeUnivCalcModal()" style="background:none; border:none; color:#94a3b8; font-size:1.8rem; cursor:pointer; line-height:1; padding:0; margin:0;">×</button>
-        </div>
-        <div style="padding:1rem 1.5rem; border-bottom:1px solid #e2e8f0; display:flex; align-items:center; gap:0.8rem; flex-wrap:wrap; background:#f8fafc;">
-            <label style="font-weight:600; color:#334155; font-size:0.9rem; white-space:nowrap;">대학 선택:</label>
-            <select id="univSelectorModal" onchange="switchUnivCalcModal()" style="font-size:0.9rem; padding:0.4rem 0.8rem; border:1px solid #cbd5e1; border-radius:8px; background:#fff; color:#1e293b; cursor:pointer; outline:none; font-weight:500;">
-                <option value="yonsei">연세대학교 [학생부교과 추천형]</option>
-                <option value="korea">고려대학교 [학생부교과 학교추천]</option>
-                <option value="sogang">서강대학교 [학생부교과 지역균형]</option>
-                <option value="sungkyunkwan">성균관대학교 [학생부교과 학교장추천]</option>
-                <option value="chungang">중앙대학교 [학생부교과 지역균형]</option>
-                <option value="kyunghee">경희대학교 [학생부교과 지역균형]</option>
-                <option value="hufs">한국외국어대학교 [학생부교과 학교장추천]</option>
-                <option value="uos">서울시립대학교 [학생부교과 지역균형]</option>
-                <option value="konkuk">건국대학교 [학생부교과 KU지역균형]</option>
-                <option value="dongguk">동국대학교 [학생부교과 학교장추천인재]</option>
-                <option value="hongik">홍익대학교 [학생부교과 학교장추천자]</option>
-                <option value="kookmin">국민대학교 [학생부교과 교과성적우수자]</option>
-                <option value="soongsil">숭실대학교 [학생부교과 학생부우수자]</option>
-                <option value="sejong">세종대학교 [학생부교과 지역균형]</option>
-                <option value="dankook">단국대학교 [학생부교과 지역균형선발]</option>
-                <option value="kwangwoon">광운대학교 [학생부교과 지역균형전형]</option>
-            </select>
-        </div>
-        <div id="calcContainerModal" style="padding:1.5rem; max-height:70vh; overflow-y:auto;">
-            <!-- JS 렌더링 영역 -->
-        </div>
-        <div style="padding:1rem 1.5rem; border-top:1px solid #e2e8f0; text-align:right; background:#f8fafc;">
-            <button onclick="closeUnivCalcModal()" style="background:#1e293b; color:#fff; border:none; padding:0.6rem 1.5rem; border-radius:8px; font-size:0.9rem; cursor:pointer; font-weight:600;">닫기</button>
-        </div>
-    </div>
-</div>
 
 
   </main>
@@ -2035,14 +1532,11 @@
                     <div class="score-item" onclick="openDetail('mes')"><span class="score-label">수+영+과</span><span class="score-value" id="modalMes"></span></div>
                     <div class="score-item" onclick="openDetail('kes')"><span class="score-label">국+영+사</span><span class="score-value" id="modalKes"></span></div>
                 </div>
-                <div style="margin-top: 10px; font-size: 0.8rem; color: #3b82f6; text-align: center;">👆 점수 박스를 누르면 산출 근거를 확인, 아래 버튼을 누르면 대학별 계산기를 엽니다.</div>
+                <div style="margin-top: 10px; font-size: 0.8rem; color: #3b82f6; text-align: center;">👆 점수 박스를 누르면 산출 근거를 확인할 수 있습니다.</div>
             </div>
             <button class="modal-close" onclick="closeModal()">×</button>
         </div>
         <div class="modal-body" style="padding-top: 15px;">
-            <button class="btn btn-green" style="width: 100%; margin-bottom: 15px; font-size: 1.1rem; justify-content: center; background: linear-gradient(135deg, #10b981, #059669);" onclick="loadToUnivCalc()">
-                이 학생 데이터를 대학별 계산기로 불러오기 ⬇️
-            </button>
             <table id="modalTable">
                 <thead>
                     <tr>
@@ -2062,21 +1556,6 @@
     </div>
 </div>
 
-<!-- 대학별 점수 요약 모달 -->
-<div class="gr-modal-overlay" id="univSummaryModalOverlay" style="z-index: 120;">
-    <div class="summary-modal">
-        <div class="modal-header">
-            <h3>대학별 성적 산출 요약</h3>
-            <button class="modal-close" onclick="closeUnivSummaryModal()">×</button>
-        </div>
-        <div class="modal-body" id="univSummaryContent">
-            <!-- JS에서 채워짐 -->
-        </div>
-        <div class="modal-footer" style="padding: 15px; text-align: right; border-top: 1px solid var(--border);">
-            <button class="btn btn-blue" onclick="closeUnivSummaryModal()">닫기</button>
-        </div>
-    </div>
-</div>
 <div class="gr-modal-overlay" id="detailModalOverlay">
     <div class="detail-modal">
         <div class="modal-header">
