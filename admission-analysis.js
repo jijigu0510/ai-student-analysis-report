@@ -6673,34 +6673,72 @@ window.renderAdmissionAnalysisTab = function () {
 
 function buildAdmissionHTML(d) {
   const ac = d.color;
+  const isLight = document.body.classList.contains('light-mode');
+  const C = {
+    navBg:         isLight ? 'rgba(255,255,255,0.97)'   : 'rgba(10,15,30,0.92)',
+    navBorder:     isLight ? 'rgba(94,106,210,0.18)'    : 'rgba(255,255,255,0.07)',
+    navLink:       isLight ? '#3d4270'                   : '#94a3b8',
+    navLinkBdr:    isLight ? 'rgba(94,106,210,0.18)'    : 'rgba(255,255,255,0.05)',
+    navLinkBg:     isLight ? 'rgba(94,106,210,0.07)'    : 'rgba(255,255,255,0.06)',
+    panelBg:       isLight ? 'rgba(255,255,255,0.95)'   : 'rgba(255,255,255,0.03)',
+    panelBorder:   isLight ? 'rgba(94,106,210,0.18)'    : 'rgba(255,255,255,0.07)',
+    panelHeadBg:   isLight ? 'rgba(94,106,210,0.08)'    : 'rgba(0,0,0,0.22)',
+    panelHeadBdr:  isLight ? 'rgba(94,106,210,0.14)'    : 'rgba(255,255,255,0.06)',
+    rowAlt:        isLight ? 'rgba(94,106,210,0.05)'    : 'rgba(0,0,0,0.12)',
+    thBg:          isLight ? 'rgba(94,106,210,0.10)'    : 'rgba(0,0,0,0.35)',
+    thColor:       isLight ? '#374151'                   : '#64748b',
+    tdBorder:      isLight ? 'rgba(94,106,210,0.08)'    : 'rgba(255,255,255,0.03)',
+    subtotalBg:    isLight ? 'rgba(94,106,210,0.06)'    : 'rgba(255,255,255,0.04)',
+    totalBg:       isLight ? 'rgba(94,106,210,0.12)'    : 'rgba(255,255,255,0.07)',
+    amber:         isLight ? '#b45309'                   : '#fbbf24',
+    textPrimary:   isLight ? '#1a1c35'                   : '#e2e8f0',
+    textSub:       isLight ? '#4b5563'                   : '#94a3b8',
+    textMuted:     isLight ? '#6b7280'                   : '#64748b',
+    textDim:       isLight ? '#374151'                   : '#475569',
+    textLight:     isLight ? '#4b5563'                   : '#cbd5e1',
+    cardBg:        isLight ? '#f8fafc'                   : 'rgba(0,0,0,0.18)',
+    cardBorder:    isLight ? 'rgba(94,106,210,0.14)'    : 'rgba(255,255,255,0.06)',
+    changesBg:     isLight ? 'rgba(248,250,252,0.95)'   : 'rgba(0,0,0,0.15)',
+    processBg:     isLight ? 'rgba(94,106,210,0.07)'    : 'rgba(255,255,255,0.05)',
+    noteBg:        isLight ? 'rgba(248,250,252,1)'      : 'rgba(255,255,255,0.03)',
+    noteBorder:    isLight ? 'rgba(94,106,210,0.22)'    : 'rgba(255,255,255,0.1)',
+    methodsBg:     isLight ? '#f8fafc'                   : 'rgba(0,0,0,0.2)',
+    methodsBdr:    isLight ? 'rgba(94,106,210,0.15)'    : 'rgba(255,255,255,0.06)',
+    methodsTableBg:isLight ? 'rgba(248,250,255,1)'      : 'rgba(0,0,0,0.1)',
+    methodsThBg:   isLight ? 'rgba(94,106,210,0.08)'    : 'rgba(0,0,0,0.25)',
+    suneungBg:     isLight ? 'rgba(248,250,255,1)'      : 'rgba(0,0,0,0.12)',
+    blue:          isLight ? '#2563eb'                   : '#60a5fa',
+    purple:        isLight ? '#7c3aed'                   : '#a78bfa',
+    divider:       isLight ? 'rgba(94,106,210,0.2)'     : '#334155',
+  };
 
   const nav = `
-    <div style="position:sticky;top:0;z-index:50;background:rgba(10,15,30,0.92);backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,0.07);margin:0 -1.5rem 1.2rem;padding:0.55rem 1.5rem;display:flex;align-items:center;gap:0.45rem;flex-wrap:wrap;">
+    <div style="position:sticky;top:0;z-index:50;background:${C.navBg};backdrop-filter:blur(14px);border-bottom:1px solid ${C.navBorder};margin:0 -1.5rem 1.2rem;padding:0.55rem 1.5rem;display:flex;align-items:center;gap:0.45rem;flex-wrap:wrap;box-shadow:${isLight?'0 2px 8px rgba(94,106,210,0.1)':'none'};">
       <span style="font-size:0.9rem;font-weight:800;color:${ac};margin-right:0.6rem;white-space:nowrap;">${d.name} ${d.year}</span>
       ${[['aa-schedule','📅 일정'],['aa-recruit','🏛️ 모집인원'],['aa-changes','🔔 변경사항'],['aa-eval','📊 평가방법'],['aa-methods','📝 전형방법'],['aa-suneung','📐 수능최저']].map(([id,label])=>
-        `<a href="#${id}" onclick="document.getElementById('${id}').scrollIntoView({behavior:'smooth',block:'start'});return false;" style="font-size:0.77rem;padding:0.22rem 0.7rem;border-radius:20px;background:rgba(255,255,255,0.06);color:#94a3b8;text-decoration:none;white-space:nowrap;border:1px solid rgba(255,255,255,0.05);" onmouseover="this.style.color='${ac}';this.style.borderColor='${ac}55'" onmouseout="this.style.color='#94a3b8';this.style.borderColor='rgba(255,255,255,0.05)'">${label}</a>`
+        `<a href="#${id}" onclick="document.getElementById('${id}').scrollIntoView({behavior:'smooth',block:'start'});return false;" style="font-size:0.77rem;padding:0.22rem 0.7rem;border-radius:20px;background:${C.navLinkBg};color:${C.navLink};text-decoration:none;white-space:nowrap;border:1px solid ${C.navLinkBdr};" onmouseover="this.style.color='${ac}';this.style.borderColor='${ac}55'" onmouseout="this.style.color='${C.navLink}';this.style.borderColor='${C.navLinkBdr}'">${label}</a>`
       ).join('')}
     </div>`;
 
   // Row 1: 일정(left) + 모집인원(right, wider)
   const row1 = `
     <div style="display:grid;grid-template-columns:1fr 1.6fr;gap:1.2rem;margin-bottom:1.2rem;align-items:start;">
-      <div id="aa-schedule">${buildScheduleBlock(d, ac)}</div>
-      <div id="aa-recruit">${buildRecruitBlock(d, ac)}</div>
+      <div id="aa-schedule">${buildScheduleBlock(d, ac, C)}</div>
+      <div id="aa-recruit">${buildRecruitBlock(d, ac, C)}</div>
     </div>`;
 
   // Row 2: 변경사항(left) + 수능최저(right)
   const row2 = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;margin-bottom:1.2rem;align-items:start;">
-      <div id="aa-changes">${buildChangesBlock(d, ac)}</div>
-      <div id="aa-suneung">${buildSuneungBlock(d, ac)}</div>
+      <div id="aa-changes">${buildChangesBlock(d, ac, C)}</div>
+      <div id="aa-suneung">${buildSuneungBlock(d, ac, C)}</div>
     </div>`;
 
   // Row 3: 평가방법 full-width
-  const row3 = `<div id="aa-eval" style="margin-bottom:1.2rem;">${buildEvalBlock(d, ac)}</div>`;
+  const row3 = `<div id="aa-eval" style="margin-bottom:1.2rem;">${buildEvalBlock(d, ac, C)}</div>`;
 
   // Row 4: 전형방법 2×2 grid
-  const row4 = `<div id="aa-methods" style="margin-bottom:2rem;">${buildMethodsBlock(d, ac)}</div>`;
+  const row4 = `<div id="aa-methods" style="margin-bottom:2rem;">${buildMethodsBlock(d, ac, C)}</div>`;
 
   return `<div style="padding:0 1.5rem;">${nav}${row1}${row2}${row3}${row4}</div>`;
 }
@@ -6709,9 +6747,9 @@ function buildAdmissionHTML(d) {
 // 유틸
 // ──────────────────────────────────────────────────
 
-function panelWrap(title, content, ac) {
-  return `<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:12px;overflow:hidden;">
-    <div style="padding:0.65rem 1.1rem;background:rgba(0,0,0,0.22);border-bottom:1px solid rgba(255,255,255,0.06);font-weight:800;font-size:0.92rem;color:${ac};">${title}</div>
+function panelWrap(title, content, ac, C) {
+  return `<div style="background:${C.panelBg};border:1px solid ${C.panelBorder};border-radius:12px;overflow:hidden;">
+    <div style="padding:0.65rem 1.1rem;background:${C.panelHeadBg};border-bottom:1px solid ${C.panelHeadBdr};font-weight:800;font-size:0.92rem;color:${ac};">${title}</div>
     <div style="padding:0.9rem 1.1rem;">${content}</div>
   </div>`;
 }
@@ -6723,12 +6761,12 @@ function smallBadge(text, color) {
 // ──────────────────────────────────────────────────
 // 1. 일정
 // ──────────────────────────────────────────────────
-function buildScheduleBlock(d, ac) {
+function buildScheduleBlock(d, ac, C) {
   const groups = d.schedule.map(g => {
     const rows = g.rows.map((r, i) => `
-      <tr style="background:${i%2===0?'rgba(0,0,0,0.12)':'transparent'};">
-        <td style="padding:0.26rem 0.65rem;font-size:0.79rem;color:#94a3b8;white-space:nowrap;">${r[0]}</td>
-        <td style="padding:0.26rem 0.65rem;font-size:0.79rem;color:#fbbf24;">${r[1]}</td>
+      <tr style="background:${i%2===0?C.rowAlt:'transparent'};">
+        <td style="padding:0.26rem 0.65rem;font-size:0.79rem;color:${C.textSub};white-space:nowrap;">${r[0]}</td>
+        <td style="padding:0.26rem 0.65rem;font-size:0.79rem;color:${C.amber};font-weight:600;">${r[1]}</td>
       </tr>`).join('');
     return `<div style="margin-bottom:0.85rem;">
       <div style="font-size:0.79rem;font-weight:700;color:${ac};margin-bottom:0.28rem;">▸ ${g.group}</div>
@@ -6737,34 +6775,34 @@ function buildScheduleBlock(d, ac) {
   }).join('');
 
   return panelWrap('📅 수시 모집 일정', groups +
-    `<p style="font-size:0.73rem;color:#475569;margin:0.4rem 0 0;">※ 수능 2026.11.19.(목) | 수능 성적통지 2026.12.11.(금)</p>`,
-    ac);
+    `<p style="font-size:0.73rem;color:${C.textDim};margin:0.4rem 0 0;">※ 수능 2026.11.19.(목) | 수능 성적통지 2026.12.11.(금)</p>`,
+    ac, C);
 }
 
 // ──────────────────────────────────────────────────
 // 2. 모집인원
 // ──────────────────────────────────────────────────
-function buildRecruitBlock(d, ac) {
+function buildRecruitBlock(d, ac, C) {
   const rt = d.recruitTable;
-  const thS  = `padding:0.28rem 0.55rem;background:rgba(0,0,0,0.35);color:#64748b;font-size:0.71rem;font-weight:700;text-align:center;white-space:nowrap;`;
+  const thS  = `padding:0.28rem 0.55rem;background:${C.thBg};color:${C.thColor};font-size:0.71rem;font-weight:700;text-align:center;white-space:nowrap;`;
   const thSL = thS.replace('text-align:center','text-align:left');
-  const tdC  = `padding:0.22rem 0.55rem;text-align:center;font-size:0.77rem;border-bottom:1px solid rgba(255,255,255,0.03);`;
-  const tdL  = `padding:0.22rem 0.55rem;text-align:left;font-size:0.77rem;border-bottom:1px solid rgba(255,255,255,0.03);`;
+  const tdC  = `padding:0.22rem 0.55rem;text-align:center;font-size:0.77rem;border-bottom:1px solid ${C.tdBorder};`;
+  const tdL  = `padding:0.22rem 0.55rem;text-align:left;font-size:0.77rem;border-bottom:1px solid ${C.tdBorder};`;
 
   const groupRows = rt.groups.map(g => {
     const rows = g.rows.map(r =>
-      `<tr><td style="${tdL};padding-left:1.1rem;color:#94a3b8;">${r[0]}</td>${r.slice(1).map((c,i)=>`<td style="${tdC};color:${i===r.length-2?'#fbbf24':'#cbd5e1'};">${c}</td>`).join('')}</tr>`
+      `<tr><td style="${tdL};padding-left:1.1rem;color:${C.textSub};">${r[0]}</td>${r.slice(1).map((c,i)=>`<td style="${tdC};color:${i===r.length-2?C.amber:C.textLight};">${c}</td>`).join('')}</tr>`
     ).join('');
-    const sub = `<tr style="background:rgba(255,255,255,0.04);">
+    const sub = `<tr style="background:${C.subtotalBg};">
       <td style="${tdL};font-weight:700;color:${ac};">◆ ${g.label}</td>
-      ${g.subtotal.map((c,i)=>`<td style="${tdC};font-weight:700;color:${i===g.subtotal.length-1?'#fbbf24':ac};">${c}</td>`).join('')}
+      ${g.subtotal.map((c,i)=>`<td style="${tdC};font-weight:700;color:${i===g.subtotal.length-1?C.amber:ac};">${c}</td>`).join('')}
     </tr>`;
     return rows + sub;
   }).join('');
 
-  const totalRow = `<tr style="background:rgba(255,255,255,0.07);">
-    <td style="${tdL};font-weight:800;color:#fbbf24;">합 계</td>
-    ${rt.total.map(c=>`<td style="${tdC};font-weight:800;color:#fbbf24;">${c}</td>`).join('')}
+  const totalRow = `<tr style="background:${C.totalBg};">
+    <td style="${tdL};font-weight:800;color:${C.amber};">합 계</td>
+    ${rt.total.map(c=>`<td style="${tdC};font-weight:800;color:${C.amber};">${c}</td>`).join('')}
   </tr>`;
 
   const content = `<div style="overflow-x:auto;max-height:480px;overflow-y:auto;">
@@ -6773,139 +6811,139 @@ function buildRecruitBlock(d, ac) {
       <tbody>${groupRows}${totalRow}</tbody>
     </table>
   </div>
-  <p style="font-size:0.71rem;color:#475569;margin:0.35rem 0 0;">${rt.note}</p>`;
+  <p style="font-size:0.71rem;color:${C.textDim};margin:0.35rem 0 0;">${rt.note||''}</p>`;
 
-  return panelWrap('🏛️ 전형별 모집인원', content, ac);
+  return panelWrap('🏛️ 전형별 모집인원', content, ac, C);
 }
 
 // ──────────────────────────────────────────────────
 // 3. 변경사항
 // ──────────────────────────────────────────────────
-function buildChangesBlock(d, ac) {
+function buildChangesBlock(d, ac, C) {
   const tagColor = { '중요':'#ef4444', '안내':'#3b82f6', '참고':'#8b5cf6', '예고':'#f59e0b' };
   const items = d.changes.map(c => `
-    <div style="padding:0.65rem 0.85rem;background:rgba(0,0,0,0.15);border-radius:8px;border-left:3px solid ${tagColor[c.tag]||ac};margin-bottom:0.55rem;">
+    <div style="padding:0.65rem 0.85rem;background:${C.changesBg};border-radius:8px;border-left:3px solid ${tagColor[c.tag]||ac};margin-bottom:0.55rem;">
       <div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.2rem;">
         ${smallBadge(c.tag, tagColor[c.tag]||ac)}
-        <span style="font-weight:700;color:#e2e8f0;font-size:0.84rem;">${c.category}</span>
+        <span style="font-weight:700;color:${C.textPrimary};font-size:0.84rem;">${c.category}</span>
       </div>
-      <p style="margin:0;color:#94a3b8;font-size:0.79rem;line-height:1.5;">${c.detail}</p>
+      <p style="margin:0;color:${C.textSub};font-size:0.79rem;line-height:1.5;">${c.detail}</p>
     </div>`).join('');
-  return panelWrap('🔔 전년도 대비 변경사항', items, ac);
+  return panelWrap('🔔 전년도 대비 변경사항', items, ac, C);
 }
 
 // ──────────────────────────────────────────────────
 // 4. 평가방법 (full-width)
 // ──────────────────────────────────────────────────
-function buildEvalBlock(d, ac) {
+function buildEvalBlock(d, ac, C) {
   const ev = d.evaluation;
 
   const processBar = ev.서류평가.process.map((p,i,arr) =>
-    `<span style="font-size:0.76rem;padding:0.15rem 0.5rem;background:rgba(255,255,255,0.05);border-radius:4px;color:#94a3b8;">${p}</span>${i<arr.length-1?`<span style="color:#334155;font-size:0.8rem;">→</span>`:''}`
+    `<span style="font-size:0.76rem;padding:0.15rem 0.5rem;background:${C.processBg};border-radius:4px;color:${C.textSub};">${p}</span>${i<arr.length-1?`<span style="color:${C.divider};font-size:0.8rem;">→</span>`:''}`
   ).join('');
 
   const elemGrid = `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.9rem;margin:0.7rem 0 1rem;">
     ${ev.서류평가.elements.map(e=>`
-      <div style="padding:0.85rem 1rem;background:rgba(0,0,0,0.18);border-radius:8px;border-top:2px solid ${e.color};">
+      <div style="padding:0.85rem 1rem;background:${C.cardBg};border:1px solid ${C.cardBorder};border-radius:8px;border-top:2px solid ${e.color};">
         <div style="font-weight:800;color:${e.color};font-size:0.88rem;margin-bottom:0.18rem;">${e.icon} ${e.name}</div>
-        <div style="color:#64748b;font-size:0.74rem;margin-bottom:0.4rem;font-style:italic;">${e.desc}</div>
+        <div style="color:${C.textMuted};font-size:0.74rem;margin-bottom:0.4rem;font-style:italic;">${e.desc}</div>
         <ul style="margin:0;padding-left:0.3rem;list-style:none;">${e.items.map(i=>
           i.startsWith('📋')
-            ? `<li style="font-size:0.72rem;color:#64748b;line-height:1.4;font-style:italic;background:rgba(255,255,255,0.03);padding:0.2rem 0.4rem;border-radius:4px;margin-bottom:0.3rem;">${i}</li>`
-            : `<li style="font-size:0.76rem;color:#94a3b8;line-height:1.45;padding-left:0.5rem;margin-bottom:0.1rem;">${i}</li>`
+            ? `<li style="font-size:0.72rem;color:${C.textMuted};line-height:1.4;font-style:italic;background:${C.noteBg};padding:0.2rem 0.4rem;border-radius:4px;margin-bottom:0.3rem;">${i}</li>`
+            : `<li style="font-size:0.76rem;color:${C.textSub};line-height:1.45;padding-left:0.5rem;margin-bottom:0.1rem;">${i}</li>`
         ).join('')}</ul>
       </div>`).join('')}
   </div>`;
 
   const intGrid = `<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:0.8rem;">
     ${ev.면접.types.map(t=>`
-      <div style="padding:0.75rem 0.9rem;background:rgba(0,0,0,0.15);border-radius:8px;border-left:3px solid ${ac};">
-        <div style="font-weight:700;color:#e2e8f0;font-size:0.85rem;margin-bottom:0.1rem;">${t.icon} ${t.name}</div>
-        <div style="font-size:0.71rem;color:#475569;margin-bottom:0.22rem;">대상: ${t.target}</div>
-        <div style="font-size:0.79rem;color:#94a3b8;line-height:1.4;">${t.desc}</div>
-        ${t.details?`<ul style="margin:0.22rem 0 0;padding-left:1.1rem;">${t.details.map(x=>`<li style="font-size:0.74rem;color:#64748b;">${x}</li>`).join('')}</ul>`:''}
+      <div style="padding:0.75rem 0.9rem;background:${C.changesBg};border:1px solid ${C.cardBorder};border-radius:8px;border-left:3px solid ${ac};">
+        <div style="font-weight:700;color:${C.textPrimary};font-size:0.85rem;margin-bottom:0.1rem;">${t.icon} ${t.name}</div>
+        <div style="font-size:0.71rem;color:${C.textDim};margin-bottom:0.22rem;">대상: ${t.target}</div>
+        <div style="font-size:0.79rem;color:${C.textSub};line-height:1.4;">${t.desc}</div>
+        ${t.details?`<ul style="margin:0.22rem 0 0;padding-left:1.1rem;">${t.details.map(x=>`<li style="font-size:0.74rem;color:${C.textMuted};">${x}</li>`).join('')}</ul>`:''}
       </div>`).join('')}
   </div>`;
 
   const stepsLabel = ev.서류평가.process.length >= 5 ? '다단계 평가 프로세스:' : '4단계 평가 프로세스:';
   const content = `
     <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.7rem;">
-      <span style="font-size:0.76rem;font-weight:700;color:#64748b;white-space:nowrap;">${stepsLabel}</span>
+      <span style="font-size:0.76rem;font-weight:700;color:${C.textMuted};white-space:nowrap;">${stepsLabel}</span>
       ${processBar}
     </div>
     <div style="font-size:0.87rem;font-weight:700;color:${ac};margin-bottom:0.2rem;">📄 평가 3요소</div>
-    <p style="font-size:0.74rem;color:#475569;margin:0 0 0.1rem;">${ev.서류평가.desc}</p>
-    ${ev.서류평가.note ? `<p style="font-size:0.73rem;color:#475569;margin:0 0 0.3rem;background:rgba(255,255,255,0.03);padding:0.25rem 0.5rem;border-radius:4px;border-left:2px solid rgba(255,255,255,0.1);">※ ${ev.서류평가.note}</p>` : ''}
+    <p style="font-size:0.74rem;color:${C.textDim};margin:0 0 0.1rem;">${ev.서류평가.desc}</p>
+    ${ev.서류평가.note ? `<p style="font-size:0.73rem;color:${C.textDim};margin:0 0 0.3rem;background:${C.noteBg};padding:0.25rem 0.5rem;border-radius:4px;border-left:2px solid ${C.noteBorder};">※ ${ev.서류평가.note}</p>` : ''}
     ${elemGrid}
     <div style="font-size:0.87rem;font-weight:700;color:${ac};margin-bottom:0.5rem;">🎤 면접 유형</div>
     ${intGrid}`;
 
-  return panelWrap('📊 학생부종합전형 평가방법', content, ac);
+  return panelWrap('📊 학생부종합전형 평가방법', content, ac, C);
 }
 
 // ──────────────────────────────────────────────────
 // 5. 전형별 방법 (2×2 grid)
 // ──────────────────────────────────────────────────
-function buildMethodsBlock(d, ac) {
+function buildMethodsBlock(d, ac, C) {
   const cards = d.methods.map(m => {
     const stageRows = m.stages.map(s => `
       <tr>
         <td style="padding:0.22rem 0.6rem;font-size:0.76rem;font-weight:600;color:${m.color};white-space:nowrap;">${s.stage}</td>
-        <td style="padding:0.22rem 0.6rem;font-size:0.76rem;color:#cbd5e1;">${s.elements}</td>
-        <td style="padding:0.22rem 0.6rem;font-size:0.76rem;color:#fbbf24;text-align:center;white-space:nowrap;">${s.select}</td>
+        <td style="padding:0.22rem 0.6rem;font-size:0.76rem;color:${C.textLight};">${s.elements}</td>
+        <td style="padding:0.22rem 0.6rem;font-size:0.76rem;color:${C.amber};text-align:center;white-space:nowrap;">${s.select}</td>
       </tr>`).join('');
 
-    return `<div style="background:rgba(0,0,0,0.2);border-radius:10px;border:1px solid rgba(255,255,255,0.06);border-top:2px solid ${m.color};padding:0.85rem 1rem;">
+    return `<div style="background:${C.methodsBg};border-radius:10px;border:1px solid ${C.methodsBdr};border-top:2px solid ${m.color};padding:0.85rem 1rem;">
       <div style="display:flex;align-items:baseline;gap:0.55rem;margin-bottom:0.35rem;flex-wrap:wrap;">
-        <span style="font-weight:800;color:#e2e8f0;font-size:0.92rem;">${m.name}</span>
-        <span style="font-size:0.77rem;color:#64748b;">모집: <strong style="color:#fbbf24;">${m.quota}</strong></span>
+        <span style="font-weight:800;color:${C.textPrimary};font-size:0.92rem;">${m.name}</span>
+        <span style="font-size:0.77rem;color:${C.textMuted};">모집: <strong style="color:${C.amber};">${m.quota}</strong></span>
       </div>
-      <div style="font-size:0.76rem;color:#64748b;margin-bottom:0.35rem;">
-        <span style="font-weight:600;color:#60a5fa;">지원자격 |</span>
-        ${m.eligibility.map(e=>`<span style="color:#94a3b8;"> ${e}</span>`).join('<span style="color:#334155;"> · </span>')}
+      <div style="font-size:0.76rem;color:${C.textMuted};margin-bottom:0.35rem;">
+        <span style="font-weight:600;color:${C.blue};">지원자격 |</span>
+        ${m.eligibility.map(e=>`<span style="color:${C.textSub};"> ${e}</span>`).join(`<span style="color:${C.divider};"> · </span>`)}
       </div>
-      <table style="width:100%;border-collapse:collapse;margin-bottom:0.4rem;background:rgba(0,0,0,0.1);border-radius:6px;overflow:hidden;">
-        <thead><tr style="background:rgba(0,0,0,0.25);">
-          <th style="padding:0.2rem 0.6rem;font-size:0.69rem;color:#475569;font-weight:600;text-align:left;">단계</th>
-          <th style="padding:0.2rem 0.6rem;font-size:0.69rem;color:#475569;font-weight:600;text-align:left;">전형 요소</th>
-          <th style="padding:0.2rem 0.6rem;font-size:0.69rem;color:#475569;font-weight:600;text-align:center;">선발</th>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:0.4rem;background:${C.methodsTableBg};border-radius:6px;overflow:hidden;">
+        <thead><tr style="background:${C.methodsThBg};">
+          <th style="padding:0.2rem 0.6rem;font-size:0.69rem;color:${C.textDim};font-weight:600;text-align:left;">단계</th>
+          <th style="padding:0.2rem 0.6rem;font-size:0.69rem;color:${C.textDim};font-weight:600;text-align:left;">전형 요소</th>
+          <th style="padding:0.2rem 0.6rem;font-size:0.69rem;color:${C.textDim};font-weight:600;text-align:center;">선발</th>
         </tr></thead>
         <tbody>${stageRows}</tbody>
       </table>
       <div style="font-size:0.76rem;margin-bottom:0.25rem;">
-        <span style="font-weight:600;color:#a78bfa;">수능최저:</span>
-        <span style="color:${m.suneung==='미적용'?'#475569':'#fbbf24'};">${m.suneung}</span>
+        <span style="font-weight:600;color:${C.purple};">수능최저:</span>
+        <span style="color:${m.suneung==='미적용'?C.textDim:C.amber};">${m.suneung}</span>
       </div>
-      <ul style="margin:0;padding-left:1.1rem;">${m.notes.map(n=>`<li style="font-size:0.74rem;color:#64748b;line-height:1.35;">${n}</li>`).join('')}</ul>
+      <ul style="margin:0;padding-left:1.1rem;">${m.notes.map(n=>`<li style="font-size:0.74rem;color:${C.textMuted};line-height:1.35;">${n}</li>`).join('')}</ul>
     </div>`;
   }).join('');
 
   return panelWrap('📝 각 전형별 세부 방법',
     `<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.9rem;">${cards}</div>`,
-    ac);
+    ac, C);
 }
 
 // ──────────────────────────────────────────────────
 // 6. 수능 최저
 // ──────────────────────────────────────────────────
-function buildSuneungBlock(d, ac) {
+function buildSuneungBlock(d, ac, C) {
   const rows = d.suneung.map(s => `
-    <div style="padding:0.5rem 0.75rem;background:rgba(0,0,0,0.12);border-radius:7px;border-left:3px solid ${s.criteria==='미적용'?'#334155':ac};margin-bottom:0.4rem;">
-      <div style="font-size:0.78rem;font-weight:700;color:#e2e8f0;margin-bottom:0.08rem;">${s.group}</div>
-      <div style="font-size:0.78rem;color:${s.criteria==='미적용'?'#475569':'#fbbf24'};font-weight:600;">${s.criteria}</div>
-      ${s.note?`<div style="font-size:0.71rem;color:#475569;">${s.note}</div>`:''}
+    <div style="padding:0.5rem 0.75rem;background:${C.suneungBg};border:1px solid ${C.cardBorder};border-radius:7px;border-left:3px solid ${s.criteria==='미적용'?C.divider:ac};margin-bottom:0.4rem;">
+      <div style="font-size:0.78rem;font-weight:700;color:${C.textPrimary};margin-bottom:0.08rem;">${s.group}</div>
+      <div style="font-size:0.78rem;color:${s.criteria==='미적용'?C.textDim:C.amber};font-weight:600;">${s.criteria}</div>
+      ${s.note?`<div style="font-size:0.71rem;color:${C.textDim};">${s.note}</div>`:''}
     </div>`).join('');
 
   const typeCards = d.suneungTypes.map(t => `
-    <div style="padding:0.52rem 0.78rem;background:rgba(0,0,0,0.12);border-radius:7px;margin-bottom:0.4rem;">
+    <div style="padding:0.52rem 0.78rem;background:${C.suneungBg};border:1px solid ${C.cardBorder};border-radius:7px;margin-bottom:0.4rem;">
       <div style="font-weight:700;color:${ac};font-size:0.81rem;">${t.type}</div>
-      <div style="font-size:0.71rem;color:#64748b;margin:0.08rem 0 0.18rem;">→ ${t.target}</div>
-      <div style="font-size:0.74rem;color:#94a3b8;">${t.detail}</div>
+      <div style="font-size:0.71rem;color:${C.textMuted};margin:0.08rem 0 0.18rem;">→ ${t.target}</div>
+      <div style="font-size:0.74rem;color:${C.textSub};">${t.detail}</div>
     </div>`).join('');
 
   return panelWrap('📐 수능 최저학력기준', `
     ${rows}
     <div style="font-size:0.81rem;font-weight:700;color:${ac};margin:0.75rem 0 0.4rem;">응시영역 기준</div>
     ${typeCards}
-  `, ac);
+  `, ac, C);
 }

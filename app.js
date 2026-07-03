@@ -305,7 +305,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (activeView) {
       activeView.classList.remove("hidden");
       activeView.classList.add("active");
-      activeView.style.display = (activeView.id === "view-csat" || activeView.id === "view-grade-rank" || activeView.id === "view-univ-score" || activeView.id === "view-passfail-examples" || activeView.id === "view-admission-dist" || activeView.id === "view-school-mock-status" || activeView.id === "view-hexagon" || activeView.id === "view-subject-path" || activeView.id === "view-admission-analysis") ? "block" : "grid";
+      activeView.style.display = (activeView.id === "view-csat" || activeView.id === "view-grade-rank" || activeView.id === "view-univ-score" || activeView.id === "view-passfail-examples" || activeView.id === "view-admission-dist" || activeView.id === "view-school-mock-status" || activeView.id === "view-hexagon" || activeView.id === "view-subject-path" || activeView.id === "view-admission-analysis" || activeView.id === "view-mock-exam" || activeView.id === "view-gpa-mock-compare") ? "block" : "grid";
     }
 
     // Sidebar Interview Settings Visibility
@@ -2223,19 +2223,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const displayData = filtered.slice(0, 100);
       displayData.forEach(row => {
+        const toChips = (val) => (val || '').split(',').map(s => s.trim()).filter(Boolean)
+          .map(n => `<span class="wrong-chip">${n}</span>`).join('');
         const tr = document.createElement('tr');
         tr.innerHTML = `
-                  <td>${row.학년}</td>
-                  <td>${row.반}</td>
-                  <td>${row.번호}</td>
-                  <td style="font-weight: 600;">${row.성명}</td>
+                  <td style="color:var(--text-secondary);font-size:0.78rem;">${row.학년}</td>
+                  <td style="color:var(--text-secondary);font-size:0.78rem;">${row.반}</td>
+                  <td style="color:var(--text-secondary);font-size:0.78rem;">${row.번호}</td>
+                  <td style="font-weight:700;">${row.성명}</td>
                   <td class="subj-name">${row.과목}</td>
-                  <td><span class="badge-grade grade-${row.등급 || 'none'}">${row.등급 || '-'}</span></td>
-                  <td class="score">${row.원점수}</td>
-                  <td class="score">${row.표준점수}</td>
-                  <td>${row.전국백분위}</td>
-                  <td class="wrong-items" title="${row.오답문항}">${row.오답문항}</td>
-                  <td class="wrong-items" title="${row.오답문항_정답률}">${row.오답문항_정답률}</td>
+                  <td style="text-align:center;"><span class="badge-grade grade-${row.등급 || 'none'}">${row.등급 || '-'}</span></td>
+                  <td class="score">${row.원점수 ?? '-'}</td>
+                  <td class="score">${row.표준점수 ?? '-'}</td>
+                  <td class="score">${row.전국백분위 ?? '-'}</td>
+                  <td class="wrong-items-cell">${toChips(row.오답문항_정답률)}</td>
               `;
         mockPreviewBody.appendChild(tr);
       });
@@ -2688,7 +2689,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function exportMockToCSV() {
     const data = getDataForCurrentMonth();
     if (data.length === 0) return;
-    const headers = ["학년", "반", "번호", "성명", "과목", "등급", "원점수", "표준점수", "전국백분위", "오답문항", "오답문항_정답률"];
+    const headers = ["학년", "반", "번호", "성명", "과목", "등급", "원점수", "표준점수", "전국백분위", "오답문항_정답률"];
     let csvContent = "\uFEFF" + headers.join(",") + "\n";
     data.forEach(row => {
       let rowArr = headers.map(h => {
@@ -4413,6 +4414,68 @@ document.addEventListener("DOMContentLoaded", () => {
       "글로벌비즈니스대학": ["글로벌학부", "융합경영학부", "자유전공학부(글로벌비즈니스)"],
       "문화스포츠대학": ["국제스포츠학부", "문화융합학부", "자유전공학부(문화스포츠)"],
       "약학대학": ["약학부"]
+
+    },
+
+    "\uc21c\uccad\ud5a5\ub300\ud559\uad50": {
+      "의과대학": ["의예과"],
+      "자연과학대학": ["간호학과", "화학과", "식품영양학과", "환경보건학과", "생명과학과", "스포츠과학과", "사회체육학과", "스포츠의학과"],
+      "인문사회과학대학": ["유아교육과", "특수교육과", "청소년교육상담학과", "법학과", "행정학과", "경찰행정학과", "사회복지학과"],
+      "글로벌경영대학": ["경영학과", "국제통상학과", "관광경영학과", "경제금융학과", "IT금융경영학과", "글로벌문화산업학과", "회계학과"],
+      "공과대학": ["컴퓨터공학과", "정보통신공학과", "전자공학과", "전기공학과", "전자정보공학과", "나노화학공학과", "에너지환경공학과", "디스플레이신소재공학과", "기계공학과", "건축학과", "스마트자동차학과", "에너지공학과"],
+      "SW융합대학": ["컴퓨터소프트웨어공학과", "정보보호학과", "의료IT공학과", "AI빅데이터학과", "사물인터넷학과", "메타버스&게임학과"],
+      "의료과학대학": ["보건행정경영학과", "의료생명공학과", "임상병리학과", "작업치료학과", "의약공학과", "의공학과"],
+      "SCH미디어랩스": ["한국문화콘텐츠학과", "영미학과", "중국학과", "미디어커뮤니케이션학과", "디지털애니메이션학과", "공연영상학과"],
+      "창의라이프대학": ["탄소중립학과", "의생명융합학부", "스마트팩토리공학과", "스마트모빌리티공학과", "융합바이오화학공학과"]
+
+    },
+
+    "\uc870\uc120\ub300\ud559\uad50": {
+      "글로벌인문대학": ["국어국문학과", "영어영문학과", "문예창작학과", "역사문화학과", "철학과", "한문학과", "글로벌비즈니스커뮤니케이션학과", "아랍어과", "아시아언어문화학부", "유럽언어문화학부", "중국어문화학과", "K-컬처공연·기획학과"],
+      "자연과학·공공보건안전대학": ["수학과", "물리학과", "화학과", "생명과학과", "식품영양학과", "융합수리과학부", "의생명과학부", "컴퓨터통계학과", "상담심리학과", "언어치료학과", "작업치료학과", "경찰행정학과", "소방재난관리학과"],
+      "법사회대학": ["법학과", "정치외교학과", "행정복지학부", "공공인재법무학과", "미디어커뮤니케이션학과", "군사학과"],
+      "경상대학": ["경영학부", "경제학과", "무역학과"],
+      "공과대학": ["기계공학과", "기계시스템미래자동차공학부", "전기공학과", "광기술공학과", "신소재공학과", "생명화학공학과", "건축공학과", "건축학과", "토목공학과", "환경공학과", "산업공학과", "원자력공학과", "에너지자원공학과", "선박해양공학과", "항공우주공학과", "용접접합과학공학과", "스마트이동체융합시스템공학부", "첨단에너지공학과"],
+      "IT융합대학": ["AI·SW학부", "전자공학과"],
+      "사범대학": ["교육학과", "국어교육과", "영어교육과", "수학교육과", "물리교육과", "화학교육과", "생물교육과", "지구과학교육과", "음악교육과", "특수교육과"],
+      "미술대학": ["미술학부", "디자인공학과", "시각디자인학과", "라이프스타일디자인학부", "문화콘텐츠학부", "만화·애니메이션학과"],
+      "체육대학": ["체육학과", "스포츠산업학과", "태권도학과", "공연예술무용과"],
+      "의과대학": ["의예과", "의학과", "간호학과"],
+      "치과대학": ["치의예과", "치의학과"],
+      "약학대학": ["약학과"],
+      "미래사회융합대학": ["미래융합학부", "스마트ICT융합전공", "스마트비즈니스전공", "소방에너지시스템전공", "건강여가복지전공", "부동산비즈니스전공", "사회복지뷰티케어전공"]
+
+    },
+
+    "\uc804\uc8fc\ub300\ud559\uad50": {
+      "인문콘텐츠대학": ["한국어문학과", "영어영문학과", "일본언어문화학과", "중국어중국학과", "역사콘텐츠학과", "웹툰만화콘텐츠학과", "신학과경배찬양학과"],
+      "사회과학대학": ["경찰학과", "법학과", "행정학과", "사회복지학과", "상담심리학과", "문헌정보학과"],
+      "경영대학": ["경영학과", "물류무역학과", "회계세무학과", "IT금융학과", "금융보험학과", "부동산국토정보학과"],
+      "의과학대학": ["간호학과", "물리치료학과", "방사선학과", "보건관리학과", "작업치료학과", "식품영양학과", "운동처방학과", "재활학과", "환경생명과학과"],
+      "공과대학": ["건축공학과", "건축학과", "토목환경공학과", "기계공학과", "기계자동차공학과", "소방안전공학과", "첨단신소재공학과", "전기전자공학과", "정보통신공학과", "산업공학과"],
+      "소프트웨어융합대학": ["컴퓨터공학과", "인공지능학과", "데이터사이언스학과", "스마트미디어학과"],
+      "문화융합대학": ["게임콘텐츠학과", "산업디자인학과", "시각디자인학과", "공연예술학과", "영화방송학과", "예술심리치료학과", "체육학과", "축구학과", "태권도학과"],
+      "문화관광대학": ["관광경영학과", "호텔경영학과", "외식산업조리학과", "한식조리학과", "패션산업학과"],
+      "사범대학": ["국어교육과", "영어교육과", "수학교육과", "과학교육과", "가정교육과", "한문교육과", "중등특수교육과", "교육학과"],
+      "미래융합대학": ["농식품경영학과", "반려동식물학과", "친환경자동차학과", "AI융합비즈니스학과", "미네르바학부", "로컬벤처학부"]
+
+    },
+
+    "\uc6d0\uad11\ub300\ud559\uad50": {
+      "교학대학": ["교학과", "원불교학과"],
+      "인문대학": ["국어국문학과", "문예창작학과", "영어영문학과", "중국학과", "역사문화학과"],
+      "경영대학": ["경영학과", "회계세무학과", "경제금융학과"],
+      "농식품융합대학": ["원예산업학과", "산림조경학과", "식품생명공학과", "생명환경학과", "식품영양학과"],
+      "약학대학": ["약학과", "한약학과"],
+      "사범대학": ["국어교육과", "영어교육과", "일어교육과", "한문교육과", "역사교육과", "교육학과", "유아교육과", "가정교육과", "체육교육과", "수학교육과", "중등특수교육과"],
+      "보건과학대학": ["동물보건학과", "반려동물산업학과", "생명과학부", "안전보건학과", "의료상담학과", "스포츠과학부", "뷰티디자인학부"],
+      "한의과대학": ["한의예과", "한의학과"],
+      "조형예술디자인대학": ["미술과", "금속·주얼리디자인학과", "시각정보디자인학과", "실내·산업디자인학과", "패션디자인산업학과"],
+      "사회과학대학": ["행정학전공", "신문방송학전공", "사회복지학전공", "보건행정학전공", "가족아동복지학과", "군사학과", "경찰행정학과", "소방행정학과"],
+      "창의공과대학": ["전기공학과", "철도시스템공학부", "전자공학과", "컴퓨터·소프트웨어공학과", "게임콘텐츠학과", "기계공학부", "건축공학과", "도시공학과", "화학공학과", "건축학과", "건설환경공학과"],
+      "치과대학": ["치의예과", "치의학과"],
+      "의과대학": ["의예과", "의학과", "간호학과", "작업치료학과", "응급구조학과"],
+      "독립학과": ["국방기술학과", "자율전공학부"]
 
     }
   };
@@ -7840,6 +7903,62 @@ SW\uc6b0\uc218(AI\ucef4\uacf5): \ud559\uc5c5\ud0d0\uad6c\uc5ed\ub7c9 60%(\ud559\
         community: "협업과 소통능력, 나눔과 배려, 성실성과 규칙 준수"
       },
       weights: { academic: 0.30, career: 0.50, community: 0.20 }
+    },
+
+    "\uc21c\uccad\ud5a5\ub300\ud559\uad50": {
+      factors: [
+        { name: "학업역량", weight: 30, details: "학업성취도, 학업태도와 학업의지(30%)" },
+        { name: "진로역량", weight: 40, details: "전공 관련 교과 이수 노력, 전공 관련 교과 성취도, 진로탐색 활동 및 경험(40%)" },
+        { name: "공동체역량", weight: 20, details: "협업과 소통능력, 나눔과 배려, 성실성과 규칙 준수(20%)" }
+      ],
+      competencies: {
+        academic: "학업성취도, 학업태도와 학업의지",
+        career: "전공 관련 교과 이수 노력, 전공 관련 교과 성취도, 진로탐색 활동 및 경험",
+        community: "협업과 소통능력, 나눔과 배려, 성실성과 규칙 준수"
+      },
+      weights: { academic: 0.30, career: 0.40, community: 0.20 }
+    },
+
+    "\uc870\uc120\ub300\ud559\uad50": {
+      factors: [
+        { name: "학업역량", weight: 40, details: "학업성취도, 학업태도와 학업의지, 탐구력(40%)" },
+        { name: "진로역량", weight: 40, details: "전공 관련 교과 이수 노력, 전공 관련 교과 성취도, 진로탐색 활동 및 경험(40%)" },
+        { name: "공동체역량", weight: 20, details: "협업과 소통능력, 나눔과 배려, 성실성과 규칙 준수(20%)" }
+      ],
+      competencies: {
+        academic: "학업성취도, 학업태도와 학업의지, 탐구력",
+        career: "전공 관련 교과 이수 노력, 전공 관련 교과 성취도, 진로탐색 활동 및 경험",
+        community: "협업과 소통능력, 나눔과 배려, 성실성과 규칙 준수"
+      },
+      weights: { academic: 0.40, career: 0.40, community: 0.20 }
+    },
+
+    "\uc804\uc8fc\ub300\ud559\uad50": {
+      factors: [
+        { name: "학업과 진로", weight: 50, details: "학업성취도, 학업태도, 진로 관련 교과 이수 노력, 진로탐색 활동 및 경험(50%)" },
+        { name: "발전가능성", weight: 25, details: "자기주도성, 경험의 다양성, 창의적 문제해결력(25%)" },
+        { name: "인성과 공동체", weight: 25, details: "협업과 소통능력, 나눔과 배려, 성실성과 규칙 준수(25%)" }
+      ],
+      competencies: {
+        academic: "학업성취도, 학업태도, 진로 관련 교과 이수 노력, 진로탐색 활동 및 경험",
+        career: "자기주도성, 경험의 다양성, 창의적 문제해결력",
+        community: "협업과 소통능력, 나눔과 배려, 성실성과 규칙 준수"
+      },
+      weights: { academic: 0.50, career: 0.25, community: 0.25 }
+    },
+
+    "\uc6d0\uad11\ub300\ud559\uad50": {
+      factors: [
+        { name: "학업역량", weight: 40, details: "학업성취도, 학업태도, 탐구력(40%)" },
+        { name: "진로역량", weight: 33.3, details: "전공 관련 교과 이수 노력, 교과 성취도, 진로 탐색 활동(33.3%)" },
+        { name: "공동체역량", weight: 26.7, details: "협업과 소통능력, 나눔과 배려, 성실성과 규칙 준수(26.7%)" }
+      ],
+      competencies: {
+        academic: "학업성취도, 학업태도, 탐구력",
+        career: "전공 관련 교과 이수 노력, 교과 성취도, 진로 탐색 활동",
+        community: "협업과 소통능력, 나눔과 배려, 성실성과 규칙 준수"
+      },
+      weights: { academic: 0.40, career: 0.333, community: 0.267 }
     }
   };
 
@@ -8897,12 +9016,18 @@ overallEvaluation 필드는 아래 형식을 반드시 따르십시오:
   // =========================================================
   // AI 전형별 지원 전략 분석
   // =========================================================
-  function renderStrategyResult(data, container) {
+  function renderStrategyResult(data, container, gradeInfoMap = {}, excludedUnis = []) {
     const ratingConfig = {
       '강추천': { color: '#22c55e', bg: 'rgba(34,197,94,0.12)', border: 'rgba(34,197,94,0.35)', label: '강추천 ★★★' },
       '추천':   { color: '#3b82f6', bg: 'rgba(59,130,246,0.10)', border: 'rgba(59,130,246,0.35)', label: '추천 ★★' },
       '보통':   { color: '#f59e0b', bg: 'rgba(245,158,11,0.09)', border: 'rgba(245,158,11,0.30)', label: '보통 ★' },
       '비추천': { color: '#ef4444', bg: 'rgba(239,68,68,0.09)', border: 'rgba(239,68,68,0.30)', label: '비추천 ✗' },
+    };
+    const chanceConfig = {
+      '안정권':         { color: '#22c55e', bg: 'rgba(34,197,94,0.18)' },
+      '적정권':         { color: '#3b82f6', bg: 'rgba(59,130,246,0.18)' },
+      '도전권':         { color: '#f59e0b', bg: 'rgba(245,158,11,0.18)' },
+      '소신지원(위험)': { color: '#ef4444', bg: 'rgba(239,68,68,0.18)' },
     };
     const order = { '강추천': 0, '추천': 1, '보통': 2, '비추천': 3 };
     const sorted = (data.universities || []).slice().sort((a, b) => (order[a.rating] ?? 9) - (order[b.rating] ?? 9));
@@ -8912,10 +9037,22 @@ overallEvaluation 필드는 아래 형식을 반드시 따르십시오:
         <h4 style="margin:0 0 0.45rem;color:var(--accent-primary);font-size:0.95rem;">📋 학생 생기부 종합 특성</h4>
         <p style="margin:0;color:var(--text-secondary);line-height:1.7;font-size:0.9rem;">${data.summary || ''}</p>
       </div>
+      ${excludedUnis.length ? `<div style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.22);border-radius:10px;padding:0.75rem 1rem;margin-bottom:1rem;font-size:0.82rem;color:var(--text-secondary);line-height:1.6;">
+        <span style="color:#f87171;font-weight:700;">⚠️ 입결 격차 과대 — 분석 제외 대학 (${excludedUnis.length}개):</span>
+        ${excludedUnis.join(', ')} <span style="opacity:0.7;">— 교과 등급 대비 입결 상한이 1.3등급 이상 낮아 현실적 지원 대상에서 제외됩니다.</span>
+      </div>` : ''}
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem;">
     `;
     for (const u of sorted) {
       const cfg = ratingConfig[u.rating] || ratingConfig['보통'];
+      const gi = gradeInfoMap[u.university] || {};
+      const chCfg = gi.chance ? (chanceConfig[gi.chance] || chanceConfig['도전권']) : null;
+      const gradeBadge = gi.avg
+        ? `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:-2px;">
+            <span style="font-size:0.72rem;color:var(--text-secondary);">📊 학종 입결</span>
+            <span style="font-size:0.72rem;font-weight:600;color:var(--text-secondary);">${gi.avg}등급</span>
+            ${chCfg ? `<span style="background:${chCfg.bg};color:${chCfg.color};font-size:0.7rem;font-weight:700;padding:1px 8px;border-radius:12px;">${gi.chance}</span>` : ''}
+          </div>` : '';
       const typeTags = (u.recommendedTypes || []).map(t =>
         `<span style="display:inline-block;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);
           color:var(--text-primary);padding:2px 9px;border-radius:20px;font-size:0.73rem;font-weight:500;
@@ -8927,7 +9064,9 @@ overallEvaluation 필드는 아래 형식을 반드시 따르십시오:
             <span style="font-size:1rem;font-weight:700;color:var(--text-primary);">${u.university}</span>
             <span style="background:${cfg.color};color:#fff;padding:3px 11px;border-radius:20px;font-size:0.78rem;font-weight:700;white-space:nowrap;flex-shrink:0;">${cfg.label}</span>
           </div>
+          ${gradeBadge}
           ${typeTags ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:-2px;">🎯 <span style="font-size:0.73rem;color:var(--text-secondary);align-self:center;margin-right:2px;">추천 전형:</span>${typeTags}</div>` : ''}
+          ${(u.recommendedMajors || []).length ? `<div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;">📚 <span style="font-size:0.73rem;color:var(--text-secondary);align-self:center;margin-right:2px;">추천 학과:</span>${(u.recommendedMajors).map(m => `<span style="display:inline-block;background:rgba(168,85,247,0.15);border:1px solid rgba(168,85,247,0.3);color:#c084fc;padding:2px 9px;border-radius:20px;font-size:0.73rem;font-weight:500;line-height:1.5;word-break:keep-all;">${m}</span>`).join(' ')}</div>` : ''}
           <p style="margin:0;font-size:0.83rem;color:var(--text-secondary);line-height:1.65;">${u.reasoning || ''}</p>
           <div style="font-size:0.8rem;border-top:1px solid rgba(255,255,255,0.08);padding-top:0.5rem;display:flex;flex-direction:column;gap:0.3rem;">
             <div style="color:#4ade80;">✅ <strong>강점:</strong> ${u.strength || '-'}</div>
@@ -8945,6 +9084,7 @@ overallEvaluation 필드는 아래 형식을 반드시 따르십시오:
   }
 
   let lastStrategyData = null;
+  let lastGradeInfoMap = {};
 
   window.downloadStrategyPDF = function() {
     if (!lastStrategyData) { alert('먼저 AI 지원 전략 분석을 실행해주세요.'); return; }
@@ -8958,10 +9098,18 @@ overallEvaluation 필드는 아래 형식을 반드시 따르십시오:
     const order = { '강추천': 0, '추천': 1, '보통': 2, '비추천': 3 };
     const sorted = (d.universities || []).slice().sort((a, b) => (order[a.rating] ?? 9) - (order[b.rating] ?? 9));
 
+    const chancePdfColors = { '안정권': '#15803d', '적정권': '#1d4ed8', '도전권': '#b45309', '소신지원(위험)': '#dc2626' };
     const cardsHtml = sorted.map(u => {
       const m = ratingMeta[u.rating] || ratingMeta['보통'];
+      const gi = lastGradeInfoMap[u.university] || {};
+      const gradeInfoLine = gi.avg
+        ? `<div style="margin-bottom:6px;font-size:11px;color:#555;">📊 학종 입결 <strong>${gi.avg}등급</strong>${gi.chance ? ` | <span style="color:${chancePdfColors[gi.chance] || '#555'};font-weight:700;">${gi.chance}</span>` : ''}</div>`
+        : '';
       const typeLine = (u.recommendedTypes || []).length
-        ? `<div style="margin-bottom:7px;font-size:11px;color:#1d4ed8;">🎯 <strong>추천 전형:</strong> ${(u.recommendedTypes).join(' / ')}</div>`
+        ? `<div style="margin-bottom:6px;font-size:11px;color:#1d4ed8;">🎯 <strong>추천 전형:</strong> ${(u.recommendedTypes).join(' / ')}</div>`
+        : '';
+      const majorLine = (u.recommendedMajors || []).length
+        ? `<div style="margin-bottom:7px;font-size:11px;color:#7e22ce;">📚 <strong>추천 학과:</strong> ${(u.recommendedMajors).join(', ')}</div>`
         : '';
       return `
         <div style="background:${m.bg};border:1.5px solid ${m.border};border-radius:10px;padding:14px 16px;break-inside:avoid;margin-bottom:12px;">
@@ -8969,7 +9117,9 @@ overallEvaluation 필드는 아래 형식을 반드시 따르십시오:
             <strong style="font-size:15px;color:#111;">${u.university}</strong>
             <span style="background:${m.color};color:#fff;padding:2px 12px;border-radius:20px;font-size:12px;font-weight:700;">${u.rating}</span>
           </div>
+          ${gradeInfoLine}
           ${typeLine}
+          ${majorLine}
           <p style="margin:0 0 8px;font-size:13px;color:#333;line-height:1.65;">${u.reasoning || ''}</p>
           <div style="font-size:12px;border-top:1px solid rgba(0,0,0,0.1);padding-top:7px;display:flex;flex-direction:column;gap:4px;">
             <div style="color:#15803d;"><strong>✅ 강점:</strong> ${u.strength || '-'}</div>
@@ -9022,7 +9172,9 @@ overallEvaluation 필드는 아래 형식을 반드시 따르십시오:
     const subjectRec  = document.getElementById('subject-records')?.value || '';
     const creative    = document.getElementById('creative-activities')?.value || '';
     const behavioral  = document.getElementById('behavioral-records')?.value || '';
-    const majorHint   = document.getElementById('strat-major-hint')?.value.trim() || '';
+    const majorFromSelect = document.getElementById('major')?.value?.trim() || '';
+    const majorFromHint   = document.getElementById('strat-major-hint')?.value?.trim() || '';
+    const majorHint       = majorFromSelect || majorFromHint || '';
 
     if (!avgGrade && !subjectRec && !coursesRaw) {
       alert('먼저 위 개인 분석 폼에서 학생을 선택하고 생기부 데이터를 불러오세요.');
@@ -9036,64 +9188,199 @@ overallEvaluation 필드는 아래 형식을 반드시 따르십시오:
     container.innerHTML = '<div style="text-align:center;padding:2.5rem;color:var(--text-secondary);">🤖 AI가 전형별 지원 전략을 분석 중입니다...<br><span style="font-size:0.82rem;">대학 수에 따라 30~60초 소요될 수 있습니다.</span></div>';
 
     try {
-      const uniList = Object.keys(universityEvalCriteria);
+      // ─── 대학별 학종 입결 범위 (2024~2025학년도 기준, 인문/자연 평균) ───
+      const univGradeRange = {
+        "서울대학교":         "1.0~1.5", "연세대학교":         "1.2~1.8",
+        "고려대학교":         "1.3~2.0", "서강대학교":         "1.7~2.3",
+        "성균관대학교":       "1.7~2.3", "한양대학교":         "1.8~2.5",
+        "이화여자대학교":     "1.9~2.5", "서울시립대학교":     "2.0~2.8",
+        "중앙대학교":         "2.0~2.8", "한국교원대학교":     "2.0~3.0",
+        "부산대학교":         "2.0~3.0", "경희대학교":         "2.2~3.0",
+        "한국외국어대학교":   "2.3~3.0", "건국대학교":         "2.3~3.0",
+        "가톨릭대학교":       "2.3~3.1", "경북대학교":         "2.3~3.2",
+        "동국대학교":         "2.5~3.2", "인하대학교":         "2.5~3.2",
+        "아주대학교":         "2.5~3.2", "숭실대학교":         "2.5~3.3",
+        "서울과학기술대학교": "2.5~3.3", "고려대학교(세종)":   "2.5~3.3",
+        "광운대학교":         "2.8~3.5", "세종대학교":         "2.8~3.5",
+        "충남대학교":         "2.8~3.6", "국민대학교":         "2.8~3.6",
+        "충북대학교":         "2.8~3.8", "전북대학교":         "2.8~3.8",
+        "단국대학교":         "3.0~3.8", "인천대학교":         "3.0~4.0",
+        "명지대학교":         "3.0~4.0", "한양대학교 ERICA":   "3.0~4.0",
+        "전남대학교":         "3.0~4.0", "상명대학교(서울)":   "3.2~4.2",
+        "가천대학교":         "3.5~4.5", "순천향대학교":       "3.5~4.5",
+        "조선대학교":         "3.5~4.8", "원광대학교":         "3.8~5.0",
+        "전주대학교":         "4.0~5.5",
+      };
+
+      const calcChance = (gradeStr, avgStr) => {
+        const g = parseFloat(gradeStr);
+        if (isNaN(g) || !avgStr) return null;
+        const [lo, hi] = avgStr.split('~').map(Number);
+        if (g <= lo - 0.2)        return '안정권';
+        if (g <= (lo + hi) / 2)   return '적정권';
+        if (g <= hi + 0.3)        return '도전권';
+        return '소신지원(위험)';
+      };
+
+      const allUniList = Object.keys(universityEvalCriteria);
+
+      // 입결 기준 비현실적 대학 사전 제외 (입결 상한보다 1.3등급 이상 낮으면 제외)
+      const gradeVal = parseFloat(avgGrade);
+      const uniList = allUniList.filter(u => {
+        if (!avgGrade || isNaN(gradeVal)) return true;
+        const avg = univGradeRange[u];
+        if (!avg) return true;
+        const hi = parseFloat(avg.split('~')[1]);
+        return gradeVal <= hi + 1.3;
+      });
+      const excludedUnis = allUniList.filter(u => !uniList.includes(u));
+
+      // 대학별 입결 + 합격 가능성 구간 맵 (클라이언트 계산)
+      const gradeInfoMap = {};
+      uniList.forEach(u => {
+        const avg = univGradeRange[u] || null;
+        gradeInfoMap[u] = { avg, chance: avg ? calcChance(avgGrade, avg) : null };
+      });
+      lastGradeInfoMap = gradeInfoMap;
+
+      // 대학별 학과 목록 (universityData에서 추출)
+      const uniMajorMap = {};
+      uniList.forEach(u => {
+        const ud = universityData[u];
+        if (!ud) return;
+        const allMajors = Object.values(ud).flat();
+        uniMajorMap[u] = allMajors;
+      });
+
+      // 대학별 학종 학과 입결 (admission_dist.js 데이터 활용)
+      const uniDeptGradeMap = {};
+      if (typeof window.getAdmissionGradeSummary === 'function') {
+        uniList.forEach(u => {
+          const grades = window.getAdmissionGradeSummary(u);
+          if (grades.length) uniDeptGradeMap[u] = grades;
+        });
+      }
+
       const uniCriteriaText = uniList.map(u => {
         const crit = universityEvalCriteria[u];
-        const factorsSnippet = (crit.factors || '').substring(0, 500).replace(/\n{3,}/g, '\n\n');
-        const weights = crit.weights ? `(학업:${Math.round(crit.weights.academic*100)}% 진로:${Math.round(crit.weights.career*100)}% 공동체:${Math.round(crit.weights.community*100)}%)` : '';
-        return `【${u}】 ${weights}\n${factorsSnippet}`;
+        const factorsStr = Array.isArray(crit.factors)
+          ? crit.factors.map(f => `${f.name}(${f.weight}%): ${f.details || ''}`).join(' / ')
+          : String(crit.factors || '');
+        const factorsSnippet = factorsStr.substring(0, 380).replace(/\n{3,}/g, '\n\n');
+        const weights = crit.weights ? `학업${Math.round(crit.weights.academic*100)}%·진로${Math.round(crit.weights.career*100)}%·공동체${Math.round(crit.weights.community*100)}%` : '';
+        const gi = gradeInfoMap[u];
+        const gradeTag = gi?.avg ? `입결:${gi.avg}등 | ${gi.chance}` : '입결미확인';
+        const majors = uniMajorMap[u] ? `개설학과: ${uniMajorMap[u].slice(0, 30).join(', ')}${uniMajorMap[u].length > 30 ? ' 외' : ''}` : '';
+
+        // 학종 학과별 입결 — 희망 학과와 유사한 항목을 앞에 배치
+        let deptGrade = '';
+        const dg = uniDeptGradeMap[u];
+        if (dg && dg.length) {
+          const hint = majorHint ? majorHint.replace(/[학과부원]/g, '').toLowerCase() : '';
+          const sorted = hint
+            ? [...dg].sort((a, b) => {
+                const ak = a.dept.replace(/[학과부원]/g, '').toLowerCase().includes(hint) ? -1 : 0;
+                const bk = b.dept.replace(/[학과부원]/g, '').toLowerCase().includes(hint) ? -1 : 0;
+                return ak - bk;
+              })
+            : dg;
+          deptGrade = '\n학종 학과 입결(최근): ' + sorted.slice(0, 16).map(d => {
+            const parts = [];
+            if (d.cut70 != null) parts.push(`70%cut:${d.cut70}등`);
+            if (d.avg != null) parts.push(`평균:${d.avg}등`);
+            return `${d.dept}(${parts.join('/')})`;
+          }).join(', ');
+        }
+
+        return `【${u}】 [${gradeTag}] (${weights})\n${majors}${deptGrade}\n${factorsSnippet}`;
       }).join('\n\n---\n\n');
 
-      const majorLine = majorHint ? `희망 학과/계열 힌트: ${majorHint}` : '(희망 학과 미지정 — 생기부 내 진로 방향 자동 파악)';
+      // 합격 가능성 구간 요약 (프롬프트용)
+      const chanceLines = uniList.map(u => {
+        const gi = gradeInfoMap[u];
+        if (!gi?.avg) return null;
+        return `${u}: 입결 ${gi.avg}등급 → 【${gi.chance}】`;
+      }).filter(Boolean).join('\n');
 
-      // 대학별 주요 전형 안내 (프롬프트에 제공)
-      const uniTypeGuide = `
-■ 대학별 주요 학생부종합전형 목록 (2026학년도 기준)
-서울대학교: 지역균형(교사추천·면접X·수능최저O), 일반전형(1단계 서류→2단계 면접)
-연세대학교: 활동우수형(면접O), 국제형(영어인터뷰), 기회균형Ⅰ
-고려대학교: 학업우수형(수능최저O), 계열적합형(면접O·수능최저X), 기회균형특별전형
-서강대학교: 학생부종합(일반형·면접O), 학생부종합(기회균형)
-성균관대학교: 탐구형인재(면접O), 계열모집(면접O), 기회균형(면접O)
-한양대학교: 학생부종합(서류100%·면접X·수능최저X), 지역균형발전(교사추천)
-중앙대학교: CAU융합형인재(서류100%·탐구역량 중심), CAU탐구형인재(면접O·전공적합성 중심)
-건국대학교: KU자기추천(면접O), KU지역균형(교사추천·서류100%)
-서울과학기술대학교: 학교생활우수자(1단계 서류→2단계 면접)
-한국교원대학교: 학생부종합(일반학생), 학생부종합(사범대학특별전형·지역인재)
-경희대학교: 네오르네상스(면접O), 고교연계(교사추천·서류100%)
-한국외국어대학교: 학생부종합(면접형·서류형), 기회균형Ⅰ
-이화여자대학교: 미래인재(서류100%), 고교추천(교사추천·면접O)
-숙명여자대학교: 숙명인재Ⅰ(면접O), 숙명인재Ⅱ(서류100%)
-인하대학교: 인하미래인재(면접O), 지역추천인재(교사추천)
-아주대학교: ACE(면접O), 고교추천(교사추천·서류100%)
-가톨릭대학교: 학교장추천(교사추천·면접X), 잠재능력우수자(면접O)
-`;
+      const majorLine = majorHint ? `희망 학과/계열: ${majorHint}` : '(희망 학과 미지정 — 생기부 내 진로 방향 자동 파악)';
 
-      const prompt = `당신은 대한민국 대학 입시 전문가입니다. 아래 학생의 학교생활기록부 데이터를 분석하여, 각 대학 학생부종합전형에 지원 시 적합성과 최적 전형을 함께 추천하세요.
+      // 대학별 주요 전형 안내
+      const uniTypeGuide = `■ 대학별 주요 학생부종합전형 (2026학년도)
+서울대: 지역균형(추천서·수능최저O·면접X), 일반(서류→면접)
+연세대: 활동우수형(면접O), 국제형(영어인터뷰O)
+고려대: 학업우수(수능최저O·서류100%), 계열적합(면접O·수능최저X)
+서강대: 학생부종합 일반(면접O)
+성균관대: 탐구형인재(면접O), 계열모집(면접O)
+한양대: 학생부종합(서류100%·면접X·수능최저X)
+중앙대: CAU융합형(서류100%), CAU탐구형(면접O)
+건국대: KU자기추천(면접O), KU지역균형(서류100%)
+동국대: Do Dream(서류100%), Do Dream(면접O)
+경희대: 네오르네상스(면접O), 고교연계(서류100%)
+한국외대: 학생부종합 면접형(면접O), 서류형(서류100%)
+인하대: 인하미래인재(면접O), 지역추천(서류100%)
+아주대: ACE(면접O), 고교추천(서류100%)
+가톨릭대: 학교장추천(서류100%·면접X), 잠재능력우수자(면접O)
+서울과기대: 학교생활우수자(면접O)
+한국교원대: 학생부종합 일반, 지역인재
+숭실대: SSU미래인재(서류100%), 사회적배려대상자
+세종대: 창의인재(면접O), 학생부우수자(서류100%)
+광운대: 광운참빛인재(면접O), 소프트웨어우수인재
+국민대: 국민프런티어(면접O), 학교생활우수자(서류100%)
+단국대: DKU인재(면접O), 학생부종합(서류100%)
+가천대: 가천바람개비(면접O), 학생부우수자(서류100%)
+부산대·경북대·전북대·충남대·충북대: 학생부종합(지역인재 우선), 일반(면접O)
+전남대·전주대·순천향대·조선대·원광대: 학생부종합(면접O), 지역인재(서류100%)
+한양ERICA: 학생부종합(서류100%·면접X), 고른기회
+고려대(세종): 학업우수(수능최저O), 크림슨(면접O)`;
+
+      const prompt = `당신은 대한민국 대학 입시 전문 컨설턴트입니다. 아래 학생의 학교생활기록부를 분석하여 각 대학 학생부종합전형의 지원 적합성을 냉철하고 객관적으로 평가하세요.
 
 [학생 데이터]
 ${majorLine}
-교과 평균 등급: ${avgGrade}
+교과 평균 등급: ${avgGrade || '미입력'}
 이수과목 및 성적(요약): ${coursesRaw.substring(0, 2000)}
 교과 세특: ${subjectRec.substring(0, 3500)}
 창체특기: ${creative.substring(0, 800)}
 행동특성 및 종합의견: ${behavioral.substring(0, 500)}
 
-[평가 대상 대학 및 학생부종합전형 기준]
+[대학별 학종 입결 및 합격 가능성 구간 — 교과평균 ${avgGrade || '?'}등급 기준]
+※ 안정권=입결 평균보다 0.2등급 이상 우수 / 적정권=입결 중간값 이내 / 도전권=입결 상한±0.3 이내 / 소신지원(위험)=입결 상한보다 크게 낮음
+${chanceLines || '(교과 등급 미입력으로 계산 불가)'}
+
+[대학별 학생부종합전형 정성평가 기준 및 가중치]
 ${uniCriteriaText.substring(0, 8000)}
 
 ${uniTypeGuide}
 
-[지시사항]
-1. 위 학생의 학생부 데이터를 각 대학의 학생부종합전형 평가 기준(학업역량·진로역량·공동체역량 비율)에 비추어 정밀 분석하세요.
-2. 각 대학에 대해 "강추천", "추천", "보통", "비추천" 중 하나로 평가하세요.
-   - 강추천: 학생의 생기부가 해당 대학 기준에 매우 부합, 합격 가능성 높음
-   - 추천: 부합하는 요소가 많으나 일부 보완 필요
-   - 보통: 부합 요소와 부족 요소가 혼재
-   - 비추천: 해당 대학 기준에 현저히 미달하거나 불일치
-3. 각 대학에 대해 학생에게 가장 유리한 전형을 1~2개 골라 recommendedTypes에 담으세요.
-   - 전형명과 함께 선택 이유를 간략히 적으세요 (예: "활동우수형 — 탐구 활동이 풍부하여 서류 경쟁력 우수")
-   - 수능최저 충족 여부, 면접 유불리, 서류100% 여부 등을 고려하세요.
-4. 학생의 실명을 노출하지 마세요.`;
+[평가 지시사항 — 반드시 준수]
+1. 교과 등급 현실을 반드시 반영하세요.
+   - '소신지원(위험)' 구간 대학: 세특이 특출나게 우수한 근거가 없는 한 반드시 '비추천' 부여
+   - 학종도 교과 성적이 핵심 평가 요소입니다. 입결 상한보다 0.5등급 이상 낮으면 서류 만회에 한계가 있습니다.
+   - '도전권' 대학: 생기부 질적 수준이 매우 높을 경우에만 '추천', 그렇지 않으면 '보통' 부여
+
+2. 평가 기준 (입결 구간 + 생기부 질 종합):
+   - 강추천: 안정권 또는 적정권 + 해당 대학 평가 기준에 생기부가 잘 부합
+   - 추천: 적정권~도전권 + 생기부의 탐구 깊이·진로 일관성이 높아 보완 가능
+   - 보통: 도전권이거나 생기부 적합도 낮음 — 신중 검토 필요
+   - 비추천: 소신지원(위험) 또는 생기부가 해당 대학 기준에 현저히 불일치
+
+3. 전형 추천 (recommendedTypes에 1~2개):
+   - "전형명 — 선택 이유" 형식 (예: "학생부종합 일반 — 탐구 활동 풍부·면접 없어 서류 경쟁력 발휘 유리")
+   - 면접 유무·수능최저 여부·서류100% 여부 반드시 언급
+   - 수능최저 충족 가능성 불확실 시 "수능최저 충족 여부 확인 필수" 명기
+
+4. 학과 추천 (recommendedMajors에 1~3개):
+   ${majorHint ? `- 학생의 희망 학과는 '${majorHint}'입니다. 각 대학 개설학과 목록에서 이와 동일하거나 가장 유사한 학과를 최우선으로 추천하세요.` : '- 학생의 생기부(진로 방향·탐구 주제·세특 내용)를 바탕으로 각 대학 개설학과에서 가장 잘 맞는 학과를 선택하세요.'}
+   - 반드시 위 [개설학과] 목록에 있는 실제 학과명만 사용하세요 (없는 학과 지어내기 금지).
+   - 비추천 대학이라도 혹시 지원하게 될 경우를 위해 적합 학과 1개는 제시하세요.
+
+5. reasoning: 다음 세 가지를 반드시 포함해 2~4문장으로 서술하세요.
+   ① 해당 대학의 평가 기준(학업역량·진로역량·공동체역량 가중치)에 비추어 학생 생기부의 구체적 강점/약점
+   ② 추천 학과의 학종 학과별 입결(등급)을 명시하세요 — "[학과명] 70%cut X.X등 / 평균 X.X등" 형식으로. 해당 대학 입결 데이터가 있는 경우 반드시 포함하세요.
+   ③ 입결 가능성 구간에 따른 지원 현실성 판단
+6. strength/weakness: 막연한 표현 금지 — 학생 생기부의 구체적 탐구 주제나 활동을 근거로 서술하세요.
+7. summary: 학생의 전반적 위치, 경쟁력 있는 등급대, 추천 지원 전략을 3~4문장으로 총평하세요.
+8. 학생의 실명을 노출하지 마세요.`;
 
       const modelsToTry = ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.5-flash-lite'];
       let resultText = null;
@@ -9107,14 +9394,15 @@ ${uniTypeGuide}
             items: {
               type: 'OBJECT',
               properties: {
-                university:       { type: 'STRING' },
-                rating:           { type: 'STRING' },
-                recommendedTypes: { type: 'ARRAY', items: { type: 'STRING' } },
-                strength:         { type: 'STRING' },
-                weakness:         { type: 'STRING' },
-                reasoning:        { type: 'STRING' }
+                university:        { type: 'STRING' },
+                rating:            { type: 'STRING' },
+                recommendedTypes:  { type: 'ARRAY', items: { type: 'STRING' } },
+                recommendedMajors: { type: 'ARRAY', items: { type: 'STRING' } },
+                strength:          { type: 'STRING' },
+                weakness:          { type: 'STRING' },
+                reasoning:         { type: 'STRING' }
               },
-              required: ['university', 'rating', 'recommendedTypes', 'strength', 'weakness', 'reasoning']
+              required: ['university', 'rating', 'recommendedTypes', 'recommendedMajors', 'strength', 'weakness', 'reasoning']
             }
           }
         },
@@ -9158,7 +9446,7 @@ ${uniTypeGuide}
         catch (e2) { throw new Error('AI 응답 형식 오류: ' + e2.message); }
       }
       lastStrategyData = parsed;
-      renderStrategyResult(parsed, container);
+      renderStrategyResult(parsed, container, gradeInfoMap, excludedUnis);
 
     } catch (err) {
       container.innerHTML = `<div style="color:var(--error-color);background:rgba(255,71,87,0.06);border:1px solid rgba(255,71,87,0.2);border-radius:10px;padding:1.2rem;">
@@ -9778,7 +10066,7 @@ ${fd.content}
       "가천대학교", "서울시립대학교", "숭실대학교", "한국외국어대학교", "세종대학교",
       "건국대학교", "중앙대학교", "경희대학교", "서울과학기술대학교", "서강대학교",
       "성균관대학교", "한양대학교", "한국교원대학교", "광운대학교", "동국대학교",
-      "인하대학교", "아주대학교", "단국대학교", "부산대학교", "인천대학교", "가톨릭대학교", "서울대학교", "국민대학교", "명지대학교", "상명대학교(서울)", "경북대학교", "전북대학교", "전남대학교", "충북대학교", "충남대학교", "한양대학교 ERICA", "고려대학교(세종)"
+      "인하대학교", "아주대학교", "단국대학교", "부산대학교", "인천대학교", "가톨릭대학교", "서울대학교", "국민대학교", "명지대학교", "상명대학교(서울)", "경북대학교", "전북대학교", "전남대학교", "충북대학교", "충남대학교", "한양대학교 ERICA", "고려대학교(세종)", "순천향대학교", "조선대학교", "전주대학교", "원광대학교"
     ];
 
     // Populate University Dropdown (✅/⚪ 마커 포함)

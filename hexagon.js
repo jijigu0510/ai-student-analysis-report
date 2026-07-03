@@ -39,10 +39,73 @@
 각색,감성,게임,고전,공연,관람,내러티브,담론,대중,몽타주,무대,발표,방송,배우,색감,스토리텔링,시나리오,실기,안무,연기,연출,영화,인물,전시,제작,창조,촬영,축제,출판,카메라,캐릭터,커뮤니티,콘텐츠,퍼포먼스,픽션,한류,해석
 `.split(',').map(w => w.trim()).filter(w => w.length >= 2));
 
+  // ── 역량별 키워드 분류 (워드클라우드 색상 구분) ────────────────
+
+  // ① 공동체역량: 협력·소통·배려·봉사 관련
+  const COMMUNITY_CATEGORY = new Set([
+    '협업','소통','배려','봉사','나눔','리더십','참여','공동체','협력',
+    '공감','존중','책임','성실','갈등','공존','조율','화합','팀',
+    '의사소통','토론','토의','커뮤니케이션','협동','봉사활동','멘토',
+    '코칭','자원봉사','기부','인성','도덕','가치관','집단','상호작용',
+    '래포','유대','배려심','호응','지지','격려','공감대','지역사회',
+    '공동체의식','협조','대인관계','포용','경청','연대','수용',
+    '나눔활동','멘토링','공헌','기여','갈등관리','갈등해결',
+    '다양성','평등','공정','도덕성','봉사정신','연대감','화해',
+    '공동선','봉사학습','사회공헌','나눔정신','이타심',
+    '상생','협동심','공동작업','팀워크','모둠','역할분담',
+    '의견조율','민주적','합의','다문화','포용력',
+  ]);
+
+  // ② 학업역량: 탐구·분석·사고·표현·언어 등 교과 학습 과정 관련
+  //    — 진로 분야에 무관하게 학습 행위 자체를 나타내는 단어들
+  const ACADEMIC_CATEGORY = new Set([
+    // 탐구·연구 방법
+    '탐구','분석','연구','실험','논증','추론','설계','가설','검증','비판',
+    '관찰','측정','조사','정량','정성','관측','실습','재현','도출',
+    '실험설계','가설설정','모델링','시뮬레이션','탐구활동','탐구방법',
+    // 사고·논리
+    '논리','논리적','논리력','추론력','비판적','사고력','사고','창의','창의성',
+    '창의적','창의력','문제해결','해석','종합','분류','비교','평가','적용',
+    '귀납법','귀류법','변증법','논리학','논리구조','근거','논거','관점','시각',
+    // 표현·언어 스킬
+    '표현','표현력','서술','작문','논술','화법','어법','어휘','독해','독해력',
+    '어원','언어학','화용론','구사','발화','발음','문체','담화','독서','독해',
+    // 학습·이해 과정
+    '학습','이해','탐색','발견','심화','확장','연계','통합','융합','적용',
+    '학술','교과','학업','학업성취','학습활동','심화학습','심화탐구',
+    '교과연계','연계탐구','확장탐구','심화연구','학문적','학습능력',
+    // 메타인지·성장
+    '자기주도','자기주도학습','자기평가','자기성찰','성찰','성장','메타인지',
+    '지적호기심','독립연구','보고서','포트폴리오','탐구보고서','산출물',
+    // 수리·과학적 방법
+    '계산','증명','정리','수리','과학적','데이터','결과','결론',
+    // 창조·구현
+    '통합','창출','창조','발명','구성','제안','해결','개념','이론','원리',
+    // 발표·정리
+    '발표','심층','개요','요약','핵심','맥락','배경',
+    // 독서·인문
+    '독서력','비평','비평가','지식','독창',
+  ]);
+
+  // getWordCategory: community → academic → career(default) 순으로 분류
+  // career = 희망 진로 분야에 특화된 전공·직업·도메인 용어
+  function getWordCategory(word) {
+    if (COMMUNITY_CATEGORY.has(word)) return 'community';
+    if (ACADEMIC_CATEGORY.has(word)) return 'academic';
+    return 'career';
+  }
+
+  const CATEGORY_COLORS = {
+    academic:  '#38bdf8',  // 하늘색  — 학업역량
+    career:    '#fb923c',  // 주황색  — 진로역량
+    community: '#4ade80',  // 연두색  — 공동체역량
+  };
+
   let hxRadarChart = null;
   let hxBarChart = null;
   let hxCurrentScores = null;
   let hxCurrentReasons = null;
+  let hxCurrentFullText = '';
 
   // ── 키워드 추출 (도메인 키워드 목록에 있는 단어만) ────────────
   function extractKeywords(text) {
@@ -69,14 +132,23 @@
     if (!el) return;
     if (!keywords.length) { el.innerHTML = '<p style="color:var(--text-secondary);text-align:center;padding:2rem;">데이터 없음</p>'; return; }
     const max = keywords[0].count;
-    const colors = ['#96baff','#7ee8fa','#a78bfa','#34d399','#fbbf24','#f87171','#60a5fa','#e879f9'];
-    el.innerHTML = keywords.map(({ word, count }, i) => {
+
+    const legend = `<div style="display:flex;gap:1.4rem;margin-bottom:1rem;font-size:0.78rem;flex-wrap:wrap;justify-content:center;opacity:0.85;">
+      <span style="display:inline-flex;align-items:center;gap:0.35rem;"><span style="width:9px;height:9px;border-radius:50%;background:${CATEGORY_COLORS.academic};display:inline-block;flex-shrink:0;"></span><span style="color:var(--text-secondary);">학업역량</span></span>
+      <span style="display:inline-flex;align-items:center;gap:0.35rem;"><span style="width:9px;height:9px;border-radius:50%;background:${CATEGORY_COLORS.career};display:inline-block;flex-shrink:0;"></span><span style="color:var(--text-secondary);">진로역량</span></span>
+      <span style="display:inline-flex;align-items:center;gap:0.35rem;"><span style="width:9px;height:9px;border-radius:50%;background:${CATEGORY_COLORS.community};display:inline-block;flex-shrink:0;"></span><span style="color:var(--text-secondary);">공동체역량</span></span>
+    </div>`;
+
+    const words = keywords.map(({ word, count }) => {
       const ratio = count / max;
-      const size = Math.round(0.85 + ratio * 2.2);   // 0.85rem ~ 3.05rem
-      const opacity = 0.5 + ratio * 0.5;
-      const color = colors[i % colors.length];
-      return `<span style="font-size:${size}rem;color:${color};opacity:${opacity};font-weight:${ratio > 0.5 ? 700 : 400};padding:0.2rem 0.4rem;display:inline-block;transition:transform 0.2s;" title="${count}회">${word}</span>`;
+      const size = (0.85 + ratio * 2.2).toFixed(2);   // 0.85rem ~ 3.05rem
+      const opacity = (0.5 + ratio * 0.5).toFixed(2);
+      const color = CATEGORY_COLORS[getWordCategory(word)];
+      const safeWord = word.replace(/'/g, "\\'");
+      return `<span onclick="window.hxShowWordSentences('${safeWord}')" style="font-size:${size}rem;color:${color};opacity:${opacity};font-weight:${ratio > 0.5 ? 700 : 400};padding:0.2rem 0.4rem;display:inline-block;cursor:pointer;transition:transform 0.18s,opacity 0.18s;" title="${count}회 등장 — 클릭하면 관련 문장 보기" onmouseenter="this.style.transform='scale(1.18)';this.style.opacity='1'" onmouseleave="this.style.transform='';this.style.opacity='${opacity}'">${word}</span>`;
     }).join(' ');
+
+    el.innerHTML = legend + words;
   }
 
   // ── 가로 막대 차트 ───────────────────────────────────────────
@@ -259,6 +331,50 @@
     if (bodyEl) bodyEl.innerHTML = criteriaHtml + contentHtml;
     overlay.classList.remove('hidden');
   }
+
+  // ── 워드클라우드 단어 클릭 → 관련 문장 모달 ────────────────────
+  function showWordSentencesModal(word) {
+    if (!hxCurrentFullText) {
+      alert('먼저 분석을 실행해 주세요.');
+      return;
+    }
+
+    // 문장 분리: 마침표/줄바꿈 기준
+    const rawSentences = hxCurrentFullText
+      .split(/(?:[다요함음임겠었했됨]\s*\.)\s+|(?:[\.!?。])\s+|\n+/)
+      .map(s => s.trim())
+      .filter(s => s.length >= 8);
+
+    // 단어 포함 문장 필터 (어간 포함 매칭)
+    const matched = rawSentences.filter(s => s.includes(word));
+
+    const overlay = document.getElementById('hx-reason-modal');
+    const titleEl = document.getElementById('hx-modal-title');
+    const bodyEl  = document.getElementById('hx-modal-body');
+    if (!overlay) return;
+
+    if (titleEl) titleEl.textContent = `"${word}" 관련 세특 문장`;
+
+    if (!matched.length) {
+      if (bodyEl) bodyEl.innerHTML = `<p style="color:var(--text-secondary);padding:0.5rem 0;">해당 단어가 포함된 문장을 찾지 못했습니다.</p>`;
+    } else {
+      // 단어 강조 표시
+      const esc = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const re = new RegExp(esc, 'g');
+      if (bodyEl) bodyEl.innerHTML =
+        `<div style="margin-bottom:0.75rem;font-size:0.82rem;color:var(--text-secondary);">${matched.length}개 문장 발견</div>` +
+        matched.map((s, idx) => {
+          const highlighted = s.replace(re, `<mark style="background:rgba(167,139,250,0.35);color:inherit;border-radius:3px;padding:0 2px;font-weight:700;">${word}</mark>`);
+          return `<div style="margin:0.5rem 0;padding:0.75rem 1rem;background:rgba(150,186,255,0.06);border-left:3px solid rgba(150,186,255,0.5);border-radius:0 8px 8px 0;font-size:0.92rem;line-height:1.8;color:var(--text-primary);">
+            <span style="font-size:0.72rem;color:var(--text-secondary);margin-right:0.5rem;">${idx + 1}.</span>${highlighted}
+          </div>`;
+        }).join('');
+    }
+
+    overlay.classList.remove('hidden');
+  }
+
+  window.hxShowWordSentences = function (word) { showWordSentencesModal(word); };
 
   // ── 학생 배치 데이터 추출 (globalBatchJsons → { subject, creative, behavior }) ──
   function getStudentRecords(globalBatchJsons, targetName) {
@@ -707,8 +823,18 @@ ${text}
       return;
     }
 
+    // 교과세특·창체·행특만 워드클라우드에 사용 (성적 데이터 제외)
+    const recordsText = [
+      records.subject,
+      records.creative,
+      records.behavior,
+    ].filter(Boolean).join('\n\n');
+
+    // 전문 텍스트 저장 (워드클라우드 클릭 시 문장 검색용)
+    hxCurrentFullText = recordsText;
+
     // 키워드 분석 (AI 없이 바로)
-    const keywords = extractKeywords(fullText);
+    const keywords = extractKeywords(recordsText);
     renderWordCloud(keywords);
     renderBarChart(keywords);
 

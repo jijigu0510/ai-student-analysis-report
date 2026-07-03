@@ -30,7 +30,7 @@
     });
   </script>
 
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=2">
 </head>
 <body>
   <div class="app-background">
@@ -879,6 +879,238 @@
     </section>
   </main>
 
+  <!-- ===== 모의고사 문항 분석 탭 뷰 ===== -->
+  <main id="view-mock-exam" class="main-container view-section hidden" style="display:none; padding:1.5rem;">
+    <section class="glass-panel" style="padding:1.5rem 2rem; margin-bottom:1.5rem;">
+      <h2 class="section-title">📊 모의고사 문항 분석</h2>
+      <p style="color:var(--text-secondary); margin-bottom:1.5rem; font-size:0.95rem; line-height:1.7;">모의고사 성적표를 업로드하면 학생별 오답 문항을 추출해 문항별 학습 가이드를 제공합니다. (담임교사용)</p>
+
+      <!-- 학년/회차 선택 -->
+      <div style="display:flex; flex-wrap:wrap; gap:1rem; align-items:flex-end; margin-bottom:1.2rem;">
+        <div>
+          <label style="font-size:0.8rem; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">학년</label>
+          <select id="mockGradeSelect" style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.6rem 1rem;">
+            <option value="1">1학년</option>
+            <option value="2">2학년</option>
+            <option value="3">3학년</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:0.8rem; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">회차</label>
+          <select id="mockMonthSelect" style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.6rem 1rem;">
+            <option value="3">3월 모의고사</option>
+            <option value="6">6월 모의고사</option>
+            <option value="9">9월 모의고사</option>
+            <option value="11">11월 모의고사</option>
+          </select>
+        </div>
+        <div style="display:flex; align-items:center; gap:0.5rem; padding:0.5rem 0.9rem; background:rgba(99,102,241,0.08); border:1px solid rgba(99,102,241,0.2); border-radius:8px; font-size:0.82rem; color:var(--text-secondary);">
+          <span>📌</span> 파일 업로드는 왼쪽 사이드바의 <strong style="color:var(--accent-primary); margin:0 0.2rem;">통합 파일 업로드</strong>를 이용하세요
+        </div>
+      </div>
+      <!-- 숨김 요소: app.js 참조용 -->
+      <input type="file" id="mockFileInput" style="display:none;" multiple>
+      <span id="uploadMonthText" style="display:none;">3</span>
+
+      <!-- 서버 저장/삭제/상태 -->
+      <div style="display:flex; flex-wrap:wrap; gap:0.6rem; align-items:center; margin-bottom:1rem;">
+        <button id="mockFirebaseSaveBtn" style="background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.35);color:#4ade80;padding:0.45rem 1rem;border-radius:8px;cursor:pointer;font-size:0.83rem;font-weight:600;">☁️ 서버에 저장</button>
+        <button id="mockFirebaseDeleteBtn" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171;padding:0.45rem 1rem;border-radius:8px;cursor:pointer;font-size:0.83rem;font-weight:600;">🗑️ 서버 삭제</button>
+        <button id="mockClearDataBtn" style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);color:#fbbf24;padding:0.45rem 1rem;border-radius:8px;cursor:pointer;font-size:0.83rem;font-weight:600;">↻ 로컬 초기화</button>
+        <span id="mockServerStatus" style="font-size:0.8rem; color:var(--text-secondary);"></span>
+      </div>
+
+      <!-- GAS 연동 설정 토글 -->
+      <div style="margin-bottom:1rem;">
+        <button id="mockGasSettingsBtn" style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.25);color:var(--accent-primary);padding:0.4rem 0.9rem;border-radius:8px;cursor:pointer;font-size:0.8rem;font-weight:600;">⚙️ 스프레드시트 연동 설정</button>
+        <div id="mockGasSettingsArea" class="hidden" style="margin-top:1rem;padding:1rem 1.2rem;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;">
+          <div style="margin-bottom:0.8rem;">
+            <label style="font-size:0.8rem;color:var(--text-secondary);display:block;margin-bottom:0.3rem;">학년 선택</label>
+            <select id="mockGasGradeSelect" style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.5rem 0.8rem;font-size:0.85rem;">
+              <option value="1">1학년</option>
+              <option value="2">2학년</option>
+              <option value="3">3학년</option>
+            </select>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:0.5rem;">
+            <div id="gasCell3" style="display:flex;align-items:center;gap:0.5rem;"><span style="min-width:80px;font-size:0.8rem;color:var(--text-secondary);">3월 GAS URL</span><input id="mockGasUrl_3" type="text" placeholder="GAS 배포 URL" style="flex:1;background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:6px;padding:0.4rem 0.7rem;font-size:0.8rem;"></div>
+            <div id="gasCell5" style="display:none;align-items:center;gap:0.5rem;"><span style="min-width:80px;font-size:0.8rem;color:var(--text-secondary);">5월 GAS URL</span><input id="mockGasUrl_5" type="text" placeholder="GAS 배포 URL" style="flex:1;background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:6px;padding:0.4rem 0.7rem;font-size:0.8rem;"></div>
+            <div id="gasCell6" style="display:flex;align-items:center;gap:0.5rem;"><span style="min-width:80px;font-size:0.8rem;color:var(--text-secondary);">6월 GAS URL</span><input id="mockGasUrl_6" type="text" placeholder="GAS 배포 URL" style="flex:1;background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:6px;padding:0.4rem 0.7rem;font-size:0.8rem;"></div>
+            <div id="gasCell7" style="display:none;align-items:center;gap:0.5rem;"><span style="min-width:80px;font-size:0.8rem;color:var(--text-secondary);">7월 GAS URL</span><input id="mockGasUrl_7" type="text" placeholder="GAS 배포 URL" style="flex:1;background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:6px;padding:0.4rem 0.7rem;font-size:0.8rem;"></div>
+            <div id="gasCell9" style="display:flex;align-items:center;gap:0.5rem;"><span style="min-width:80px;font-size:0.8rem;color:var(--text-secondary);">9월 GAS URL</span><input id="mockGasUrl_9" type="text" placeholder="GAS 배포 URL" style="flex:1;background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:6px;padding:0.4rem 0.7rem;font-size:0.8rem;"></div>
+            <div id="gasCell11" style="display:flex;align-items:center;gap:0.5rem;"><span style="min-width:80px;font-size:0.8rem;color:var(--text-secondary);">11월 GAS URL</span><input id="mockGasUrl_11" type="text" placeholder="GAS 배포 URL" style="flex:1;background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:6px;padding:0.4rem 0.7rem;font-size:0.8rem;"></div>
+          </div>
+          <div style="display:flex;gap:0.5rem;margin-top:0.8rem;">
+            <button id="mockLoadSheetsBtn" style="background:rgba(56,189,248,0.15);border:1px solid rgba(56,189,248,0.35);color:#38bdf8;padding:0.4rem 0.9rem;border-radius:8px;cursor:pointer;font-size:0.8rem;font-weight:600;">🔗 스프레드시트 연결</button>
+            <button id="mockGasUrlSaveBtn" style="background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.35);color:var(--accent-primary);padding:0.4rem 0.9rem;border-radius:8px;cursor:pointer;font-size:0.8rem;font-weight:600;">💾 설정 저장</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 결과 영역 -->
+    <div id="mockResultArea" class="hidden">
+      <section class="glass-panel" style="padding:1.2rem 1.5rem; margin-bottom:1rem;">
+        <div style="display:flex;flex-wrap:wrap;gap:0.8rem;align-items:center;justify-content:space-between;">
+          <div style="display:flex;flex-wrap:wrap;gap:0.6rem;align-items:center;">
+            <span id="mockResultText" style="font-size:0.88rem;color:var(--text-secondary);"></span>
+            <select id="mockGradeFilterSelect" style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.4rem 0.7rem;font-size:0.83rem;">
+              <option value="all">전체 학년</option>
+            </select>
+            <select id="mockClassSelect" style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.4rem 0.7rem;font-size:0.83rem;">
+              <option value="all">전체 반</option>
+            </select>
+            <select id="mockStudentSelect" style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.4rem 0.7rem;font-size:0.83rem;">
+              <option value="all">전체 학생</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+            <button id="mockDownloadBtn" style="background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.3);color:#38bdf8;padding:0.4rem 0.9rem;border-radius:8px;cursor:pointer;font-size:0.82rem;font-weight:600;">⬇️ CSV 다운로드</button>
+            <button id="mockPrintReportBtn" style="background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.3);color:var(--accent-primary);padding:0.4rem 0.9rem;border-radius:8px;cursor:pointer;font-size:0.82rem;font-weight:600;">🖨️ 개인 리포트 출력</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 학생 요약 카드 -->
+      <div id="mockSummaryCard" class="hidden" style="margin-bottom:1rem;">
+        <section class="glass-panel" style="padding:1rem 1.5rem;">
+          <div style="display:flex;flex-wrap:wrap;gap:1rem;align-items:center;">
+            <div>
+              <div id="summaryStudentName" style="font-size:1.1rem;font-weight:700;color:var(--text-primary);"></div>
+              <div id="summaryStudentInfo" style="font-size:0.83rem;color:var(--text-secondary);margin-top:0.2rem;"></div>
+            </div>
+            <div id="summaryGradeBadges" style="display:flex;flex-wrap:wrap;gap:0.4rem;"></div>
+          </div>
+        </section>
+      </div>
+
+      <!-- 테이블 뷰 -->
+      <div id="mockTableView">
+        <section class="glass-panel" style="padding:1rem 1.5rem;">
+          <div class="mock-table-wrapper">
+            <table class="mock-table">
+              <thead>
+                <tr>
+                  <th>학년</th>
+                  <th>반</th>
+                  <th>번호</th>
+                  <th>성명</th>
+                  <th>과목</th>
+                  <th style="text-align:center;">등급</th>
+                  <th style="text-align:right;">원점수</th>
+                  <th style="text-align:right;">표준점수</th>
+                  <th style="text-align:right;">백분위</th>
+                  <th>오답 정답률</th>
+                </tr>
+              </thead>
+              <tbody id="mockPreviewBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <!-- 개인 리포트 뷰 -->
+      <div id="mockIndividualView" class="hidden">
+        <div id="individualReportGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1rem;"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ===== 내신 & 모의고사 분석 탭 뷰 ===== -->
+  <main id="view-gpa-mock-compare" class="main-container view-section hidden" style="display:none; padding:1.5rem;">
+    <section class="glass-panel" style="padding:1.5rem 2rem; margin-bottom:1rem;">
+      <h2 class="section-title">📈 내신 & 모의고사 분석</h2>
+      <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:1.2rem; line-height:1.7;">내신 성적과 모의고사 성적의 상관관계를 시각화합니다. 내신 점수 확인하기 탭에서 먼저 데이터를 불러온 후 사용하세요.</p>
+
+      <!-- 연동 설정 -->
+      <div style="display:flex;flex-wrap:wrap;gap:0.6rem;align-items:center;margin-bottom:1rem;">
+        <input id="compareGasUrl" type="text" placeholder="GAS URL (선택)" style="flex:1;min-width:200px;background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.5rem 0.8rem;font-size:0.83rem;">
+        <button id="compareGasUrlSaveBtn" style="background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.3);color:var(--accent-primary);padding:0.5rem 0.9rem;border-radius:8px;cursor:pointer;font-size:0.82rem;font-weight:600;">💾 URL 저장</button>
+        <button id="compareLoadDataBtn" style="background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.3);color:#38bdf8;padding:0.5rem 0.9rem;border-radius:8px;cursor:pointer;font-size:0.82rem;font-weight:600;">🔄 데이터 갱신</button>
+        <span id="compareGasStatus" style="font-size:0.8rem;color:var(--text-secondary);"></span>
+      </div>
+
+      <!-- 필터 옵션 -->
+      <div style="display:flex;flex-wrap:wrap;gap:0.6rem;align-items:flex-end;margin-bottom:1rem;">
+        <div>
+          <label style="font-size:0.75rem;color:var(--text-secondary);display:block;margin-bottom:0.2rem;">연도</label>
+          <select id="compareYear" style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.45rem 0.7rem;font-size:0.82rem;"><option value="all">전체</option></select>
+        </div>
+        <div>
+          <label style="font-size:0.75rem;color:var(--text-secondary);display:block;margin-bottom:0.2rem;">모의고사 회차</label>
+          <select id="compareMockRound" style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.45rem 0.7rem;font-size:0.82rem;"><option value="all">전체</option></select>
+        </div>
+        <div>
+          <label style="font-size:0.75rem;color:var(--text-secondary);display:block;margin-bottom:0.2rem;">학년</label>
+          <select id="compareGrade" style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.45rem 0.7rem;font-size:0.82rem;"><option value="all">전체</option><option value="1">1학년</option><option value="2">2학년</option><option value="3">3학년</option></select>
+        </div>
+        <div>
+          <label style="font-size:0.75rem;color:var(--text-secondary);display:block;margin-bottom:0.2rem;">반</label>
+          <select id="compareClassFilter" style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.45rem 0.7rem;font-size:0.82rem;"><option value="all">전체</option></select>
+        </div>
+        <div>
+          <label style="font-size:0.75rem;color:var(--text-secondary);display:block;margin-bottom:0.2rem;">학생</label>
+          <select id="compareStudent" style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.45rem 0.7rem;font-size:0.82rem;"><option value="all">전체 학생</option></select>
+        </div>
+        <div>
+          <label style="font-size:0.75rem;color:var(--text-secondary);display:block;margin-bottom:0.2rem;">X축 (내신 구분)</label>
+          <select id="compareXType" style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.45rem 0.7rem;font-size:0.82rem;">
+            <option value="전체내신">전체내신</option>
+            <option value="국영수">국영수</option>
+            <option value="국영수과">국영수과</option>
+            <option value="국영수사">국영수사</option>
+            <option value="국영수사과">국영수사과</option>
+            <option value="수영과">수영과</option>
+            <option value="국영사">국영사</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:0.75rem;color:var(--text-secondary);display:block;margin-bottom:0.2rem;">Y축 (모의고사)</label>
+          <select id="compareScoreType" style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.45rem 0.7rem;font-size:0.82rem;">
+            <option value="grade">등급합</option>
+            <option value="best_grade">최상위 N합</option>
+            <option value="raw">원점수합</option>
+            <option value="std">표준점수합</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:0.75rem;color:var(--text-secondary);display:block;margin-bottom:0.2rem;">N합 (N 선택)</label>
+          <select id="compareBestN" style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.45rem 0.7rem;font-size:0.82rem;">
+            <option value="2">2합</option>
+            <option value="3">3합</option>
+            <option value="4">4합</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 과목 체크박스 -->
+      <div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:1rem;font-size:0.82rem;color:var(--text-secondary);align-items:center;">
+        <span style="font-weight:600;margin-right:0.2rem;">과목 선택:</span>
+        <label style="display:flex;align-items:center;gap:0.25rem;cursor:pointer;"><input type="checkbox" name="compareSubject" value="국어" checked> 국어</label>
+        <label style="display:flex;align-items:center;gap:0.25rem;cursor:pointer;"><input type="checkbox" name="compareSubject" value="수학" checked> 수학</label>
+        <label style="display:flex;align-items:center;gap:0.25rem;cursor:pointer;"><input type="checkbox" name="compareSubject" value="영어" checked> 영어</label>
+        <label style="display:flex;align-items:center;gap:0.25rem;cursor:pointer;"><input type="checkbox" name="compareSubject" value="탐구영역1" checked> 탐구1</label>
+        <label style="display:flex;align-items:center;gap:0.25rem;cursor:pointer;"><input type="checkbox" name="compareSubject" value="탐구영역2" checked> 탐구2</label>
+      </div>
+    </section>
+
+    <!-- 로딩 -->
+    <div id="compareChartLoader" class="hidden" style="text-align:center;padding:2rem;color:var(--text-secondary);">
+      <div class="spinner" style="margin:0 auto 0.8rem;"></div>
+      데이터를 불러오는 중...
+    </div>
+
+    <!-- 산점도 차트 뷰 -->
+    <div id="compareChartView">
+      <section class="glass-panel" style="padding:1.2rem 1.5rem;">
+        <canvas id="compareScatterChart" style="width:100%;max-height:500px;"></canvas>
+      </section>
+    </div>
+
+    <!-- 개인 학생 뷰 -->
+    <div id="compareIndividualView" class="hidden"></div>
+  </main>
+
   <main id="view-grade-rank" class="main-container view-section hidden">
 <div class="gr-container">
     <div class="gr-header">
@@ -1028,14 +1260,14 @@
   <!-- 세부 과목 모달 -->
   <div id="univ-score-detail-overlay" onclick="if(event.target===this)closeUnivScoreDetail()"
        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.65); z-index:9998; align-items:center; justify-content:center; padding:1.5rem; box-sizing:border-box;">
-    <div style="background:var(--panel-bg,#1a2035); border-radius:16px; max-width:900px; width:100%; max-height:85vh; display:flex; flex-direction:column; overflow:hidden; border:1px solid rgba(148,163,184,0.2);">
-      <div style="background:rgba(30,58,138,0.5); padding:1rem 1.5rem; display:flex; align-items:center; justify-content:space-between;">
-        <strong id="univ-score-detail-title" style="color:#f1f5f9; font-size:1rem;">교과 점수 세부 내역</strong>
-        <button onclick="closeUnivScoreDetail()" style="background:none; border:none; color:#94a3b8; font-size:1.6rem; cursor:pointer; line-height:1; padding:0;">×</button>
+    <div style="background:var(--panel-bg,#1a2035); border-radius:16px; max-width:900px; width:100%; max-height:85vh; display:flex; flex-direction:column; overflow:hidden; border:1px solid var(--panel-border);">
+      <div style="background:var(--accent-primary); padding:1rem 1.5rem; display:flex; align-items:center; justify-content:space-between; opacity:0.92;">
+        <strong id="univ-score-detail-title" style="color:#fff; font-size:1rem;">교과 점수 세부 내역</strong>
+        <button onclick="closeUnivScoreDetail()" style="background:none; border:none; color:rgba(255,255,255,0.8); font-size:1.6rem; cursor:pointer; line-height:1; padding:0;">×</button>
       </div>
-      <div id="univ-score-detail-body" style="padding:1.5rem; overflow-y:auto; color:var(--text-primary,#e2e8f0);"></div>
-      <div style="padding:1rem 1.5rem; border-top:1px solid rgba(148,163,184,0.15); text-align:right;">
-        <button onclick="closeUnivScoreDetail()" style="background:rgba(30,58,138,0.6); color:#93c5fd; border:1px solid rgba(30,58,138,0.6); padding:0.5rem 1.5rem; border-radius:8px; font-size:0.9rem; cursor:pointer; font-weight:600;">닫기</button>
+      <div id="univ-score-detail-body" style="padding:1.5rem; overflow-y:auto; color:var(--text-primary);"></div>
+      <div style="padding:1rem 1.5rem; border-top:1px solid var(--panel-border); text-align:right;">
+        <button onclick="closeUnivScoreDetail()" style="background:var(--accent-primary); color:#fff; border:none; padding:0.5rem 1.5rem; border-radius:8px; font-size:0.9rem; cursor:pointer; font-weight:600;">닫기</button>
       </div>
     </div>
   </div>
@@ -2785,11 +3017,11 @@ if (document.readyState === 'loading') {
 }
 
   </script>
-  <script src="app.js?v=61"></script>
+  <script src="app.js?v=70"></script>
   <script src="grade-rank.js"></script>
   <script src="univ-score.js"></script>
   <script src="admission_dist.js"></script>
-  <script src="hexagon.js"></script>
+  <script src="hexagon.js?v=5"></script>
   <script src="admission-analysis.js?v=12"></script>
   <script type="module" src="firebase-visitors.js"></script>
 

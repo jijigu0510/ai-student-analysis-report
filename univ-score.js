@@ -2940,6 +2940,23 @@ window.renderUnivScoreTab = function() {
         return;
     }
 
+    const isLight = document.body.classList.contains('light-mode');
+    const U = {
+        infoBg:     isLight ? 'rgba(94,106,210,0.07)'  : 'rgba(30,58,138,0.12)',
+        infoBorder: isLight ? 'rgba(94,106,210,0.2)'   : 'rgba(30,58,138,0.3)',
+        thBg:       isLight ? 'rgba(94,106,210,0.1)'   : 'rgba(30,58,138,0.3)',
+        thColor:    isLight ? '#374151'                  : '#93c5fd',
+        thBorder:   isLight ? 'rgba(94,106,210,0.15)'  : 'rgba(148,163,184,0.2)',
+        rowTopBg:   isLight ? 'rgba(94,106,210,0.08)'  : 'rgba(30,58,138,0.18)',
+        rowAlt:     isLight ? 'rgba(94,106,210,0.03)'  : 'rgba(255,255,255,0.02)',
+        rowBorder:  isLight ? 'rgba(94,106,210,0.1)'   : 'rgba(148,163,184,0.1)',
+        rankColor:  isLight ? '#6b7280'                  : '#64748b',
+        btnBg:      isLight ? 'rgba(94,106,210,0.1)'   : 'rgba(30,58,138,0.4)',
+        btnColor:   isLight ? '#3d4270'                  : '#93c5fd',
+        btnBorder:  isLight ? 'rgba(94,106,210,0.3)'   : 'rgba(30,58,138,0.6)',
+        subLabel:   isLight ? '#6b7280'                  : '#64748b',
+    };
+
     const results = students.map(s => {
         const sc = univ.calc(s);
         return { ...s, _sc: sc, _displayScore: sc.displayScore };
@@ -2949,23 +2966,23 @@ window.renderUnivScoreTab = function() {
 
     const rows = results.map((r, i) => {
         const isTop = r._univRank <= 3;
-        const rowBg = isTop ? 'background:rgba(30,58,138,0.18);' : (i % 2 === 0 ? 'background:rgba(255,255,255,0.02);' : '');
+        const rowBg = isTop ? `background:${U.rowTopBg};` : (i % 2 === 0 ? `background:${U.rowAlt};` : '');
         const medalColors = ['#f59e0b', '#94a3b8', '#b45309'];
         const rankBadge = r._univRank <= 3
             ? `<span style="display:inline-block;width:1.6rem;height:1.6rem;line-height:1.6rem;border-radius:50%;background:${medalColors[r._univRank-1]};color:#fff;font-size:0.75rem;font-weight:700;">${r._univRank}</span>`
-            : `<span style="color:#64748b;">${r._univRank}</span>`;
+            : `<span style="color:${U.rankColor};">${r._univRank}</span>`;
 
         return `
-        <tr style="${rowBg} border-bottom:1px solid rgba(148,163,184,0.1);">
+        <tr style="${rowBg} border-bottom:1px solid ${U.rowBorder};">
             <td style="padding:0.7rem 0.9rem;text-align:center;">${rankBadge}</td>
-            <td style="padding:0.7rem;text-align:center;color:#64748b;">${r.class !== '미상' ? r.class : '-'}</td>
+            <td style="padding:0.7rem;text-align:center;color:${U.rankColor};">${r.class !== '미상' ? r.class : '-'}</td>
             <td style="padding:0.7rem;font-weight:600;color:var(--text-primary);">${r.name}</td>
             <td style="padding:0.7rem;text-align:right;color:${univ.scoreColor};font-weight:700;font-size:1rem;">
                 ${['sogang','kut','aju','inu','inch','kgu','jbnu','cnnu','knu','cbnu','cnu','gnu'].includes(univKey) ? r._displayScore.toFixed(2) : (['dku','kwu','mju','smu','cuk'].includes(univKey) ? r._displayScore.toFixed(3) : r._displayScore.toFixed(4))}
             </td>
             <td style="padding:0.7rem;text-align:center;">
                 <button onclick="openUnivScoreDetail(${r.rank},'${univKey}')"
-                    style="background:rgba(30,58,138,0.4);color:#93c5fd;border:1px solid rgba(30,58,138,0.6);border-radius:6px;padding:0.3rem 0.7rem;font-size:0.78rem;cursor:pointer;white-space:nowrap;">
+                    style="background:${U.btnBg};color:${U.btnColor};border:1px solid ${U.btnBorder};border-radius:6px;padding:0.3rem 0.7rem;font-size:0.78rem;cursor:pointer;white-space:nowrap;font-weight:600;">
                     세부보기
                 </button>
             </td>
@@ -2973,20 +2990,20 @@ window.renderUnivScoreTab = function() {
     }).join('');
 
     container.innerHTML = `
-        <div style="background:rgba(30,58,138,0.12);border:1px solid rgba(30,58,138,0.3);border-radius:12px;padding:1rem 1.4rem;margin-bottom:1.5rem;font-size:0.82rem;line-height:1.8;color:var(--text-secondary);">
+        <div style="background:${U.infoBg};border:1px solid ${U.infoBorder};border-radius:12px;padding:1rem 1.4rem;margin-bottom:1.5rem;font-size:0.82rem;line-height:1.8;color:var(--text-secondary);">
             ${univ.infoHTML}
         </div>
         <div style="overflow-x:auto;">
             <table style="width:100%;border-collapse:collapse;font-size:0.9rem;">
                 <thead>
-                    <tr style="background:rgba(30,58,138,0.3);">
-                        <th style="padding:0.8rem;text-align:center;color:#93c5fd;border-bottom:1px solid rgba(148,163,184,0.2);white-space:nowrap;">순위</th>
-                        <th style="padding:0.8rem;text-align:center;color:#93c5fd;border-bottom:1px solid rgba(148,163,184,0.2);">반</th>
-                        <th style="padding:0.8rem;text-align:left;color:#93c5fd;border-bottom:1px solid rgba(148,163,184,0.2);">이름</th>
-                        <th style="padding:0.8rem;text-align:right;color:#93c5fd;border-bottom:1px solid rgba(148,163,184,0.2);white-space:nowrap;">
-                            ${univ.scoreLabel}<br><span style="font-weight:normal;font-size:0.78rem;color:#64748b;">(${univ.maxScore}점 만점)</span>
+                    <tr style="background:${U.thBg};">
+                        <th style="padding:0.8rem;text-align:center;color:${U.thColor};border-bottom:1px solid ${U.thBorder};white-space:nowrap;">순위</th>
+                        <th style="padding:0.8rem;text-align:center;color:${U.thColor};border-bottom:1px solid ${U.thBorder};">반</th>
+                        <th style="padding:0.8rem;text-align:left;color:${U.thColor};border-bottom:1px solid ${U.thBorder};">이름</th>
+                        <th style="padding:0.8rem;text-align:right;color:${U.thColor};border-bottom:1px solid ${U.thBorder};white-space:nowrap;">
+                            ${univ.scoreLabel}<br><span style="font-weight:normal;font-size:0.78rem;color:${U.subLabel};">(${univ.maxScore}점 만점)</span>
                         </th>
-                        <th style="padding:0.8rem;text-align:center;color:#93c5fd;border-bottom:1px solid rgba(148,163,184,0.2);"></th>
+                        <th style="padding:0.8rem;text-align:center;color:${U.thColor};border-bottom:1px solid ${U.thBorder};"></th>
                     </tr>
                 </thead>
                 <tbody>${rows}</tbody>

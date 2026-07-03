@@ -4022,4 +4022,79 @@
     if (modal) modal.style.display = 'none';
   };
 
+  // ── 전형 추천 AI 분석용: 대학별 학종 학과 입결 요약 ──────────────────────
+  window.getAdmissionGradeSummary = function (uniLabel) {
+    function safe(v) { const n = parseFloat(v); return isNaN(n) ? null : n; }
+    try {
+      const ex = {
+        '건국대학교': () => {
+          const years = KU_DATA.map(d => d.학년도).filter(Boolean);
+          const mx = years.length ? Math.max(...years) : 0;
+          return KU_DATA.filter(d => d.학년도 === mx && d['모집전형'] === 'KU자기추천')
+            .map(d => ({ dept: d['모집단위'], avg: null, cut70: safe(d['70%cut(등급)']) }));
+        },
+        '경희대학교': () => KHU_JONGHAP_DATA
+          .map(d => ({ dept: d.name, avg: safe(d.avg), cut70: safe(d.cut70) })),
+        '광운대학교': () => {
+          const src = KWU_MYUNJEOP_DATA.length ? KWU_MYUNJEOP_DATA : KWU_SEORYU_DATA;
+          return src.map(d => ({ dept: d.unit, avg: safe(d.grade), cut70: null }));
+        },
+        '군산대학교': () => {
+          const years = KUNSAN_DATA.map(d => d.year).filter(Boolean);
+          const mx = years.length ? Math.max(...years) : 0;
+          return KUNSAN_DATA.filter(d => d.year === mx && d.type && d.type.includes('종합'))
+            .map(d => ({ dept: d.major, avg: safe(d.avgGrade), cut70: safe(d.cut70Grade) }));
+        },
+        '동국대학교': () => {
+          const years = DGU_DATA.map(d => d['학년도']).filter(Boolean);
+          const mx = years.length ? Math.max(...years) : 0;
+          return DGU_DATA.filter(d => d['학년도'] === mx && d['모집전형'] && d['모집전형'].includes('Do Dream'))
+            .map(d => ({ dept: d['모집단위'], avg: safe(d['평균(등급)']), cut70: safe(d['최저(등급)']) }));
+        },
+        '서강대학교': () => SGU_DATA
+          .filter(d => d['모집전형'] && d['모집전형'].includes('알바트로스'))
+          .map(d => ({ dept: d['모집단위'], avg: null, cut70: safe(d['70%cut']) })),
+        '서울시립대학교': () => UOS_DATA
+          .filter(d => d.admissionType && d.admissionType.includes('학생부종합'))
+          .map(d => ({ dept: d.dept, avg: safe(d.grade), cut70: null })),
+        '성균관대학교': () => SKU_DATA
+          .map(d => ({ dept: d['모집단위'], avg: null, cut70: safe(d['70%cut']) })),
+        '우석대학교': () => WSU_DATA
+          .filter(d => d['모집전형'] === '지역인재')
+          .map(d => ({ dept: d['모집단위'], avg: safe(d['평균']), cut70: safe(d['70% cut']) })),
+        '원광대학교': () => WKU_DATA
+          .filter(d => d['모집전형'] === '학생부종합')
+          .map(d => ({ dept: d['모집단위'], avg: null, cut70: safe(d['70%cut']) })),
+        '전남대학교': () => JNU_DATA
+          .filter(d => d['모집전형'] && d['모집전형'].includes('지역인재'))
+          .map(d => ({ dept: d['모집단위'], avg: safe(d['평균등급']), cut70: safe(d['70%cut']) })),
+        '전주대학교': () => JJU_DATA
+          .filter(d => d['모집전형'] && d['모집전형'].includes('종합'))
+          .map(d => ({ dept: d['모집단위'], avg: safe(d['평균']), cut70: safe(d['70%cut']) })),
+        '중앙대학교': () => CAU_DATA
+          .filter(d => d['모집전형'] && d['모집전형'].includes('다빈치'))
+          .map(d => ({ dept: d['모집단위'], avg: safe(d.passAvg), cut70: safe(d['70%cut']) })),
+        '충남대학교': () => CNU_DATA
+          .filter(d => d['모집전형'] && d['모집전형'].includes('지역인재'))
+          .map(d => ({ dept: d['모집단위'], avg: safe(d['평균(등급)']), cut70: safe(d['70%(등급)']) })),
+        '충북대학교': () => CBNU_DATA
+          .filter(d => d['모집전형'] && d['모집전형'].includes('종합'))
+          .map(d => ({ dept: d['모집단위'], avg: safe(d['평균(등급)']), cut70: safe(d['70%(등급)']) })),
+        '한국외국어대학교': () => HUFS_JONGHAP_DATA
+          .map(d => ({ dept: d['모집단위'], avg: null, cut70: safe(d['70%(등급)']) })),
+        '한양대학교': () => {
+          const years = HYU_DATA.map(d => d['학년도']).filter(Boolean);
+          const mx = years.length ? Math.max(...years) : 0;
+          return HYU_DATA.filter(d => d['학년도'] === mx)
+            .map(d => ({ dept: d['모집단위'], avg: safe(d['평균등급']), cut70: safe(d['70%cut']) }));
+        },
+        '홍익대학교': () => HIU_DATA
+          .map(d => ({ dept: d['모집단위'], avg: safe(d['평균(등급)']), cut70: safe(d['70%(등급)']) })),
+      };
+      const fn = ex[uniLabel];
+      if (!fn) return [];
+      return fn().filter(d => d.dept && (d.avg !== null || d.cut70 !== null));
+    } catch (e) { return []; }
+  };
+
 })();
