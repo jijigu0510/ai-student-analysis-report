@@ -8561,7 +8561,7 @@ overallEvaluation 필드는 아래 형식을 반드시 따르십시오:
 
       <div class="uni-criteria-section" style="margin-bottom: 2.5rem; background: #fff; padding: 1.5rem; border-radius: 12px; border: 1px solid #eee; page-break-inside: avoid;">
         <h3 style="font-size: 1.4rem; color: #333; margin-bottom: 1.2rem; border-left: 6px solid #5e6ad2; padding-left: 1rem;">대학별 평가 주안점 (분석 기준)</h3>
-        <div class="markdown-body" style="font-size: 0.85rem; color: #555; line-height: 1.6;">${marked.parse(universityEvalCriteria[uni]?.factors || "일반적인 학생부종합전형 평가 기준을 적용하여 분석되었습니다.")}</div>
+        <div class="markdown-body" style="font-size: 0.85rem; color: #555; line-height: 1.6;">${marked.parse((() => { const f = universityEvalCriteria[uni]?.factors; return Array.isArray(f) ? f.map(x => `${x.name}(${x.weight}%): ${x.details || ''}`).join('\n') : String(f || '일반적인 학생부종합전형 평가 기준을 적용하여 분석되었습니다.'); })())}</div>
       </div>
 
       <div class="overall-evaluation" style="margin-bottom: 2.5rem; background: var(--clr-inset-bg); padding: 2rem; border-radius: 12px; border: 1px solid var(--panel-border);">
