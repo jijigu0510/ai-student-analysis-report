@@ -7962,6 +7962,13 @@ SW\uc6b0\uc218(AI\ucef4\uacf5): \ud559\uc5c5\ud0d0\uad6c\uc5ed\ub7c9 60%(\ud559\
     }
   };
 
+  // factors가 배열인 경우 문자열로 정규화 (marked.parse 등 모든 호출에서 안전하게 사용하기 위함)
+  Object.values(universityEvalCriteria).forEach(crit => {
+    if (Array.isArray(crit.factors)) {
+      crit.factors = crit.factors.map(f => `${f.name}(${f.weight}%): ${f.details || ''}`).join('\n');
+    }
+  });
+
   async function fetchWithRetry(url, options, maxRetries = 3) {
     let retries = 0;
     const timeout = options.timeout || 60000; // 60초 기본 타임아웃
