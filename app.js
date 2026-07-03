@@ -8333,7 +8333,10 @@ overallEvaluation 필드는 아래 형식을 반드시 따르십시오:
       return;
     }
 
-    const { factors, competencies, weights } = criteria;
+    const { competencies, weights } = criteria;
+    const factors = Array.isArray(criteria.factors)
+      ? criteria.factors.map(f => `${f.name}(${f.weight}%): ${f.details || ''}`).join('\n')
+      : String(criteria.factors || '');
 
     // ── 반영 비율 바 ──
     const wAca = Math.round((weights.academic || 0) * 100);
