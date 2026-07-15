@@ -2991,6 +2991,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (item.과목수) countSet.add(item.과목수);
     });
 
+    const filterUniv = document.getElementById("csat-filter-univ");
     const filterRegion = document.getElementById("csat-filter-region");
     const filterType = document.getElementById("csat-filter-type");
     const filterSubject = document.getElementById("csat-filter-subject");
@@ -3009,6 +3010,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Event listeners for filters
     const render = () => renderCsatGrid();
+    if (filterUniv) filterUniv.addEventListener("input", render);
     if (filterRegion) filterRegion.addEventListener("change", render);
     if (filterType) filterType.addEventListener("change", render);
     if (filterSubject) filterSubject.addEventListener("change", render);
@@ -3022,6 +3024,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const container = document.getElementById("csatGridContainer");
     if (!container || typeof csatData === 'undefined') return;
 
+    const univFilter = (document.getElementById("csat-filter-univ")?.value || '').trim();
     const rFilter = document.getElementById("csat-filter-region")?.value || 'all';
     const tFilter = document.getElementById("csat-filter-type")?.value || 'all';
     const sFilter = document.getElementById("csat-filter-subject")?.value || 'all';
@@ -3029,6 +3032,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const gMaxFilter = document.getElementById("csat-filter-grade-max")?.value || 'all';
 
     const filtered = csatData.filter(item => {
+      if (univFilter) {
+        const univ = (item.대학 || '').toLowerCase();
+        if (!univ.includes(univFilter.toLowerCase())) return false;
+      }
       if (rFilter !== 'all') {
         const itemRegion = item.지역 ? item.지역.trim() : "미표기";
         if (itemRegion !== rFilter) return false;
@@ -7242,47 +7249,78 @@ SW\uc6b0\uc218(AI\ucef4\uacf5): \ud559\uc5c5\ud0d0\uad6c\uc5ed\ub7c9 60%(\ud559\
     },
     "\uac00\ucc9c\ub300\ud559\uad50": {
       factors: `
-[\uac00\ucc9c\ub300\ud559\uad50 2027\ud559\ub144\ub3c4 \ud559\uc0dd\ubd80\uc885\ud569\uc804\ud615 \uc11c\ub958\ud3c9\uac00 \uae30\uc900 \ubc0f \ud559\uacfc\ubcc4 \ud3c9\uac00 \uc8fc\uc548\uc810]
+[\uac00\ucc9c\ub300\ud559\uad50 2027\ud559\ub144\ub3c4 \ud559\uc0dd\ubd80\uc885\ud569\uc804\ud615 \uc11c\ub958\ud3c9\uac00 \uae30\uc900 \ubc0f \ud559\uacfc\ubcc4 \ud3c9\uac00 \uc8fc\uc548\uc810 — \ubaa8\uc9d1\uc694\uac15 \ubc18\uc601]
 
-\u25a0 \uc11c\ub958\ud3c9\uac00 \uc885\ud569 \uc548\ub0b4 \ubc0f \ubc29\ubc95
+■ \uc804\ud615\ubcc4 \uc120\ubc1c \uad6c\uc870
+   \uac00\ucc9c\ubc14\ub78c\uac1c\ube44(437\uba85): 1\ub2e8\uacc4(4\ubc30\uc218) \uc11c\ub958100% → 2\ub2e8\uacc4 1\ub2e8\uacc450%+\uba74\uc81150% / \uc218\ub2a5\ucd5c\uc800 \uc5c6\uc74c
+   \uac00\ucc9c\uc758\uc57d\ud559(26\uba85): 1\ub2e8\uacc4(4\ubc30\uc218) \uc11c\ub958100% → 2\ub2e8\uacc4 1\ub2e8\uacc450%+\uba74\uc81150%
+     - \uc758\uc608\uacfc: \uad6d\uc5b4·\uc218\ud559(\uae30\ud558/\ubbf8\uc801\ubd84)·\uc601\uc5b4·\uacfc\ud0d0(2\uacfc\ubaa9) \uc911 3\uac1c \uc601\uc5ed \uac01 1\ub4f1\uae09
+     - \uc57d\ud559\uacfc: \uad6d\uc5b4·\uc218\ud559(\uae30\ud558/\ubbf8\uc801\ubd84)·\uc601\uc5b4·\uacfc\ud0d0(2\uacfc\ubaa9) \uc911 3\uac1c \uc601\uc5ed \ud569 5\uc774\ub0b4
+
+■ \uc11c\ub958\ud3c9\uac00 \uc885\ud569 \uc548\ub0b4 \ubc0f \ubc29\ubc95
 \uac00\ucc9c\ub300\ud559\uad50\ub294 \ud559\uc5c5\uc5ed\ub7c9 \ube44\uc911\uc774 \uac00\uc7a5 \ub192\uc740 \uc77c\ubc18\uc801\uc778 \ub300\ud559\ub4e4\uacfc \ub2ec\ub9ac, **\uc778\uc131(40%), \uc9c4\ud559\uc758\uc9c0(40%), \ud559\uc5c5\uc5ed\ub7c9(20%)**\uc774\ub77c\ub294 \ud30c\uaca9\uc801\uc778 \uc815\uc131\ud3c9\uac00 \ube44\uc728\uc744 \uac16\uc2b5\ub2c8\ub2e4.
 \uad50\uacfc\uc640 \ube44\uad50\uacfc\ub97c \uae30\uacc4\uc801\uc73c\ub85c \ubd84\ub9ac\ud558\uc9c0 \uc54a\uace0 \uc0dd\uae30\ubd80 \uc804 \uc601\uc5ed\uc744 \uc720\uae30\uc801\uc73c\ub85c \uc5f0\uacb0\ud558\uc5ec \uc885\ud569 \ud3c9\uac00\ud558\uba70, \uace0\uad50 \uc7ac\ud559 \uc911 '\uc9c4\ub85c \ubcc0\uacbd'\uc774 \uc788\ub354\ub77c\ub3c4 \ud0d0\uc0c9 \uacfc\uc815\ub9cc \ud569\ub9ac\uc801\uc774\ub77c\uba74 \uac10\uc810 \uc5c6\uc774 \uc720\uc5f0\ud558\uac8c \ud3c9\uac00\ud569\ub2c8\ub2e4.
 
-\u25a0 \ud575\uc2ec 3\ub300 \ud3c9\uac00 \uc694\uc18c \ubc0f \uc11c\ub958\ud3c9\uac00 \ubd84\uc11d \uae30\uc900
-1. \uc778\uc131 (\ub2e8\uc77c \ucd5c\ub300 \ube44\uc911 40%) - \ub098\ub214, \ubc30\ub824, \uacf5\ub3d9\uccb4 \uc5ed\ub7c9\uacfc \uc131\uc2e4\uc131
-- \ud0c0 \ub300\ud559\uc758 20% \uc218\uc900\uc744 \ub118\uc5b4, \uac00\ucc9c\ub300\ub294 \uc778\uc131\uc744 40%\ub85c \ub461\ub2c8\ub2e4. \ub098\ub214, \ubc30\ub824, \uacf5\ub3d9\uccb4 \ud654\ud569\uc740 \ubb3c\ub860 \uae30\ubcf8\uc801 \uc131\uc2e4\uc131(\ucd9c\uacb0 \ub4f1)\uc744 \ub9e4\uc6b0 \uac15\ub3c4 \ub192\uac8c \ubd05\ub2c8\ub2e4.
-- \ud559\uae09/\ub3d9\uc544\ub9ac\uc5d0\uc11c \uacfc\uc81c\ub97c \uc218\ud589\ud560 \ub54c \ud300\uc6d0\ub4e4\uacfc \uc5b4\ub5bb\uac8c \ud611\uc5c5\ud558\uace0 \ud0c0\uc778\uc744 \ubc30\ub824\ud588\ub294\uc9c0 \uc804 \uc601\uc5ed\uc5d0\uc11c \uc2a4\uce94\ud558\uc2ed\uc2dc\uc624. (\ud2b9\ud788 \uba54\ub514\uceec \ucea0\ud37c\uc2a4\ub294 \uc0dd\uba85 \uc778\uad8c, \uc9c1\uc5c5 \uc724\ub9ac\uc5d0 \ub300\ud55c \uc7a3\ub300\uac00 \uadf9\ud55c\uc73c\ub85c \ub192\uc544\uc9d1\ub2c8\ub2e4.)
+■ \ud575\uc2ec 3\ub300 \ud3c9\uac00 \uc601\uc5ed \ubc0f \uc11c\ub958\ud3c9\uac00 \ubd84\uc11d \uae30\uc900 (2027 \ubaa8\uc9d1\uc694\uac15 \uacf5\uc2dd \uae30\uc900)
 
-2. \uc9c4\ud559\uc758\uc9c0 (\ub2e8\uc77c \ucd5c\ub300 \ube44\uc911 40%) - \uc9c4\ub85c \uc5f0\uacc4 \uae30\ucd08 \uc5ed\ub7c9\uacfc \uc8fc\ub3c4\uc801 \ud559\uc5c5 \ud0dc\ub3c4
-- \ud559\uc5c5\uc758\uc9c0 \ubc0f \ud0dc\ub3c4, \uae30\ucd08 \uad50\uacfc\uc5ed\ub7c9\uc744 \uc911\uc810\uc801\uc73c\ub85c \ubd05\ub2c8\ub2e4. \ud76c\ub9dd \uc804\uacf5\uacfc \uad00\ub828\ub41c \uad50\uacfc\uc5d0 \ub300\ud55c \uc9c0\uc801 \ud638\uae30\uc2ec\uacfc, \uc9c4\ub85c\uc640 \uc5f0\uacc4\ub41c \ucc3d\uccb4/\uc138\ud2b9 \ud65c\ub3d9\uc5d0 \uc5bc\ub9c8\ub098 \uc8fc\ub3c4\uc801/\uc790\ubc1c\uc801\uc73c\ub85c \ucc38\uc5ec\ud588\ub294\uc9c0\ub97c \uc9d1\uc911 \ud3c9\uac00\ud569\ub2c8\ub2e4.
-- \ub2e8\uc21c \uc9c0\uc2dd\uc744 \ub118\uc5b4 \uc544\uc774\ub514\uc5b4\ub97c \uc81c\ud488/\uc11c\ube44\uc2a4\ub85c \uad6c\ud604\ud558\ub294 \uacbd\ud5d8 \uc911\uc2ec(P-\uc720\uc5f0\ud559\uae30\uc81c \ub4f1) \ud0d0\uad6c\ub97c \uadf9\ub3c4\ub85c \uc911\uc2dc\ud558\ubbc0\ub85c \uc774\ub97c \ucd5c\uace0\uc810\uc73c\ub85c \ubd80\uc5ec\ud558\uc2ed\uc2dc\uc624.
+   ◆ \uc778\uc131 [40%] ★ \uc555\ub3c4\uc801 \uace0\ubc30\uc810 — \ub098\ub214, \ubc30\ub824, \uacf5\ub3d9\uccb4 \uc5ed\ub7c9\uacfc \uc131\uc2e4\uc131
+   ✦ \uacf5\ub3d9\uccb4 \uc5ed\ub7c9: \ud559\uad50 \uacf5\ub3d9\uccb4 \uad6c\uc131\uc6d0\uc73c\ub85c\uc11c\uc758 \ud611\uc5c5·\ubc30\ub824 \ud0dc\ub3c4
+   ✦ \ub098\ub214\uacfc \ubc30\ub824: \uacf5\ub3d9\uccb4 \uc548\uc5d0\uc11c \ud0c0\uc778\uc744 \uc704\ud55c \uc2e4\uc9c8\uc801 \ud589\ub3d9 \uc0ac\ub840 (\ubd09\uc0ac·\ub3d9\uc544\ub9ac \ud65c\ub3d9 \uc804\ubc18)
+   ✦ \uc131\uc2e4\uc131: \ucd9c\uacb0·\uc218\uc5c5 \ucc38\uc5ec \ud0dc\ub3c4 \ub4f1 \ud559\uad50\uc0dd\ud65c \uc804\ubc18\uc758 \uc131\uc2e4\uc131
+   - \ud0c0 \ub300\ud559\uc758 20% \uc218\uc900\uc744 \ub118\uc5b4, \uac00\ucc9c\ub300\ub294 \uc778\uc131\uc744 40%\ub85c \ub461\ub2c8\ub2e4. \ud559\uae09/\ub3d9\uc544\ub9ac\uc5d0\uc11c \uacfc\uc81c\ub97c \uc218\ud589\ud560 \ub54c \ud300\uc6d0\ub4e4\uacfc \uc5b4\ub5bb\uac8c \ud611\uc5c5\ud558\uace0 \ud0c0\uc778\uc744 \ubc30\ub824\ud588\ub294\uc9c0 \uc804 \uc601\uc5ed\uc5d0\uc11c \uc2a4\uce94\ud558\uc2ed\uc2dc\uc624.
+   - \ud2b9\ud788 \uba54\ub514\uceec \ucea0\ud37c\uc2a4(\uc758\uc608·\uc57d\ud559·\uac04\ud638)\ub294 \uc0dd\uba85 \uc778\uad8c·\uc9c1\uc5c5 \uc724\ub9ac\uc5d0 \ub300\ud55c \uc7a3\ub300\uac00 \uadf9\ud55c\uc73c\ub85c \ub192\uc2b5\ub2c8\ub2e4.
 
-3. \ud559\uc5c5\uc5ed\ub7c9 (20%) - \uae30\ucd08 \ub2a5\ub825\uacfc \ub2a5\ub3d9\uc801 \ud559\uc5c5 \uada4\uc801
-- \uc131\uc801 \ub4f1\uae09 \uc218\uce58\ubfd0\ub9cc \uc544\ub2c8\ub77c, \uc804 \uc601\uc5ed\uc5d0\uc11c \ub4dc\ub7ec\ub098\ub294 \uad50\uacfc \uc218\uc5c5 \ucc38\uc5ec \ud0dc\ub3c4\uc640 "\uc790\uc2e0\uc758 \ubd80\uc871\ud55c \uc810\uc744 \ubcf4\uc644\ud558\ub824\ub294 \ub178\ub825 \ub4f1 \uc885\ud569\uc801\uc778 \ud559\uc5c5 \uc131\uc7a5 \uada4\uc801"\uc744 \ud3c9\uac00\ud569\ub2c8\ub2e4. \uc218\ud559/\uacfc\ud559 \uae30\ucd08 \ub4f1\ub77d\ub3c4 \uc0b4\ud3b4\uc57c \ud569\ub2c8\ub2e4.
+   ◆ \uc9c4\ud559\uc758\uc9c0 [40%] ★ \uc555\ub3c4\uc801 \uace0\ubc30\uc810 — \uc9c0\uc6d0 \ubaa8\uc9d1\ub2e8\uc704 \ud559\uc2b5 \uc900\ube44 \uc5ed\ub7c9
+   ✦ \uad50\uacfc\uc5ed\ub7c9(\uacc4\uc5f4\uc801\ud569\uc131): \uc9c0\uc6d0 \uacc4\uc5f4 \uad00\ub828 \uad50\uacfc \uc774\uc218 \ubc0f \uc131\ucde8\ub3c4
+   ✦ \ud559\uc2b5\uacbd\ud5d8(\uacc4\uc5f4\uc801\ud569\uc131): \uc218\uc5c5\uacfc \ud559\uad50 \ud65c\ub3d9\uc5d0\uc11c\uc758 \uacc4\uc5f4 \uad00\ub828 \ud0d0\uad6c \uacbd\ud5d8
+   ✦ \ub2a5\ub3d9\uc801 \ud559\uc5c5\ud0dc\ub3c4: \uc2a4\uc2a4\ub85c \uc9c8\ubb38\ud558\uace0 \uae4a\uc774 \ud0d0\uad6c\ud558\ub294 \uc790\uae30\uc8fc\ub3c4\uc801 \ud559\uc2b5 \uc790\uc138
+   ✦ \uad50\uacfc \uc131\ucde8 \uacfc\uc815: \uc131\ucde8 \uacb0\uacfc\ubcf4\ub2e4 \uadf8 \uacfc\uc815\uc5d0\uc11c \ub098\ud0c0\ub09c \ub178\ub825\uacfc \uc131\uc7a5
+   - \ud76c\ub9dd \uc804\uacf5\uacfc \uad00\ub828\ub41c \uad50\uacfc\uc5d0 \ub300\ud55c \uc9c0\uc801 \ud638\uae30\uc2ec\uacfc, \uc9c4\ub85c\uc640 \uc5f0\uacc4\ub41c \ucc3d\uccb4/\uc138\ud2b9 \ud65c\ub3d9\uc5d0 \uc5bc\ub9c8\ub098 \uc8fc\ub3c4\uc801/\uc790\ubc1c\uc801\uc73c\ub85c \ucc38\uc5ec\ud588\ub294\uc9c0\ub97c \uc9d1\uc911 \ud3c9\uac00\ud569\ub2c8\ub2e4.
+   - \ub2e8\uc21c \uc9c0\uc2dd\uc744 \ub118\uc5b4 \uc544\uc774\ub514\uc5b4\ub97c \uc2e4\uc81c \ud504\ub85c\uc81d\ud2b8·\ud0d0\uad6c\ub85c \uad6c\ud604\ud55c \uacbd\ud5d8\uc744 \ucd5c\uace0\uc810\uc73c\ub85c \ubd80\uc5ec\ud558\uc2ed\uc2dc\uc624.
 
-\u25a0 \ud559\uacfc\ubcc4 \uc804\uacf5\uae30\ubc18 \ud575\uc2ec \uc5ed\ub7c9 \uc8fc\uc548\uc810 (\uacbd\ud5a5 \ubd84\uc11d)
+   ◆ \ud559\uc5c5\uc5ed\ub7c9 [20%] — \uae30\ucd08 \ub2a5\ub825\uacfc \ub2a5\ub3d9\uc801 \ud559\uc5c5 \uada4\uc801
+   ✦ \ud559\uc5c5\uc758\uc9c0 \ubc0f \ud0dc\ub3c4: \ubc30\uc6c0\uc5d0 \ub300\ud55c \uc5f4\uc758\uc640 \uc9c0\uc18d\uc801\uc778 \ud559\uc5c5 \ub178\ub825
+   ✦ \uae30\ucd08\uad50\uacfc \uc5ed\ub7c9: \ub300\ud559 \ud559\uc2b5\uc5d0 \ud544\uc694\ud55c \uae30\ucd08 \uad50\uacfc \uc774\ud574\ub825 \ubc0f \uc218\ud589 \ub2a5\ub825
+   ✦ \ud559\uc5c5\uc131\ucde8\ub3c4: \uad50\uacfc\ubaa9 \uc774\uc218 \uc131\ucde8 \uc218\uc900
+   - \uc131\uc801 \ub4f1\uae09 \uc218\uce58\ubfd0\ub9cc \uc544\ub2c8\ub77c, \uc804 \uc601\uc5ed\uc5d0\uc11c \ub4dc\ub7ec\ub098\ub294 \uad50\uacfc \uc218\uc5c5 \ucc38\uc5ec \ud0dc\ub3c4\uc640 "\uc790\uc2e0\uc758 \ubd80\uc871\ud55c \uc810\uc744 \ubcf4\uc644\ud558\ub824\ub294 \uc885\ud569\uc801\uc778 \ud559\uc5c5 \uc131\uc7a5 \uada4\uc801"\uc744 \ud3c9\uac00\ud569\ub2c8\ub2e4. \uc218\ud559/\uacfc\ud559 \uae30\ucd08 \ub4f1\ub77d\ub3c4 \uc0b4\ud3b4\uc57c \ud569\ub2c8\ub2e4.
+
+■ \uc11c\ub958\ud3c9\uac00 3\ub300 \uacf5\uc2dd \uad00\uc810 (2027 \ubaa8\uc9d1\uc694\uac15 — \uac00\ucc9c\ub300\ud559\uad50 \uace0\uc720 \ucca0\ud559)
+   1. \uacfc\uc815 \uc911\uc2ec: \ud65c\ub3d9\uc758 \uacb0\uacfc\ubcf4\ub2e4 \uadf8 \uacfc\uc815\uc5d0\uc11c \ub098\ud0c0\ub09c \ud559\uc2b5 \ud0dc\ub3c4\uc640 \uc0ac\uace0\uc758 \ud750\ub984\uc744 \uc911\uc810\uc801\uc73c\ub85c \ubd04
+   2. \uc9c0\uc18d\uc131: \uc77c\ud68c\uc131 \ud65c\ub3d9\ubcf4\ub2e4 \ud559\ub144·\ud559\uae30·\uacfc\ubaa9\uc5d0 \uac78\uccd0 \ubc18\ubcf5\uc801\uc73c\ub85c \ub098\ud0c0\ub098\ub294 \ubaa8\uc2b5 \uc8fc\ubaa9
+   3. \uc5f0\uacc4\uc131: \uc218\uc5c5\uc5d0\uc11c \ubc30\uc6b4 \ub0b4\uc6a9\uc774 \ud559\uad50 \ud65c\ub3d9\uacfc \uc5b4\ub5bb\uac8c \uc5f0\uacb0\ub418\uc5c8\ub294\uc9c0\ub97c \ud568\uaed8 \uc0b4\ud54c
+   × \uad50\uacfc·\ube44\uad50\uacfc \uad6c\ubd84 \uc5c6\uc774 \ud559\uc0dd\ubd80 \uc804 \uc601\uc5ed\uc744 \ud3c9\uac00 \uadfc\uac70\ub85c \ud65c\uc6a9
+   × \ud65c\ub3d9 \uc218·\uae30\uc7ac \ubd84\ub7c9\ubcf4\ub2e4 \uc218\uc5c5\uc5d0 \ucda9\uc2e4\ud788 \ucc38\uc5ec\ud55c \ud754\uc801\uc774 \ub354 \uc911\uc694
+
+■ \uba74\uc811\ud3c9\uac00 \uc601\uc5ed (2\ub2e8\uacc4, \ube14\ub77c\uc778\ub4dc \uba74\uc811 / \uba74\uc811\uad00 3\uc778 × \uc9c0\uc6d0\uc790 1\uc778)
+   \uc778\uc131 40% / \uc9c4\ud559\uc758\uc9c0 40% / \uc758\uc0ac\uc18c\ud1b5\uc5ed\ub7c9 20%
+   - \uc778\uc131: \uc11c\ub958 \uae30\ubc18 \uacf5\ub3d9\uccb4 \uc5ed\ub7c9·\ub098\ub214\uacfc \ubc30\ub824·\uc131\uc2e4\uc131·\uba74\uc811 \ucc38\uc5ec \ud0dc\ub3c4
+   - \uc9c4\ud559\uc758\uc9c0: \ud559\uc0dd\ubd80 \uae30\ubc18 \uc218\uc5c5·\ud0d0\uad6c \uacbd\ud5d8 \uc124\uba85, \uacc4\uc5f4 \uad00\ub828 \uc900\ube44 \uc0c1\ud0dc \ud655\uc778 (\ud0d0\uce68 \uc9c8\ubb38 \ud3ec\ud568)
+   - \uc758\uc0ac\uc18c\ud1b5\uc5ed\ub7c9: \uc9c8\ubb38 \uc758\ub3c4 \ud30c\uc545 \ub2a5\ub825, \uc11c\ub958 \uae30\ubc18 \uc751\ub2f5\uc758 \ub17c\ub9ac\uc131·\uc77c\uad00\uc131
+   × \ubcc4\ub3c4 \uc81c\uc2dc\ubb38 \uc5c6\uc74c — \ud559\uc0dd\ubd80\uc5d0 \uae30\uc7ac\ub41c \ub0b4\uc6a9 \uae30\ubc18 \uc9c8\ubb38
+
+■ \ud559\uacfc\ubcc4 \uc804\uacf5\uae30\ubc18 \ud575\uc2ec \uc5ed\ub7c9 \uc8fc\uc548\uc810 (\uacbd\ud5a5 \ubd84\uc11d)
 1. \ucca8\ub2e8 IT \ubc0f \ubc18\ub3c4\uccb4 \uacc4\uc5f4 (\ucef4\uacf5, AI, \uc2dc\uc2a4\ud15c\ubc18\ub3c4\uccb4 \ub4f1 \uac00\ucc9c\ub300 \ucd5c\uc0c1\uc704 \uc8fc\ub825)
-- \uc218\ud559\uc801 \ub17c\ub9ac\ub825 \ubc0f \ud504\ub85c\uadf8\ub798\ubc0d \uc5ed\ub7c9 \ucd5c\uc6b0\uc120. \ud68c\ub85c \uc124\uacc4, AI \ubaa8\ub378\ub9c1, \uc815\ubcf4\ubcf4\uc548 \ub4f1 \ud558\ubc84\ub4dc \uc218\uc900\uc744 \uc9c0\ud5a5\ud558\ub294 H/W \ubc0f S/W \uc804\uacf5\uc774\ubbc0\ub85c, \uc218\ud559\uacfc \ubb3c\ub9ac \ubc14\ud0d5\uc758 \uc2e4\ubb34 \uc9c0\ud5a5\uc801 \ud504\ub85c\uc81d\ud2b8 \uacbd\ud5d8(\ucf54\ub529 \ub4f1) \uc720\ubb34\uac00 \ud569\uaca9\uc758 \uc5f4\uc1e0\uc785\ub2c8\ub2e4.
+- \uc218\ud559\uc801 \ub17c\ub9ac\ub825 \ubc0f \ud504\ub85c\uadf8\ub798\ubc0d \uc5ed\ub7c9 \ucd5c\uc6b0\uc120. \ud68c\ub85c \uc124\uacc4, AI \ubaa8\ub378\ub9c1, \uc815\ubcf4\ubcf4\uc548 \ub4f1 H/W \ubc0f S/W \uc804\uacf5\uc774\ubbc0\ub85c, \uc218\ud559\uacfc \ubb3c\ub9ac \ubc14\ud0d5\uc758 \uc2e4\ubb34 \uc9c0\ud5a5\uc801 \ud504\ub85c\uc81d\ud2b8 \uacbd\ud5d8(\ucf54\ub529 \ub4f1) \uc720\ubb34\uac00 \ud569\uaca9\uc758 \uc5f4\uc1e0\uc785\ub2c8\ub2e4.
 
-2. \uc758\uc57d\ud559 \ubc0f \ubcf4\uac74\u00b7\uba54\ub514\uceec \uacc4\uc5f4 (\uc758\uc608, \uc57d\ud559, \uac04\ud638, \uce58\uc704\uc0dd \ub4f1)
+2. \uc758\uc57d\ud559 \ubc0f \ubcf4\uac74·\uba54\ub514\uceec \uacc4\uc5f4 (\uc758\uc608, \uc57d\ud559, \uac04\ud638, \uce58\uc704\uc0dd \ub4f1)
 - \ucd5c\uc0c1\uc704 \uc218/\uacfc \uc131\ucde8\ub294 \uae30\ubcf8 \uc804\uc81c\uc774\uba70, \uc778\uc131(40%)\uc5d0\uc11c \uc694\uad6c\ud558\ub294 \uc774\ud0c0\uc2ec/\ud76c\uc0dd\uc815\uc2e0/\uc758\ub8cc \uc724\ub9ac\uac00 \ud575\uc2ec. \ub1cc\uacfc\ud559, \uc2e0\uc57d \ub370\uc774\ud130 \ubd84\uc11d \ub4f1 \ucd5c\uc2e0 \uc758\ub8cc \uae30\uc220 \ub3d9\ud5a5(AI+\uc758\ub8cc)\uc5d0 \ub300\ud55c \uc735\ud569\ud615 \uc9c0\uc801 \ud638\uae30\uc2ec \uac15\ub825 \uac00\uc0b0\uc810.
 
 3. \uacbd\uc601 \ubc0f \uc0ac\ud68c\uacfc\ud559 \uacc4\uc5f4 (\uacbd\uc601, \ubbf8\ub514\uc5b4, \uc751\uc6a9\ud1b5\uacc4 \ub4f1)
-- \ucd5c\uc2e0 \uc0b0\uc5c5 \ud2b8\ub80c\ub4dc\ub97c \uc77d\uc5b4\ub0b4\ub294 \ub370\uc774\ud130 \ubd84\uc11d \ubc0f \ube45\ub370\uc774\ud130, \ud1b5\uacc4 \ub4f1 \uc218\ud559/IT \ud234\uc744 \uc778\ubb38\uc0ac\ud68c \ud604\uc0c1\uc774\ub098 \ud68c\uacc4/\uacbd\uc601 \ubb38\uc81c \ud574\uacb0\uc5d0 \ubb34\uae30\ub85c \uc811\ubaa9\ud574 \ubcf8 '\ubd84\uc11d\uc801 \uae30\ud68d \uc5ed\ub7c9'\uc744 \uac15\ub825\ud558\uac8c \ud3c9\uac00\ud558\uc2ed\uc2dc\uc624.
+- \ucd5c\uc2e0 \uc0b0\uc5c5 \ud2b8\ub80c\ub4dc\ub97c \uc77d\uc5b4\ub0b4\ub294 \ub370\uc774\ud130 \ubd84\uc11d \ubc0f \ube45\ub370\uc774\ud130, \ud1b5\uacc4 \ub4f1 \uc218\ud559/IT \ud234\uc744 \uc778\ubb38\uc0ac\ud68c \ud604\uc0c1\uc774\ub098 \ud68c\uacc4/\uacbd\uc601 \ubb38\uc81c \ud574\uacb0\uc5d0 \uc811\ubaa9\ud574 \ubcf8 '\ubd84\uc11d\uc801 \uae30\ud68d \uc5ed\ub7c9'\uc744 \uac15\ub825\ud558\uac8c \ud3c9\uac00\ud558\uc2ed\uc2dc\uc624.
 
 4. \uacf5\ud559 \ubc0f \uc2a4\ub9c8\ud2b8\uc2dc\ud2f0 \uacc4\uc5f4 (\ud654\uacf5, \ubc30\ud130\ub9ac, \ub85c\ubd07, \uac74\ucd95 \ub4f1)
-- \uc218/\ubb3c/\ud654 \uae30\ucd08\uacfc\ud559 \ubf08\ub300\ub97c \uae30\ubc18\uc73c\ub85c, \uc2e4\uc81c \uc2dc\uc2a4\ud15c\uc744 \uc124\uacc4\ud558\uace0 \ubb38\uc81c\uc810\uc744 \uc804\uc0b0\ubaa8\uc0ac(\uc2dc\ubbac\ub808\uc774\uc158)\ud574\ubcf4\ub294 \ub4f1 P-\ud559\uae30\uc81c\ud615 '\uc2e4\ucc9c\uc801 \ud504\ub85c\uc81d\ud2b8 \uc911\uc2ec \ud0d0\uad6c \ubc0f \uc624\ub958 \uadf9\ubcf5 \uacbd\ud5d8'\uc744 \uc911\uc2dc\ud569\ub2c8\ub2e4.
+- \uc218/\ubb3c/\ud654 \uae30\ucd08\uacfc\ud559 \ubf08\ub300\ub97c \uae30\ubc18\uc73c\ub85c, \uc2e4\uc81c \uc2dc\uc2a4\ud15c\uc744 \uc124\uacc4\ud558\uace0 \ubb38\uc81c\uc810\uc744 \uc804\uc0b0\ubaa8\uc0ac\ud574\ubcf4\ub294 \ub4f1 '\uc2e4\ucc9c\uc801 \ud504\ub85c\uc81d\ud2b8 \uc911\uc2ec \ud0d0\uad6c \ubc0f \uc624\ub958 \uadf9\ubcf5 \uacbd\ud5d8'\uc744 \uc911\uc2dc\ud569\ub2c8\ub2e4.
 
 5. \uc778\ubb38 \ubc0f \ubc95\ud559 \uacc4\uc5f4 (AI\uc778\ubb38\ub300\ud559, \ubc95, \ud589\uc815, \uacbd\ucc30 \ub4f1)
-- \uc5b4\ubb38 \uc735\ud569: \uc5b4\ud559 \ub2a5\ub825\uc744 \ucd9c\ud310, \uad00\uad11, \ub098\uc544\uac00 IT(\ub370\uc774\ud130 \ucc98\ub9ac, \ubbf8\ub514\uc5b4 \uae30\ud68d)\ub85c \ud655\uc7a5\ud558\ub824\ub294 \uc9c4\ub85c \uac1c\ucc99 \ud0dc\ub3c4. \ubc95/\ud589\uc815: \ub69c\ub837\ud55c \uacf5\uc9c1 \uc724\ub9ac\uc640 \ub17c\ub9ac\uc801 \uc0ac\ud68c\ubb38\uc81c \ube44\ud310\uc801 \uc0ac\uace0.
+- \uc5b4\ubb38 \uc735\ud569: \uc5b4\ud559 \ub2a5\ub825\uc744 IT(\ub370\uc774\ud130 \ucc98\ub9ac, \ubbf8\ub514\uc5b4 \uae30\ud68d)\ub85c \ud655\uc7a5\ud558\ub824\ub294 \uc9c4\ub85c \uac1c\ucc99 \ud0dc\ub3c4. \ubc95/\ud589\uc815: \ub69c\ub837\ud55c \uacf5\uc9c1 \uc724\ub9ac\uc640 \ub17c\ub9ac\uc801 \uc0ac\ud68c\ubb38\uc81c \ube44\ud310\uc801 \uc0ac\uace0.
 
-6. \uae30\ucd08\uacfc\ud559/\ubc14\uc774\uc624 (\uc0dd\uba85, \ud654\ud559, \uc601\uc591) \ubc0f \uc608\uc220\u00b7\uccb4\uc721\u00b7\uc790\uc720\uc804\uacf5
+6. \uae30\ucd08\uacfc\ud559/\ubc14\uc774\uc624 (\uc0dd\uba85, \ud654\ud559, \uc601\uc591) \ubc0f \uc608\uc220·\uccb4\uc721·\uc790\uc720\uc804\uacf5
 - \ubc14\uc774\uc624: \uc81c\uc57d/\ud654\uc7a5\ud488/\uce5c\ud658\uacbd \uc6d0\ucc9c \uae30\uc220\uc774\ubbc0\ub85c \uaf3c\uaf3c\ud55c \uc2e4\ud5d8 \uc5ed\ub7c9, \uc2e4\ud328\ub97c \ub450\ub824\uc6cc\ud558\uc9c0 \uc54a\ub294 \uc5f0\uad6c \ud0dc\ub3c4.
-- \uc608\uc220: \uc804\uacf5 \uc2e4\uae30\ub9cc \ud30c\ub294 \uac83\uc774 \uc544\ub2c8\ub77c 4\ucc28 \uc0b0\uc5c5(\uba54\ud0c0\ubc84\uc2a4/\ucf58\ud150\uce20) \ubc0f \uc778\ubb38\ud559(\ube44\ud3c9/\uc0ac\ud68c\ubb38\uc81c)\uc744 \uacb0\ud569\ud55c \uc735\ud569 \uae30\ud68d\ub825.
+- \uc608\uc220: \uc804\uacf5 \uc2e4\uae30\ub9cc \ud30c\ub294 \uac83\uc774 \uc544\ub2c8\ub77c 4\ucc28 \uc0b0\uc5c5 \ubc0f \uc778\ubb38\ud559\uc744 \uacb0\ud569\ud55c \uc735\ud569 \uae30\ud68d\ub825.
 - \uc790\uc720\uc804\uacf5: \ud559\ubb38 \uacbd\uacc4\ub97c \ud5c8\ubb34\ub294 \ub2a5\ub3d9\uc801 \uc9c0\uc801 \uc720\uc5f0\uc131.
 
-\ud83d\udca1 \uc11c\ub958\ud3c9\uac00 \uacb0\ub860 \ud301 \ubc0f \uc720\uc758\uc0ac\ud56d:
-\uac00\ucc9c\ub300 \ud559\uc0dd\ubd80\uc885\ud569\uc758 \uc2ec\uc7a5\ubd80\ub294 **'\uacbd\ud5d8(\ud504\ub85c\uc81d\ud2b8) \uc911\uc2ec\uc758 \ub2a5\ub3d9\uc131(\uc9c4\ud559\uc758\uc9c0 40%)'**\uacfc **'\ud300\uc6cc\ud06c/\uc131\uc2e4\uc131(\uc778\uc131 40%)'**\uc785\ub2c8\ub2e4. \uc9c4\ub85c \ubcc0\uacbd\uc774 \uc788\ub354\ub77c\ub3c4 \uadf8 \uacfc\uc815\uc774 \ub2a5\ub3d9\uc801\uc774\uc5c8\ub2e4\uba74 \uac10\uc810\ud558\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4. \uadf8\ub7ec\ub098 **\ud559\uad50\ud3ed\ub825 1~9\ud638 \uae30\uc7ac \uc0ac\ud56d\uc740 \uc815\uc131\ud3c9\uac00 \uc2dc \uc804\uccb4 \uacfc\uc815\uc5d0 \uac78\uce5c \uac15\ub825\ud55c \ubd88\uc774\uc775(\uac10\uc810) \ub300\uc0c1**\uc774\ubbc0\ub85c \ubc1c\uacac \uc989\uc2dc \uce58\uba85\ud0c0\ub85c \uc9c0\uc801\ud558\uc2ed\uc2dc\uc624.
+💡 \uc11c\ub958\ud3c9\uac00 \uacb0\ub860 \ud301 \ubc0f \uc720\uc758\uc0ac\ud56d:
+\uac00\ucc9c\ub300 \ud559\uc0dd\ubd80\uc885\ud569\uc758 \uc2ec\uc7a5\ubd80\ub294 **'\uacfc\uc815 \uc911\uc2ec \ub2a5\ub3d9\uc131(\uc9c4\ud559\uc758\uc9c0 40%)'**\uacfc **'\ud300\uc6cc\ud06c/\uc131\uc2e4\uc131(\uc778\uc131 40%)'**\uc785\ub2c8\ub2e4. \uc9c4\ub85c \ubcc0\uacbd\uc774 \uc788\ub354\ub77c\ub3c4 \uadf8 \uacfc\uc815\uc774 \ub2a5\ub3d9\uc801\uc774\uc5c8\ub2e4\uba74 \uac10\uc810\ud558\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4. \uadf8\ub7ec\ub098 **\ud559\uad50\ud3ed\ub825 1~9\ud638 \uae30\uc7ac \uc0ac\ud56d\uc740 \uc815\uc131\ud3c9\uac00 \uc2dc \uac15\ub825\ud55c \ubd88\uc774\uc775(\uac10\uc810) \ub300\uc0c1**\uc774\ubbc0\ub85c \ubc1c\uacac \uc989\uc2dc \uce58\uba85\ud0c0\ub85c \uc9c0\uc801\ud558\uc2ed\uc2dc\uc624.
 `,
       competencies: {
         academic: "\ud559\uc5c5\uc5ed\ub7c9 (20%) - \uc131\uc801 \uc218\uce58\ubfd0 \uc544\ub2c8\ub77c, \uc790\uc2e0\uc758 \ubd80\uc871\ud55c \uc810\uc744 \ub048\uc9c8\uae30\uac8c \ubcf4\uc644\ud558\ub294 \uad50\uacfc \ucc38\uc5ec \ud0dc\ub3c4 \uae30\ubc18 \uc131\uc7a5 \uada4\uc801",
@@ -10220,6 +10258,15 @@ ${fd.content}
       const gachonGuideContent = `
 <h2 style="color:var(--accent-primary);margin-top:0;">🎓 가천대학교 면접 가이드</h2>
 
+<h3>0. 전형 구조 및 수능최저</h3>
+<table style="width:100%;border-collapse:collapse;margin-bottom:0.5rem;">
+  <thead><tr style="background:rgba(150,186,255,0.15);"><th style="padding:8px 10px;border:1px solid var(--panel-border);text-align:left;">전형명</th><th style="padding:8px 10px;border:1px solid var(--panel-border);text-align:center;">모집인원</th><th style="padding:8px 10px;border:1px solid var(--panel-border);text-align:left;">전형 방법</th><th style="padding:8px 10px;border:1px solid var(--panel-border);text-align:left;">수능최저</th></tr></thead>
+  <tbody>
+    <tr><td style="padding:8px 10px;border:1px solid var(--panel-border);"><strong>가천바람개비</strong></td><td style="padding:8px 10px;border:1px solid var(--panel-border);text-align:center;">437명</td><td style="padding:8px 10px;border:1px solid var(--panel-border);">1단계(4배수) 서류100% → 2단계 1단계50%+면접50%</td><td style="padding:8px 10px;border:1px solid var(--panel-border);">없음</td></tr>
+    <tr><td style="padding:8px 10px;border:1px solid var(--panel-border);"><strong>가천의약학</strong></td><td style="padding:8px 10px;border:1px solid var(--panel-border);text-align:center;">26명</td><td style="padding:8px 10px;border:1px solid var(--panel-border);">1단계(4배수) 서류100% → 2단계 1단계50%+면접50%</td><td style="padding:8px 10px;border:1px solid var(--panel-border);">의예과: 국·수(기하/미적)·영·과탐(2) 중 3개 각 1등급<br>약학과: 동일 기준 3개 합 5이내</td></tr>
+  </tbody>
+</table>
+
 <h3>1. 면접 반영 비율 및 합격 역전률</h3>
 <p>가천대학교는 2단계 평가에서 <strong>1단계 서류 성적 50%와 면접 평가 50%</strong>를 합산하여 최종 합격자를 선발합니다.<br>
 면접의 비중이 50%로 매우 높기 때문에, 1단계 합격자 순위가 뒤바뀌는 <strong>'역전률'이 무려 약 60%</strong>에 달합니다.<br>
@@ -10251,7 +10298,15 @@ ${fd.content}
   <li>"수학 시간에 미적분과 관련된 책을 읽고, 미분과 적분에 대한 개념을 정리했다고 기록되어 있습니다. 책에서 인상 깊었던 핵심 내용을 설명하고, 미분의 정의를 설명해주세요."</li>
 </ul>
 
-<h3>5. 전략 요약</h3>
+<h3>5. 서류평가 3대 공식 관점 (2027 모집요강)</h3>
+<p>가천대학교는 서류평가 시 다음 3가지 관점을 공식 평가 기준으로 명시하고 있습니다. 면접 답변도 이 관점에 맞춰 구성하면 효과적입니다.</p>
+<ul>
+  <li><strong>과정 중심</strong>: 활동의 결과보다 그 과정에서 나타난 학습 태도와 사고의 흐름</li>
+  <li><strong>지속성</strong>: 일회성 활동보다 학년·학기·과목에 걸쳐 반복적으로 나타나는 모습</li>
+  <li><strong>연계성</strong>: 수업에서 배운 내용이 학교 활동과 어떻게 연결되었는지</li>
+</ul>
+
+<h3>6. 전략 요약</h3>
 <p>가천대 면접은 면접관에게 성적이 공개되지 않는 <strong>3대1 블라인드 면접</strong>이므로, 서류 내용의 핵심 원리(특히 교과 지식)를 정확히 숙지하고 논리적인 태도로 답변한다면 성적의 불리함을 충분히 뒤집을 수 있는 기회의 장입니다.</p>
 `;
 
@@ -10336,13 +10391,13 @@ ${fd.content}
 [가천대학교 면접 특이사항 - 필수 반영]
 가천대학교는 다음과 같은 고유한 면접 구조를 가집니다. 아래 기준을 10개 문항 전체에 반드시 반영하세요.
 - 면접관 3인 x 지원자 1인, 10분 내외 완벽한 블라인드 면접 (1단계 서류 성적도 면접관에게 비공개)
-- 평가 배점: 진학의지 40% / 인성 40% / 학업역량 20%
-- 10개 문항을 다음 비율로 배분: 진학의지 4문항, 인성 4문항, 학업역량 2문항
+- 평가 배점: 진학의지 40% / 인성 40% / 의사소통역량 20%
+- 10개 문항을 다음 비율로 배분: 진학의지 4문항, 인성 4문항, 의사소통역량 2문항
 - 인성 문항: 나눔, 배려, 공동체 협업 및 성실성(출결 등) 확인. 반드시 공동체 활동(자율/동아리/봉사/행특)과 연계하여 구체적 사례를 묻는 형식으로 설계
 - 진학의지 문항: 전공에 대한 자발적 지적 호기심과 주도적 활동 경험 확인. 특히 아이디어를 실제 경험으로 구현해 본 사례와, 교과 세특의 탐구 내용에서 핵심 원리·개념을 직접 설명하도록 요구하는 꼬리 질문을 반드시 포함
-- 학업역량 문항: 기초 교과 성취도 및 학습 과정에서의 성장 궤적 확인
+- 의사소통역량 문항: 질문 의도 파악 능력, 서류 기반 응답의 논리성·일관성, 표현의 명확성 확인
 - 각 문항 제목(h3) 바로 아래에 반드시 다음 형식으로 면접 평가 기준을 명시하세요:
-  - **📌 평가 항목**: [진학의지/인성/학업역량] | **질문 의도**: [이 질문으로 확인하고자 하는 바를 한 문장으로 간략히]
+  - **📌 평가 항목**: [진학의지/인성/의사소통역량] | **질문 의도**: [이 질문으로 확인하고자 하는 바를 한 문장으로 간략히]
 ` :
           targetUniv === "서울시립대학교" ? `
 
@@ -11793,7 +11848,16 @@ ${univPromptSupplement}
         #gachon-guide-content ul { padding-left: 1.5rem; }
       </style>
       <div id="gachon-guide-content" style="line-height:1.8; font-size:1.0rem; color: var(--text-primary);">
-        <h3 style="color:var(--accent-primary); margin-top: 0;">1. 면접 반영 비율 및 합격 역전률</h3>
+        <h3 style="color:var(--accent-primary); margin-top: 0;">0. 전형 구조 및 수능최저</h3>
+        <table>
+          <thead><tr><th>전형명</th><th style="text-align:center;">모집인원</th><th>전형 방법</th><th>수능최저</th></tr></thead>
+          <tbody>
+            <tr><td><strong>가천바람개비</strong></td><td style="text-align:center;">437명</td><td>1단계(4배수) 서류100% → 2단계 1단계50%+면접50%</td><td>없음</td></tr>
+            <tr><td><strong>가천의약학</strong></td><td style="text-align:center;">26명</td><td>1단계(4배수) 서류100% → 2단계 1단계50%+면접50%</td><td>의예과: 국·수(기하/미적)·영·과탐(2) 중 3개 각 1등급<br>약학과: 동일 기준 3개 합 5이내</td></tr>
+          </tbody>
+        </table>
+
+        <h3 style="color:var(--accent-primary);">1. 면접 반영 비율 및 합격 역전률</h3>
         <p>가천대학교는 2단계 평가에서 <strong>1단계 서류 성적 50%와 면접 평가 50%</strong>를 합산하여 최종 합격자를 선발합니다.<br>
         면접의 비중이 50%로 매우 높기 때문에, 1단계 합격자 순위가 뒤바뀌는 <strong>'역전률'이 무려 약 60%</strong>에 달합니다.<br>
         심지어 1단계에서 4~5배수 턱걸이 성적으로 통과한 학생들 중에서도 20%가 최종 합격할 만큼 면접의 실질적인 영향력이 절대적인 대학입니다.</p>
@@ -11824,7 +11888,15 @@ ${univPromptSupplement}
           <li>"수학 시간에 미적분과 관련된 책을 읽고, 미분과 적분에 대한 개념을 정리했다고 기록되어 있습니다. 책에서 인상 깊었던 핵심 내용을 설명하고, 미분의 정의를 설명해주세요."</li>
         </ul>
 
-        <h3 style="color:var(--accent-primary);">5. 전략 요약</h3>
+        <h3 style="color:var(--accent-primary);">5. 서류평가 3대 공식 관점 (2027 모집요강)</h3>
+        <p>가천대학교는 서류평가 시 다음 3가지 관점을 공식 평가 기준으로 명시하고 있습니다. 면접 답변도 이 관점에 맞춰 구성하면 효과적입니다.</p>
+        <ul>
+          <li><strong>과정 중심</strong>: 활동의 결과보다 그 과정에서 나타난 학습 태도와 사고의 흐름</li>
+          <li><strong>지속성</strong>: 일회성 활동보다 학년·학기·과목에 걸쳐 반복적으로 나타나는 모습</li>
+          <li><strong>연계성</strong>: 수업에서 배운 내용이 학교 활동과 어떻게 연결되었는지</li>
+        </ul>
+
+        <h3 style="color:var(--accent-primary);">6. 전략 요약</h3>
         <p>가천대 면접은 면접관에게 성적이 공개되지 않는 <strong>3대1 블라인드 면접</strong>이므로, 서류 내용의 핵심 원리(특히 교과 지식)를 정확히 숙지하고 논리적인 태도로 답변한다면 성적의 불리함을 충분히 뒤집을 수 있는 기회의 장입니다.</p>
         <div style="margin-top:1.5rem; text-align:right;">
           <button onclick="window.printGachonGuide()" style="background:var(--accent-gradient);color:#fff;border:none;padding:0.6rem 1.4rem;border-radius:8px;font-size:0.9rem;font-weight:600;cursor:pointer;">🖨️ PDF로 인쇄</button>
@@ -11851,6 +11923,14 @@ ${univPromptSupplement}
       </style>
     </head><body>
       <h1>🎓 가천대학교 면접 가이드</h1>
+      <h2>0. 전형 구조 및 수능최저</h2>
+      <table>
+        <thead><tr><th>전형명</th><th>모집인원</th><th>전형 방법</th><th>수능최저</th></tr></thead>
+        <tbody>
+          <tr><td><strong>가천바람개비</strong></td><td>437명</td><td>1단계(4배수) 서류100% → 2단계 1단계50%+면접50%</td><td>없음</td></tr>
+          <tr><td><strong>가천의약학</strong></td><td>26명</td><td>1단계(4배수) 서류100% → 2단계 1단계50%+면접50%</td><td>의예과: 국·수(기하/미적)·영·과탐(2) 중 3개 각 1등급<br>약학과: 동일 기준 3개 합 5이내</td></tr>
+        </tbody>
+      </table>
       <h2>1. 면접 반영 비율 및 합격 역전률</h2>
       <p>가천대학교는 2단계 평가에서 <strong>1단계 서류 성적 50%와 면접 평가 50%</strong>를 합산하여 최종 합격자를 선발합니다.<br>
       면접의 비중이 50%로 매우 높기 때문에, 1단계 합격자 순위가 뒤바뀌는 <strong>'역전률'이 무려 약 60%</strong>에 달합니다.<br>
@@ -11878,7 +11958,14 @@ ${univPromptSupplement}
         <li>"사회 시간에 형법 분야에 관심이 많아 스스로 관련 분야에 대한 심화 탐구를 진행했다고 기록되어 있습니다. 탐구한 주요 내용을 설명해주세요."</li>
         <li>"수학 시간에 미적분과 관련된 책을 읽고, 미분과 적분에 대한 개념을 정리했다고 기록되어 있습니다. 책에서 인상 깊었던 핵심 내용을 설명하고, 미분의 정의를 설명해주세요."</li>
       </ul>
-      <h2>5. 전략 요약</h2>
+      <h2>5. 서류평가 3대 공식 관점 (2027 모집요강)</h2>
+      <p>가천대학교는 서류평가 시 다음 3가지 관점을 공식 평가 기준으로 명시하고 있습니다.</p>
+      <ul>
+        <li><strong>과정 중심</strong>: 활동의 결과보다 그 과정에서 나타난 학습 태도와 사고의 흐름</li>
+        <li><strong>지속성</strong>: 일회성 활동보다 학년·학기·과목에 걸쳐 반복적으로 나타나는 모습</li>
+        <li><strong>연계성</strong>: 수업에서 배운 내용이 학교 활동과 어떻게 연결되었는지</li>
+      </ul>
+      <h2>6. 전략 요약</h2>
       <p>가천대 면접은 면접관에게 성적이 공개되지 않는 <strong>3대1 블라인드 면접</strong>이므로, 서류 내용의 핵심 원리(특히 교과 지식)를 정확히 숙지하고 논리적인 태도로 답변한다면 성적의 불리함을 충분히 뒤집을 수 있는 기회의 장입니다.</p>
     </body></html>`);
     printWin.document.close();
@@ -12595,11 +12682,11 @@ ${univPromptSupplement}
     modalBody.innerHTML = `
       <div style="font-family:'Malgun Gothic', sans-serif;">
         <p>가천대는 <strong>'인성'</strong>과 <strong>'진학의지'</strong>를 각각 40%씩 반영하여 매우 중요하게 평가합니다.</p>
-        <h3 style="color:#1a237e; margin-top:1.5rem;">1. 평가 요소 및 비중</h3>
+        <h3 style="color:#1a237e; margin-top:1.5rem;">1. 면접 평가 요소 및 비중</h3>
         <ul>
           <li><strong>인성 (40%):</strong> 공동체 의식, 협업 능력, 성실성</li>
           <li><strong>진학의지 (40%):</strong> 전공 관심도, 자발적 탐구, 발전 가능성</li>
-          <li><strong>학업역량 (20%):</strong> 기초 학업 성취 및 학습 태도</li>
+          <li><strong>의사소통역량 (20%):</strong> 질문 의도 파악 능력, 응답의 논리성·일관성</li>
         </ul>
         <h3 style="color:#1a237e; margin-top:1.5rem;">2. 주요 특징</h3>
         <ul>

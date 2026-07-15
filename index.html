@@ -773,6 +773,14 @@
       <p style="color: var(--text-secondary); margin-bottom: 2.2rem; line-height: 1.7; font-size: 0.95rem;">각 대학별 수능 최저학력기준 충족 여부를 실시간으로 판정하고, 현재 성적 기반의 지원 가능 대학군을 필터링하여 보여줍니다.</p>
       
       <div class="csat-filters">
+        <div class="csat-filter-group" style="flex: 1.5;">
+          <label for="csat-filter-univ" style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 500;">대학 검색</label>
+          <div style="position: relative;">
+            <span style="position:absolute; left:0.75rem; top:50%; transform:translateY(-50%); color:var(--text-secondary); pointer-events:none; font-size:0.9rem;">🔍</span>
+            <input type="text" id="csat-filter-univ" placeholder="대학명 입력..." autocomplete="off"
+              style="width:100%; padding:0.72rem 0.75rem 0.72rem 2.1rem; background:var(--input-bg); border:1px solid var(--input-border); border-radius:8px; color:var(--text-primary); font-size:0.9rem; box-sizing:border-box;">
+          </div>
+        </div>
         <div class="csat-filter-group">
           <label for="csat-filter-region" style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 500;">지역</label>
           <select id="csat-filter-region"><option value="all">모든 지역</option></select>
@@ -3017,7 +3025,7 @@ if (document.readyState === 'loading') {
 }
 
   </script>
-  <script src="app.js?v=70"></script>
+  <script src="app.js?v=72"></script>
   <script src="grade-rank.js"></script>
   <script src="univ-score.js"></script>
   <script src="admission_dist.js"></script>
