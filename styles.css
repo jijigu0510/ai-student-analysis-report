@@ -3029,7 +3029,413 @@ body.light-mode .visitor-counter {
         #view-grade-rank .y-results { background: #1e293b; color: white; padding: 20px; border-radius: 12px; position: sticky; top: 20px; }
         #view-grade-rank .y-res-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 0.95rem; }
         #view-grade-rank .y-res-total { display: flex; justify-content: space-between; margin-top: 15px; padding-top: 15px; border-top: 2px solid rgba(255,255,255,0.2); font-size: 1.3rem; font-weight: bold; color: #fef08a; }
-        
-    
 
+/* ==================== 수시지원상담카드 ==================== */
+/* Card CSS custom properties — no conflict with app's --text-primary, --accent-* etc. */
+:root {
+  --bg: #f6f7f9; --panel: #ffffff; --ink: #1f2933; --muted: #667085;
+  --line: #d7dde5; --line-strong: #aab4c2; --navy: #17456b; --soft-blue: #e8f1f8;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --navy: #96baff; --muted: #9ba3af;
+    --soft-blue: rgba(94,106,210,0.20); --line: rgba(255,255,255,0.10); --line-strong: rgba(255,255,255,0.22);
+  }
+}
+:root[data-theme="dark"] {
+  --navy: #96baff; --muted: #9ba3af;
+  --soft-blue: rgba(94,106,210,0.20); --line: rgba(255,255,255,0.10); --line-strong: rgba(255,255,255,0.22);
+}
+:root[data-theme="light"] {
+  --navy: #17456b; --muted: #667085;
+  --soft-blue: #e8f1f8; --line: #d7dde5; --line-strong: #aab4c2;
+}
+
+/* view-card wrapper — dark theme frame around the white document */
+#view-card {
+  background: var(--panel-bg, #0f1117);
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+#view-card > section#cardPanel {
+  max-width: 1920px;
+  margin: 0 auto;
+  padding: 18px 20px 40px;
+}
+/* Loading state */
+#card-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 60vh;
+  flex-direction: column;
+  gap: 1rem;
+  color: var(--text-secondary, #9ba3af);
+  font-size: 1rem;
+}
+#card-loading .spinner {
+  width: 42px; height: 42px;
+  border: 4px solid rgba(150,186,255,0.15);
+  border-top-color: #96baff;
+  border-radius: 50%;
+  animation: card-spin 0.85s linear infinite;
+}
+@keyframes card-spin { to { transform: rotate(360deg); } }
+
+/* ── Card toolbar ── */
+.card-toolbar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:0 0 12px; }
+.card-toolbar button { border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.06); border-radius:8px; padding:8px 14px; cursor:pointer; font-size:13px; font-weight:600; color:#e2e8f0; transition:background .15s, border-color .15s; }
+.card-toolbar button.primary { background:linear-gradient(135deg,#7c83fd,#96baff); border-color:transparent; color:#fff; }
+.card-toolbar button:hover { background:rgba(255,255,255,0.12); border-color:rgba(255,255,255,0.22); }
+.card-toolbar button.primary:hover { background:linear-gradient(135deg,#6b73eb,#85a9ee); }
+.card-toolbar .card-hint { color:#adb5bd; font-size:12px; }
+
+/* ── Card workflow / status ── */
+.card-workflow { margin:0 0 12px; padding:11px 13px; border:1px solid rgba(124,131,253,0.22); border-radius:9px; background:rgba(94,106,210,0.08); color:#adb5bd; font-size:12.5px; line-height:1.65; }
+.card-workflow strong { color:#96baff; }
+.card-workflow .flow-step { display:inline-block; margin-right:12px; white-space:nowrap; }
+.card-file-status { display:none; margin:0 0 10px; padding:8px 11px; border-radius:8px; background:rgba(32,201,151,0.10); border:1px solid rgba(32,201,151,0.28); color:#20c997; font-size:12px; line-height:1.45; }
+.card-file-status.show { display:block; }
+
+/* ── Toolbar & workflow: light mode overrides ── */
+body.light-mode .card-toolbar button { background:#eef1ff; border-color:#c5caf5; color:#2a3580; }
+body.light-mode .card-toolbar button:hover { background:#dde2fb; border-color:#a0a8ee; }
+body.light-mode .card-toolbar button.primary { background:linear-gradient(135deg,#5e6ad2,#4a55c0); border-color:transparent; color:#fff; }
+body.light-mode .card-toolbar button.primary:hover { background:linear-gradient(135deg,#4a55c0,#3a44af); }
+body.light-mode .card-toolbar .card-hint { color:#64748b; }
+body.light-mode .card-workflow { background:rgba(94,106,210,0.06); border-color:rgba(94,106,210,0.18); color:#475569; }
+body.light-mode .card-workflow strong { color:#3a49c0; }
+body.light-mode .card-file-status { background:rgba(16,185,129,0.08); border-color:rgba(16,185,129,0.28); color:#0d7a5f; }
+
+/* ── Card panel container ── */
+#cardPanel { padding:1.5rem; }
+
+/* ── Card sheet (white document — kept light for print) ── */
+.card-sheet { background:#fff; border:1px solid rgba(255,255,255,0.10); border-radius:12px; padding:22px 20px; box-shadow:0 8px 40px rgba(0,0,0,.45); }
+.card-inner { width:100%; font-family:'Noto Serif KR', 'Batang', 'Georgia', serif; }
+.card-title { text-align:center; margin:0 0 10px; padding:6px 0 10px; border-bottom:2px solid currentColor; }
+.card-title-school {
+  display:block; font-family:'Nanum Myeongjo','Noto Serif KR',serif;
+  font-size:12px; font-weight:400; letter-spacing:.55em; color:#17456b;
+  margin-bottom:4px; text-indent:.55em;
+}
+.card-title-main {
+  display:block; font-family:'Nanum Myeongjo','Noto Serif KR',serif;
+  font-size:28px; font-weight:800; letter-spacing:.12em; color:#0d2e50;
+  line-height:1.15; text-indent:.12em;
+}
+.card-title-year {
+  display:block; font-family:'Noto Serif KR',serif;
+  font-size:11px; font-weight:300; letter-spacing:.25em; color:#555;
+  margin-top:4px; text-indent:.25em;
+}
+.card-idrow { display:flex; justify-content:flex-end; gap:4px; align-items:center; font-size:13px; font-weight:700; margin:0 0 8px; color:#000; }
+.card-idrow input { width:76px; height:20px; min-height:0; border:none; border-radius:0; border-bottom:1px solid #888; text-align:center; font-size:13px; padding:2px 2px; background:transparent; }
+.card-sec-label { font-size:13.5px; font-weight:800; margin:8px 0 5px; color:#000; }
+.panel-head { margin:0 0 10px; }
+.panel-head h2 { margin:0 0 4px; font-size:17px; color:var(--navy); }
+.panel-head span { color:var(--muted); font-size:13px; line-height:1.5; }
+
+/* ── Info table ── */
+table.card-info { width:100%; border-collapse:collapse; table-layout:fixed; margin-bottom:12px; }
+table.card-info th, table.card-info td { border:1px solid #444; font-size:12.5px; padding:4px 6px; color:#000; }
+table.card-info th { background:#f1f3f5; font-weight:700; text-align:center; white-space:nowrap; }
+table.card-info input { width:100%; height:20px; min-height:0; border:none; border-radius:0; font-size:12.5px; padding:1px 2px; background:transparent; color:#000; }
+
+/* ── OX toggles ── */
+.card-ox { display:inline-block; min-width:36px; text-align:center; cursor:pointer; border-bottom:1px dashed #b0b8c1; font-weight:800; font-size:13px; line-height:1.2; user-select:none; color:#17456b; }
+.card-ox:hover { background:#eef4fa; }
+
+/* ── 수시 응시 전형 체크박스 ── */
+.card-cb-cell { padding:5px 8px !important; }
+.card-cb-label { display:inline-flex; align-items:center; gap:4px; margin-right:14px; font-size:13px; font-weight:600; color:#1f2933; cursor:pointer; white-space:nowrap; }
+.card-cb-label input[type="checkbox"] { width:15px; height:15px; accent-color:#17456b; cursor:pointer; flex-shrink:0; }
+.card-cb-sub { font-weight:400; font-size:12px; color:#444; margin-left:2px; }
+.card-cb-sub input { width:80px; height:18px; min-height:0; border:none; border-bottom:1px solid #888; font-size:12px; padding:1px 2px; background:transparent; color:#000; }
+
+/* ── Main card table ── */
+table.card-main { width:100%; border-collapse:collapse; table-layout:fixed; }
+table.card-main th, table.card-main td { border:1px solid #444; font-size:11.5px; padding:2px 3px; text-align:center; vertical-align:middle; color:#000; word-break:break-all; }
+table.card-main thead th { background:#f1f3f5; font-weight:700; font-size:11.5px; line-height:1.25; padding:4px 2px; }
+table.card-main input { width:100%; height:18px; min-height:0; border:none; border-radius:0; font-size:11.5px; text-align:center; padding:1px; background:transparent; color:#000; }
+table.card-main .card-ce { min-height:15px; outline:none; font-size:11px; line-height:1.3; text-align:center; white-space:pre-wrap; }
+table.card-main .card-typecell { padding:0; }
+table.card-main select.card-kind { width:100%; height:18px; min-height:0; border:none; border-radius:0; background:transparent; font-size:11px; text-align:center; text-align-last:center; appearance:none; -webkit-appearance:none; padding:1px; color:#000; cursor:pointer; }
+table.card-main select.card-typename-sel { width:100%; height:auto; min-height:0; border:none; border-radius:0; background:transparent; font-size:11px; padding:2px 1px; color:#000; cursor:pointer; word-break:keep-all; }
+table.card-main .card-typecell .card-ce { padding:2px 3px; }
+table.card-main .card-typecell .tk { border-bottom:1px solid #888; font-weight:600; }
+.card-rowgroup { break-inside:avoid; page-break-inside:avoid; }
+.card-stage-label { background:#fafbfc; font-size:10.5px; white-space:nowrap; }
+.card-check-cell { text-align:center; vertical-align:middle; padding:4px 2px; }
+.card-check-badge { display:flex; align-items:center; justify-content:center; width:100%; height:100%; min-height:28px; cursor:pointer; }
+.card-check-badge:hover { opacity:.8; }
+.card-check-empty { display:inline-block; padding:3px 6px; border-radius:6px; font-size:10px; font-weight:700; color:#6b7280; background:rgba(107,114,128,0.1); border:1px solid rgba(107,114,128,0.25); white-space:nowrap; letter-spacing:.02em; }
+.card-check-level { font-size:10px !important; padding:3px 7px !important; white-space:nowrap; }
+.card-hist-modal-overlay { position:fixed; inset:0; z-index:9990; background:rgba(0,0,0,.72); display:flex; align-items:center; justify-content:center; padding:16px; }
+.card-hist-modal-box { position:relative; width:min(780px,100%); max-height:90vh; overflow-y:auto; background:#1b1d2e; border:1px solid rgba(255,255,255,.12); border-radius:16px; padding:28px 24px 24px; box-shadow:0 24px 80px rgba(0,0,0,.7); }
+.card-hist-modal-close { position:absolute; top:14px; right:16px; background:none; border:none; color:#9ba3af; font-size:20px; cursor:pointer; line-height:1; padding:2px 6px; border-radius:4px; }
+.card-hist-modal-close:hover { color:#fff; background:rgba(255,255,255,.08); }
+.card-clear-row { border:none; background:transparent; color:#b44b5f; cursor:pointer; font-size:11px; padding:0; display:block; margin:2px auto 0; }
+.card-notes { font-size:11.5px; color:#000; margin:8px 0 0; line-height:1.5; }
+.card-notes p { margin:0; }
+.card-filled { background:#f4f9f4; }
+.card-examcell .card-ce { text-align:left; }
+.card-date-dup { color:#c0141e; font-weight:800; text-decoration:underline; }
+
+/* ── Autocomplete dropdown ── */
+.card-ac-box { position:absolute; z-index:9999; background:#fff; border:1px solid var(--line-strong); border-radius:6px; box-shadow:0 8px 20px rgba(31,41,51,.18); max-height:340px; overflow-y:auto; min-width:200px; display:none; overscroll-behavior:contain; }
+.card-ac-box::-webkit-scrollbar { width:14px; }
+.card-ac-box::-webkit-scrollbar-track { background:#f2f5f8; border-radius:0 6px 6px 0; }
+.card-ac-box::-webkit-scrollbar-thumb { background:#a9b8c6; border-radius:7px; border:3px solid #f2f5f8; min-height:40px; }
+.card-ac-box::-webkit-scrollbar-thumb:hover { background:#7f93a6; }
+.card-ac-item { padding:7px 10px; font-size:12.5px; cursor:pointer; text-align:left; display:flex; justify-content:space-between; gap:10px; }
+.card-ac-item .ac-meta { color:var(--muted); font-size:11px; flex:0 0 auto; }
+.card-ac-item:hover, .card-ac-item.hover, .card-ac-item.active { background:var(--soft-blue); }
+.card-ac-count { position:sticky; top:0; background:#f7fafc; color:var(--muted); font-size:10.5px; padding:3px 10px; border-bottom:1px solid var(--line-strong); text-align:right; letter-spacing:.02em; }
+
+/* ── Teacher section ── */
+table.card-teacher { margin-bottom:4px; }
+table.card-teacher th { white-space:normal; }
+table.card-teacher td { vertical-align:middle; }
+table.card-teacher .card-tce { min-height:46px; outline:none; font-size:12.5px; line-height:1.5; text-align:left; white-space:pre-wrap; padding:3px 5px; color:#000; }
+table.card-teacher input { text-align:center; }
+table.card-teacher tr { break-inside:avoid; page-break-inside:avoid; }
+.card-teacher-wrap { break-inside:avoid; page-break-inside:avoid; margin-top:14px; }
+.project-credit { margin:10px 4px 0; color:var(--muted); font-size:11px; line-height:1.55; text-align:right; }
+
+/* ── Workspace layout ── */
+.card-workspace { display:flex; flex-direction:column; gap:14px; }
+.card-sheet { flex:1; }
+
+/* ── History panel ── */
+.history-panel { width:100%; overflow:visible; background:rgba(25,27,42,0.65); border:1px solid rgba(255,255,255,0.10); border-radius:12px; box-shadow:0 8px 32px rgba(0,0,0,.35); padding:16px; backdrop-filter:blur(12px); }
+.history-panel::-webkit-scrollbar { width:8px; }
+.history-panel::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.15); border-radius:8px; }
+.history-head { display:flex; justify-content:space-between; gap:10px; align-items:flex-start; padding-bottom:12px; border-bottom:1px solid rgba(255,255,255,0.08); }
+.history-head h3 { margin:0; color:#96baff; font-size:17px; font-weight:700; }
+.history-head p { margin:4px 0 0; color:#adb5bd; font-size:11.5px; line-height:1.45; }
+.history-row-chip { flex:0 0 auto; background:rgba(94,106,210,0.22); color:#96baff; border:1px solid rgba(124,131,253,0.35); border-radius:999px; padding:5px 11px; font-size:11px; font-weight:800; }
+.history-level-badge { flex:0 0 auto; border:1px solid; border-radius:999px; padding:5px 12px; font-size:12px; font-weight:800; letter-spacing:.03em; }
+.history-current { margin:12px 0; padding:10px 12px; border-radius:8px; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.07); }
+.history-current strong { display:block; font-size:13.5px; line-height:1.35; color:#e8eeff; }
+.history-current span { display:block; margin-top:3px; color:#adb5bd; font-size:11.5px; line-height:1.4; word-break:keep-all; }
+.history-alert { margin:9px 0; border-radius:8px; padding:8px 11px; font-size:11.5px; line-height:1.45; }
+.history-alert.ok { background:rgba(32,201,151,0.10); color:#5edfc0; border:1px solid rgba(32,201,151,0.25); }
+.history-alert.warn { background:rgba(255,193,7,0.10); color:#ffd055; border:1px solid rgba(255,193,7,0.25); }
+.history-alert.none { background:rgba(255,255,255,0.04); color:#adb5bd; border:1px solid rgba(255,255,255,0.08); }
+.history-kpis { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:12px 0; }
+.history-kpi { background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.08); border-radius:9px; padding:9px 7px; min-width:0; text-align:center; }
+.history-kpi span { display:block; color:#9ba3af; font-size:10.5px; white-space:nowrap; }
+.history-kpi strong { display:block; margin-top:4px; color:#f0f4ff; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.history-section-title { display:flex; justify-content:space-between; align-items:center; gap:8px; margin:14px 0 8px; }
+.history-section-title h4 { margin:0; font-size:13px; color:#e2e8f0; font-weight:700; }
+.history-section-title small { color:#9ba3af; font-size:10.5px; }
+.history-records { display:grid; gap:9px; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); }
+.history-record { border:1px solid rgba(255,255,255,0.08); border-left:4px solid #5e6ad2; border-radius:9px; padding:10px 10px 9px; background:rgba(25,27,42,0.50); }
+.history-record.other { border-left-color:#ffc107; background:rgba(255,193,7,0.05); }
+.history-record-top { display:flex; align-items:center; gap:6px; }
+.history-year { font-size:15px; color:#96baff; font-weight:700; }
+.history-badge { border-radius:999px; padding:2px 7px; font-size:9.5px; font-weight:800; white-space:nowrap; }
+.history-badge.exact { background:rgba(32,201,151,0.15); color:#5edfc0; }
+.history-badge.near { background:rgba(94,106,210,0.18); color:#96baff; }
+.history-badge.other { background:rgba(255,193,7,0.14); color:#ffd055; }
+.history-score { margin-left:auto; color:#6b7280; font-size:9.5px; }
+.history-old-type { margin-top:5px; color:#e2e8f0; font-size:11.5px; font-weight:700; line-height:1.35; word-break:keep-all; }
+.history-old-major { margin-top:2px; color:#9ba3af; font-size:10.5px; line-height:1.35; word-break:keep-all; }
+.history-metric-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:5px; margin-top:9px; }
+.history-metric { min-width:0; text-align:center; padding:6px 3px; background:rgba(0,0,0,0.22); border-radius:7px; border:1px solid rgba(255,255,255,0.05); }
+.history-metric span { display:block; color:#6b7280; font-size:9.5px; white-space:nowrap; }
+.history-metric b { display:block; margin-top:2px; font-size:12px; color:#e2e8f0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.history-cutline { margin-top:8px; padding-top:7px; border-top:1px dashed rgba(255,255,255,0.10); color:#9ba3af; font-size:10.5px; line-height:1.45; }
+.history-cutline b { color:#e2e8f0; }
+.history-toggle { display:flex; align-items:flex-start; gap:6px; margin:10px 0 2px; color:#adb5bd; font-size:11px; line-height:1.35; cursor:pointer; }
+.history-toggle input { margin-top:1px; accent-color:#7c83fd; }
+.history-foot { margin-top:12px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.08); color:#9ba3af; font-size:10.5px; line-height:1.5; }
+.history-empty { padding:28px 8px; text-align:center; color:#9ba3af; font-size:12px; line-height:1.7; }
+.card-rowgroup.history-active td { background:#e8eeff !important; }
+.card-rowgroup.history-active tr:first-child td:first-child { box-shadow:inset 4px 0 0 #7c83fd; }
+
+/* ── Print appendix ── */
+.history-print-appendix { display:none; }
+.history-print-page { break-after:page; page-break-after:always; }
+.history-print-page:last-child { break-after:auto; page-break-after:auto; }
+.history-print-page-head { display:flex; justify-content:space-between; align-items:flex-end; gap:12px; margin:0 0 6mm; padding-bottom:3mm; border-bottom:2px solid #17456b; color:#000; }
+.history-print-page-head h2 { margin:0; font-size:17px; color:#17456b; }
+.history-print-page-head p { margin:2px 0 0; font-size:9px; color:#555; }
+.history-print-page-meta { font-size:9px; color:#444; text-align:right; line-height:1.45; }
+.history-print-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:5mm; align-items:stretch; }
+.history-print-card { border:1px solid #7b8794; border-radius:4px; padding:3.2mm; min-height:76mm; break-inside:avoid; page-break-inside:avoid; background:#fff; color:#000; }
+.history-print-card-head { display:flex; align-items:flex-start; gap:7px; padding-bottom:2.2mm; margin-bottom:2.2mm; border-bottom:1px solid #aab4c2; }
+.history-print-no { flex:0 0 auto; min-width:22px; height:22px; border-radius:50%; background:#17456b; color:#fff; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:800; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+.history-print-current { min-width:0; flex:1 1 auto; }
+.history-print-current strong { display:block; font-size:11.5px; line-height:1.3; word-break:keep-all; }
+.history-print-current span { display:block; margin-top:1px; font-size:8.5px; color:#4b5563; line-height:1.35; word-break:keep-all; }
+.history-print-status { margin-left:auto; flex:0 0 auto; padding:2px 5px; border-radius:999px; font-size:7.5px; font-weight:800; white-space:nowrap; border:1px solid #b9c3ce; }
+.history-print-status.ok { background:#e8f4ee; color:#21654f; }
+.history-print-status.warn { background:#fff3d6; color:#7a5412; }
+.history-print-status.none { background:#f1f3f5; color:#667085; }
+table.history-print-table { width:100%; border-collapse:collapse; table-layout:fixed; }
+table.history-print-table th, table.history-print-table td { border:1px solid #8f99a5; padding:1.2mm 1mm; font-size:7.4px; line-height:1.3; text-align:center; vertical-align:middle; word-break:break-word; }
+table.history-print-table th { background:#edf1f4; font-weight:800; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+table.history-print-table td.type, table.history-print-table td.major { text-align:left; }
+table.history-print-table td.type { font-weight:700; }
+table.history-print-table td small { display:block; margin-top:1px; font-size:6.7px; color:#555; }
+.history-print-empty { padding:12mm 3mm; text-align:center; color:#667085; font-size:9px; line-height:1.5; border:1px dashed #aab4c2; border-radius:4px; }
+.history-print-note { margin-top:2.2mm; font-size:7.2px; line-height:1.45; color:#4b5563; }
+
+/* ── Card sheet: dark mode (screen only, not print) ── */
+@media screen {
+  body:not(.light-mode) .card-sheet { background:#1e2235; box-shadow:0 8px 40px rgba(0,0,0,.6); border-color:rgba(255,255,255,0.08); }
+  body:not(.light-mode) .card-title { color:#96baff; border-bottom-color:#96baff; }
+  body:not(.light-mode) .card-title-school { color:#96baff; }
+  body:not(.light-mode) .card-title-main { color:#d0e4ff; }
+  body:not(.light-mode) .card-title-year { color:#9ba3af; }
+  body:not(.light-mode) .card-idrow { color:#c8d0e8; }
+  body:not(.light-mode) .card-idrow input { border-bottom-color:rgba(255,255,255,0.3); color:#e8eeff; }
+  body:not(.light-mode) .card-sec-label { color:#c8d0e8; }
+  body:not(.light-mode) .panel-head h2 { color:#96baff; }
+  body:not(.light-mode) .panel-head span { color:#9ba3af; }
+  body:not(.light-mode) table.card-info th, body:not(.light-mode) table.card-info td { border-color:rgba(255,255,255,0.14); color:#e2e8f0; }
+  body:not(.light-mode) table.card-info th { background:rgba(94,106,210,0.18); }
+  body:not(.light-mode) table.card-info input { color:#e2e8f0; }
+  body:not(.light-mode) .card-ox { color:#96baff; border-bottom-color:rgba(255,255,255,0.25); }
+  body:not(.light-mode) .card-ox:hover { background:rgba(94,106,210,0.15); }
+  body:not(.light-mode) .card-cb-label { color:#c8d0e8; }
+  body:not(.light-mode) .card-cb-sub { color:#9ba3af; }
+  body:not(.light-mode) .card-cb-sub input { border-bottom-color:rgba(255,255,255,0.25); color:#e2e8f0; }
+  body:not(.light-mode) table.card-main th, body:not(.light-mode) table.card-main td { border-color:rgba(255,255,255,0.12); color:#e2e8f0; }
+  body:not(.light-mode) table.card-main thead th { background:rgba(94,106,210,0.22); color:#c8d0e8; }
+  body:not(.light-mode) table.card-main input { color:#e2e8f0; }
+  body:not(.light-mode) table.card-main .card-ce { color:#e2e8f0; }
+  body:not(.light-mode) table.card-main select.card-kind { color:#e2e8f0; }
+  body:not(.light-mode) table.card-main select.card-typename-sel { color:#e2e8f0; }
+  body:not(.light-mode) .card-stage-label { background:rgba(255,255,255,0.04); color:#9ba3af; }
+  body:not(.light-mode) .card-filled { background:rgba(94,106,210,0.08) !important; }
+  body:not(.light-mode) .card-rowgroup.history-active td { background:rgba(94,106,210,0.18) !important; }
+  body:not(.light-mode) .card-notes { color:#9ba3af; }
+  body:not(.light-mode) table.card-teacher .card-tce { color:#e2e8f0; }
+  body:not(.light-mode) table.card-teacher th, body:not(.light-mode) table.card-teacher td { border-color:rgba(255,255,255,0.12); color:#e2e8f0; }
+  body:not(.light-mode) .card-ac-box { background:#252840; border-color:rgba(255,255,255,0.12); }
+  body:not(.light-mode) .card-ac-box::-webkit-scrollbar-track { background:#1e2235; }
+  body:not(.light-mode) .card-ac-box::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.18); border-color:#1e2235; }
+  body:not(.light-mode) .card-ac-item { color:#e2e8f0; }
+  body:not(.light-mode) .card-ac-item .ac-meta { color:#9ba3af; }
+  body:not(.light-mode) .card-ac-item:hover, body:not(.light-mode) .card-ac-item.hover, body:not(.light-mode) .card-ac-item.active { background:rgba(94,106,210,0.22); }
+  body:not(.light-mode) .card-ac-count { background:#1e2235; color:#9ba3af; border-bottom-color:rgba(255,255,255,0.1); }
+}
+/* ── Card sheet: light mode overrides ── */
+body.light-mode .card-sheet { background:#fff; border-color:#d7dde5; }
+body.light-mode .card-title { color:#17456b; border-bottom-color:#17456b; }
+body.light-mode .card-title-school { color:#17456b; }
+body.light-mode .card-title-main { color:#0d2e50; }
+body.light-mode .card-title-year { color:#667085; }
+body.light-mode .card-idrow { color:#1f2933; }
+body.light-mode .card-idrow input { border-bottom-color:#aab4c2; color:#1f2933; }
+body.light-mode .card-sec-label { color:#1f2933; }
+body.light-mode .panel-head h2 { color:#17456b; }
+body.light-mode .panel-head span { color:#667085; }
+body.light-mode table.card-info th, body.light-mode table.card-info td { border-color:#d7dde5; color:#1f2933; }
+body.light-mode table.card-info th { background:#e8f1f8; }
+body.light-mode table.card-info input { color:#1f2933; }
+body.light-mode .card-ox { color:#17456b; border-bottom-color:#aab4c2; }
+body.light-mode .card-cb-label { color:#1f2933; }
+body.light-mode .card-cb-sub { color:#667085; }
+body.light-mode .card-cb-sub input { border-bottom-color:#aab4c2; color:#1f2933; }
+body.light-mode table.card-main th, body.light-mode table.card-main td { border-color:#d7dde5; color:#1f2933; }
+body.light-mode table.card-main thead th { background:#e8f1f8; color:#17456b; }
+body.light-mode table.card-main input { color:#1f2933; }
+body.light-mode table.card-main .card-ce { color:#1f2933; }
+body.light-mode table.card-main select.card-kind { color:#1f2933; }
+body.light-mode table.card-main select.card-typename-sel { color:#1f2933; }
+body.light-mode .card-stage-label { background:#f6f7f9; color:#667085; }
+body.light-mode .card-filled { background:rgba(23,69,107,0.05) !important; }
+body.light-mode .card-rowgroup.history-active td { background:#e8eeff !important; }
+body.light-mode .card-notes { color:#667085; }
+body.light-mode table.card-teacher .card-tce { color:#1f2933; }
+body.light-mode table.card-teacher th, body.light-mode table.card-teacher td { border-color:#d7dde5; color:#1f2933; }
+body.light-mode .card-ac-box { background:#fff; border-color:#d7dde5; }
+body.light-mode .card-ac-item { color:#1f2933; }
+body.light-mode .card-ac-item .ac-meta { color:#667085; }
+body.light-mode .card-ac-count { background:#f6f7f9; color:#667085; border-bottom-color:#d7dde5; }
+
+/* ── History panel & modal: light mode overrides ── */
+body.light-mode .history-panel { background:#f0f4ff; border-color:rgba(94,106,210,0.2); box-shadow:0 4px 20px rgba(94,106,210,0.10); }
+body.light-mode .history-head { border-bottom-color:rgba(94,106,210,0.15); }
+body.light-mode .history-head h3 { color:#3a49c0; }
+body.light-mode .history-row-chip { background:rgba(94,106,210,0.12); color:#3a49c0; border-color:rgba(94,106,210,0.3); }
+body.light-mode .history-current { background:rgba(94,106,210,0.07); border-color:rgba(94,106,210,0.15); }
+body.light-mode .history-current strong { color:#1e2a60; }
+body.light-mode .history-current span { color:#5a6480; }
+body.light-mode .history-alert.ok { background:rgba(16,185,129,0.08); color:#0d7a5f; border-color:rgba(16,185,129,0.25); }
+body.light-mode .history-alert.warn { background:rgba(234,179,8,0.08); color:#8a6200; border-color:rgba(234,179,8,0.3); }
+body.light-mode .history-alert.none { background:rgba(100,116,139,0.08); color:#475569; border-color:rgba(100,116,139,0.2); }
+body.light-mode .history-kpi { background:#fff; border-color:rgba(94,106,210,0.15); }
+body.light-mode .history-kpi span { color:#4b5563; }
+body.light-mode .history-kpi strong { color:#1e2a60; }
+body.light-mode .history-section-title h4 { color:#1e2a60; }
+body.light-mode .history-section-title small { color:#4b5563; }
+body.light-mode .history-record { background:#fff; border-color:rgba(94,106,210,0.18); border-left-color:#5e6ad2; }
+body.light-mode .history-record.other { background:rgba(234,179,8,0.05); border-left-color:#b45309; border-color:rgba(180,83,9,0.2); }
+body.light-mode .history-year { color:#2d3bb5; }
+body.light-mode .history-badge.exact { background:rgba(94,106,210,0.14); color:#2d3bb5; border-color:rgba(94,106,210,0.3); }
+body.light-mode .history-badge.near { background:rgba(16,185,129,0.12); color:#065f46; border-color:rgba(16,185,129,0.3); }
+body.light-mode .history-badge.other { background:rgba(180,83,9,0.10); color:#92400e; border-color:rgba(180,83,9,0.3); }
+body.light-mode .history-score { color:#374151; }
+body.light-mode .history-old-type { color:#1f2937; }
+body.light-mode .history-old-major { color:#374151; }
+body.light-mode .history-metric { background:#eef2ff; border-color:rgba(94,106,210,0.15); }
+body.light-mode .history-metric span { color:#374151; }
+body.light-mode .history-metric b { color:#1e2a60; }
+body.light-mode .history-cutline { border-top-color:rgba(94,106,210,0.15); color:#374151; }
+body.light-mode .history-toggle { color:#1f2937; }
+body.light-mode .history-foot { border-top-color:rgba(94,106,210,0.15); color:#4b5563; }
+body.light-mode .history-empty { color:#374151; }
+body.light-mode .card-hist-modal-box { background:#fff; border-color:rgba(94,106,210,0.2); box-shadow:0 24px 80px rgba(94,106,210,0.18); }
+body.light-mode .card-hist-modal-close { color:#64748b; }
+body.light-mode .card-hist-modal-close:hover { color:#1e2a60; background:rgba(94,106,210,0.08); }
+
+/* ── Responsive ── */
+@media (max-width:768px) {
+  .history-records { grid-template-columns:1fr; }
+}
+
+/* ── Print CSS (adapted for integrated app) ── */
+@media print {
+  /* Hide app navigation and other views */
+  body.print-card .tabs-container,
+  body.print-card .no-print,
+  body.print-card .metrics,
+  body.print-card .tabbar { display:none !important; }
+
+  /* Card panel print styles */
+  body.print-card #view-card { display:block !important; height:auto !important; overflow:visible !important; padding:0 !important; background:#fff !important; }
+  body.print-card #view-card > section#cardPanel { padding:0 !important; max-width:none !important; }
+  body.print-card .card-sheet { border:none; border-radius:0; padding:0; overflow:visible; box-shadow:none; }
+  body.print-card .card-inner { min-width:0; }
+  body.print-card .card-title { border-bottom-color:#17456b !important; }
+  body.print-card .card-title-school { color:#17456b !important; font-size:11px; }
+  body.print-card .card-title-main { color:#0d2e50 !important; font-size:22px; }
+  body.print-card .card-title-year { color:#444 !important; font-size:10px; }
+  body.print-card table.card-info th, body.print-card table.card-info td { border:1px solid #000; font-size:10.5px; padding:3px 4px; }
+  body.print-card table.card-info th { background:#eceff1 !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  body.print-card table.card-main th, body.print-card table.card-main td { border:1px solid #000; font-size:9px; padding:1.5px 2px; }
+  body.print-card table.card-main thead th { background:#eceff1 !important; font-size:9px; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  body.print-card table.card-main input { height:13px; font-size:9px; }
+  body.print-card table.card-main select.card-kind { height:13px; font-size:9px; }
+  body.print-card table.card-main select.card-typename-sel { font-size:9px; }
+  body.print-card table.card-info input { height:15px; font-size:10.5px; }
+  body.print-card .card-ox { border-bottom:none; color:#000; font-size:11px; }
+  body.print-card table.card-main .card-ce { font-size:8.5px; min-height:11px; }
+  body.print-card table.card-main .card-stage-label { font-size:8.5px; }
+  body.print-card .card-filled { background:#fff; }
+  body.print-card .card-date-dup { color:#c0141e !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  body.print-card table.card-main thead { display:table-header-group; }
+  body.print-card table.card-teacher .card-tce { min-height:52px; font-size:10px; }
+  body.print-card .history-panel { display:none !important; }
+  body.print-card .card-workspace { display:block !important; }
+  body.print-card .project-credit { margin-top:5px; color:#444; font-size:8px; }
+  body.print-card.print-history .history-print-appendix { display:block !important; break-before:page; page-break-before:always; margin:0; padding:0; }
+  body.print-card:not(.print-history) .history-print-appendix { display:none !important; }
+}
+/* ==================== /수시지원상담카드 ==================== */
 

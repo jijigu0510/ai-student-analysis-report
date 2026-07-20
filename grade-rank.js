@@ -100,6 +100,7 @@
                     // 성적순(오름차순)으로 다시 정렬하여 석차 무결성 보장
                     parsed.sort((a, b) => (a.totalGPA || 9.9) - (b.totalGPA || 9.9));
                     state.students = parsed.map((s, i) => ({ ...s, rank: i + 1 }));
+                    window.gradeRankStudents = state.students;
                     
                     // 초기화 순서 수정: 데이터 먼저 구축 후 UI 표시
                     updateHierarchyData();
@@ -358,6 +359,7 @@
                         const parsed = JSON.parse(text);
                         if (Array.isArray(parsed)) {
                             state.students = parsed;
+                            window.gradeRankStudents = state.students;
                             isJsonLoaded = true;
                             break; 
                         }
@@ -699,6 +701,8 @@
             return {
                 name,
                 class: studentClass,
+                number,
+                school: school || '부안고등학교',
                 subjects: subjs,
                 ...calculatedGPAs
             };

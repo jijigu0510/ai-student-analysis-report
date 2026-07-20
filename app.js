@@ -273,6 +273,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const tabHexagon = document.getElementById("tab-hexagon");
   const tabAdmissionAnalysis = document.getElementById("tab-admission-analysis");
   const viewAdmissionAnalysis = document.getElementById("view-admission-analysis");
+  const tabCard = document.getElementById("tab-card");
+  const viewCard = document.getElementById("view-card");
   const tabUnivScore = document.getElementById("tab-univ-score");
   const viewUnivScore = document.getElementById("view-univ-score");
   const viewIndividual = document.getElementById("view-individual");
@@ -291,8 +293,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const tabSubjectPath = document.getElementById("tab-subject-path");
   const viewSubjectPath = document.getElementById("view-subject-path");
 
-  const allTabs = [tabIndividual, tabPassFail, tabPassFailExamples, tabSetech, tabSubjectPath, tabCsat, tabInterview, tabMockExam, tabGpaMockCompare, tabGradeRank, tabUnivScore, tabAdmissionDist, tabSchoolMockStatus, tabHexagon, tabAdmissionAnalysis].filter(Boolean);
-  const allViews = [viewIndividual, viewPassFail, viewPassFailExamples, viewSetech, viewSubjectPath, viewCsat, viewInterview, viewMockExam, viewGpaMockCompare, viewGradeRank, viewUnivScore, viewAdmissionDist, viewSchoolMockStatus, viewHexagon, viewAdmissionAnalysis].filter(Boolean);
+  const allTabs = [tabIndividual, tabPassFail, tabPassFailExamples, tabSetech, tabSubjectPath, tabCsat, tabInterview, tabMockExam, tabGpaMockCompare, tabGradeRank, tabUnivScore, tabAdmissionDist, tabSchoolMockStatus, tabHexagon, tabAdmissionAnalysis, tabCard].filter(Boolean);
+  const allViews = [viewIndividual, viewPassFail, viewPassFailExamples, viewSetech, viewSubjectPath, viewCsat, viewInterview, viewMockExam, viewGpaMockCompare, viewGradeRank, viewUnivScore, viewAdmissionDist, viewSchoolMockStatus, viewHexagon, viewAdmissionAnalysis, viewCard].filter(Boolean);
 
   function switchTabTo(activeTab, activeView) {
     allTabs.forEach(t => t.classList.remove("active"));
@@ -305,7 +307,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (activeView) {
       activeView.classList.remove("hidden");
       activeView.classList.add("active");
-      activeView.style.display = (activeView.id === "view-csat" || activeView.id === "view-grade-rank" || activeView.id === "view-univ-score" || activeView.id === "view-passfail-examples" || activeView.id === "view-admission-dist" || activeView.id === "view-school-mock-status" || activeView.id === "view-hexagon" || activeView.id === "view-subject-path" || activeView.id === "view-admission-analysis" || activeView.id === "view-mock-exam" || activeView.id === "view-gpa-mock-compare") ? "block" : "grid";
+      activeView.style.display = (activeView.id === "view-csat" || activeView.id === "view-grade-rank" || activeView.id === "view-univ-score" || activeView.id === "view-passfail-examples" || activeView.id === "view-admission-dist" || activeView.id === "view-school-mock-status" || activeView.id === "view-hexagon" || activeView.id === "view-subject-path" || activeView.id === "view-admission-analysis" || activeView.id === "view-mock-exam" || activeView.id === "view-gpa-mock-compare" || activeView.id === "view-card") ? "block" : "grid";
     }
 
     // Sidebar Interview Settings Visibility
@@ -374,6 +376,46 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   if (tabAdmissionAnalysis) tabAdmissionAnalysis.addEventListener("click", () => {
     switchTabTo(tabAdmissionAnalysis, viewAdmissionAnalysis);
+  });
+  let cardTabInitialized = false;
+  if (tabCard) tabCard.addEventListener("click", async () => {
+    switchTabTo(tabCard, viewCard);
+    if (cardTabInitialized) return;
+    cardTabInitialized = true;
+
+    const loading = document.getElementById("card-loading");
+    const cardPanel = document.getElementById("cardPanel");
+
+    try {
+      // Fetch both JSON payloads in parallel (first-open only)
+      const [payloadRes, historyRes] = await Promise.all([
+        fetch("card-payload.json"),
+        fetch("card-history.json")
+      ]);
+      if (!payloadRes.ok || !historyRes.ok) throw new Error("데이터 파일 로드 실패");
+
+      const [payload, history] = await Promise.all([
+        payloadRes.json(),
+        historyRes.json()
+      ]);
+
+      window._CARD_PAYLOAD = payload;
+      window._CARD_HISTORY = history;
+
+      // Show card panel, hide loading
+      if (loading) loading.style.display = "none";
+      if (cardPanel) cardPanel.style.display = "";
+
+      // Run the card IIFE (now exposed as initCardTab)
+      if (typeof window.initCardTab === "function") {
+        window.initCardTab();
+      } else {
+        throw new Error("card.js가 아직 로드되지 않았습니다.");
+      }
+    } catch (err) {
+      cardTabInitialized = false; // allow retry
+      if (loading) loading.innerHTML = `<p style="color:#ff6b6b;">⚠️ 상담카드 데이터 로드 실패: ${err.message}<br><button onclick="document.getElementById('tab-card').click()" style="margin-top:0.5rem;padding:0.4rem 1rem;border-radius:6px;border:1px solid #ff6b6b;background:transparent;color:#ff6b6b;cursor:pointer;">다시 시도</button></p>`;
+    }
   });
 
   // --- Tab Container Toggle Logic ---

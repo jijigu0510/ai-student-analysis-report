@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
@@ -6,7 +6,7 @@
   <title>부안고등학교 진학지도 프로그램</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Serif+KR:wght@300;400;600;700;900&family=Nanum+Myeongjo:wght@400;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
@@ -30,7 +30,7 @@
     });
   </script>
 
-  <link rel="stylesheet" href="styles.css?v=2">
+  <link rel="stylesheet" href="styles.css?v=6">
 </head>
 <body>
   <div class="app-background">
@@ -167,6 +167,7 @@
         <button id="toggle-tabs-btn" class="tab-btn" style="text-align:center; font-weight:700; color:var(--accent-primary); border-bottom: 2px solid rgba(255,255,255,0.1); display:flex; justify-content:center; align-items:center; gap:0.5rem; padding: 1rem;">
            <span class="btn-text">◀ 탭 숨기기</span>
         </button>
+        <button id="tab-card" class="tab-btn">🗂️ 수시지원상담카드 작성하기</button>
         <button id="tab-individual" class="tab-btn active">학교생활기록부 정성평가 분석(전형 추천)</button>
         <button id="tab-passfail" class="tab-btn">과거 학생부종합전형 합불 분석 리포트</button>
         <button id="tab-passfail-examples" class="tab-btn">📊 과거 합불 사례 확인하기</button>
@@ -1735,6 +1736,19 @@
     </div>
   </main>
 
+  <!-- ===== 수시지원상담카드 작성하기 탭 뷰 ===== -->
+  <main id="view-card" class="view-section hidden" style="display:none; width:100%; padding:0; margin:0;">
+    <!-- 로딩 스피너 (데이터 첫 로드 시) -->
+    <div id="card-loading">
+      <div class="spinner"></div>
+      <span>상담카드 데이터를 불러오는 중입니다… (최초 1회)</span>
+    </div>
+    <!-- 카드 내용이 렌더링되는 컨테이너 -->
+    <section id="cardPanel" style="display:none;"></section>
+    <!-- PDF 인쇄용 부록 -->
+    <div id="historyPrintAppendix" class="no-print"></div>
+  </main>
+
   </div> <!-- // End of .app-layout -->
 
   <!-- 육각형 근거 모달 -->
@@ -3025,8 +3039,9 @@ if (document.readyState === 'loading') {
 }
 
   </script>
-  <script src="app.js?v=72"></script>
-  <script src="grade-rank.js"></script>
+  <script src="card.js?v=90" defer></script>
+  <script src="app.js?v=77"></script>
+  <script src="grade-rank.js?v=77"></script>
   <script src="univ-score.js"></script>
   <script src="admission_dist.js"></script>
   <script src="hexagon.js?v=5"></script>
