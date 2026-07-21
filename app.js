@@ -4840,8 +4840,8 @@ document.addEventListener("DOMContentLoaded", () => {
       if (subjectCol === -1 && (cell.includes("과목") || cell.includes("교과목"))) subjectCol = j;
       else if (subjectCol2 === -1 && (cell.includes("교과") || cell.includes("과목군") || cell.includes("교과군"))) subjectCol2 = j;
 
-      //단위수 컬럼: '단위', '단위수', '이수단위' 등
-      if (creditCol === -1 && (cell.includes("단위") || cell.includes("단위수"))) creditCol = j;
+      //단위수 컬럼: '단위', '단위수', '이수단위', '학점수', '학점' 등
+      if (creditCol === -1 && (cell.includes("단위") || cell.includes("학점수") || cell.includes("학점"))) creditCol = j;
 
       //등급 컬럼: '등급', '석차등급', '성적' 등
       if (gradeCol === -1 && (cell.includes("등급") || cell.includes("석차등급") || cell === "성적")) gradeCol = j;
@@ -5492,7 +5492,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const generalLines = [], careerLines = [], artsLines = [];
         gRows.forEach(r => {
           const sub = getVal(r, ["과목명", "교과목명", "과목"]) || "과목미상";
-          const creditRaw = getVal(r, ["단위수", "이수단위", "단위"]);
+          const creditRaw = getVal(r, ["단위수", "이수단위", "단위", "학점수", "학점"]);
           const credit = parseFloat(String(creditRaw).match(/\d+(\.\d+)?/)?.[0] || "0") || 1;
 
           // 파일 유형 구분: 고유 컬럼 존재 여부로 판단
@@ -15607,7 +15607,7 @@ ${univPromptSupplement}
         if (!cell) continue;
         if (subjectCol === -1 && (cell.includes('과목') || cell.includes('교과목'))) subjectCol = j;
         else if (subjectCol2 === -1 && (cell.includes('교과') || cell.includes('과목군') || cell.includes('교과군'))) subjectCol2 = j;
-        if (creditCol === -1 && (cell.includes('단위') || cell.includes('단위수'))) creditCol = j;
+        if (creditCol === -1 && (cell.includes('단위') || cell.includes('학점수') || cell.includes('학점'))) creditCol = j;
         if (gradeCol === -1 && (cell.includes('등급') || cell.includes('석차등급') || cell === '성적')) gradeCol = j;
         if (achieveCol === -1 && cell.includes('성취도')) achieveCol = j;
         if (rawScoreCol === -1 && cell.includes('원점수')) rawScoreCol = j;

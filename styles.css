@@ -3086,6 +3086,10 @@ body.light-mode .visitor-counter {
 .card-toolbar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:0 0 12px; }
 .card-toolbar button { border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.06); border-radius:8px; padding:8px 14px; cursor:pointer; font-size:13px; font-weight:600; color:#e2e8f0; transition:background .15s, border-color .15s; }
 .card-toolbar button.primary { background:linear-gradient(135deg,#7c83fd,#96baff); border-color:transparent; color:#fff; }
+.card-toolbar button.danger { background:rgba(239,68,68,0.12); border-color:rgba(239,68,68,0.35); color:#f87171; font-weight:700; }
+.card-toolbar button.danger:hover { background:rgba(239,68,68,0.22); border-color:rgba(239,68,68,0.6); }
+.card-reset-corner { position:absolute; top:50%; left:8px; transform:translateY(-50%); padding:5px 10px; border-radius:6px; border:1px solid rgba(239,68,68,0.4); background:rgba(239,68,68,0.1); color:#f87171; font-size:11px; font-weight:700; cursor:pointer; white-space:nowrap; z-index:1; transition:background .15s; }
+.card-reset-corner:hover { background:rgba(239,68,68,0.22); border-color:rgba(239,68,68,0.65); }
 .card-toolbar button:hover { background:rgba(255,255,255,0.12); border-color:rgba(255,255,255,0.22); }
 .card-toolbar button.primary:hover { background:linear-gradient(135deg,#6b73eb,#85a9ee); }
 .card-toolbar .card-hint { color:#adb5bd; font-size:12px; }
@@ -3405,7 +3409,9 @@ body.light-mode .card-hist-modal-close:hover { color:#1e2a60; background:rgba(94
   body.print-card .tabs-container,
   body.print-card .no-print,
   body.print-card .metrics,
-  body.print-card .tabbar { display:none !important; }
+  body.print-card .tabbar,
+  body.print-card #universalUploadSection,
+  body.print-card #show-tabs-btn { display:none !important; }
 
   /* Card panel print styles */
   body.print-card #view-card { display:block !important; height:auto !important; overflow:visible !important; padding:0 !important; background:#fff !important; }

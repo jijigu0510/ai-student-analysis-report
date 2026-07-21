@@ -354,14 +354,34 @@
         try {
             for (const file of files) {
                 try {
-                    if (file.name.toLowerCase().endsWith('.json')) {
+                    const nameLower = file.name.toLowerCase();
+                    if (nameLower.endsWith('.json')) {
                         const text = await readFile(file, 'UTF-8');
                         const parsed = JSON.parse(text);
                         if (Array.isArray(parsed)) {
                             state.students = parsed;
                             window.gradeRankStudents = state.students;
                             isJsonLoaded = true;
-                            break; 
+                            break;
+                        }
+                    } else if (nameLower.endsWith('.xlsx') || nameLower.endsWith('.xls')) {
+                        const buf = await new Promise((resolve, reject) => {
+                            const reader = new FileReader();
+                            reader.onload = e => resolve(e.target.result);
+                            reader.onerror = () => reject(new Error('파일 읽기 실패'));
+                            reader.readAsArrayBuffer(file);
+                        });
+                        const wb = XLSX.read(new Uint8Array(buf), { type: 'array' });
+                        let xlsxParsed = [];
+                        wb.SheetNames.forEach(sheetName => {
+                            const csv = XLSX.utils.sheet_to_csv(wb.Sheets[sheetName]);
+                            const parsed = parseCSV(csv, file.name);
+                            if (parsed.length > 0) xlsxParsed = xlsxParsed.concat(parsed);
+                        });
+                        if (xlsxParsed.length === 0) {
+                            errorFiles.push(file.name);
+                        } else {
+                            allData = allData.concat(xlsxParsed);
                         }
                     } else {
                         const text = await readFile(file, encoding);

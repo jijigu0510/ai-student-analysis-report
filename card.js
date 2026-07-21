@@ -953,7 +953,8 @@ window.initCardTab = function() {
       const inp = (k, w) => `<input data-h="${k}" value="${escapeAttr(h[k] || '')}"${w ? ` style="width:${w}"` : ''}>`;
       const ox = k => `<span class="card-ox" data-ox="${k}" title="클릭하면 O → X → 빈칸 순으로 바뀝니다">${escapeHtml(h[k] || '')}</span>`;
       return `
-      <div class="card-title">
+      <div class="card-title" style="position:relative">
+        <button type="button" id="cardResetBtn" class="card-reset-corner no-print">🗑️ 초기화</button>
         <span class="card-title-school">부안고등학교</span>
         <span class="card-title-main">수시 지원 상담카드</span>
         <span class="card-title-year">2027학년도 대입전형</span>
@@ -1136,10 +1137,10 @@ window.initCardTab = function() {
             <button type="button" id="cardXlsxBtn">📥 엑셀로 저장</button>
             <button type="button" id="cardPrintBtn">PDF로 저장</button>
             <button type="button" id="cardImportBtn">관심 비교 목록 불러오기</button>
-            <button type="button" id="cardResetBtn">전체 지우기</button>
             <button type="button" class="primary" id="cardSheetsBtn">📊 구글 시트로 저장</button>
             <button type="button" id="cardSheetsLoadBtn">📥 시트에서 불러오기</button>
             <button type="button" id="cardSheetsConfigBtn" title="구글 시트 URL 설정">⚙️ URL 설정</button>
+            <button type="button" id="cardSheetsViewBtn">📋 데이터 확인하기</button>
             <span class="card-hint">상담 전에는 학생작성본, 상담 기록이 있으면 교사상담본이라는 이름으로 자동 저장됩니다.</span>
           </div>
           <div class="card-workspace"><aside class="history-panel no-print" id="historyPanel" aria-live="polite"></aside><div class="card-sheet"><div class="card-inner">${cardHeaderHtml()}${cardTableHtml()}${cardTeacherHtml()}</div></div></div>
@@ -1154,9 +1155,10 @@ window.initCardTab = function() {
         el('cardXlsxBtn').addEventListener('click', cardExcelExport);
         el('cardPrintBtn').addEventListener('click', () => cardPrint(true));
         el('cardImportBtn').addEventListener('click', cardImportFavs);
-        el('cardResetBtn').addEventListener('click', () => { if (confirm('상담카드 내용을 모두 지울까요?')) { cardState = cardDefaultState(); cardRefreshAll(); cardSave(); } });
+        el('cardResetBtn').addEventListener('click', () => { if (confirm('상담카드를 초기화하시겠습니까?\n\n작성된 모든 내용(지원 대학, 상담 기록 등)이 삭제됩니다.\n새 학생의 상담카드를 작성할 때 사용하세요.')) { cardState = cardDefaultState(); cardRefreshAll(); cardSave(); el('cardClassSel').style.display='none'; el('cardStudentSel').style.display='none'; el('cardStudentConfirmBtn').style.display='none'; cardShowFileStatus('✅ 초기화 완료. 새 상담카드를 작성할 수 있습니다.'); } });
         el('cardSheetsBtn').addEventListener('click', cardSheetsExport);
         el('cardSheetsLoadBtn').addEventListener('click', cardSheetsLoad);
+        el('cardSheetsViewBtn').addEventListener('click', () => window.open('https://docs.google.com/spreadsheets/d/1yy8FlQg44M39aeeE5CiecTUkil8dJGq654_uY2Y6QiU/edit?usp=sharing', '_blank'));
         el('cardSheetsConfigBtn').addEventListener('click', cardSheetsConfig);
         el('cardHistModalClose').addEventListener('click', cardCloseHistoryModal);
         el('cardHistModal').addEventListener('click', e => { if (e.target === el('cardHistModal')) cardCloseHistoryModal(); });
@@ -1401,69 +1403,117 @@ window.initCardTab = function() {
       else cardShowFileStatus('구글 시트 URL이 초기화되었습니다.');
     }
 
-    // ── 학생 피커 모달 ──
+    // ── 학생 피커 모달 (반→이름 계층형 드롭다운) ──
     function cardShowStudentPicker(students, onSelect) {
       const existing = document.getElementById('cardStudentPickerOverlay');
       if (existing) existing.remove();
 
+      // 반별 그룹화 (hakbun[1] = 반)
+      const byClass = {};
+      students.forEach(s => {
+        const cls = (s.hakbun && s.hakbun.length >= 2) ? s.hakbun.charAt(1) : '?';
+        if (!byClass[cls]) byClass[cls] = [];
+        byClass[cls].push(s);
+      });
+      const classes = Object.keys(byClass).sort((a,b) => a.localeCompare(b, 'ko'));
+
+      const SEL_CSS = 'width:100%;padding:10px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.07);color:#e2e8f0;font-size:14px;outline:none;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'8\' viewBox=\'0 0 12 8\'%3E%3Cpath d=\'M1 1l5 5 5-5\' stroke=\'%23adb5bd\' stroke-width=\'1.8\' fill=\'none\' stroke-linecap=\'round\'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center';
+      const LBL_CSS = 'color:#adb5bd;font-size:12px;font-weight:600;letter-spacing:.04em;margin-bottom:4px';
+      const ROW_CSS = 'display:flex;flex-direction:column;gap:4px';
+
       const overlay = document.createElement('div');
       overlay.id = 'cardStudentPickerOverlay';
-      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;display:flex;align-items:center;justify-content:center';
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:10000;display:flex;align-items:center;justify-content:center';
 
       const box = document.createElement('div');
-      box.style.cssText = 'background:#1e2235;border-radius:12px;padding:20px;width:480px;max-height:80vh;display:flex;flex-direction:column;gap:10px;box-shadow:0 8px 40px rgba(0,0,0,.5)';
+      box.style.cssText = 'background:#1e2235;border-radius:14px;padding:24px;width:380px;display:flex;flex-direction:column;gap:16px;box-shadow:0 12px 48px rgba(0,0,0,.6)';
 
+      // 헤더
       const hdr = document.createElement('div');
       hdr.style.cssText = 'display:flex;justify-content:space-between;align-items:center;color:#e2e8f0;font-size:15px;font-weight:700';
       hdr.innerHTML = '<span>📥 시트에서 학생 불러오기</span>';
       const closeX = document.createElement('button');
       closeX.textContent = '✕';
-      closeX.style.cssText = 'background:none;border:none;color:#adb5bd;font-size:16px;cursor:pointer;line-height:1;padding:2px 6px;border-radius:4px';
+      closeX.style.cssText = 'background:none;border:none;color:#adb5bd;font-size:18px;cursor:pointer;padding:2px 6px;border-radius:4px';
       closeX.onclick = () => overlay.remove();
       hdr.appendChild(closeX);
 
-      const countEl = document.createElement('div');
-      countEl.style.cssText = 'font-size:12px;color:#6c757d';
+      // 반 선택
+      const clsWrap = document.createElement('div');
+      clsWrap.style.cssText = ROW_CSS;
+      clsWrap.innerHTML = `<div style="${LBL_CSS}">반 선택</div>`;
+      const clsSel = document.createElement('select');
+      clsSel.style.cssText = SEL_CSS;
+      clsSel.innerHTML = '<option value="">-- 반을 선택하세요 --</option>' +
+        classes.map(c => `<option value="${c}">${c}반</option>`).join('');
+      clsWrap.appendChild(clsSel);
 
-      const search = document.createElement('input');
-      search.placeholder = '이름 또는 학번 검색…';
-      search.style.cssText = 'padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.07);color:#e2e8f0;font-size:13px;width:100%;outline:none';
+      // 이름 선택
+      const nameWrap = document.createElement('div');
+      nameWrap.style.cssText = ROW_CSS;
+      nameWrap.innerHTML = `<div style="${LBL_CSS}">이름 선택</div>`;
+      const nameSel = document.createElement('select');
+      nameSel.style.cssText = SEL_CSS;
+      nameSel.innerHTML = '<option value="">-- 반을 먼저 선택하세요 --</option>';
+      nameSel.disabled = true;
+      nameWrap.appendChild(nameSel);
 
-      const list = document.createElement('div');
-      list.style.cssText = 'overflow-y:auto;max-height:52vh;display:flex;flex-direction:column;gap:3px';
+      // 학생 정보 표시
+      const infoEl = document.createElement('div');
+      infoEl.style.cssText = 'font-size:12px;color:#6c757d;min-height:18px';
 
-      function renderList(q) {
-        list.innerHTML = '';
-        const fl = q ? students.filter(s => s.name.includes(q) || s.hakbun.includes(q)) : students;
-        countEl.textContent = `총 ${fl.length}명`;
-        if (!fl.length) {
-          list.innerHTML = '<div style="color:#adb5bd;text-align:center;padding:20px;font-size:13px">검색 결과가 없습니다</div>';
-          return;
+      // 불러오기 버튼
+      const confirmBtn = document.createElement('button');
+      confirmBtn.textContent = '불러오기';
+      confirmBtn.disabled = true;
+      confirmBtn.style.cssText = 'padding:11px;border-radius:8px;border:none;background:#5e6ad2;color:#fff;font-size:14px;font-weight:700;cursor:pointer;transition:background .15s';
+      confirmBtn.onmouseover = () => { if (!confirmBtn.disabled) confirmBtn.style.background='#4a55c0'; };
+      confirmBtn.onmouseout  = () => { if (!confirmBtn.disabled) confirmBtn.style.background='#5e6ad2'; };
+
+      let selectedStudent = null;
+
+      clsSel.addEventListener('change', () => {
+        const cls = clsSel.value;
+        nameSel.innerHTML = cls
+          ? '<option value="">-- 이름을 선택하세요 --</option>' +
+            (byClass[cls] || []).map((s,i) =>
+              `<option value="${i}">${s.name || '(이름없음)'}${s.hakbun ? ' ('+s.hakbun+')' : ''}${!s.hasJson ? ' ⚠️' : ''}</option>`
+            ).join('')
+          : '<option value="">-- 반을 먼저 선택하세요 --</option>';
+        nameSel.disabled = !cls;
+        selectedStudent = null;
+        confirmBtn.disabled = true;
+        infoEl.textContent = '';
+      });
+
+      nameSel.addEventListener('change', () => {
+        const cls = clsSel.value;
+        const idx = nameSel.value;
+        if (cls && idx !== '') {
+          selectedStudent = byClass[cls][+idx];
+          const ts = selectedStudent.ts ? new Date(selectedStudent.ts).toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
+          infoEl.innerHTML = selectedStudent.hasJson
+            ? `<span style="color:#20c997">✅ 제출됨</span>${ts ? ' · ' + ts : ''}`
+            : '<span style="color:#f87171">⚠️ 아직 제출하지 않은 학생입니다</span>';
+          confirmBtn.disabled = !selectedStudent.hasJson;
+        } else {
+          selectedStudent = null;
+          confirmBtn.disabled = true;
+          infoEl.textContent = '';
         }
-        fl.forEach(s => {
-          const row = document.createElement('div');
-          row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;cursor:pointer;background:rgba(255,255,255,.04);color:#e2e8f0;font-size:13px;transition:background .1s';
-          row.onmouseover = () => row.style.background = 'rgba(94,106,210,.28)';
-          row.onmouseout  = () => row.style.background = 'rgba(255,255,255,.04)';
-          const ts = s.ts ? new Date(s.ts).toLocaleDateString('ko-KR', {month:'2-digit',day:'2-digit'}) : '';
-          row.innerHTML =
-            `<span style="width:56px;font-family:monospace;color:#adb5bd;flex-shrink:0">${s.hakbun||'—'}</span>` +
-            `<span style="flex:1;font-weight:700">${s.name||'(이름없음)'}</span>` +
-            (ts ? `<span style="color:#6c757d;font-size:11px;flex-shrink:0">${ts}</span>` : '') +
-            (!s.hasJson ? '<span style="color:#f87171;font-size:10px;flex-shrink:0">미제출</span>' : '');
-          row.onclick = () => { overlay.remove(); onSelect(s); };
-          list.appendChild(row);
-        });
-      }
+      });
 
-      renderList('');
-      search.addEventListener('input', () => renderList(search.value.trim()));
+      confirmBtn.addEventListener('click', () => {
+        if (!selectedStudent) return;
+        overlay.remove();
+        onSelect(selectedStudent);
+      });
+
       overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 
-      box.append(hdr, countEl, search, list);
+      box.append(hdr, clsWrap, nameWrap, infoEl, confirmBtn);
       overlay.appendChild(box);
       document.body.appendChild(overlay);
-      setTimeout(() => search.focus(), 50);
     }
 
     async function cardSheetsLoad() {
