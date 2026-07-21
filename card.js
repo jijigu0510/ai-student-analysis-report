@@ -1377,7 +1377,7 @@ window.initCardTab = function() {
 
     // ==================== Google Sheets 내보내기 ====================
     const _SHEETS_URL_KEY = 'susicard_sheets_url';
-    const _SHEETS_DEFAULT_URL = 'https://script.google.com/macros/s/AKfycbwB1oFw24kelDqLskxIVNRAAlzudOu_XB_ovZynqjXPuFbM9kcR4iwLAz8H-TIT3Id8/exec';
+    const _SHEETS_DEFAULT_URL = 'https://script.google.com/macros/s/AKfycbxFAk8OQV8bTBDJqzWm_hbBglasp74myp8s4Rv7fwMtL6Ia-1hDP7ib0Qr0FF0hBiKS/exec';
     function _sheetsUrl() { return localStorage.getItem(_SHEETS_URL_KEY) || _SHEETS_DEFAULT_URL; }
 
     function cardSheetsConfig() {
