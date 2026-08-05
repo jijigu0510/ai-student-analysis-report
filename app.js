@@ -9761,7 +9761,15 @@ ${fd.content}
 - 해당 교과를 배워야 하는 이유를 알고, 교과 내용에 지적 호기심을 갖고, 지식을 확장하되, 탐구 시 그 소재를 진로와 연관시킬 수도 있음
 - 반드시 포함할 요소: 학생의 수업 모습과 태도 / 수업 시간에 배운 내용과 관련된 탐구 활동 / 학생의 교과 역량 / 교과 내용과 관련된 후속 활동 / 학생의 역량 추가 기술 / 연계·심화·확장
 
-위 표 1~5의 서술 예시, 어휘, 서술어 위계, 기재 요령을 rewriteSuggestion 및 strategicRewrite 작성 시 적극적으로 활용하여, 실제 교사가 작성한 것처럼 자연스럽고 전문적인 문체로 서술하십시오. 특히 학생의 역량 수준에 맞는 서술어를 위계적으로 선택하고, 고차원 역량(평가·창출단계)이 드러나도록 탐구 서술어를 중심으로 작성하십시오.
+▶ [표 6] 대입지원관 실무연수·교육부 공식 교과세특 예시집 기반 평가·재작성 원칙:
+- 기록 우선순위 매트릭스: 1순위 '학생+평가'(학생의 개별화된 구체적 활동 + 교사의 평가적 기술이 조화) > 2순위 '학생+사실'(구체적 활동은 있으나 평가적 기술 없음) > 3순위 '학교+평가'(구체적 내용 없이 미사여구만 남발) > 4순위 '학교+사실'(학교 공통 활동의 의미없는 반복 서술). 원문이 몇 순위에 해당하는지 판단하여 점수와 개선점에 반영하고, rewriteSuggestion·strategicRewrite는 반드시 1순위 형태로 작성하십시오.
+- 탐구와 조사의 구분: '탐구'는 문제 인식→정보 탐색→분석 및 해석→적용 및 확장→성찰 및 후속활동의 전 과정을 학생이 스스로 주도하는 능동적 사고 활동이며, 단순 검색·자료 짜깁기에 그치는 '조사'와 다릅니다. 원문이 조사 수준에 머물러 있다면 improvements에 명확히 지적하십시오.
+- 공식 예시집 기준 실제 우수 세특 사례의 평균 분량은 300~450자이며, 지나치게 짧지 않다면 글자수 자체보다 근거의 구체성과 밀도를 우선 평가하십시오.
+- 이수과목 연계: 세특은 실제 이수 교과의 성취기준과 연결되어야 하며, 진로 관련성을 과도하게 강조하기보다 교과 고유의 역량(교과별 2015 개정 교육과정 역량 어휘)이 우선 드러나야 좋은 평가를 받습니다.
+- 종단적 심화(학기·학년에 걸친 지속·심화)가 드러나면 가점 요소로 평가하고, 어려움·시행착오를 구체적 극복 과정으로 서술한 경우(예: 오차 발생→원인 분석→해결) 탐구의 진정성이 높다고 평가하십시오.
+- 근거 없는 칭찬이나 미사여구 반복은 감점 요소이며, 반드시 구체적 사실 뒤에 절제된 평가어를 붙이는 방식을 rewriteSuggestion·strategicRewrite에 적용하십시오.
+
+위 표 1~6의 서술 예시, 어휘, 서술어 위계, 기재 요령, 우선순위 매트릭스를 rewriteSuggestion 및 strategicRewrite 작성 시 적극적으로 활용하여, 실제 교사가 작성한 것처럼 자연스럽고 전문적인 문체로 서술하십시오. 특히 학생의 역량 수준에 맞는 서술어를 위계적으로 선택하고, 고차원 역량(평가·창출단계)이 드러나도록 탐구 서술어를 중심으로 작성하십시오.
 
 [엄격한 평가 및 감점 주의사항]
 - **[핵심] 2015 개정 교육과정 평가지표 준수**: 단순 활동 나열이나 미사여구는 점수를 부여하지 않습니다. 지적 호기심의 '발현-과정-결과'가 논리적으로 증명될 때만 고득점을 부여하세요.
@@ -10254,6 +10262,20 @@ ${fd.content}
 - [과정/내용]: 본인의 지적 호기심을 해결하기 위해 어떤 주도적인 탐구활동(독서, 보고서 작성, 발표, 실험 등)을 구체적으로 어떻게 수행했는가? (사용된 핵심 개념, 분석 논리 등 포함)
 - [결과/성장]: 해당 탐구 과정을 통해 무엇을 깨달았으며, 교과 역량이나 학업적 역량이 어떻게 성장했는가? (후속 연계 활동이 있다면 간략히 기재)
 
+# 📚 근거자료 기반 검증된 작성 원칙 (대입지원관·공식 교과세특 예시집 기반)
+아래는 입학사정관 실무 연수자료 및 교육부·시도교육청·한국교육과정평가원 공동 제작 교과세특 기재 예시집을 분석하여 도출한 검증된 원칙입니다. 반드시 반영하십시오.
+1. [기록 우선순위 매트릭스]: 세특은 항상 다음 4단계 중 1순위를 지향해야 합니다.
+   1순위 '학생+평가'(학생의 개별화된 구체적 활동 내용 + 교사의 평가적 기술이 조화) > 2순위 '학생+사실'(구체적 활동은 언급되나 평가적 기술 없음) > 3순위 '학교+평가'(개별화된 구체적 내용 없이 미사여구만 남발) > 4순위 '학교+사실'(학교 공통 활동의 의미없는 반복 서술, 학교 공통 문구).
+2. [탐구와 조사의 구분]: '탐구'는 문제 인식(스스로 의문 발견) → 정보 탐색(자료 조사·독서·실험) → 분석 및 해석(비교·비판·재구성) → 적용 및 확장(다른 영역과 연결, 새로운 해결책 제시) → 성찰 및 후속활동(한계 인식, 배운 점, 향후 방향)의 전 과정을 학생이 스스로 주도하는 능동적 사고 활동입니다. 단순 검색·자료 짜깁기 수준의 '조사'와 다르므로, 제공된 자료가 조사 수준에 그친다면 무리하게 탐구처럼 과장하지 말고 관찰된 사실 범위 내에서 성실하게 서술하십시오.
+3. [실제 우수 사례 기준]: 공식 예시집의 실제 우수 세특 사례는 대부분 300~450자 내외로 작성되어 있으며, 글자수를 억지로 채우기보다 근거 있는 구체적 서술로 밀도를 높이는 것이 우선입니다.
+4. [이수과목과의 연계]: 세특은 학생이 실제 배우는 교과의 성취기준과 연결되어야 하며, 진로 관련성을 과도하게 강조하기보다 해당 교과 고유의 역량(예: 국어-비판적·창의적 사고 역량, 수학-문제해결·추론, 과학-과학적 탐구·의사소통 능력 등 2015 개정 교육과정 교과역량 어휘)이 우선 드러나도록 작성하십시오.
+5. [종단적 심화]: 단발성 활동보다 학기·학년에 걸쳐 지속·심화된 탐구가 관찰 기록에 있다면 그 연계와 성장을 강조하십시오.
+6. [문장 간 유기적 연결과 절제]: 문장과 문장이 논리적으로 이어져 하나의 성장 서사로 읽히도록 구성하십시오. 근거 없는 칭찬이나 과도한 미사여구(사실 제시 없이 "매우 뛰어남", "탁월함"만 반복)는 오히려 신뢰도를 떨어뜨리므로 지양하고, 구체적 근거 뒤에 절제된 평가어를 붙이는 방식을 사용하십시오.
+7. [어려움과 극복 과정]: 관찰 기록에 시행착오·오차·의견 차이 등이 있었다면 이를 숨기지 말고 '어려움을 겪었으나 ~하게 해결함'과 같이 구체적인 극복 과정으로 서술하면 탐구의 진정성을 높일 수 있습니다.
+8. [5대 기재 전략]: 자료가 뒷받침하는 범위 안에서 다음 다섯 전략을 최대한 적용하십시오. (1) '왜(동기)'를 반드시 넣기 — 수업에서 무엇을 배우다 어떤 의문이 생겨 활동을 시작했는지 (2) 활동 수를 줄이고 깊이를 늘리기 — 여러 활동을 얕게 나열하지 말고 가장 밀도 높은 활동 1~2개를 깊게 서술 (3) 실패의 수정 과정을 구체적으로 — 원인 인식→수정→개선 결과의 3단계 (4) 학생의 발화를 직접 인용 — 자료에 학생의 말·질문·제안이 있다면 작은따옴표로 인용 (5) 설명 가능한 우수성 표현 — 근거로 뒷받침되어 면접에서 학생이 직접 설명할 수 있는 내용만 기재
+9. [평가자의 5가지 핵심 질문]: 완성된 초안이 다음 질문에 답할 수 있는지 스스로 점검하십시오. 왜 했는가(동기의 진정성) / 어떤 과정으로 했는가(탐구의 깊이) / 추가로 무엇을 했는가(자발적 확장) / 어떤 역량이 보이는가(평가 가능성) / 주도적으로 했는가(학생 중심성). 자료가 부족해 답할 수 없는 항목은 억지로 창작하지 말고 비워두십시오.
+10. [빠르게 탈락하는 패턴 회피]: 활동만 열거하고 과정·동기·성찰이 없는 '나열형'(가장 치명적), 학생의 부족함을 암시하는 부정적 뉘앙스, 구체적 사실 없이 결과만 선언하는 추상적 칭찬은 반드시 피하십시오.
+
 # 작동 프로세스 (Workflow)
 사용자(교사)가 학생의 정보(과목, 탐구 주제, 구체적 활동 내용, 관찰한 행동 특성 등)를 입력하면 다음과 같이 답변합니다.
 
@@ -10345,19 +10367,39 @@ ${fd.content}
 수정된 결과도 [Step 2]와 동일하게 글자수와 출력 형식 규칙을 반드시 다시 지키십시오.
 
 # 📝 Examples (Few-shot Learning)
-다음은 우수 작성 사례입니다. 이 톤 앤 매너를 참고하여 작성하십시오.
+다음은 교육부·17개 시도교육청·한국교육과정평가원·한국교원대 종합교육연수원이 공동 개발한 공식 교과세특 기재 예시집의 실제 고등학교 우수 사례입니다. 이 톤 앤 매너와 문장 구조를 반드시 참고하여 작성하십시오.
 
-(이번 작성에서는 별도 예시 없이 위 지침만으로 작성하십시오.)
+[예시 1 — 화학Ⅰ]
+화학적 지식을 바탕으로 탐구 결과를 설명할 수 있으며, 새로운 상황의 문제를 해결하는 능력이 우수함. 탄산 칼슘과 묽은 염산과의 반응을 화학 반응식으로 나타내고 반응한 탄산 칼슘과 생성된 이산화 탄소의 질량을 구하는 실험을 설계하여 양적 관계를 설명함. 모둠원과 협력하여 실험을 수행하고 이산화 탄소의 질량을 측정한 결과를 바탕으로 탄산 칼슘과 이산화 탄소의 양(몰)적 관계를 그래프로 나타내어 화학 반응식을 완성하고, 화학 반응식에서 계수의 의미를 설명함. 질량을 측정하는 과정에서 저울의 단위와 유효 숫자 처리에 따른 실험 오차로 어려움을 겪었으나 올바른 결괏값을 제시하기 위해 모둠원과 적극적으로 의사소통함. 탐구 실험 결과를 해석하는 과정을 통해 화학적 지식을 추론하는 능력이 향상됨.
+
+[예시 2 — 한국사]
+역사 사료 분석에 관심을 가지고 그 의미를 파악하는 것에 흥미를 보이는 학생임. 조선 시대 세계관의 변화를 다양한 자료를 수집하여 분석하면서 설명함. '임진왜란이 동아시아에 끼친 영향'을 주제로 자료를 탐구하여 발표함. 1차 사료인 조선왕조실록과 징비록 등을 찾아보고, 이를 정리하여 발표함. 임진왜란 이후 여러 변화를 가독성 높은 발표 자료로 제작하고, 담배나 고추의 전래 등 흥미로운 예시를 더해 알기 쉽게 전달함. 역사 공부를 교과서의 내용만으로 멈추지 않고 사료를 통해 객관적이고 종합적으로 이해하려는 노력이 돋보이는 학생이며, 탐구 활동을 할 때마다 사료를 찾아보고 나름대로 해석해 보려고 노력하는 모습이 인상적임.
+
+[예시 3 — 확률과 통계]
+평소 타인의 의견을 경청하여 개선점 및 추가점에 대한 아이디어를 구체화하고, 생각을 명료화하는 데 도움을 주는 등 친구들과 활발히 소통함. 실생활 상황에서 표본 추출의 원리를 설명하고, 모평균을 추정하여 정확하게 해석함. '생활 속의 통계적 추정'이라는 주제로 일일 스마트폰 사용 시간에 대한 온라인 설문지를 제작하고, 수집된 설문 결과를 통계 처리하여 실태를 파악하여 발표하는 데 주도적인 역할을 담당함. 모집단과 표본 개념에 대한 이해도가 높아서 설문 결과를 통계 프로그램으로 처리하여 자료를 그래프로 표현하고, 자료를 통해 얻은 표본평균을 활용하여 모평균을 정확하게 추정함. 그래프 분석 결과로 문제점 해결을 위한 대안을 모색하는 등 정보 처리역량이 성장하였음을 확인함.
+
+[예시 4 — 독서]
+자신의 관심사와 관련된 다양한 글을 찾아 읽는 학생임. 글을 읽고 필자의 논점을 명확하게 파악하고, 필자의 생각에 대한 대안을 적극적인 태도로 찾음. '말이 칼이 될 때(홍성수)'를 읽고 혐오 표현에 대한 서평을 작성하여 '표현의 자유를 제한하는 구체적 기준을 설정하자'는 내용의 대안을 제시함. 제안한 대안 중에는 구체성을 좀 더 보완해야 하는 측면도 있으나, 필자의 관점 파악과 이에 대한 주체적인 해석 및 평가를 제시한 점이 우수함. 필자의 의도를 다양한 관점에서 분석하고 이를 사회 문제로 연결하여 비판적으로 접근하고 대안을 창의적으로 제시하는 능력이 우수함.
+
+[위 예시들에서 반드시 학습할 공통 문장 구조]
+1. 도입: 교사가 관찰한 학생의 전반적 특성이나 도달한 성취수준을 먼저 제시 ('~하는 학생임', '~하는 능력이 우수함')
+2. 전개: 구체적인 평가 과제·활동명을 작은따옴표로 인용하고, 학생이 실제로 수행한 방법과 도출한 결과를 사실 그대로 서술
+3. 심화: 시행착오·오차·의견 차이가 있었다면 '~어려움을 겪었으나 ~하여 해결함' 형태로 극복 과정을 드러냄 (예시 1·3에서 확인)
+4. 마무리: 관찰된 역량의 성장을 교사의 판단으로 정리 ('~능력이 향상됨', '~모습이 인상적임', '~역량이 성장하였음을 확인함')
+5. 미사여구를 단독으로 쓰지 않고, 반드시 구체적 사실 서술 뒤에 절제된 평가어를 붙임
+6. 위 예시들은 300~400자 분량이지만 이는 문장 구조·문체를 배우기 위한 참고용이며, 실제 출력 분량은 반드시 위 "✂️ 글자수 엄수 규칙"(약 475~500자)을 따르십시오. 다만 분량을 채우기 위해 근거 없는 미사여구를 덧붙이지 말고, 자료에 있는 구체적 사실을 더 풀어서 서술하는 방식으로 분량을 확보하십시오.
 ---
 명령: 위 지침을 완벽히 숙지하고, 사용자가 전달한 첫 메시지(기재 영역·자료)를 바탕으로 곧바로 [Step 2]의 세특 초안(완성된 문단 텍스트만)을 출력하십시오. 인사말이나 자료 요청 문구 없이 문단 하나만 출력하고 끝내십시오. 이후 사용자가 수정을 요청하면 매번 글자수 제한과 출력 형식(마크다운 금지, 문단만 출력) 규칙을 다시 확인하십시오.`;
 
-    // ---------- Gemini 호출 ----------
-    async function sdGenerateDraft(history) {
+    // ---------- Gemini 호출 (공통) ----------
+    async function sdCallGemini(systemText, contents, maxOutputTokens, disableThinking) {
       const apiKey = document.getElementById('sd-api-key').value.trim();
+      const generationConfig = { temperature: 0.5, maxOutputTokens: maxOutputTokens || 4096 };
+      if (disableThinking) generationConfig.thinkingConfig = { thinkingBudget: 0 };
       const body = {
-        systemInstruction: { role: "system", parts: [{ text: SD_SYSTEM_PROMPT }] },
-        contents: history,
-        generationConfig: { temperature: 0.5, maxOutputTokens: 4096 }
+        systemInstruction: { role: "system", parts: [{ text: systemText }] },
+        contents,
+        generationConfig
       };
       const modelsToTry = ["gemini-3.1-pro", "gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash-lite"];
 
@@ -10380,8 +10422,14 @@ ${fd.content}
             throw new Error(`API Error (${model}): ` + (errBody?.error?.message || res.statusText));
           }
           const data = await res.json();
-          const text = (data?.candidates?.[0]?.content?.parts || []).map(p => p.text || "").join("");
-          if (!text.trim()) throw new Error("빈 응답을 받았습니다.");
+          const candidate = data?.candidates?.[0];
+          const text = (candidate?.content?.parts || []).map(p => p.text || "").join("");
+          if (!text.trim()) {
+            if (candidate?.finishReason === 'MAX_TOKENS') {
+              throw new Error(`응답이 토큰 제한으로 잘렸습니다 (${model}).`);
+            }
+            throw new Error("빈 응답을 받았습니다.");
+          }
           return text.trim();
         } catch (err) {
           lastErr = err;
@@ -10389,6 +10437,34 @@ ${fd.content}
         }
       }
       throw lastErr || new Error("모든 모델 호출에 실패했습니다.");
+    }
+
+    async function sdGenerateDraft(history) {
+      return sdCallGemini(SD_SYSTEM_PROMPT, history, 4096);
+    }
+
+    // ---------- 작성 근거 설명 ----------
+    const SD_RATIONALE_SYSTEM_PROMPT = `당신은 세특 초안을 작성한 AI의 작성 의도를 교사에게 설명하는 보조 역할입니다.
+제시된 세특 초안 하나에 대해, 왜 그렇게 작성했는지를 교사가 이해하고 검증할 수 있도록 아래 5가지 항목을 마크다운 형식으로 설명하십시오.
+
+## 판단 기준 (대입지원관 실무연수·교육부 공식 교과세특 예시집 기반)
+- 기록 우선순위 매트릭스: 1순위 '학생+평가'(개별화된 구체적 활동 + 교사의 평가적 기술 조화) > 2순위 '학생+사실'(활동은 있으나 평가적 기술 없음) > 3순위 '학교+평가'(구체적 내용 없이 미사여구) > 4순위 '학교+사실'(학교 공통 문구 반복)
+- 탐구 5단계: 문제 인식 → 정보 탐색 → 분석·해석 → 적용·확장 → 성찰·후속활동. 단순 검색·짜깁기 수준의 '조사'와 구분됨
+- 5대 기재 전략: (1) '왜(동기)'로 시작 (2) 활동 수 줄이고 깊이 늘리기 (3) 실패·시행착오의 수정 과정 구체화 (4) 학생 발화 직접 인용 (5) 근거 있는(설명 가능한) 우수성 표현
+- 교과 고유 역량 우선: 진로 관련성을 과도하게 강조하기보다 해당 교과의 교육과정 역량이 먼저 드러나야 함
+
+## 출력할 5가지 항목
+1. **활용한 자료**: 업로드 자료·관찰 기록 중 어떤 내용을 근거로 삼았는지 구체적으로 언급. 자료에 없는 내용을 창작하지 않았음을 확인시켜 줄 것. 반대로 자료가 부족해 일반적 서술로 처리한 부분이 있다면 교사가 보완하도록 솔직히 밝힐 것
+2. **문장 구성 흐름**: 동기(배경) → 과정(내용) → 결과(성장)를 각각 어느 문장에 배치했는지, 그리고 '학생+평가(1순위)' 형태를 어떻게 구현했는지
+3. **탐구 단계 및 기재 전략 반영**: 위 탐구 5단계 중 자료로 뒷받침되는 단계가 무엇이었고, 5대 기재 전략 중 어떤 것을 적용했는지. 자료 한계로 적용하지 못한 전략이 있다면 명시
+4. **강조한 핵심역량**: 어떤 핵심역량·교과역량을 선택했고 그 근거가 자료의 어느 부분에서 나왔는지
+5. **기재 금지·형식 규정 처리**: 자료에 기재 금지 사항(대회·수상·어학시험·소논문·특허·MOOC·방과후·기관명/브랜드명 등)이 있었다면 어떻게 걸러냈는지, 없었다면 "해당 없음"이라고 명시. 명사형 어미 종결과 글자수 조정도 함께 언급
+
+각 항목은 2~4문장으로 간결하게 작성하되 반드시 5개 항목을 모두 끝까지 완성하십시오. 근거 없이 추측하지 말고, 세특 본문 자체를 다시 출력하지 마십시오.`;
+
+    async function sdGenerateRationale(contextParts, draftText) {
+      const userText = `[교사가 제공한 원본 정보]\n${contextParts}\n\n[AI가 작성한 세특 초안]\n${draftText}\n\n위 초안을 왜 이렇게 작성했는지 설명해줘.`;
+      return sdCallGemini(SD_RATIONALE_SYSTEM_PROMPT, [{ role: 'user', parts: [{ text: userText }] }], 8192, true);
     }
 
     // ---------- 체크리스트 / 안내문구 ----------
@@ -10467,6 +10543,7 @@ ${fd.content}
     const sdReviseFiles = document.getElementById('sd-reviseFiles');
 
     let sdHistory = [];
+    let sdContextLog = [];
 
     function sdToggleAreaUI() {
       const isSubject = !sdArea || sdArea.value === 'subject';
@@ -10501,6 +10578,31 @@ ${fd.content}
       if (fd.competencies.length) s += `[강조할 핵심역량] ${fd.competencies.join(', ')}\n`;
       if (fd.notes) s += `\n[교사 관찰 기록 / 메모]\n${fd.notes}\n`;
       return s;
+    }
+
+    function sdShowRationaleLoading() {
+      document.getElementById('sd-rationaleLoading')?.classList.remove('hidden');
+      const el = document.getElementById('sd-rationale');
+      el?.classList.add('hidden');
+      if (el) el.innerHTML = '';
+    }
+
+    function sdRenderRationale(mdText) {
+      document.getElementById('sd-rationaleLoading')?.classList.add('hidden');
+      const el = document.getElementById('sd-rationale');
+      if (!el) return;
+      el.innerHTML = (window.marked ? marked.parse(mdText) : mdText);
+      el.classList.remove('hidden');
+    }
+
+    async function sdFetchAndRenderRationale(contextText, draftText) {
+      sdShowRationaleLoading();
+      try {
+        const rationale = await sdGenerateRationale(contextText, draftText);
+        sdRenderRationale(rationale);
+      } catch (err) {
+        sdRenderRationale(`⚠️ 작성 근거 설명을 불러오지 못했습니다: ${err.message}`);
+      }
     }
 
     function sdRenderDraft(text) {
@@ -10552,11 +10654,13 @@ ${fd.content}
           const contextText = sdBuildContextText(fd) + (textParts.length ? '\n\n[업로드 자료 추출 내용]\n' + textParts.join('\n\n') : '');
           const userParts = [{ text: contextText }, ...imageParts];
           sdHistory = [{ role: 'user', parts: userParts }];
+          sdContextLog = [contextText];
 
           const draft = await sdGenerateDraft(sdHistory);
           sdHistory.push({ role: 'model', parts: [{ text: draft }] });
 
           sdRenderDraft(draft);
+          sdFetchAndRenderRationale(sdContextLog.join('\n\n---\n\n'), draft);
         } catch (err) {
           sdLoadingState?.classList.add('hidden');
           sdEmptyState?.classList.remove('hidden');
@@ -10585,15 +10689,18 @@ ${fd.content}
         let reviseText = revision;
         if (textParts.length) reviseText += '\n\n[추가 업로드 자료]\n' + textParts.join('\n\n');
         sdHistory.push({ role: 'user', parts: [{ text: reviseText }, ...imageParts] });
+        sdContextLog.push(`[수정 요청] ${reviseText}`);
 
         const draft = await sdGenerateDraft(sdHistory);
         sdHistory.push({ role: 'model', parts: [{ text: draft }] });
 
         sdRenderDraft(draft);
+        sdFetchAndRenderRationale(sdContextLog.join('\n\n---\n\n'), draft);
         if (sdReviseInput) sdReviseInput.value = '';
         if (sdReviseFiles) sdReviseFiles.value = '';
       } catch (err) {
         sdHistory.pop(); // 실패한 요청은 히스토리에서 제거
+        sdContextLog.pop();
         alert('수정 반영 중 오류가 발생했습니다:\n' + err.message);
       } finally {
         sdReviseBtn.disabled = false;
