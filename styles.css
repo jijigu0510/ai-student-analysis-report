@@ -308,6 +308,22 @@ body.light-mode .visitor-divider {
   display: none !important;
 }
 
+.setech-cols {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  min-width: 0;
+}
+
+.setech-cols .form-section,
+.setech-cols .result-section {
+  width: 100%;
+}
+
+.setech-cols.hidden {
+  display: none !important;
+}
+
 .blur-name {
   filter: blur(5px);
   transition: filter 0.3s ease;
@@ -912,7 +928,7 @@ textarea::-webkit-scrollbar-thumb {
   .main-container {
     grid-template-columns: 1fr;
   }
-  
+
   .result-section {
     min-height: 600px;
   }

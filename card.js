@@ -1553,8 +1553,25 @@ window.initCardTab = function() {
               return;
             }
 
-            cardState = cardNormalizeImportedState(st);
+            // 헤더(학생 기본정보)는 전체 복사, 행은 대학명·학과·전형유형·세부전형명·전략메모만
+            const _norm = cardNormalizeImportedState(st);
+            const _partial = cardDefaultState();
+            Object.assign(_partial.header, _norm.header);
+            for (let _i = 0; _i < CARD_ROWS; _i++) {
+              const _src = _norm.rows[_i];
+              if (!_src) continue;
+              _partial.rows[_i].uni      = _src.uni      || '';
+              _partial.rows[_i].major    = _src.major    || '';
+              _partial.rows[_i].typeName = _src.typeName || '';
+              _partial.rows[_i].typeKind = _src.typeKind || '';
+              _partial.rows[_i].strategy = _src.strategy || '';
+            }
+            cardState = _partial;
             cardRefreshAll();
+            // 나머지 필드(모집인원·경쟁률·합격자평균·전형단계·수능최저·면접일정)는 자동완성
+            for (let _i = 0; _i < CARD_ROWS; _i++) {
+              if (cardState.rows[_i].uni && cardState.rows[_i].major) cardTryAutofill(_i);
+            }
             cardSave();
             clearTimeout(window._cardNaeshinTimer);
             window._cardNaeshinTimer = setTimeout(cardLookupNaeshin, 200);

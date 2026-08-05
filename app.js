@@ -552,7 +552,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function setupUniversalApiKey() {
     const uniApi = document.getElementById('uni-api-key');
-    const targets = ['api-key', 'pf-api-key', 'st-api-key', 'iv-api-key'];
+    const targets = ['api-key', 'pf-api-key', 'st-api-key', 'iv-api-key', 'sd-api-key'];
 
     if (uniApi) {
       // 로드 시 localStorage 확인 후 값 채우기 및 전파
@@ -10102,6 +10102,505 @@ ${fd.content}
       }
     });
   }
+
+  // =========================================================
+  // 세특 초안 작성 — 서브탭 토글
+  // =========================================================
+  (function initSetechDraftFeature() {
+    const setechNavAnalyze = document.getElementById('setech-nav-analyze');
+    const setechNavDraft = document.getElementById('setech-nav-draft');
+    const setechAnalyzePanel = document.getElementById('setech-analyze-panel');
+    const setechDraftPanel = document.getElementById('setech-draft-panel');
+
+    function switchSetechNav(mode) {
+      const isAnalyze = mode === 'analyze';
+      setechAnalyzePanel?.classList.toggle('hidden', !isAnalyze);
+      setechDraftPanel?.classList.toggle('hidden', isAnalyze);
+      if (setechNavAnalyze) {
+        setechNavAnalyze.style.background = isAnalyze ? 'var(--accent-primary)' : 'transparent';
+        setechNavAnalyze.style.color = isAnalyze ? '#fff' : 'var(--text-secondary)';
+      }
+      if (setechNavDraft) {
+        setechNavDraft.style.background = isAnalyze ? 'transparent' : 'var(--accent-primary)';
+        setechNavDraft.style.color = isAnalyze ? 'var(--text-secondary)' : '#fff';
+      }
+    }
+    setechNavAnalyze?.addEventListener('click', () => switchSetechNav('analyze'));
+    setechNavDraft?.addEventListener('click', () => switchSetechNav('draft'));
+
+    // ---------- NEIS 바이트수 계산 (한글 1자=3바이트, 그 외 1바이트) ----------
+    function getNeisByteLength(str) {
+      let bytes = 0;
+      for (const ch of str) {
+        const code = ch.codePointAt(0);
+        if ((code >= 0xAC00 && code <= 0xD7A3) || (code >= 0x3131 && code <= 0x318E)) bytes += 3;
+        else bytes += 1;
+      }
+      return bytes;
+    }
+
+    // ---------- 파일 파싱 ----------
+    async function sdExtractDocx(file) {
+      if (!window.mammoth) throw new Error("mammoth.js가 로드되지 않았습니다.");
+      const arrayBuffer = await file.arrayBuffer();
+      const result = await window.mammoth.extractRawText({ arrayBuffer });
+      return (result.value || "").trim();
+    }
+
+    async function sdExtractPdf(file) {
+      const lib = window.pdfjsLib || window['pdfjs-dist/build/pdf'];
+      if (!lib) throw new Error("PDF.js가 로드되지 않았습니다.");
+      if (!lib.GlobalWorkerOptions.workerSrc) {
+        lib.GlobalWorkerOptions.workerSrc =
+          'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+      }
+      const data = new Uint8Array(await file.arrayBuffer());
+      const pdf = await lib.getDocument({ data }).promise;
+      let text = "";
+      for (let p = 1; p <= pdf.numPages; p++) {
+        const page = await pdf.getPage(p);
+        const tc = await page.getTextContent();
+        text += tc.items.map(i => i.str).join(" ") + "\n";
+      }
+      return text.trim();
+    }
+
+    async function sdExtractHwpx(file) {
+      if (!window.JSZip) throw new Error("JSZip이 로드되지 않았습니다.");
+      const zip = await window.JSZip.loadAsync(await file.arrayBuffer());
+      const sectionFiles = Object.keys(zip.files)
+        .filter(name => /section\d*\.xml$/i.test(name))
+        .sort();
+      let text = "";
+      for (const name of sectionFiles) {
+        const xml = await zip.files[name].async("text");
+        const plain = xml
+          .replace(/<[^>]+>/g, " ")
+          .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&").replace(/&quot;/g, '"')
+          .replace(/\s+/g, " ")
+          .trim();
+        if (plain) text += plain + "\n";
+      }
+      return text.trim();
+    }
+
+    function sdFileToInlineImage(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const base64 = String(reader.result).split(",")[1];
+          resolve({ inlineData: { mimeType: file.type || "image/png", data: base64 } });
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function sdProcessFiles(fileList) {
+      const textParts = [];
+      const imageParts = [];
+      for (const file of Array.from(fileList || [])) {
+        const lower = file.name.toLowerCase();
+        try {
+          if (lower.endsWith(".docx") || lower.endsWith(".doc")) {
+            const t = await sdExtractDocx(file);
+            if (t) textParts.push(`[업로드 파일: ${file.name}]\n${t}`);
+          } else if (lower.endsWith(".pdf")) {
+            const t = await sdExtractPdf(file);
+            if (t) textParts.push(`[업로드 파일: ${file.name}]\n${t}`);
+          } else if (lower.endsWith(".hwpx")) {
+            const t = await sdExtractHwpx(file);
+            if (t) textParts.push(`[업로드 파일: ${file.name}]\n${t}`);
+          } else if (file.type && file.type.startsWith("image/")) {
+            const part = await sdFileToInlineImage(file);
+            imageParts.push(part);
+            textParts.push(`[업로드 이미지: ${file.name}] (아래 첨부 이미지 내용을 참고)`);
+          } else {
+            textParts.push(`[지원하지 않는 파일 형식: ${file.name}]`);
+          }
+        } catch (err) {
+          console.error(`[세특초안] 파일 처리 실패 (${file.name}):`, err);
+          textParts.push(`[파일 처리 실패: ${file.name} — ${err.message}]`);
+        }
+      }
+      return { textParts, imageParts };
+    }
+
+    // ---------- 시스템 프롬프트 ----------
+    const SD_SYSTEM_PROMPT = `# 역할 (Role)
+귀하는 대한민국 고등학교 교사를 지원하는 '학교생활기록부(교과세특 및 창의적 체험활동) 기재 지원 전문 AI 어시스턴트'입니다. 교사가 제공하는 학생의 관찰 기록, 수행평가 결과, 활동지 내용을 바탕으로 대입 서류평가에서 경쟁력 있고 법적 기재 요령을 준수하는 세련된 생기부 초안을 작성합니다.
+
+# 핵심 원칙 (Core Principles)
+1. [교사 중심 기술]: 학교 공통 활동의 단순 나열(학교+사실)을 피하고, 학생 개별의 구체적인 탐구 내용과 태도, 교사의 평가적 기술이 조화를 이루는 '학생+평가(1순위)' 형태로 서술합니다. (이해함, 인식함, 기름 등등 서술어 사용 금지) (서술어 편집실 url에서 과학과 서술어 참고할 것)
+2. [상투적 표현 지양]: 근거 없는 단순한 미사여구나 과도한 칭찬, 상투적인 성실성 강조는 배제하고 구체적인 행동 사례와 탐구 과정으로 학생의 우수성을 증명합니다.
+3. [사실 기반 윤문]: 교사가 직접 관찰한 사실적 데이터에 기반해 문장을 매끄럽게 연결하되, 존재하지 않는 허위 사실을 창작하거나 과장하지 않습니다.
+
+# 기재 금지 및 준수 사항 (Strict Regulations) - 중요!
+반드시 다음 규정을 철저히 위반하지 않도록 상시 검증하십시오.
+- [명사형 어미 종결]: 모든 문장은 반드시 명사형 어미('~함', '~임', '~음')로 종결합니다.
+- [글자 수 제한]: 과목별 세부능력 및 특기사항은 공백 포함 한글 500자(1,500바이트) 이내로 구성해야 하므로, 생성 글자 수를 약 400자 내외로 조절하여 교사가 수정할 수 있는 여유를 둡니다.
+- [기재 금지 사항 배제]:
+  * 온·오프라인 교외대회, 교내대회 참여 사실 및 수상 실적 일체 기재 불가
+  * 공인어학시험 성적 및 참여 사실 기재 불가
+  * 논문(소논문) 학회지 등재 및 발표 사실, 도서 출간 사실, 지식재산권(특허 등) 출원/등록 사실 기재 불가
+  * K-MOOC, MOOC, KOCW 관련 사항 기재 불가
+  * 방과후학교 활동 내용 기재 불가
+  * 사설 기관명, 구체적인 특정 대학명, 기관명, 상호명, 강사명 기재 불가
+  * 부모 및 친인척의 사회적·경제적 지위 암시 내용 기재 불가
+
+# 생기부 문장 구조 (Writing Flow)
+기록하는 문장은 가급적 학생의 역량 흐름이 한눈에 보이도록 아래의 유기적 구조를 반영하여 단일 문단으로 구성합니다.
+- [동기/배경]: 수업 중 어떤 배움이나 성취기준, 탐구 주제에 호기심을 느끼고 활동을 시작했는가?
+- [과정/내용]: 본인의 지적 호기심을 해결하기 위해 어떤 주도적인 탐구활동(독서, 보고서 작성, 발표, 실험 등)을 구체적으로 어떻게 수행했는가? (사용된 핵심 개념, 분석 논리 등 포함)
+- [결과/성장]: 해당 탐구 과정을 통해 무엇을 깨달았으며, 교과 역량이나 학업적 역량이 어떻게 성장했는가? (후속 연계 활동이 있다면 간략히 기재)
+
+# 작동 프로세스 (Workflow)
+사용자(교사)가 학생의 정보(과목, 탐구 주제, 구체적 활동 내용, 관찰한 행동 특성 등)를 입력하면 다음과 같이 답변합니다.
+
+1. [분석 요약]: 제공받은 핵심 입력 데이터 분석
+2. [생기부 초안 생성]: 위의 모든 규정(명사형 어미, 글자수 500자 미만, 기재금지 필터링)을 완벽히 적용한 생기부 초안 제공
+3. [체크리스트 피드백]: 생성된 글의 글자 수(공백 포함) 및 기재 금지사항이 포함되지 않았음을 교사에게 선언
+4. [주의사항 경고 (Disclaimer)]: "※ 주의: 생성형 AI의 결과물을 그대로 입력하는 것은 금지되어 있습니다. 교사는 반드시 본 초안을 보조 수단(윤문 등)으로만 활용하고, 실제 학생의 수행과 비교하여 허위나 과장이 없는지 철저히 검토한 후 교사 본인의 책임하에 최종 입력하십시오." 안내구 필수 출력
+
+# 대상 과목 및 영역별 기재 원칙
+사용자가 입력한 영역(분류)을 자동 인식하여 아래의 원칙에 따라 작성하십시오.
+
+1. [자율활동] (최대 500자)
+- 학교·학급 단체 활동의 단순 나열을 배제하고, 그 안에서 학생이 '스스로 계획하고 주도적으로 실천한 개별적 역할 및 행동 변화' 중심으로 서술합니다.
+- 공동체 역량, 리더십, 협업 태도뿐만 아니라 특색활동을 통한 학업적 확장성을 드러냅니다.
+
+2. [진로활동] (최대 500자)
+- 학생의 진로 희망 분야와 연계하여, 수업이나 교내 활동에서 배운 지식을 심화·확장하기 위해 주도적으로 탐구(보고서, 독서 연계 등)한 과정을 구체적으로 기술합니다.
+- 단순히 희망 직업을 적는 것을 넘어, 진로를 향한 진지한 탐색 과정과 역량 성장에 초점을 맞춥니다.
+
+3. [동아리활동] (최대 500자)
+- 정규 동아리 부서 내에서 학생이 수행한 구체적인 역할, 기여도, 성취 과정을 기록합니다.
+- 탐구 주제 선정의 동기-실험 및 활동 과정-배우고 성장한 점이 유기적으로 연결되도록 작성합니다.
+
+# Role
+당신은 20년 경력의 고등학교 교사이며, 학교생활기록부 '교과 세부능력 및 특기사항(세특)' 작성 전문 컨설턴트입니다. 학생의 활동 데이터를 분석하여 서울 상위권 대학 입학사정관이 선호하는 '교사 관찰 시점'의 평가 문장을 작성합니다.
+
+# Goal
+학생의 활동 자료를 바탕으로 다음 4가지 요소를 포함하여 문장을 작성합니다.
+1. 성취수준: 학생이 도달한 학업의 깊이와 사고력 수준
+2. 수행 과정 및 결과: 과제, 활동의 흐름과 산출물 내용
+3. 역량: 2022 개정 교육과정 핵심역량 및 대학 평가 요소
+4. 교사 총평: 태도, 참여도, 변화, 성장 등 관찰을 통한 종합 판단
+
+# 🎯 이번 작성 대상
+- 적용 교육과정: 2022 개정 교육과정
+- 목표 분량: 공백 포함 최대 500자 (나이스 기준 약 1500바이트 이내)
+
+# 🗣 Tone & Manner (대화 및 작성 태도)
+- 사용자(교사)에게는 예의 바르고 정중한 '하십시오체(~합니다, ~하겠습니다)'를 사용하십시오.
+- 친절하고 협조적인 전문 컨설턴트의 태도를 유지하십시오.
+
+# ⛔ Critical Constraints (작성 금지 사항 - 엄수)
+1. 서술 시점 위반 금지 (교사 관찰자 시점 유지)
+   - (학생 시점 절대 금지): ~을 깨달음, ~을 알게 됨, ~라고 느낌, 계기가 되었음, ~다짐함
+   - (교사 관찰 시점): ~을 표현함, ~에 대해 토론함, ~모습이 돋보임, ~역량이 충분함
+2. 금지 용어: 영어 브랜드명/서비스명(ChatGPT, Gemini 등) → '생성형 AI', '대화형 모델' 등 보통명사로 대체. 학생이 참여한 강의의 강사명, 구체적인 기업명, 대학명 사용 금지.
+3. 금지 기호 (절대 위반 금지): 세특/특기사항 결과물 안에는 마크다운 문법을 단 하나도 사용하지 마십시오. **볼드**, *이탤릭*, - 리스트, # 제목, 번호 매기기(1. 2. 3.), 소제목(예: "역량 반영:") 등을 절대 포함하지 마십시오. 《 》, 『 』, 가운데 점 같은 특수기호도 금지입니다. 강조가 필요할 경우 오직 작은따옴표('')만 사용하시고, 도서명은 '도서명(저자명)' 또는 '도서명'으로만 입력하십시오.
+4. 문체: 반드시 명사형("~함", "~임")으로 문장을 끝맺으십시오.
+5. 출력 형식: 세특/특기사항을 제시할 때는 완성된 문단 텍스트 그 자체만 출력하십시오. 제목, 소제목, 항목 번호, 부연 설명을 절대 덧붙이지 마십시오. "수정이나 추가를 원하시면 말씀해 주십시오", "더 필요하신 부분이 있으면 알려주세요" 같은 안내·유도 문구도 절대 쓰지 마십시오. 문단 하나만 출력하고 그대로 끝내십시오.
+
+# ✂️ 글자수 엄수 규칙 (매우 중요 - 반드시 지킬 것)
+- 이번 목표 분량은 나이스(NEIS) 기준 최대 1500바이트(공백 포함 한글 약 500자)입니다. 최소 1425바이트(약 475자) 이상, 1500바이트(약 500자) 이하가 되도록 작성하십시오.
+- 나이스 바이트 기준: 한글 1자 = 3바이트, 영문·숫자·공백·기호 1자 = 1바이트로 계산합니다.
+- 이 문단은 자동으로 재검토되지 않고 그대로 최종 결과물로 사용됩니다. 다시 다듬을 기회가 없다는 전제로, 반드시 처음부터 목표 범위에 맞게 작성하십시오.
+- 예를 들어 목표가 약 500자(1500바이트)인데 474자(약 1422바이트) 이하로 쓰고 멈추는 것은 명백한 오류입니다. 분량이 부족할 것 같으면 사례를 하나 더 추가하거나, 이미 쓴 문장을 더 구체적으로 풀어서 서술하여 처음부터 충분한 분량으로 작성하십시오.
+- 반대로 500자(1500바이트)를 넘겼다면 문장을 압축해 그 이하로 줄인 뒤에만 출력하십시오.
+- 문단을 다 쓴 후, 반드시 스스로 분량을 확인하여 위 범위(약 475~500자, 1425~1500바이트) 안에 있는지 점검하고, 범위 밖이면 다시 써서 맞춘 뒤에만 최종 출력하십시오. 확인 없이 바로 출력하는 것은 허용되지 않습니다.
+
+# 📌 Evaluation Criteria & Keyword Mapping
+## 1. 핵심역량 및 필수 서술어 (참고용 - 전체 목록. 대화 중 학생 자료에 맞는 항목을 선택해 활용)
+- 자기관리역량: (계획함, 성찰함, 개선함, 주도적으로 학습함)
+- 지식정보처리역량: (분석함, 정리함, 탐색함, 연결함, 요약함, 도출함, 활용함, 비판적으로 수용함)
+- 창의적 사고역량: (재구성함, 전환함, 창출함, 독창적임, 발상의 전환을 보임, 문제를 새롭게 정의함, 융합하여 제안함)
+- 협력적소통역량: (설명함, 발표함, 조정함, 수용함, 경청함, 공감함, 설득함, 효과적으로 소통함)
+- 공동체역량: (협업함, 배려함, 기여함, 나눔을 실천함, 갈등을 해결함, 책임을 다함, 의견을 조율함, 피드백을 주고받음)
+- 심미적감성역량: (공감함, 존중함, 표현함, 향유함, 성찰함, 감수성이 뛰어남)
+
+## 권장 문장 패턴
+- ~을 표현함. ~활동에 참여함. ~에 대해 ~하는 모습을 보임. ~에 대해 심도 있게 탐구함.
+- ~에 대한 대안을 제시함. ~에 대한 공감을 이끌어냄. ~의 다양한 측면을 비교함.
+- ~하는 모습이 우수함. ~한 모습이 돋보임. ~하는 능력이 탁월함. ~한 결론을 도출함.
+
+# 🔗 대화 연속성 규칙 (매우 중요).
+- 사용자가 짧은 코멘트(예: "역량 추가해줘", 사진 한 장)만 보내더라도, 항상 "지금까지의 전체 맥락을 반영한 하나의 최종본"을 출력해야 합니다.
+
+# Workflow
+
+## [Step 1] 자료 분석
+사용자(교사)가 첫 메시지로 전달한 기재 영역, 과목명, 강조 핵심역량, 업로드 자료(추출된 텍스트·이미지), 관찰 기록/메모를 종합적으로 분석하십시오. 별도의 인사말이나 추가 자료 요청 없이 바로 [Step 2]로 진행하십시오. 다만 제공된 정보가 지나치게 빈약하여(예: 아무 내용도 없음) 초안 작성이 불가능한 경우에만, 어떤 정보가 더 필요한지 한두 문장으로 짧게 요청하십시오.
+
+## [Step 2] 세특 문장 작성
+수집된 정보를 바탕으로 성취수준 → 수행과정 → 역량 → 총평의 흐름에 맞춰 작성하십시오. (참여도가 낮은 학생은 관찰된 사실 위주로 기술) 작성 후 위 "✂️ 글자수 엄수 규칙"에 따라 반드시 글자수를 확인하고 범위를 벗어나면 다시 써서 맞춘 뒤에만 출력하십시오. 출력에는 문단 텍스트만 포함하고 제목, 번호, 마크다운, 부연 문구를 넣지 마십시오.
+
+## [Step 3] 피드백 및 수정
+사용자가 수정을 요청하거나 추가 자료(텍스트·사진)를 보내면, 위 "🔗 대화 연속성 규칙"에 따라 기존 내용과 새 자료를 모두 반영한 최종본을 다시 작성하십시오. 다음을 확인하여 반영하십시오.
+1. 활동 구체화/강조 여부
+2. 역량 변경/추가 여부
+3. 표현 수정 및 분량 조절
+수정된 결과도 [Step 2]와 동일하게 글자수와 출력 형식 규칙을 반드시 다시 지키십시오.
+
+# 📝 Examples (Few-shot Learning)
+다음은 우수 작성 사례입니다. 이 톤 앤 매너를 참고하여 작성하십시오.
+
+(이번 작성에서는 별도 예시 없이 위 지침만으로 작성하십시오.)
+---
+명령: 위 지침을 완벽히 숙지하고, 사용자가 전달한 첫 메시지(기재 영역·자료)를 바탕으로 곧바로 [Step 2]의 세특 초안(완성된 문단 텍스트만)을 출력하십시오. 인사말이나 자료 요청 문구 없이 문단 하나만 출력하고 끝내십시오. 이후 사용자가 수정을 요청하면 매번 글자수 제한과 출력 형식(마크다운 금지, 문단만 출력) 규칙을 다시 확인하십시오.`;
+
+    // ---------- Gemini 호출 ----------
+    async function sdGenerateDraft(history) {
+      const apiKey = document.getElementById('sd-api-key').value.trim();
+      const body = {
+        systemInstruction: { role: "system", parts: [{ text: SD_SYSTEM_PROMPT }] },
+        contents: history,
+        generationConfig: { temperature: 0.5, maxOutputTokens: 4096 }
+      };
+      const modelsToTry = ["gemini-3.1-pro", "gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash-lite"];
+
+      let lastErr;
+      for (const model of modelsToTry) {
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 60000);
+          const res = await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+            signal: controller.signal
+          });
+          clearTimeout(timeoutId);
+
+          if (!res.ok) {
+            const errBody = await res.json().catch(() => ({}));
+            throw new Error(`API Error (${model}): ` + (errBody?.error?.message || res.statusText));
+          }
+          const data = await res.json();
+          const text = (data?.candidates?.[0]?.content?.parts || []).map(p => p.text || "").join("");
+          if (!text.trim()) throw new Error("빈 응답을 받았습니다.");
+          return text.trim();
+        } catch (err) {
+          lastErr = err;
+          console.warn(`[세특초안] ${model} 호출 실패:`, err.message);
+        }
+      }
+      throw lastErr || new Error("모든 모델 호출에 실패했습니다.");
+    }
+
+    // ---------- 체크리스트 / 안내문구 ----------
+    function sdBuildChecklist(text) {
+      const byteLen = getNeisByteLength(text);
+      const charLen = text.length;
+      const items = [];
+
+      items.push({
+        ok: byteLen <= 1500,
+        label: `분량: 공백 포함 ${charLen}자 (약 ${byteLen.toLocaleString()}바이트, NEIS 기준 최대 1,500바이트)`
+      });
+
+      const sentences = text.split(/(?<=[.!?])\s+/).map(s => s.trim()).filter(Boolean);
+      const nonNominal = sentences.filter(s => !/[함임음]["')\]]*\.?$/.test(s));
+      items.push({
+        ok: nonNominal.length === 0,
+        label: nonNominal.length === 0
+          ? "모든 문장이 명사형 어미(~함/~임/~음)로 종결됨"
+          : `명사형 어미로 끝나지 않는 문장 ${nonNominal.length}개 발견 — 검토 필요`
+      });
+
+      const hasMarkdown = /(\*\*|##|^-\s|^\d+\.\s|【|『|《)/m.test(text);
+      items.push({
+        ok: !hasMarkdown,
+        label: hasMarkdown ? "마크다운 기호(굵게·목록·제목 등) 감지됨 — 제거 필요" : "마크다운 기호 미사용 확인"
+      });
+
+      const bannedPatterns = [
+        { re: /(교내|교외)?\s*(대회|경시대회|올림피아드).{0,8}(수상|입상|참가|참여|출전)/, label: "대회 참가·수상 관련 표현" },
+        { re: /토익|토플|텝스|TOEIC|TOEFL|TEPS|HSK|JLPT|IELTS/i, label: "공인어학시험" },
+        { re: /소논문|R&E|학회지|학술지\s*(등재|게재)/, label: "소논문/학회지" },
+        { re: /특허|지식재산권|상표\s*(출원|등록)/, label: "지식재산권" },
+        { re: /K-?MOOC|KOCW|무크/i, label: "MOOC/KOCW" },
+        { re: /방과후\s*(학교|수업)/, label: "방과후학교" },
+        { re: /ChatGPT|Gemini|Claude|GPT-?\d|뤼튼/i, label: "AI 서비스 브랜드명" }
+      ];
+      const hits = bannedPatterns.filter(p => p.re.test(text)).map(p => p.label);
+      items.push({
+        ok: hits.length === 0,
+        label: hits.length === 0
+          ? "기재 금지 항목(대회·어학시험·논문·특허·MOOC·방과후 등) 미발견"
+          : `기재 금지 가능 표현 발견: ${hits.join(", ")} — 반드시 확인 필요`
+      });
+
+      return items;
+    }
+
+    function sdRenderChecklist(items) {
+      const el = document.getElementById('sd-checklist');
+      if (!el) return;
+      el.innerHTML = items.map(it =>
+        `<div style="color:${it.ok ? '#4ade80' : '#ff6b6b'};">${it.ok ? '✅' : '⚠️'} ${it.label}</div>`
+      ).join('');
+    }
+
+    function sdRenderDisclaimer() {
+      const el = document.getElementById('sd-disclaimer');
+      if (!el) return;
+      el.textContent = "※ 주의: 생성형 AI의 결과물을 그대로 입력하는 것은 금지되어 있습니다. 교사는 반드시 본 초안을 보조 수단(윤문 등)으로만 활용하고, 실제 학생의 수행과 비교하여 허위나 과장이 없는지 철저히 검토한 후 교사 본인의 책임하에 최종 입력하십시오.";
+    }
+
+    // ---------- UI 요소 ----------
+    const sdForm = document.getElementById('sdForm');
+    const sdGenerateBtn = document.getElementById('sd-generateBtn');
+    const sdEmptyState = document.getElementById('sd-emptyState');
+    const sdLoadingState = document.getElementById('sd-loadingState');
+    const sdLoadingLabel = document.getElementById('sd-loadingLabel');
+    const sdDraftBox = document.getElementById('sd-draftBox');
+    const sdArea = document.getElementById('sd-area');
+    const sdSubjectGroup = document.getElementById('sd-subject-group');
+    const sdFilesInput = document.getElementById('sd-files');
+    const sdFileListEl = document.getElementById('sd-file-list');
+    const sdReviseBtn = document.getElementById('sd-reviseBtn');
+    const sdReviseInput = document.getElementById('sd-reviseInput');
+    const sdReviseFiles = document.getElementById('sd-reviseFiles');
+
+    let sdHistory = [];
+
+    function sdToggleAreaUI() {
+      const isSubject = !sdArea || sdArea.value === 'subject';
+      if (sdSubjectGroup) sdSubjectGroup.style.display = isSubject ? '' : 'none';
+    }
+    sdArea?.addEventListener('change', sdToggleAreaUI);
+    sdToggleAreaUI();
+
+    // 강조 핵심역량 최대 2개 제한
+    document.querySelectorAll('#sd-competency-group input[type=checkbox]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        const checked = document.querySelectorAll('#sd-competency-group input[type=checkbox]:checked');
+        if (checked.length > 2) {
+          cb.checked = false;
+          alert('강조할 핵심역량은 최대 2개까지 선택할 수 있습니다.');
+        }
+      });
+    });
+
+    sdFilesInput?.addEventListener('change', () => {
+      const files = Array.from(sdFilesInput.files || []);
+      if (sdFileListEl) {
+        sdFileListEl.innerHTML = files.map(f =>
+          `<span style="background:rgba(150,186,255,0.12);color:#96baff;padding:0.3rem 0.7rem;border-radius:14px;font-size:0.78rem;">📎 ${f.name}</span>`
+        ).join('');
+      }
+    });
+
+    function sdBuildContextText(fd) {
+      let s = `[기재 영역] ${fd.area === 'subject' ? '교과 세특' + (fd.subjectName ? ` (과목: ${fd.subjectName})` : '') : fd.area}\n`;
+      if (fd.studentName) s += `[학생 식별] ${fd.studentName}\n`;
+      if (fd.competencies.length) s += `[강조할 핵심역량] ${fd.competencies.join(', ')}\n`;
+      if (fd.notes) s += `\n[교사 관찰 기록 / 메모]\n${fd.notes}\n`;
+      return s;
+    }
+
+    function sdRenderDraft(text) {
+      sdLoadingState?.classList.add('hidden');
+      const draftTextEl = document.getElementById('sd-draftText');
+      if (draftTextEl) draftTextEl.textContent = text;
+      const byteLen = getNeisByteLength(text);
+      const charCountEl = document.getElementById('sd-charCount');
+      if (charCountEl) charCountEl.textContent = `${text.length}자 / 약 ${byteLen.toLocaleString()}바이트`;
+      sdRenderChecklist(sdBuildChecklist(text));
+      sdRenderDisclaimer();
+      sdDraftBox?.classList.remove('hidden');
+      if (window.innerWidth <= 992) {
+        document.getElementById('sd-resultContainer')?.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+
+    if (sdForm) {
+      sdForm.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const apiKey = document.getElementById('sd-api-key').value.trim();
+        if (!apiKey) { alert("API 키를 입력하세요. (상단 '통합 파일 업로드' 탭에서 Gemini API Key를 입력하면 자동 반영됩니다.)"); return; }
+
+        const fd = {
+          area: sdArea ? sdArea.value : 'subject',
+          subjectName: document.getElementById('sd-subject-name').value.trim(),
+          studentName: document.getElementById('sd-student-name').value.trim(),
+          competencies: Array.from(document.querySelectorAll('#sd-competency-group input[type=checkbox]:checked')).map(cb => cb.value),
+          notes: document.getElementById('sd-notes').value.trim()
+        };
+
+        const files = Array.from(sdFilesInput?.files || []);
+        if (!files.length && !fd.notes) {
+          alert('업로드할 자료 또는 관찰 기록 중 최소 하나는 입력해야 합니다.');
+          return;
+        }
+
+        sdEmptyState?.classList.add('hidden');
+        sdDraftBox?.classList.add('hidden');
+        sdLoadingState?.classList.remove('hidden');
+        if (sdLoadingLabel) sdLoadingLabel.textContent = '자료를 분석하는 중입니다';
+        sdGenerateBtn.disabled = true;
+        sdGenerateBtn.innerHTML = "<span class='spinner' style='width:20px;height:20px;border-width:2px;margin:0;'></span> 처리 중...";
+
+        try {
+          const { textParts, imageParts } = await sdProcessFiles(files);
+          if (sdLoadingLabel) sdLoadingLabel.textContent = 'AI가 세특 초안을 작성 중입니다';
+
+          const contextText = sdBuildContextText(fd) + (textParts.length ? '\n\n[업로드 자료 추출 내용]\n' + textParts.join('\n\n') : '');
+          const userParts = [{ text: contextText }, ...imageParts];
+          sdHistory = [{ role: 'user', parts: userParts }];
+
+          const draft = await sdGenerateDraft(sdHistory);
+          sdHistory.push({ role: 'model', parts: [{ text: draft }] });
+
+          sdRenderDraft(draft);
+        } catch (err) {
+          sdLoadingState?.classList.add('hidden');
+          sdEmptyState?.classList.remove('hidden');
+          alert('초안 생성 중 오류가 발생했습니다:\n' + err.message);
+        } finally {
+          sdGenerateBtn.disabled = false;
+          sdGenerateBtn.innerHTML = "<span class='btn-text'>AI 세특 초안 완성하기</span><span class='btn-icon'>✦</span>";
+        }
+      });
+    }
+
+    sdReviseBtn?.addEventListener('click', async () => {
+      const apiKey = document.getElementById('sd-api-key').value.trim();
+      if (!apiKey) { alert('API 키를 입력하세요.'); return; }
+      const revision = sdReviseInput?.value.trim();
+      if (!revision) { alert('수정 요청 내용을 입력하세요.'); return; }
+      if (!sdHistory.length) { alert('먼저 초안을 생성하세요.'); return; }
+
+      sdReviseBtn.disabled = true;
+      const originalHtml = sdReviseBtn.innerHTML;
+      sdReviseBtn.innerHTML = "<span class='spinner' style='width:16px;height:16px;border-width:2px;margin:0;'></span> 반영 중...";
+
+      try {
+        const files = Array.from(sdReviseFiles?.files || []);
+        const { textParts, imageParts } = await sdProcessFiles(files);
+        let reviseText = revision;
+        if (textParts.length) reviseText += '\n\n[추가 업로드 자료]\n' + textParts.join('\n\n');
+        sdHistory.push({ role: 'user', parts: [{ text: reviseText }, ...imageParts] });
+
+        const draft = await sdGenerateDraft(sdHistory);
+        sdHistory.push({ role: 'model', parts: [{ text: draft }] });
+
+        sdRenderDraft(draft);
+        if (sdReviseInput) sdReviseInput.value = '';
+        if (sdReviseFiles) sdReviseFiles.value = '';
+      } catch (err) {
+        sdHistory.pop(); // 실패한 요청은 히스토리에서 제거
+        alert('수정 반영 중 오류가 발생했습니다:\n' + err.message);
+      } finally {
+        sdReviseBtn.disabled = false;
+        sdReviseBtn.innerHTML = originalHtml;
+      }
+    });
+  })();
 
   // --- Visitor Stats Logic ---
   function initVisitorStats() {

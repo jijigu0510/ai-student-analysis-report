@@ -10,6 +10,8 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mammoth/mammoth.browser.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jszip/dist/jszip.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="csat_data.js"></script>
   <script src="interview_data.js"></script>
@@ -30,7 +32,7 @@
     });
   </script>
 
-  <link rel="stylesheet" href="styles.css?v=6">
+  <link rel="stylesheet" href="styles.css?v=9">
 </head>
 <body>
   <div class="app-background">
@@ -566,7 +568,21 @@
   </main>
 
   <!-- ===== 세특 분석 탭 뷰 ===== -->
-  <main id="view-setech" class="main-container view-section hidden">
+  <main id="view-setech" class="view-section hidden" style="flex: 1; min-width: 0;">
+    <div class="glass-panel" style="padding: 0.6rem; margin-bottom: 1.5rem;">
+      <div style="display:flex;border-radius:10px;overflow:hidden;">
+        <button type="button" id="setech-nav-analyze"
+          style="flex:1;padding:0.8rem 1rem;background:var(--accent-primary);color:#fff;border:none;cursor:pointer;font-weight:600;font-size:0.95rem;border-radius:8px;transition:background 0.2s,color 0.2s;">
+          🔍 세특 분석 및 평가
+        </button>
+        <button type="button" id="setech-nav-draft"
+          style="flex:1;padding:0.8rem 1rem;background:transparent;color:var(--text-secondary);border:none;cursor:pointer;font-weight:500;font-size:0.95rem;border-radius:8px;transition:background 0.2s,color 0.2s;margin-left:0.4rem;">
+          ✍️ 세특 초안 작성
+        </button>
+      </div>
+    </div>
+
+    <div id="setech-analyze-panel" class="setech-cols">
     <section class="glass-panel form-section">
       <h2 class="section-title">✏️ 세특(세부능력 및 특기사항) 분석</h2>
       <p style="color: var(--text-secondary); margin-bottom: 2.2rem; line-height: 1.7; font-size: 0.95rem;">학생부기재요령과 대학별 우수 세특을 학습한 AI가 세특 내용을 분석하여 피드백을 제공하고, 이를 바탕으로 맞춤형 세특 작성을 지원합니다. (교과 교사용)</p>
@@ -766,6 +782,108 @@
         </div>
       </div>
     </section>
+    </div><!-- /setech-analyze-panel -->
+
+    <div id="setech-draft-panel" class="setech-cols hidden">
+      <section class="glass-panel form-section">
+        <h2 class="section-title">✍️ AI 세특 초안 작성</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 2.2rem; line-height: 1.7; font-size: 0.95rem;">학생 관찰 기록, 수행평가 결과물, 활동지(워드·PDF·한글 HWPX·사진) 등을 업로드하면, AI가 학교생활기록부 기재요령을 준수한 세특 초안을 작성해 드립니다. (교과 교사용)</p>
+        <form id="sdForm" novalidate>
+          <input type="hidden" id="sd-api-key">
+          <div class="form-group-row-3">
+            <div class="form-group">
+              <label for="sd-area" style="color: var(--text-secondary); font-weight: 500;">기재 영역</label>
+              <select id="sd-area" style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.75rem 1rem;width:100%;">
+                <option value="subject">📚 교과 세특</option>
+                <option value="자율활동">자율활동</option>
+                <option value="진로활동">진로활동</option>
+                <option value="동아리활동">동아리활동</option>
+              </select>
+            </div>
+            <div class="form-group" id="sd-subject-group">
+              <label for="sd-subject-name" style="color: var(--text-secondary); font-weight: 500;">과목명 <span style="color:#aaa;font-weight:400;font-size:0.85em;">(교과 세특인 경우)</span></label>
+              <input type="text" id="sd-subject-name" placeholder="예) 미적분"
+                style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.75rem 1rem;width:100%;">
+            </div>
+            <div class="form-group">
+              <label for="sd-student-name" style="color: var(--text-secondary); font-weight: 500;">학생 식별 <span style="color:#aaa;font-weight:400;font-size:0.85em;">(선택, 초안 참고용)</span></label>
+              <input type="text" id="sd-student-name" placeholder="예) 3학년 2반 홍길동"
+                style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.75rem 1rem;width:100%;">
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom:1.4rem;">
+            <label style="color:var(--text-secondary);font-weight:500;display:block;margin-bottom:0.6rem;">강조할 핵심역량 <span style="color:#aaa;font-weight:400;font-size:0.85em;">(최대 2개, 미선택 시 AI가 자료에 맞게 자율 선택)</span></label>
+            <div id="sd-competency-group" style="display:flex;flex-wrap:wrap;gap:0.5rem;">
+              <label class="sd-comp-chip"><input type="checkbox" value="자기관리역량" style="margin-right:4px;">자기관리역량</label>
+              <label class="sd-comp-chip"><input type="checkbox" value="지식정보처리역량" style="margin-right:4px;">지식정보처리역량</label>
+              <label class="sd-comp-chip"><input type="checkbox" value="창의적 사고역량" style="margin-right:4px;">창의적 사고역량</label>
+              <label class="sd-comp-chip"><input type="checkbox" value="협력적소통역량" style="margin-right:4px;">협력적소통역량</label>
+              <label class="sd-comp-chip"><input type="checkbox" value="공동체역량" style="margin-right:4px;">공동체역량</label>
+              <label class="sd-comp-chip"><input type="checkbox" value="심미적감성역량" style="margin-right:4px;">심미적감성역량</label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="sd-files" style="color: var(--text-secondary); font-weight: 500;">자료 업로드 <span class="label-desc" style="color: #96baff; font-weight: normal;">(Word, PDF, 한글 HWPX, 이미지 — 여러 개 선택 가능)</span></label>
+            <input type="file" id="sd-files" multiple accept=".doc,.docx,.pdf,.hwpx,.png,.jpg,.jpeg,.webp"
+              style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.6rem 0.8rem;width:100%;">
+            <div id="sd-file-list" style="margin-top:0.6rem;display:flex;flex-wrap:wrap;gap:0.4rem;"></div>
+          </div>
+
+          <div class="form-group">
+            <label for="sd-notes" style="color: var(--text-secondary); font-weight: 500;">관찰 기록 / 추가 메모 <span class="label-desc" style="color: #96baff; font-weight: normal;">(선택, 직접 입력)</span></label>
+            <textarea id="sd-notes" rows="6"
+              placeholder="예) 발표 시 자신의 분석 논리를 조리있게 설명함. 활동지에 극한 개념의 실생활 적용 사례를 스스로 정리함. 모둠 활동에서 데이터 정리를 주도함 등"
+              style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.75rem 1rem;width:100%;resize:vertical;min-height:120px;"></textarea>
+          </div>
+
+          <button type="submit" class="btn-primary" id="sd-generateBtn">
+            <span class="btn-text">AI 세특 초안 완성하기</span>
+            <span class="btn-icon">✦</span>
+          </button>
+        </form>
+      </section>
+      <section class="glass-panel result-section">
+        <h2 class="section-title">세특 초안 결과</h2>
+        <div class="result-container" id="sd-resultContainer">
+          <div class="empty-state" id="sd-emptyState">
+            <div class="empty-icon">✍️</div>
+            <p>업로드 자료와 관찰 기록을 입력한 후 초안 생성 버튼을 클릭하세요.<br><span style="font-size:0.85em;color:var(--text-secondary);">완성된 초안은 반드시 교사가 검토·수정 후 입력해야 합니다.</span></p>
+          </div>
+          <div class="loading-state hidden" id="sd-loadingState">
+            <div class="spinner"></div>
+            <div class="loading-text">
+              <span id="sd-loadingLabel">AI가 세특 초안을 작성 중입니다</span>
+              <span class="dots">...</span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill"></div></div>
+          </div>
+          <div id="sd-draftBox" class="hidden">
+            <div style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:0.5rem;text-align:right;" id="sd-charCount"></div>
+            <div id="sd-draftText" style="background:rgba(150,186,255,0.08);padding:1.2rem;border-radius:8px;border-left:4px solid var(--accent-primary);white-space:pre-wrap;line-height:1.85;font-size:0.95rem;"></div>
+            <div class="overall-evaluation" style="margin-top:1.2rem;">
+              <h3>✅ 체크리스트</h3>
+              <div id="sd-checklist" style="font-size:0.85rem;line-height:1.9;"></div>
+            </div>
+            <div id="sd-disclaimer" style="margin-top:1.2rem;padding:0.8rem 1rem;background:rgba(255,159,67,0.1);border-left:4px solid #ff9f43;border-radius:6px;font-size:0.82rem;color:#ffb765;line-height:1.7;"></div>
+
+            <div class="form-group" style="margin-top:1.6rem;">
+              <label for="sd-reviseInput" style="color: var(--text-secondary); font-weight: 500;">수정 요청 <span class="label-desc" style="color: #96baff; font-weight: normal;">(예: "동아리에서의 역할을 더 구체적으로 써줘", "지식정보처리역량 추가해줘")</span></label>
+              <textarea id="sd-reviseInput" rows="3" placeholder="수정하고 싶은 내용을 입력하세요..."
+                style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.75rem 1rem;width:100%;resize:vertical;"></textarea>
+              <label for="sd-reviseFiles" style="color: var(--text-secondary); font-size:0.82rem; margin-top:0.6rem; display:block;">추가 자료 업로드 <span style="color:#aaa;">(선택)</span></label>
+              <input type="file" id="sd-reviseFiles" multiple accept=".doc,.docx,.pdf,.hwpx,.png,.jpg,.jpeg,.webp"
+                style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.5rem 0.8rem;width:100%;margin-top:0.3rem;">
+              <button type="button" class="btn-primary" id="sd-reviseBtn" style="margin-top:0.9rem;">
+                <span class="btn-text">반영하여 다시 작성</span>
+                <span class="btn-icon">↻</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div><!-- /setech-draft-panel -->
   </main>
 
   <main id="view-csat" class="single-container view-section hidden" style="flex: 1;">
@@ -3039,8 +3157,8 @@ if (document.readyState === 'loading') {
 }
 
   </script>
-  <script src="card.js?v=98" defer></script>
-  <script src="app.js?v=77"></script>
+  <script src="card.js?v=99" defer></script>
+  <script src="app.js?v=78"></script>
   <script src="grade-rank.js?v=78"></script>
   <script src="univ-score.js"></script>
   <script src="admission_dist.js"></script>
