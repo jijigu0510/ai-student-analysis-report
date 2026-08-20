@@ -774,8 +774,14 @@ window.initCardTab = function() {
         const pm = sub.match(/([\d.]+)\s*%/);
         if (pm) val = parseFloat(pm[1]);
         else {
-          const nm = sub.match(/(?:^|[^\d.,])(\d{1,3})(?:[^\d%배.]|$)/);
-          if (nm && +nm[1] <= 100) val = +nm[1];
+          // "1,000(100)" 형식: 괄호 안의 숫자가 실제 반영비율(%)
+          const pp = sub.match(/\((\d{1,3})\)/);
+          if (pp && +pp[1] <= 100) val = +pp[1];
+          else {
+            // 쉼표(천단위 구분자) 뒤 숫자를 오인하지 않도록 lookahead에 ',' 추가
+            const nm = sub.match(/(?:^|[^\d.,])(\d{1,3})(?:[^\d%배.,]|$)/);
+            if (nm && +nm[1] <= 100) val = +nm[1];
+          }
         }
         if (val == null || !(val > 0)) continue;
         if (hits[h].col === '__s1') { if (s1 == null) s1 = val; }

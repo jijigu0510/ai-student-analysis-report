@@ -181,6 +181,7 @@
         <button id="tab-grade-rank" class="tab-btn">📊 내신 점수 확인하기</button>
         <button id="tab-univ-score" class="tab-btn">🎓 대학별 교과 점수 확인하기</button>
         <button id="tab-admission-dist" class="tab-btn">📊 대학별 입결 분포도</button>
+        <button id="tab-susi-ipgyeol" class="tab-btn">📈 수시 입결 확인하기</button>
         <button id="tab-school-mock-status" class="tab-btn">🏫 우리 학교 모의고사 성적 현황</button>
         <button id="tab-hexagon" class="tab-btn">🔷 육각형 인재 확인하기</button>
         <button id="tab-admission-analysis" class="tab-btn">📋 수시 전형 분석하기</button>
@@ -1411,6 +1412,11 @@
   <!-- ===== 대학별 입결 분포도 탭 뷰 ===== -->
   <main id="view-admission-dist" class="main-container view-section hidden" style="padding: 0; background: none; box-shadow: none; border: none; display: none;">
     <div id="adist-root" style="width: 100%; padding: 1.5rem 0;"></div>
+  </main>
+
+  <!-- ===== 수시 입결 확인하기 탭 뷰 ===== -->
+  <main id="view-susi-ipgyeol" class="main-container view-section hidden" style="padding: 0; background: none; box-shadow: none; border: none; display: none;">
+    <div id="si-root"></div>
   </main>
 
   <!-- ===== 우리 학교 모의고사 성적 현황 탭 ===== -->
@@ -3167,10 +3173,12 @@ if (document.readyState === 'loading') {
 
   </script>
   <script src="card.js?v=99" defer></script>
-  <script src="app.js?v=81"></script>
+  <script src="app.js?v=82"></script>
   <script src="grade-rank.js?v=78"></script>
   <script src="univ-score.js"></script>
   <script src="admission_dist.js"></script>
+  <script src="susi_ipgyeol_data.js"></script>
+  <script src="susi-ipgyeol.js?v=1"></script>
   <script src="hexagon.js?v=5"></script>
   <script src="admission-analysis.js?v=12"></script>
   <script type="module" src="firebase-visitors.js"></script>

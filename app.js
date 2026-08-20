@@ -287,14 +287,16 @@ document.addEventListener("DOMContentLoaded", () => {
   const viewGpaMockCompare = document.getElementById("view-gpa-mock-compare");
   const viewGradeRank = document.getElementById("view-grade-rank");
   const viewAdmissionDist = document.getElementById("view-admission-dist");
+  const tabSusiIpgyeol = document.getElementById("tab-susi-ipgyeol");
+  const viewSusiIpgyeol = document.getElementById("view-susi-ipgyeol");
   const viewSchoolMockStatus = document.getElementById("view-school-mock-status");
   const viewHexagon = document.getElementById("view-hexagon");
 
   const tabSubjectPath = document.getElementById("tab-subject-path");
   const viewSubjectPath = document.getElementById("view-subject-path");
 
-  const allTabs = [tabIndividual, tabPassFail, tabPassFailExamples, tabSetech, tabSubjectPath, tabCsat, tabInterview, tabMockExam, tabGpaMockCompare, tabGradeRank, tabUnivScore, tabAdmissionDist, tabSchoolMockStatus, tabHexagon, tabAdmissionAnalysis, tabCard].filter(Boolean);
-  const allViews = [viewIndividual, viewPassFail, viewPassFailExamples, viewSetech, viewSubjectPath, viewCsat, viewInterview, viewMockExam, viewGpaMockCompare, viewGradeRank, viewUnivScore, viewAdmissionDist, viewSchoolMockStatus, viewHexagon, viewAdmissionAnalysis, viewCard].filter(Boolean);
+  const allTabs = [tabIndividual, tabPassFail, tabPassFailExamples, tabSetech, tabSubjectPath, tabCsat, tabInterview, tabMockExam, tabGpaMockCompare, tabGradeRank, tabUnivScore, tabAdmissionDist, tabSusiIpgyeol, tabSchoolMockStatus, tabHexagon, tabAdmissionAnalysis, tabCard].filter(Boolean);
+  const allViews = [viewIndividual, viewPassFail, viewPassFailExamples, viewSetech, viewSubjectPath, viewCsat, viewInterview, viewMockExam, viewGpaMockCompare, viewGradeRank, viewUnivScore, viewAdmissionDist, viewSusiIpgyeol, viewSchoolMockStatus, viewHexagon, viewAdmissionAnalysis, viewCard].filter(Boolean);
 
   function switchTabTo(activeTab, activeView) {
     allTabs.forEach(t => t.classList.remove("active"));
@@ -307,7 +309,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (activeView) {
       activeView.classList.remove("hidden");
       activeView.classList.add("active");
-      activeView.style.display = (activeView.id === "view-csat" || activeView.id === "view-grade-rank" || activeView.id === "view-univ-score" || activeView.id === "view-passfail-examples" || activeView.id === "view-admission-dist" || activeView.id === "view-school-mock-status" || activeView.id === "view-hexagon" || activeView.id === "view-subject-path" || activeView.id === "view-admission-analysis" || activeView.id === "view-mock-exam" || activeView.id === "view-gpa-mock-compare" || activeView.id === "view-card") ? "block" : "grid";
+      activeView.style.display = (activeView.id === "view-csat" || activeView.id === "view-grade-rank" || activeView.id === "view-univ-score" || activeView.id === "view-passfail-examples" || activeView.id === "view-admission-dist" || activeView.id === "view-susi-ipgyeol" || activeView.id === "view-school-mock-status" || activeView.id === "view-hexagon" || activeView.id === "view-subject-path" || activeView.id === "view-admission-analysis" || activeView.id === "view-mock-exam" || activeView.id === "view-gpa-mock-compare" || activeView.id === "view-card") ? "block" : "grid";
     }
 
     // Sidebar Interview Settings Visibility
@@ -363,6 +365,11 @@ document.addEventListener("DOMContentLoaded", () => {
   if (tabAdmissionDist) tabAdmissionDist.addEventListener("click", () => {
     switchTabTo(tabAdmissionDist, viewAdmissionDist);
     if (typeof window.initAdmissionDist === "function") window.initAdmissionDist();
+  });
+  if (tabSusiIpgyeol) tabSusiIpgyeol.addEventListener("click", () => {
+    switchTabTo(tabSusiIpgyeol, viewSusiIpgyeol);
+    if (typeof window.initSusiIpgyeol === "function") window.initSusiIpgyeol();
+    setTimeout(() => window.dispatchEvent(new Event('resize')), 100);
   });
   if (tabSchoolMockStatus) tabSchoolMockStatus.addEventListener("click", () => {
     switchTabTo(tabSchoolMockStatus, viewSchoolMockStatus);
