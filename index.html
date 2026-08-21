@@ -2358,6 +2358,64 @@ const AdmissionAnalysis = () => {
     return agg;
   }, [data]);
 
+  // ─── 전형별 합격률 ────────────────────────────────────────────────────────
+  const acceptanceRate = useMemo(() => {
+    const init = () => ({ pass: 0, waitPass: 0, fail: 0 });
+    const s = init(), c = init();
+    data.forEach(item => {
+      const cat = getResultCategory(item.result);
+      const isS = item.type.includes('교과');
+      const isC = !isS && (item.type.includes('종합') || item.type.includes('학종') || item.type.includes('서류'));
+      const target = isS ? s : isC ? c : null;
+      if (!target) return;
+      if (cat === '합격') target.pass++;
+      else if (cat === '충원합격') target.waitPass++;
+      else if (cat === '불합격') target.fail++;
+    });
+    const compute = (obj) => {
+      const total = obj.pass + obj.waitPass + obj.fail;
+      if (!total) return null;
+      return { ...obj, total,
+        initialRate: +(obj.pass / total * 100).toFixed(1),
+        finalRate: +((obj.pass + obj.waitPass) / total * 100).toFixed(1) };
+    };
+    return { subject: compute(s), comprehensive: compute(c) };
+  }, [data]);
+
+  const gradeAcceptanceRate = useMemo(() => {
+    const rows = {};
+    data.forEach(item => {
+      const cat = getResultCategory(item.result);
+      const g = Math.floor(item.grade);
+      if (g < 1 || g > 9) return;
+      if (!rows[g]) rows[g] = { s: { p:0, w:0, f:0 }, c: { p:0, w:0, f:0 } };
+      const isS = item.type.includes('교과');
+      const isC = !isS && (item.type.includes('종합') || item.type.includes('학종') || item.type.includes('서류'));
+      const target = isS ? rows[g].s : isC ? rows[g].c : null;
+      if (!target) return;
+      if (cat === '합격') target.p++;
+      else if (cat === '충원합격') target.w++;
+      else if (cat === '불합격') target.f++;
+    });
+    return Array.from({ length: 9 }, (_, i) => {
+      const g = i + 1;
+      const r = rows[g];
+      if (!r) return null;
+      const st = r.s.p + r.s.w + r.s.f;
+      const ct = r.c.p + r.c.w + r.c.f;
+      if (!st && !ct) return null;
+      return {
+        grade: g,
+        sTotal: st,
+        sInitial: st ? Math.round(r.s.p / st * 100) : null,
+        sFinal:   st ? Math.round((r.s.p + r.s.w) / st * 100) : null,
+        cTotal: ct,
+        cInitial: ct ? Math.round(r.c.p / ct * 100) : null,
+        cFinal:   ct ? Math.round((r.c.p + r.c.w) / ct * 100) : null,
+      };
+    }).filter(Boolean);
+  }, [data]);
+
   const toggleFilter = (c) =>
     setActiveFilters(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]);
 
@@ -2827,6 +2885,134 @@ const AdmissionAnalysis = () => {
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
+              </div>
+
+              {/* 전형별 합격률 대시보드 */}
+              <div style={{ ...card }}>
+                <p style={{ margin: '0 0 0.85rem', fontWeight: 700, fontSize: '0.9rem', color: t.textHeading,
+                  display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  🎯 전형별 합격률
+                </p>
+
+                {/* 교과 / 종합 전체 합격률 */}
+                {[
+                  { key: 'subject',       label: '교과 전형', color: '#6366f1' },
+                  { key: 'comprehensive', label: '종합 전형', color: '#10b981' },
+                ].map(({ key, label, color }) => {
+                  const d = acceptanceRate[key];
+                  if (!d) return (
+                    <div key={key} style={{ marginBottom: '1rem', padding: '0.5rem 0.7rem',
+                      backgroundColor: t.bgSub, borderRadius: '8px',
+                      fontSize: '0.78rem', color: t.textMuted, textAlign: 'center' }}>
+                      {label} 데이터 없음
+                    </div>
+                  );
+                  return (
+                    <div key={key} style={{ marginBottom: '1.1rem' }}>
+                      {/* 헤더 */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                        <span style={{ fontSize: '0.82rem', fontWeight: 700, color }}>{label}</span>
+                        <span style={{ fontSize: '0.73rem', color: t.textMuted }}>총 {d.total}건</span>
+                      </div>
+                      {/* 최초합 bar */}
+                      <div style={{ marginBottom: '0.38rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between',
+                          fontSize: '0.72rem', color: t.textMuted, marginBottom: '0.18rem' }}>
+                          <span>최초합 ({d.pass}건)</span>
+                          <span style={{ fontWeight: 700, color: COLORS['합격'] }}>{d.initialRate}%</span>
+                        </div>
+                        <div style={{ height: '7px', borderRadius: '4px', backgroundColor: t.bgSub, overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${d.initialRate}%`,
+                            backgroundColor: COLORS['합격'], borderRadius: '4px',
+                            transition: 'width 0.5s ease' }} />
+                        </div>
+                      </div>
+                      {/* 충원포함 bar */}
+                      <div style={{ marginBottom: '0.55rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between',
+                          fontSize: '0.72rem', color: t.textMuted, marginBottom: '0.18rem' }}>
+                          <span>충원포함 ({d.pass + d.waitPass}건)</span>
+                          <span style={{ fontWeight: 700, color: COLORS['충원합격'] }}>{d.finalRate}%</span>
+                        </div>
+                        <div style={{ height: '7px', borderRadius: '4px', backgroundColor: t.bgSub, overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${d.finalRate}%`,
+                            backgroundColor: COLORS['충원합격'], borderRadius: '4px',
+                            transition: 'width 0.5s ease' }} />
+                        </div>
+                      </div>
+                      {/* 건수 배지 */}
+                      <div style={{ display: 'flex', gap: '0.35rem' }}>
+                        {[
+                          { label: '최초합', val: d.pass,     color: COLORS['합격'] },
+                          { label: '충원합', val: d.waitPass, color: COLORS['충원합격'] },
+                          { label: '불합격', val: d.fail,     color: COLORS['불합격'] },
+                        ].map(s => (
+                          <div key={s.label} style={{ flex: 1, textAlign: 'center',
+                            padding: '0.28rem 0.1rem', backgroundColor: t.bgSub,
+                            borderRadius: '6px', border: `1px solid ${t.border}` }}>
+                            <div style={{ color: s.color, fontWeight: 700, fontSize: '0.82rem' }}>{s.val}</div>
+                            <div style={{ color: t.textMuted, fontSize: '0.67rem', marginTop: '0.08rem' }}>{s.label}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* 등급별 합격률 테이블 */}
+                {gradeAcceptanceRate.length > 0 && (
+                  <>
+                    <div style={{ borderTop: `1px solid ${t.border}`, margin: '0.6rem 0 0.75rem' }} />
+                    <p style={{ margin: '0 0 0.5rem', fontSize: '0.78rem', fontWeight: 700, color: t.textHeading }}>
+                      등급별 합격률
+                    </p>
+                    <div style={{ overflowX: 'auto' }}>
+                      <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: '0.72rem' }}>
+                        <thead>
+                          <tr style={{ borderBottom: `1px solid ${t.border}` }}>
+                            <th style={{ padding: '0.28rem 0.3rem', color: t.textMuted, fontWeight: 600,
+                              textAlign: 'center', whiteSpace: 'nowrap' }}>등급</th>
+                            <th style={{ padding: '0.28rem 0.3rem', color: '#6366f1', fontWeight: 600,
+                              textAlign: 'center', whiteSpace: 'nowrap' }}>교과<br/>최초/충원</th>
+                            <th style={{ padding: '0.28rem 0.3rem', color: '#10b981', fontWeight: 600,
+                              textAlign: 'center', whiteSpace: 'nowrap' }}>종합<br/>최초/충원</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {gradeAcceptanceRate.map(r => (
+                            <tr key={r.grade} style={{ borderBottom: `1px solid ${t.border}` }}>
+                              <td style={{ padding: '0.3rem', textAlign: 'center',
+                                color: t.textHeading, fontWeight: 600 }}>{r.grade}등급</td>
+                              <td style={{ padding: '0.3rem', textAlign: 'center' }}>
+                                {r.sTotal > 0 ? (
+                                  <span style={{ color: t.text }}>
+                                    <span style={{ color: COLORS['합격'], fontWeight: 700 }}>{r.sInitial}%</span>
+                                    <span style={{ color: t.textMuted }}> / </span>
+                                    <span style={{ color: COLORS['충원합격'], fontWeight: 700 }}>{r.sFinal}%</span>
+                                    <span style={{ color: t.textMuted, fontSize: '0.65rem', display: 'block' }}>({r.sTotal}건)</span>
+                                  </span>
+                                ) : <span style={{ color: t.textMuted }}>-</span>}
+                              </td>
+                              <td style={{ padding: '0.3rem', textAlign: 'center' }}>
+                                {r.cTotal > 0 ? (
+                                  <span style={{ color: t.text }}>
+                                    <span style={{ color: COLORS['합격'], fontWeight: 700 }}>{r.cInitial}%</span>
+                                    <span style={{ color: t.textMuted }}> / </span>
+                                    <span style={{ color: COLORS['충원합격'], fontWeight: 700 }}>{r.cFinal}%</span>
+                                    <span style={{ color: t.textMuted, fontSize: '0.65rem', display: 'block' }}>({r.cTotal}건)</span>
+                                  </span>
+                                ) : <span style={{ color: t.textMuted }}>-</span>}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <p style={{ margin: '0.4rem 0 0', fontSize: '0.67rem', color: t.textMuted, lineHeight: 1.5 }}>
+                      최초: 최초합 기준 / 충원: 충원합격 포함 기준
+                    </p>
+                  </>
+                )}
               </div>
             </div>
           </div>
