@@ -3296,6 +3296,63 @@ const AdmissionAnalysis = () => {
                     color: t.textMuted, fontSize: '1.2rem', padding: 0 }}>✕</button>
               </div>
 
+              {/* 전형별 합격률 요약 */}
+              {(() => {
+                const byType = {};
+                students.forEach(s => {
+                  const cat = getResultCategory(s.result);
+                  const tp = s.type || '기타';
+                  if (!byType[tp]) byType[tp] = { pass: 0, waitPass: 0, fail: 0 };
+                  if (cat === '합격') byType[tp].pass++;
+                  else if (cat === '충원합격') byType[tp].waitPass++;
+                  else if (cat === '불합격') byType[tp].fail++;
+                });
+                const rows = Object.entries(byType)
+                  .map(([tp, d]) => {
+                    const total = d.pass + d.waitPass + d.fail;
+                    if (!total) return null;
+                    return { tp, ...d, total,
+                      initialRate: Math.round(d.pass / total * 100),
+                      finalRate:   Math.round((d.pass + d.waitPass) / total * 100) };
+                  })
+                  .filter(Boolean)
+                  .sort((a, b) => b.total - a.total);
+                if (!rows.length) return null;
+                return (
+                  <div style={{ padding: '0.7rem 1.25rem', borderBottom: `1px solid ${t.border}`,
+                    backgroundColor: t.bgCard, flexShrink: 0 }}>
+                    <p style={{ margin: '0 0 0.55rem', fontSize: '0.75rem', fontWeight: 700,
+                      color: t.textMuted, letterSpacing: '0.02em' }}>전형별 합격률</p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
+                      {rows.map(r => (
+                        <div key={r.tp}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between',
+                            alignItems: 'center', marginBottom: '0.22rem', flexWrap: 'wrap', gap: '0.3rem' }}>
+                            <span style={{ fontSize: '0.74rem', color: t.text, fontWeight: 600 }}>{r.tp}</span>
+                            <div style={{ display: 'flex', gap: '0.55rem', alignItems: 'center' }}>
+                              <span style={{ fontSize: '0.67rem', color: t.textMuted }}>총 {r.total}건</span>
+                              <span style={{ fontSize: '0.72rem', color: COLORS['합격'], fontWeight: 700 }}>
+                                최초 {r.initialRate}%<span style={{ fontWeight: 400, color: t.textMuted }}> ({r.pass})</span>
+                              </span>
+                              <span style={{ fontSize: '0.72rem', color: COLORS['충원합격'], fontWeight: 700 }}>
+                                충원포함 {r.finalRate}%<span style={{ fontWeight: 400, color: t.textMuted }}> ({r.pass + r.waitPass})</span>
+                              </span>
+                            </div>
+                          </div>
+                          <div style={{ height: '7px', borderRadius: '4px',
+                            backgroundColor: t.bgSub, overflow: 'hidden', display: 'flex' }}>
+                            <div style={{ width: `${r.initialRate}%`,
+                              backgroundColor: COLORS['합격'], transition: 'width 0.45s ease' }} />
+                            <div style={{ width: `${r.finalRate - r.initialRate}%`,
+                              backgroundColor: COLORS['충원합격'], transition: 'width 0.45s ease' }} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
               <div style={{ overflowY: 'auto', padding: '0.75rem 1.25rem',
                 display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 {students.map((s, i) => {
