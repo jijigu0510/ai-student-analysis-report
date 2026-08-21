@@ -1979,7 +1979,7 @@ const GAS_URL = 'https://script.google.com/macros/s/AKfycbyFmjavISW4Xux2vJWpUdqK
 const COLORS = { '합격': '#10B981', '충원합격': '#3B82F6', '불합격': '#EF4444', '기타': '#9CA3AF' };
 const RESULT_CATEGORIES = ['합격', '충원합격', '불합격', '기타'];
 const CHART_TYPES = ['학생부위주(교과)', '학생부위주(종합)', '실기/실적위주'];
-const YEAR_OPTIONS = ['2025', '2024'];
+const YEAR_OPTIONS = ['2025', '2024', '전체'];
 
 // ─── SVG 아이콘 ─────────────────────────────────────────────────────────────
 const Icons = {
@@ -2025,8 +2025,12 @@ function parseAdmissionRows(rows) {
     .map((row, idx) => {
       const gradeRaw  = getVal(row, ['일반등급', '등급']);
       const resultRaw = getVal(row, ['최종단계', '결과', '합격여부', '상태', '판정']);
+      const cls = getVal(row, ['반']) || '';
+      const num = getVal(row, ['번호']) || '';
       return {
         id:          idx,
+        studentKey:  cls && num ? `${cls}-${num}` : '',
+        cls, num,
         uni:         getVal(row, ['대학명', '대학교', '대학']) || '-',
         type:        getVal(row, ['전형유형', '전형구분'])      || '기타',
         typeDetail:  getVal(row, ['세부유형', '전형세부'])      || '-',
@@ -2069,7 +2073,7 @@ const YearSelector = ({ year, onChange, isDark, t }) => (
       }}
     >
       {YEAR_OPTIONS.map(y => (
-        <option key={y} value={y}>{y}년</option>
+        <option key={y} value={y}>{y === '전체' ? '전체 (24+25)' : `${y}년`}</option>
       ))}
     </select>
   </div>
@@ -2084,6 +2088,7 @@ const AdmissionAnalysis = () => {
   const [selectedPoint, setSelectedPoint] = useState(null);
   const [selectedUniPassData, setSelectedUniPassData]   = useState(null);
   const [selectedUniChartData, setSelectedUniChartData] = useState(null);
+  const [modalStudent, setModalStudent]                 = useState(null);
   const [activeFilters, setActiveFilters] = useState([...RESULT_CATEGORIES]);
   const [yDomain, setYDomain]             = useState([1, 9]);
   const [tempYDomain, setTempYDomain]     = useState([1, 9]);
@@ -2127,19 +2132,34 @@ const AdmissionAnalysis = () => {
     setLoading(true);
     setGasError('');
     try {
-      const res = await fetch(`${GAS_URL}?action=admission&year=${year}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
-      if (json.error) throw new Error(json.error);
-
-      const parsed = parseAdmissionRows(json.data || []);
+      let parsed = [];
+      if (year === '전체') {
+        // 2024+2025 병렬 fetch 후 연도 태그 붙여 합산
+        const [r24, r25] = await Promise.all(
+          ['2024', '2025'].map(y => fetch(`${GAS_URL}?action=admission&year=${y}`).then(r => {
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            return r.json();
+          }))
+        );
+        if (r24.error) throw new Error(r24.error);
+        if (r25.error) throw new Error(r25.error);
+        const p24 = parseAdmissionRows(r24.data || []).map(d => ({ ...d, year: '2024' }));
+        const p25 = parseAdmissionRows(r25.data || []).map(d => ({ ...d, year: '2025' }));
+        parsed = [...p24, ...p25].map((d, i) => ({ ...d, id: i }));
+      } else {
+        const res = await fetch(`${GAS_URL}?action=admission&year=${year}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        if (json.error) throw new Error(json.error);
+        parsed = parseAdmissionRows(json.data || []).map(d => ({ ...d, year }));
+      }
       if (parsed.length > 0) {
         setData(parsed);
         setYDomain([1, 9]);
         localStorage.setItem('reactPfData', JSON.stringify(parsed));
         localStorage.setItem('reactPfYear', year);
       } else {
-        setGasError(`${year}년 시트에 파싱 가능한 데이터가 없습니다. 헤더(전형, 등급 등)를 확인해주세요.`);
+        setGasError(`${year === '전체' ? '전체' : year + '년'} 시트에 파싱 가능한 데이터가 없습니다. 헤더(전형, 등급 등)를 확인해주세요.`);
         setData([]);
       }
     } catch (err) {
@@ -2562,7 +2582,7 @@ const AdmissionAnalysis = () => {
                       outline: 'none',
                     }}
                   >
-                    {YEAR_OPTIONS.map(y => <option key={y} value={y} style={{ color: '#1e293b' }}>{y}년</option>)}
+                    {YEAR_OPTIONS.map(y => <option key={y} value={y} style={{ color: '#1e293b' }}>{y === '전체' ? '전체 (24+25)' : `${y}년`}</option>)}
                   </select>
                 </div>
               )}
@@ -2743,13 +2763,11 @@ const AdmissionAnalysis = () => {
                             const { cx, cy, payload } = props;
                             if (payload._dummy || payload.grade == null) return null;
                             const fill = COLORS[getResultCategory(payload.result)];
+                            const ox = payload.xOffset || 0;
                             return (
-                              <circle
-                                cx={cx + (payload.xOffset || 0)} cy={cy} r={6}
-                                fill={fill} fillOpacity={0.82} stroke={fill} strokeWidth={1.5}
-                                onClick={e => { e.stopPropagation(); setSelectedPoint(payload); }}
-                                style={{ cursor: 'pointer' }}
-                              />
+                              <g onClick={e => { e.stopPropagation(); setSelectedPoint(payload); }} style={{ cursor: 'pointer' }}>
+                                <circle cx={cx + ox} cy={cy} r={6} fill={fill} fillOpacity={0.82} stroke={fill} strokeWidth={1.5} />
+                              </g>
                             );
                           }}
                         />
@@ -2818,13 +2836,17 @@ const AdmissionAnalysis = () => {
                               const { cx, cy, payload } = props;
                               if (payload.grade == null) return null;
                               const fill = COLORS[getResultCategory(payload.result)];
+                              const ox = payload.xOffset || 0;
                               return (
-                                <circle
-                                  cx={cx + (payload.xOffset || 0)} cy={cy} r={6}
-                                  fill={fill} fillOpacity={0.82} stroke={fill} strokeWidth={1.5}
-                                  onClick={e => { e.stopPropagation(); setSelectedPoint(payload); }}
-                                  style={{ cursor: 'pointer' }}
-                                />
+                                <g onClick={e => { e.stopPropagation(); setSelectedPoint(payload); }} style={{ cursor: 'pointer' }}>
+                                  <circle cx={cx + ox} cy={cy} r={6} fill={fill} fillOpacity={0.82} stroke={fill} strokeWidth={1.5} />
+                                  {selectedYear === '전체' && payload.year && (
+                                    <text x={cx + ox} y={cy - 9} textAnchor="middle" fill={fill}
+                                      fontSize="8" fontWeight="700" style={{ pointerEvents: 'none' }}>
+                                      {payload.year.slice(2)}
+                                    </text>
+                                  )}
+                                </g>
                               );
                             }}
                           />
@@ -3207,7 +3229,14 @@ const AdmissionAnalysis = () => {
                 borderBottom: `1px solid ${t.border}`, display: 'flex',
                 justifyContent: 'space-between', alignItems: 'flex-start', flexShrink: 0 }}>
                 <div style={{ flex: 1, marginRight: '0.5rem' }}>
-                  <p style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: t.textHeading }}>{selectedPoint.uni}</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
+                    <p style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: t.textHeading }}>{selectedPoint.uni}</p>
+                    {selectedPoint.year && (
+                      <span style={{ fontSize: '0.7rem', fontWeight: 700, color: t.textMuted,
+                        backgroundColor: t.bgSub, border: `1px solid ${t.border}`,
+                        padding: '0.05rem 0.4rem', borderRadius: '4px' }}>{selectedPoint.year}</span>
+                    )}
+                  </div>
                   <p style={{ margin: '0.2rem 0 0', fontSize: '0.875rem', color: '#7c83fd', fontWeight: 600 }}>{selectedPoint.major}</p>
                 </div>
                 <button onClick={() => setSelectedPoint(null)}
@@ -3362,14 +3391,24 @@ const AdmissionAnalysis = () => {
                     ? (cat==='합격' ? '#052e16' : cat==='충원합격' ? '#0c2149' : cat==='불합격' ? '#3b0a0a' : t.bgCard)
                     : (cat==='합격' ? '#d1fae5' : cat==='충원합격' ? '#dbeafe' : cat==='불합격' ? '#fee2e2' : t.bgSub);
                   return (
-                    <div key={i} style={{ border: `1px solid ${t.border}`, padding: '0.7rem 0.9rem',
-                      borderRadius: '10px', display: 'flex', justifyContent: 'space-between',
-                      alignItems: 'center', gap: '0.75rem', backgroundColor: t.bgSub }}>
+                    <div key={i}
+                      onClick={() => setModalStudent(s)}
+                      style={{ border: `1px solid ${t.border}`, padding: '0.7rem 0.9rem',
+                        borderRadius: '10px', display: 'flex', justifyContent: 'space-between',
+                        alignItems: 'center', gap: '0.75rem', backgroundColor: t.bgSub,
+                        cursor: 'pointer', transition: 'opacity 0.15s' }}
+                      onMouseEnter={e => e.currentTarget.style.opacity = '0.75'}
+                      onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem',
                           marginBottom: '0.2rem', flexWrap: 'wrap' }}>
                           <span style={{ backgroundColor: bbg, color: bc, padding: '0.05rem 0.45rem',
                             borderRadius: '4px', fontSize: '0.72rem', fontWeight: 700, whiteSpace: 'nowrap' }}>{s.result}</span>
+                          {selectedYear === '전체' && s.year && (
+                            <span style={{ backgroundColor: t.bgCard, color: t.textMuted,
+                              border: `1px solid ${t.border}`, padding: '0.02rem 0.35rem',
+                              borderRadius: '4px', fontSize: '0.67rem', fontWeight: 600 }}>{s.year}</span>
+                          )}
                           <span style={{ fontSize: '0.78rem', color: t.textMuted }}>{s.type}</span>
                         </div>
                         <p style={{ margin: 0, fontWeight: 600, color: t.text, fontSize: '0.875rem' }}>{s.major}</p>
@@ -3380,6 +3419,107 @@ const AdmissionAnalysis = () => {
                         textAlign: 'center', flexShrink: 0, minWidth: '60px' }}>
                         <p style={{ margin: 0, fontSize: '0.68rem', color: t.textMuted }}>등급</p>
                         <p style={{ margin: 0, fontWeight: 800, fontSize: '1.1rem', color: '#7c83fd' }}>{s.grade}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ──── 학생 전체 지원 현황 모달 ──── */}
+      {modalStudent && (() => {
+        const ms = modalStudent;
+        // 같은 학생의 모든 지원 기록 (반+번호로 식별, 없으면 등급으로 근사)
+        const siblings = ms.studentKey
+          ? data.filter(d => d.studentKey === ms.studentKey && (!ms.year || d.year === ms.year))
+          : data.filter(d => Math.abs(d.grade - ms.grade) < 0.01);
+        const sorted = [...siblings].sort((a, b) => {
+          const order = { '합격': 0, '충원합격': 1, '불합격': 2, '기타': 3 };
+          return (order[getResultCategory(a.result)] ?? 3) - (order[getResultCategory(b.result)] ?? 3);
+        });
+        const passCount   = sorted.filter(d => getResultCategory(d.result) === '합격').length;
+        const waitCount   = sorted.filter(d => getResultCategory(d.result) === '충원합격').length;
+        const failCount   = sorted.filter(d => getResultCategory(d.result) === '불합격').length;
+        const label = ms.studentKey ? `${ms.cls}반 ${ms.num}번` : `등급 ${ms.grade}`;
+        return (
+          <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10001, padding: '1rem' }}
+            onClick={() => setModalStudent(null)}>
+            <div style={{ backgroundColor: t.bg, borderRadius: '14px', maxWidth: '520px', width: '100%',
+              maxHeight: '90vh', display: 'flex', flexDirection: 'column',
+              boxShadow: '0 24px 64px rgba(0,0,0,0.6)', border: `1px solid ${t.border}`, overflow: 'hidden' }}
+              onClick={e => e.stopPropagation()}>
+
+              {/* 헤더 */}
+              <div style={{ backgroundColor: t.bgSub, padding: '1rem 1.25rem',
+                borderBottom: `1px solid ${t.border}`, display: 'flex',
+                justifyContent: 'space-between', alignItems: 'flex-start', flexShrink: 0 }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <p style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: t.textHeading }}>
+                      {label} 전체 지원 현황
+                    </p>
+                    {ms.year && (
+                      <span style={{ fontSize: '0.7rem', fontWeight: 700, color: t.textMuted,
+                        backgroundColor: t.bgCard, border: `1px solid ${t.border}`,
+                        padding: '0.05rem 0.4rem', borderRadius: '4px' }}>{ms.year}</span>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.7rem', marginTop: '0.35rem', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '0.75rem' }}>
+                      <span style={{ color: t.textMuted }}>일반등급 </span>
+                      <span style={{ fontWeight: 700, color: '#7c83fd' }}>{ms.grade}</span>
+                    </span>
+                    <span style={{ fontSize: '0.75rem', color: t.textMuted }}>총 {sorted.length}건</span>
+                    {passCount > 0 && <span style={{ fontSize: '0.73rem', color: COLORS['합격'], fontWeight: 700 }}>최초합 {passCount}</span>}
+                    {waitCount > 0 && <span style={{ fontSize: '0.73rem', color: COLORS['충원합격'], fontWeight: 700 }}>충원합 {waitCount}</span>}
+                    {failCount > 0 && <span style={{ fontSize: '0.73rem', color: COLORS['불합격'], fontWeight: 700 }}>불합격 {failCount}</span>}
+                  </div>
+                </div>
+                <button onClick={() => setModalStudent(null)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer',
+                    color: t.textMuted, fontSize: '1.2rem', lineHeight: 1, flexShrink: 0, padding: 0 }}>✕</button>
+              </div>
+
+              {/* 지원 목록 */}
+              <div style={{ overflowY: 'auto', flex: 1, padding: '0.75rem 1.25rem',
+                display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                {sorted.map((item, i) => {
+                  const cat = getResultCategory(item.result);
+                  const bc  = COLORS[cat] || '#9CA3AF';
+                  const bbg = isDark
+                    ? (cat==='합격' ? '#052e16' : cat==='충원합격' ? '#0c2149' : cat==='불합격' ? '#3b0a0a' : t.bgCard)
+                    : (cat==='합격' ? '#d1fae5' : cat==='충원합격' ? '#dbeafe' : cat==='불합격' ? '#fee2e2' : t.bgSub);
+                  return (
+                    <div key={i} style={{ border: `1px solid ${t.border}`, borderRadius: '10px',
+                      padding: '0.65rem 0.9rem', backgroundColor: t.bgSub }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.22rem', flexWrap: 'wrap' }}>
+                            <span style={{ backgroundColor: bbg, color: bc, padding: '0.04rem 0.45rem',
+                              borderRadius: '4px', fontSize: '0.72rem', fontWeight: 700, whiteSpace: 'nowrap' }}>{item.result}</span>
+                            <span style={{ fontSize: '0.72rem', color: t.textMuted }}>{item.type}</span>
+                            {selectedYear === '전체' && item.year && (
+                              <span style={{ fontSize: '0.67rem', color: t.textMuted,
+                                backgroundColor: t.bgCard, border: `1px solid ${t.border}`,
+                                padding: '0.02rem 0.32rem', borderRadius: '3px' }}>{item.year}</span>
+                            )}
+                          </div>
+                          <p style={{ margin: 0, fontWeight: 700, color: t.textHeading, fontSize: '0.9rem' }}>{item.uni}</p>
+                          <p style={{ margin: '0.1rem 0 0', color: t.text, fontSize: '0.82rem' }}>{item.major}</p>
+                          {item.admName && item.admName !== '-' && (
+                            <p style={{ margin: '0.1rem 0 0', fontSize: '0.7rem', color: t.textMuted }}>{item.admName}</p>
+                          )}
+                          {item.reason && (
+                            <p style={{ margin: '0.15rem 0 0', fontSize: '0.7rem', color: '#f87171' }}>⚠ {item.reason}</p>
+                          )}
+                          {item.rank && item.rank !== '-' && (
+                            <p style={{ margin: '0.1rem 0 0', fontSize: '0.7rem', color: COLORS['충원합격'] }}>예비 {item.rank}번</p>
+                          )}
+                        </div>
                       </div>
                     </div>
                   );
