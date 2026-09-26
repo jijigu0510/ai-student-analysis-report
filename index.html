@@ -2050,10 +2050,67 @@ const MOCK_SHEET_ID = '1JbgXRiCB02XFeZnNR9pswLhihYY7wObCpjWreTYTe7s';
 const MOCK_SHEET_NAME = (year) => `${year}-3학년 모의고사 성적`;
 const roundNo = (r) => parseInt(String(r).replace(/[^0-9]/g, ''), 10) || 99;
 const KO_NUM = { '두': 2, '세': 3, '네': 4, '1': 1, '2': 2, '3': 3, '4': 4 };
+// 탐구 과목명이 과학탐구인지 (물리학/화학/생명과학/지구과학 Ⅰ·Ⅱ)
+const isScienceTamgu = (name) => /물리|화학|생명과학|지구과학/.test(String(name || ''));
+
+/* 충북대 모집단위 → 단과대학 (2027 모집요강 p.17). 소속은 연도 간 동일하지만
+   등급 기준값은 연도마다 달라지므로 기준값은 반드시 해당 연도 기준 원문에서 읽는다.
+   충북대는 "단, 사회과학대학 2개 합 7 이내…" 처럼 단과대학별로 기준이 갈려서 이 표가 필요하다. */
+const CBNU_COLLEGES = {
+  '인문대학': ['국어국문학과','중어중문학과','영어영문학과','독일언어문화학과','프랑스언어문화학과','러시아언어문화학과','철학과','사학과','고고미술사학과'],
+  '사회과학대학': ['사회학과','심리학과','행정학과','정치외교학과','경제학과'],
+  '자연과학대학': ['수학과','정보통계학과','물리학과','화학과','생물학과','미생물학과','생화학과','천문우주학과','지구환경과학과'],
+  '경영대학': ['경영학부','국제경영학과','경영정보학과'],
+  '공과대학': ['토목공학부','기계공학부','화학공학과','신소재공학과','건축공학과','안전공학과','환경공학과','공업화학과','도시공학과','건축학과','공학자율전공학부'],
+  '전자정보대학': ['전기공학부','전자공학과','반도체공학부','정보통신공학부','컴퓨터공학과','인공지능학부','지능로봇공학과','전자정보자율전공학부'],
+  '농업생명환경대학': ['식물자원학과','축산학과','산림학과','지역건설공학과','환경생명화학과','특용식물학과','원예과학과','바이오시스템공학과','식물의학과','식품생명공학과','목재·종이과학과','농업경제학과'],
+  '사범대학': ['교육학과','국어교육과','영어교육과','역사교육과','지리교육과','사회교육과','윤리교육과','물리교육과','화학교육과','생물교육과','지구과학교육과','수학교육과'],
+  '생활과학대학': ['식품영양학과','아동복지학과','의류학과','주거환경학과','소비자학과'],
+  '수의과대학': ['수의예과'], '약학대학': ['약학과','제약학과'], '의과대학': ['의예과'], '간호대학': ['간호학과'],
+  '창의융합대학': ['인문사회자율전공계열','자연과학자율전공계열','바이오헬스학부'],
+};
+const CBNU_UNIT = (() => {
+  const m = {};
+  Object.keys(CBNU_COLLEGES).forEach(c => CBNU_COLLEGES[c].forEach(u => { m[u.replace(/[\s·‧]/g, '')] = c; }));
+  return m;
+})();
+// 요강 본문이 쓰는 약어 (2024년 기준 텍스트는 '자연대·공대·전정대'로 적혀 있다)
+const COLLEGE_ALIAS = {
+  '자연과학대학': ['자연대'], '공과대학': ['공대'], '전자정보대학': ['전정대'], '사범대학': ['사범대'],
+  '약학대학': ['약대'], '의과대학': ['의대'], '농업생명환경대학': ['농생대'], '생활과학대학': ['생활대'],
+  '사회과학대학': ['사과대'], '간호대학': ['간호대'], '수의과대학': ['수의대'], '창의융합대학': [],
+  '인문대학': ['인문대'], '경영대학': ['경영대'],
+};
+/** 대학·모집단위로 단과대학 판별 (현재 충북대 자료만 보유) */
+function collegeOf(uni, major) {
+  if (!/충북대/.test(String(uni || ''))) return null;
+  return CBNU_UNIT[String(major || '').replace(/[\s·‧()]/g, '')] || null;
+}
+/** 조항이 해당 단과대학(또는 그 소속 모집단위)을 지목하는가.
+    '의예과'가 '수의예과'에, '의대'가 '수의대'에 걸리지 않도록 앞쪽 한글 경계를 확인한다 */
+function mentionsCollege(clause, college, major) {
+  if (!clause || !college) return false;
+  const hit = (name) => {
+    if (!name) return false;
+    const i = clause.indexOf(name);
+    if (i < 0) return false;
+    return i === 0 || !/[가-힣]/.test(clause[i - 1]);
+  };
+  const mj = String(major || '').replace(/\s/g, '');
+  if ([college].concat(COLLEGE_ALIAS[college] || []).some(hit)) {
+    // "창의융합대학 바이오헬스학부" 처럼 단과대학 뒤에 특정 모집단위를 붙인 항목은
+    // 그 모집단위만 대상이다 (같은 단과대 다른 모집단위는 해당 없음)
+    const named = (CBNU_COLLEGES[college] || []).filter(u => clause.indexOf(u) >= 0);
+    if (named.length) return named.indexOf(mj) >= 0;
+    return true;
+  }
+  return hit(mj);   // "의대 의예과", "수의예과" 처럼 모집단위명만으로 지목
+}
 
 // 자유서술로 적힌 최저학력기준을 판정 가능한 규칙으로 해석. 해석 불가 시 mode='unparsed'
-// uni: 대학별 보정 규칙(아래 '공주대' 케이스)을 적용하기 위한 대학명
-function parseMinStandard(rawText, uni) {
+// uni·major·track: 대학별 보정('공주대'), 단과대학별 차등('충북대'),
+// 미적분·기하 완화의 계열 한정(금오공대·영남대·한경대)을 판정하기 위한 대학명·모집단위·계열
+function parseMinStandard(rawText, uni, major, track) {
   if (!rawText) return null;
   let s = String(rawText).replace(/[\r\n]+/g, ' ').replace(/["“”]/g, ' ').replace(/\s+/g, ' ').trim();
   s = s.replace(/^[*○·\-\s]*수능최저기준\s*:?\s*/, '').replace(/^[*○·\-\s]+/, '');
@@ -2064,11 +2121,43 @@ function parseMinStandard(rawText, uni) {
   const khMatch = s.match(/한국사\s*(\d)\s*등급\s*이내/);
   const engMatch = s.match(/영어\s*(\d)\s*등급\s*이내/);
 
-  if (/미적분|기하/.test(s) && /(상향|감산|하향)/.test(s)) caveats.push('수학 선택과목에 따른 등급 상향/감산');
+  // 미적분·기하 선택자 완화. 표기가 세 가지다:
+  //  ① "1등급 상향(3등급→2등급)" ② "취득 등급에 2등급을 감산" ③ "선택 시 2개 등급 합이 11등급 이내"(완화 후 기준)
+  // ①②는 그 수치가 곧 완화량, ③은 (완화 후 기준 − 본문 기준)이 완화량이다.
+  const mathClause = /미적분|기하/.test(s)
+    ? (s.split(/※|\(단[,)]|단\)|\(\*/).find(c => /미적분|기하/.test(c) && /(상향|감산|선택\s*시|반영할\s*경우)/.test(c)) || '')
+    : '';
+  const mathStep = mathClause.match(/(\d)\s*(?:개\s*)?등급(?:을)?\s*(?:상향|감산)/);
+  const mathAlt = mathClause.match(/합이?\s*(\d+)\s*등급\s*이내/);
+
+  /* 미적분·기하 완화의 적용 범위.
+     ① "(법경영학부, 인문융합공공인재학부지원자 제외)" → 그 모집단위만 제외 (한경국립대)
+     ② "공학계열 및 자율전공학부 :", "※ 공과대학, 디지털융합대학… 지원자:" 처럼 대상을 한정하면
+        열거된 곳이 모두 자연계열이므로 계열이 '자연'일 때만 적용 (금오공대·영남대)
+     ③ 한정이 없으면 전원 적용 (우석대·예수대) */
+  const mathScope = (() => {
+    if (!mathClause) return { applies: false };
+    const mj = String(major || '').replace(/\s/g, '');
+    const ex = mathClause.match(/\(([^)]*?)지원자?\s*제외\)/);
+    if (ex && mj) {
+      const excluded = ex[1].split(/,/).map(x => x.trim().replace(/\s/g, '')).filter(Boolean);
+      if (excluded.some(n => mj === n || mj.indexOf(n) >= 0 || n.indexOf(mj) >= 0)) return { applies: false };
+    }
+    const gated = /계열|대학|학부|학과/.test(mathClause.replace(/\([^)]*제외\)/g, ''));
+    if (!gated) return { applies: true };
+    if (!track) return { applies: true, unresolved: true };   // 계열 모르면 적용하되 주의 표시
+    return { applies: String(track).trim() === '자연' };
+  })();
+  if (mathScope.unresolved) caveats.push('미적분·기하 완화가 일부 모집단위만 대상');
   const afterMarker = s.split(/※|\(단[,)]|단\)/).slice(1).join(' ');
   if (/계열|모집단위|대학|학부/.test(afterMarker) && /이내/.test(afterMarker)) caveats.push('모집단위·계열별 차등 기준');
-  if (/직업탐구/.test(s)) caveats.push('직업탐구 예외');
+  // 직업탐구 조항은 직업계고 응시자용이라 일반고에는 적용되지 않는다 (본교 응시 이력 0건)
+  if (/직업탐구/.test(s)) caveats.push('직업탐구 응시자 예외 (일반고는 해당 없음)');
   if (/제2외국어/.test(s)) caveats.push('제2외국어 대체 조건');
+
+  // "과학탐구 1과목 이상 응시자는 수능 최저학력기준 1등급 하향 적용" (전북대 자연계열)
+  // → 과탐을 1과목 이상 응시한 학생은 등급 합 상한이 그만큼 완화된다
+  const relaxM = s.match(/과학탐구\s*1과목\s*이상\s*응시자는[^.]{0,30}?(\d)\s*등급\s*하향/);
 
   const base = {
     raw: String(rawText).trim(),
@@ -2076,6 +2165,9 @@ function parseMinStandard(rawText, uni) {
     tamguRound: /반올림/.test(s),
     koreanHistoryMax: khMatch ? Number(khMatch[1]) : null,
     englishMax: engMatch ? Number(engMatch[1]) : null,
+    sciRelax: relaxM ? Number(relaxM[1]) : 0,
+    mathStep: (mathScope.applies && mathStep) ? Number(mathStep[1]) : 0,   // 상향/감산 수치
+    mathAlt: (mathScope.applies && mathAlt) ? Number(mathAlt[1]) : 0,      // 완화 후 등급 합 기준
     caveats,
   };
 
@@ -2089,33 +2181,64 @@ function parseMinStandard(rawText, uni) {
 
   // 필수 포함 영역: 모집단위별로 갈리는 조건은 제외하고 전체 적용 조건만 인정
   // ('수학과'의 '학과' 오탐을 피하려고 단과대 나열 여부로 판별)
+  const college = collegeOf(uni, major);
   const require = (() => {
     const out = [];
     const clauses = s.split(/※|\(단[,)]|단\)|\d\)/);
     const cond = (c) => /계열|모집단위/.test(c) || (c.match(/대학|학부/g) || []).length >= 2;
     if (clauses.some(c => !cond(c) && /수학[^.]{0,12}(?:필수\s*)?포함|수학을\s*포함|수학[^.]{0,24}(?:의무|필수)\s*반영/.test(c))) out.push('수학');
     if (clauses.some(c => !cond(c) && /(?:과학)?탐구[^.]{0,16}필수\s*반영/.test(c))) out.push('탐구');
+    // 단과대학을 아는 경우 "○○대학…은 수학 필수 반영" 조항을 실제 판정에 반영 (항목 단위로 판단)
+    if (out.indexOf('수학') < 0 && college) {
+      const mathReq = clauses.filter(c => /수학\s*필수\s*반영/.test(c))[0];
+      if (mathReq && mathReq.split('수학 필수 반영')[0].split(/,/).some(e => mentionsCollege(e, college, major)))
+        out.push('수학');
+    }
     return out;
   })();
+
+  // 단과대학별로 등급 기준이 갈리는 경우(충북대 "단, 사회과학대학 2개 합 7 이내, …") 그 기준으로 교체
+  const collegeOverride = (() => {
+    if (!college) return null;
+    const exc = (s.match(/\(단[,)]([^)]*)\)/) || [])[1];
+    if (!exc) return null;
+    const parts = exc.split(/,(?![^()]*\))/);
+    for (let i = 0; i < parts.length; i++) {
+      if (!mentionsCollege(parts[i], college, major)) continue;
+      const cnt = parts[i].match(/(\d)\s*개\s*영역/);
+      const max = parts[i].match(/합\s*(\d+)\s*등급\s*이내|(\d+)\s*등급\s*이내/);
+      const sumMax = max ? Number(max[1] || max[2]) : null;
+      if (sumMax) return { count: cnt ? Number(cnt[1]) : null, sumMax, note: parts[i].trim() };
+    }
+    return null;
+  })();
+  const applyOverride = (r) => collegeOverride
+    ? Object.assign({}, r, { count: collegeOverride.count || r.count, sumMax: collegeOverride.sumMax,
+        collegeRule: `${college} 기준 적용: ${collegeOverride.note}` })
+    : r;
 
   // 축약형 "상위 2합 8", "3합 12"
   m = s.match(/(?:상위\s*)?(\d)\s*합\s*(\d+)(?!\s*개)/);
   if (m && !/\d\s*개/.test(s.slice(0, m.index))) {
-    return { ...base, mode: 'sum', count: Number(m[1]), require, sumMax: Number(m[2]) };
+    return applyOverride({ ...base, mode: 'sum', count: Number(m[1]), require, sumMax: Number(m[2]) });
   }
 
   // 일반형. "수능 4개 영역(국어,수학,영어,탐구) 중 상위 2개 영역 등급 합 8 이내"에서
   // 앞쪽 '4개 영역'은 후보 풀이므로, 합산 절에 가장 가까운 'N개'를 반영 수로 본다
-  const sumClause = (s.match(/합(?:이|산)?\s*(\d+)\s*등?급?\s*(?:이내|이하|포함)/g) || []).pop();
+  // 기준 본문만 본다. ※·단)·(* 뒤의 예외 조항에는 다른 모집단위 기준(충북대 의과대학 3합 5)이나
+  // 완화 후 기준(예수대 미적분 선택 시 2합 11)이 적혀 있어, 그걸 기본값으로 잡으면 안 된다
+  const mainOnly = s.split(/※|\(단[,)]|단\)|\(\*/)[0];
+  const scope = /합(?:이|산)?\s*\d+\s*등?급?\s*(?:이내|이하|포함)/.test(mainOnly) ? mainOnly : s;
+  const sumClause = (scope.match(/합(?:이|산)?\s*(\d+)\s*등?급?\s*(?:이내|이하|포함)/g) || []).pop();
   if (sumClause) {
-    const at = s.lastIndexOf(sumClause);
-    const head = s.slice(0, at);
+    const at = scope.lastIndexOf(sumClause);
+    const head = scope.slice(0, at);
     const cnt = (head.match(/(\d|두|세|네)\s*개(?:의)?\s*(?:영역|과목|등급)/g) || []).pop();
     const sumMax = Number((sumClause.match(/(\d+)/) || [])[1]);
     if (cnt && sumMax) {
       const c = (cnt.match(/(\d|두|세|네)/) || [])[1];
       const count = KO_NUM[c] ?? Number(c);
-      if (count) return { ...base, mode: 'sum', count, require, sumMax };
+      if (count) return applyOverride({ ...base, mode: 'sum', count, require, sumMax });
     }
     // 반영 수는 없지만 영역이 나열된 경우 → 나열된 영역 전부를 합산
     // 예) "수학, 영어 및 과학탐구(1과목) 영역 합산 12등급 이내"
@@ -2126,7 +2249,7 @@ function parseMinStandard(rawText, uni) {
       if (/영어/.test(head)) listed.push('영어');
       if (/탐구|과탐|사탐/.test(head)) listed.push('탐구');
       if (listed.length >= 2) {
-        return { ...base, mode: 'sum', count: listed.length, require: listed, sumMax, listedAreas: true };
+        return applyOverride({ ...base, mode: 'sum', count: listed.length, require: listed, sumMax, listedAreas: true });
       }
     }
   }
@@ -2140,7 +2263,7 @@ function parseMinStandard(rawText, uni) {
 
   // "1개 영역 M등급 이내" 류
   m = s.match(/(\d)\s*개\s*(?:영역|과목)\s*(?:이상이\s*)?(?:등급이?\s*)?(\d+)\s*등?급?\s*이내/);
-  if (m) return { ...base, mode: 'sum', count: Number(m[1]), require, sumMax: Number(m[2]) };
+  if (m) return applyOverride({ ...base, mode: 'sum', count: Number(m[1]), require, sumMax: Number(m[2]) });
 
   return { ...base, mode: 'unparsed',
     reason: /합산\s*\d+\s*등?급?\s*이내/.test(s) ? '반영 영역 수가 명시되지 않음' : '지원하지 않는 표기' };
@@ -2191,9 +2314,25 @@ function evalMinStandard(rule, g) {
   if (need < 0 || rest.length < need) return { status: 'unknown', reason: '반영 가능한 영역 부족' };
   const picked = [...req, ...rest.slice(0, need)];
   const sum = picked.reduce((a, k) => a + areas[k], 0);
-  if (sum > rule.sumMax) fails.push(`등급 합 ${sum}`);
-  return { status: fails.length ? 'fail' : 'pass', sum, fails,
-           detail: picked.map(k => `${k} ${areas[k]}`).join(' + ') + ` = ${sum}` };
+
+  // 기준 완화 ① 과탐 응시(전북대 자연계열) ② 미적분·기하 선택
+  const tookSci = isScienceTamgu(g['탐구1과목']) || isScienceTamgu(g['탐구2과목']);
+  const sciUp = (rule.sciRelax && tookSci) ? rule.sciRelax : 0;
+  const tookCalc = /미적분|기하/.test(String(g['수학과목'] || ''));
+  const mathUp = !tookCalc ? 0
+    : (rule.mathStep ? rule.mathStep
+      : (rule.mathAlt ? Math.max(0, rule.mathAlt - rule.sumMax) : 0));
+  const relaxed = sciUp + mathUp;
+  const effMax = rule.sumMax + relaxed;
+
+  const why = [];
+  if (sciUp) why.push('과탐 응시');
+  if (mathUp) why.push(`수학 ${String(g['수학과목']).trim()} 선택`);
+
+  if (sum > effMax) fails.push(`등급 합 ${sum}`);
+  return { status: fails.length ? 'fail' : 'pass', sum, effMax, relaxed, fails,
+           detail: picked.map(k => `${k} ${areas[k]}`).join(' + ') + ` = ${sum}`
+             + (relaxed ? ` [기준 ${rule.sumMax}→${effMax} 완화: ${why.join(', ')}]` : '') };
 }
 
 // 규칙을 사람이 읽을 수 있는 한 줄로
@@ -2207,6 +2346,9 @@ function describeRule(rule) {
   if (rule.require && rule.require.length) bits.push(`${rule.require.join('·')} 필수 포함`);
   if (rule.koreanHistoryMax != null) bits.push(`한국사 ${rule.koreanHistoryMax}등급 이내`);
   if (rule.englishMax != null) bits.push(`영어 ${rule.englishMax}등급 이내`);
+  if (rule.sciRelax) bits.push(`과탐 응시 시 ${rule.sciRelax}등급 완화`);
+  if (rule.mathStep) bits.push(`미적분·기하 선택 시 ${rule.mathStep}등급 완화`);
+  else if (rule.mathAlt && rule.sumMax) bits.push(`미적분·기하 선택 시 합 ${rule.mathAlt} 이내`);
   bits.push(rule.tamgu === 'avg2' ? '탐구 2과목 평균' : '탐구 상위 1과목');
   return bits.join(' · ');
 }
@@ -2252,6 +2394,7 @@ function parseAdmissionRows(rows) {
         rank:        getVal(row, ['최초후보순위', '후보순위', '예비번호']) || '-',
         admName:     getVal(row, ['전형명(대)', '전형명'])      || '-',
         minStandard: getVal(row, ['최저학력기준', '수능최저'])  || '',
+        track:       getVal(row, ['계열'])                      || '',
       };
     })
     .filter(item => item.uni !== '-');
@@ -2485,6 +2628,8 @@ const AdmissionAnalysis = () => {
               이름: String(raw(5) || ''),
               국어: toN(10), 수학: toN(15), 영어: toN(17),
               한국사: toN(19), 탐구1: toN(24), 탐구2: toN(29),
+              탐구1과목: String(raw(20) || ''), 탐구2과목: String(raw(25) || ''),
+              수학과목: String(raw(11) || ''),
             };
             // 행은 있으나 등급이 하나도 없으면 미응시 — 판정 대상에서 제외
             if ([rec['국어'], rec['수학'], rec['영어'], rec['탐구1'], rec['탐구2']].every(v => v == null)) return;
@@ -2763,7 +2908,7 @@ const AdmissionAnalysis = () => {
     const noMock = [];      // 모의고사 성적 없음
 
     withStd.forEach(item => {
-      const rule = parseMinStandard(item.minStandard, item.uni);
+      const rule = parseMinStandard(item.minStandard, item.uni, item.major, item.track);
       if (!rule || rule.mode === 'unparsed') {
         unparsed.push({ item, reason: (rule && rule.reason) || '기준 해석 불가' });
         return;
@@ -4175,7 +4320,7 @@ const AdmissionAnalysis = () => {
                   <ModalRow label="모집인원"     value={selectedPoint.count ? `${selectedPoint.count}명` : null} />
                   <ModalRow label="최초후보순위" value={selectedPoint.rank} highlight={hasRank} />
                   {selectedPoint.minStandard && (() => {
-                    const rule = parseMinStandard(selectedPoint.minStandard, selectedPoint.uni);
+                    const rule = parseMinStandard(selectedPoint.minStandard, selectedPoint.uni, selectedPoint.major, selectedPoint.track);
                     const desc = describeRule(rule);
                     const rounds = roundsForItem(selectedPoint);
                     const roundKeys = rounds
