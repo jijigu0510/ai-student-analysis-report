@@ -321,13 +321,36 @@ document.addEventListener("DOMContentLoaded", () => {
         const ivStudentSelect = document.getElementById("iv-student-select");
         const mainStudentSelect = document.getElementById("student-select");
         if (ivStudentSelect && mainStudentSelect && mainStudentSelect.options.length > 1) {
+          const hadPdf = Array.from(ivStudentSelect.options).find(o => o.value === "__pdf__");
           if (ivStudentSelect.options.length !== mainStudentSelect.options.length) {
+            const prev = ivStudentSelect.value;
             ivStudentSelect.innerHTML = mainStudentSelect.innerHTML;
+            // 이 탭에서 올린 생기부 PDF 항목은 목록 동기화 후에도 유지한다
+            if (hadPdf) {
+              const opt = document.createElement("option");
+              opt.value = "__pdf__";
+              opt.textContent = hadPdf.textContent;
+              ivStudentSelect.appendChild(opt);
+              if (prev === "__pdf__") ivStudentSelect.value = "__pdf__";
+            }
           }
+        }
+        // Apply vertical layout for interview tab
+        if (activeView && activeView.id === "view-interview") {
+          activeView.style.display = "flex";
+          activeView.style.flexDirection = "column";
+          activeView.style.gap = "20px";
         }
       } else {
         sidebarIvSettings.classList.add("hidden");
       }
+    }
+
+    // Reset layout for other tabs
+    if (activeView && activeView.id !== "view-interview" && (activeView.id === "view-individual" || activeView.id === "view-passfail")) {
+      activeView.style.display = "grid";
+      activeView.style.flexDirection = "";
+      activeView.style.gap = "";
     }
   }
 
@@ -3416,6 +3439,82 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const universityData = {
 
+    "순천향대학교": {
+      "의약·보건 계열": ["의예과", "간호학과", "임상병리학전공", "작업치료학전공", "보건행정경영학전공", "스마트헬스라이프전공", "환경보건학과"],
+      "자연과학 계열": ["화학과", "식품영양학과", "생명과학과", "바이오의약전공", "바이오인포매틱스전공", "AI의료생명공학전공"],
+      "인문사회 계열": ["유아교육과", "특수교육과", "청소년교육·상담학과", "법학전공", "행정학전공", "경찰행정학과", "사회복지학과", "한국문화콘텐츠학과", "영미학과", "중국학과", "미디어커뮤니케이션학과"],
+      "경영·상경 계열": ["경영학과", "국제통상학과", "관광경영학과", "경제금융학과", "IT금융경영학과", "글로벌문화산업학과", "회계학과"],
+      "공학 계열": ["정보통신공학전공", "전자공학전공", "전기공학과", "전자정보공학과", "나노화학공학과", "에너지환경공학과", "디스플레이신소재공학과", "기계공학과", "스마트자동차학과", "건축학과(5년제)", "에너지공학전공", "탄소중립학전공"],
+      "AI·컴퓨터 계열": ["소프트웨어공학전공", "컴퓨터공학전공", "정보보호학과", "AI게임공학과", "의료IT공학전공", "AI빅데이터전공", "AI사물인터넷전공", "정밀의료전공", "의공학전공", "헬스케어융합전공", "로봇공학전공", "의료전자전공"],
+      "예체능 계열": ["디지털애니메이션학과", "공연영상학과", "스포츠과학과", "스포츠응용산업학과", "스포츠의학전공"],
+      "자율전공": ["자율전공학과"]
+    },
+
+
+    "청주대학교": {
+      "경상 계열": ["경영학과", "회계학과", "무역학과", "관광경영학과", "호텔외식경영학과", "의료경영학과"],
+      "인문사회 계열": ["영어영문학과", "문헌정보학과", "신문방송학과", "광고홍보학과", "사회복지학과", "경찰행정학과"],
+      "보건의료 계열": ["간호학과", "물리치료학과", "작업치료학과", "방사선학과", "임상병리학과", "치위생학과", "바이오의약학과", "제약공학과", "동물보건복지학과", "스포츠재활학과"],
+      "공학 계열": ["건축학과", "건축공학과", "토목공학과", "조경학과", "지적학과", "전자공학과", "전기제어공학과", "에너지융합공학과", "시스템반도체공학과"],
+      "AI·SW 계열": ["인공지능소프트웨어학과", "데이터사이언스학과", "디지털보안학과"],
+      "예술 계열": ["영화영상학과", "연극학과", "만화애니메이션학과", "산업디자인학과", "시각디자인학과", "공예디자인학과", "아트앤패션디자인학과", "디지털미디어디자인학과"],
+      "항공·국방 계열": ["항공운항학과", "항공서비스학과", "무인항공기학과", "항공기계공학과", "군사학과"],
+      "자유전공·체육": ["자유전공학부", "생활체육학과"]
+    },
+
+
+    "서원대학교": {
+      "사범 계열": ["국어교육과", "영어교육과", "수학교육과", "교육학과", "윤리교육과", "사회교육과", "역사교육과", "생물교육과", "유아교육과", "체육교육과", "음악교육과"],
+      "사회·공공 계열": ["경찰행정학부", "소방행정학과", "응급구조학과", "사회복지학과", "아동복지학과", "상담심리학과"],
+      "경영·관광 계열": ["경영학부", "항공관광학과", "호텔외식조리학부", "광고홍보학과"],
+      "보건·식품 계열": ["식품영양학과", "식품공학과", "제약공학과", "바이오코스메틱학과", "헬스케어운동학과", "레저스포츠학부"],
+      "예술·디자인 계열": ["뷰티학과", "패션의류학과", "디자인학과", "웹툰콘텐츠학과", "콘텐츠학부"],
+      "공학 계열": ["컴퓨터공학과", "소프트웨어학과", "AI로봇학과", "건축학부", "환경안전학과"],
+      "자유전공": ["자유전공학부", "K-Culture학부"]
+    },
+
+
+    "서울교육대학교": {
+      "교육 계열": ["초등교육과"]
+    },
+
+    "경인교육대학교": {
+      "교육 계열": ["초등교육과"]
+    },
+
+    "공주교육대학교": {
+      "교육 계열": ["초등교육과"]
+    },
+
+    "광주교육대학교": {
+      "교육 계열": ["초등교육과"]
+    },
+
+    "대구교육대학교": {
+      "교육 계열": ["초등교육과"]
+    },
+
+    "부산교육대학교": {
+      "교육 계열": ["초등교육과"]
+    },
+
+    "전주교육대학교": {
+      "교육 계열": ["초등교육과"]
+    },
+
+    "진주교육대학교": {
+      "교육 계열": ["초등교육과"]
+    },
+
+    "청주교육대학교": {
+      "교육 계열": ["초등교육과"]
+    },
+
+    "춘천교육대학교": {
+      "교육 계열": ["초등교육과"]
+    },
+
+
     "\uac00\ucc9c\ub300\ud559\uad50": {
 
       "\uacbd\uc601 \ubc0f \uc0ac\ud68c\uacfc\ud559 \uacc4\uc5f4": ["\uacbd\uc601\ud559\uacfc", "\uacbd\uc81c\ud559\uacfc", "\uad00\uad11\uacbd\uc601\ud559\uacfc", "\uae08\uc735\u00b7\ube45\ub370\uc774\ud130\ud559\ubd80(\uae08\uc735\uc218\ud559\uc804\uacf5, \ube45\ub370\uc774\ud130\uacbd\uc601\uc804\uacf5)", "\ubbf8\ub514\uc5b4\ucee4\ubba4\ub2c8\ucf00\uc774\uc158\ud559\uacfc", "\uc0ac\ud68c\ubcf5\uc9c0\ud559\uacfc", "\uc2ec\ub9ac\ud559\uacfc", "\uc720\uc544\uad50\uc721\ud559\uacfc", "\uc751\uc6a9\ud1b5\uacc4\ud559\uacfc", "\uc758\ub8cc\uc0b0\uc5c5\uacbd\uc601\ud559\uacfc", "\ud328\uc158\uc0b0\uc5c5\ud559\uacfc", "\ud68c\uacc4\uc138\ubb34\ud559\uacfc"],
@@ -3434,30 +3533,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
     },
 
-    "\uac00\ud1a8\ub9ad\ub300\ud559\uad50": {
+    "가톨릭대학교": {
 
-      "2026 \ucca8\ub2e8\ud559\uacfc": ["AI\uc758\uacf5\ud559\uacfc", "\ubc14\uc774\uc624\ub85c\uc9c1\uc2a4\uacf5\ud559\ubd80"],
+      "인문 계열": ["신학과", "국사학과", "국어국문학과", "영어영문학부", "일어일본문화학과", "중국언어문화학과", "철학과", "프랑스어문화학과"],
 
-      "\uae00\ub85c\ubc8c\uacbd\uc601\ub300\ud559 (\uc7ac\uc9c1\uc790 \uc804\ud615)": ["IT\ud30c\uc774\ub0b8\uc2a4\ud559\uacfc", "\uad6d\uc81c\uacbd\uc601\ud559\uacfc", "\uc138\ubb34\ud68c\uacc4\uae08\uc735\ud559\uacfc"],
+      "사회 계열": ["사회복지학과", "사회학과", "심리학과", "행정학과", "법학과", "미디어기술콘텐츠학과"],
 
-      "\uae30\ucd08 \ubc0f \uc751\uc6a9\uacfc\ud559 \ubd84\uc57c": ["\ubb3c\ub9ac\ud559\uacfc", "\uc218\ud559\uacfc", "\ud654\ud559\uacfc"],
+      "경영·상경 계열": ["국제경영학과", "세무회계금융학과", "인문사회계열", "경영학과", "경제학과", "국제학부", "회계학과"],
 
-      "\ubb34\uc804\uacf5 / \uad11\uc5ed \ubaa8\uc9d1\ub2e8\uc704": ["\uc778\ubb38\uc0ac\ud68c\uacc4\uc5f4", "\uc790\uc5f0\uacf5\ud559\uacc4\uc5f4", "\uc790\uc720\uc804\uacf5\ud559\ubd80"],
+      "자연과학 계열": ["물리학과", "수학과", "화학과"],
 
-      "\ubc14\uc774\uc624 \ubc0f \ud658\uacbd\uacf5\ud559 \ubd84\uc57c": ["\ubc14\uc774\uc624\uba54\ub514\uceec\ud654\ud559\uacf5\ud559\uacfc", "\uc0dd\uba85\uacf5\ud559\uacfc", "\uc5d0\ub108\uc9c0\ud658\uacbd\uacf5\ud559\uacfc", "\uc758\uc0dd\uba85\uacfc\ud559\uacfc"],
+      "공학·IT 계열": ["AI의공학과", "바이오로직스공학부", "IT파이낸스학과", "바이오메디컬화학공학과", "생명공학과", "에너지환경공학과", "데이터사이언스학과", "바이오메디컬소프트웨어학과", "인공지능학과", "정보통신전자공학부", "컴퓨터정보공학부"],
 
-      "\uc0ac\ud68c\uacfc\ud559 \ubd84\uc57c": ["\uc0ac\ud68c\ubcf5\uc9c0\ud559\uacfc", "\uc0ac\ud68c\ud559\uacfc", "\uc2ec\ub9ac\ud559\uacfc", "\uc544\ub3d9\ud559\uacfc", "\ud589\uc815\ud559\uacfc"],
+      "의약·보건 계열": ["의생명과학과", "간호학과", "약학과", "의예과"],
 
-      "\uc0c1\uacbd\u00b7\ubc95\ud559 \ubd84\uc57c": ["\uacbd\uc601\ud559\uacfc", "\uacbd\uc81c\ud559\uacfc", "\uad6d\uc81c\ud559\ubd80", "\ubc95\ud559\uacfc", "\ud68c\uacc4\ud559\uacfc"],
+      "생활과학 계열": ["아동학과", "식품영양학과", "의류학과"],
 
-      "\uc0dd\ud65c\uacfc\ud559 \ubd84\uc57c": ["\uacf5\uac04\ub514\uc790\uc778\u00b7\uc18c\ube44\uc790\ud559\uacfc", "\uc2dd\ud488\uc601\uc591\ud559\uacfc", "\uc758\ub958\ud559\uacfc"],
+      "사범 계열": ["특수교육과"],
 
-      "\uc18c\ud504\ud2b8\uc6e8\uc5b4 \ubc0f IT/\ub370\uc774\ud130 \ubd84\uc57c": ["\ub370\uc774\ud130\uc0ac\uc774\uc5b8\uc2a4\ud559\uacfc", "\ubbf8\ub514\uc5b4\uae30\uc220\ucf58\ud150\uce20\ud559\uacfc", "\ubc14\uc774\uc624\uba54\ub514\uceec\uc18c\ud504\ud2b8\uc6e8\uc5b4\ud559\uacfc", "\uc778\uacf5\uc9c0\ub2a5\ud559\uacfc", "\uc815\ubcf4\ud1b5\uc2e0\uc804\uc790\uacf5\ud559\ubd80", "\ucef4\ud4e8\ud130\uc815\ubcf4\uacf5\ud559\ubd80"],
+      "예체능 계열": ["공간디자인·소비자학과", "음악과"],
 
-      "\uc758\uc57d\u00b7\ubcf4\uac74\u00b7\uc0ac\ubc94\u00b7\uc2e0\ud559\u00b7\uc608\uccb4\ub2a5 \uacc4\uc5f4 (\ud2b9\uc218 \ubaa9\uc801)": ["\uac04\ud638\ud559\uacfc", "\uc2e0\ud559\uacfc", "\uc57d\ud559\uacfc", "\uc74c\uc545\uacfc", "\uc758\uc608\uacfc", "\ud2b9\uc218\uad50\uc721\uacfc"],
-
-      "\uc778\ubb38\u00b7\uc5b4\ubb38\ud559 \ubd84\uc57c": ["\uad6d\uc0ac\ud559\uacfc", "\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\uc601\uc5b4\uc601\ubb38\ud559\ubd80", "\uc77c\uc5b4\uc77c\ubcf8\ubb38\ud654\ud559\uacfc", "\uc911\uad6d\uc5b8\uc5b4\ubb38\ud654\ud559\uacfc", "\ucca0\ud559\uacfc", "\ud504\ub791\uc2a4\uc5b4\ubb38\ud654\ud559\uacfc"]
-
+      "자율전공": ["자연공학계열", "자유전공학부"]
     },
 
     "\uac74\uad6d\ub300\ud559\uad50": {
@@ -3508,32 +3604,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
     },
 
-    "\uacbd\ubd81\ub300\ud559\uad50": {
+    "경희대학교": {
 
-      "\ub18d\uc5c5\uc0dd\uba85\u00b7\uc0dd\ud0dc\ud658\uacbd \uacc4\uc5f4": ["\uace4\ucda9\uc0dd\uba85\uacfc\ud559\uacfc", "\uad00\uad11\ud559\uacfc", "\ub18d\uc0b0\uc5c5\ud559\uacfc", "\ub18d\uc5c5\ud1a0\ubaa9\uacf5\ud559\uacfc", "\ub3d9\ubb3c\uc0dd\uba85\uacf5\ud559\uacfc", "\ub9d0/\ud2b9\uc218\ub3d9\ubb3c\ud559\uacfc", "\ubc14\uc774\uc624\uc12c\uc720\uc18c\uc7ac\ud559\uacfc", "\uc0b0\ub9bc\uacfc\ud559\u00b7\uc870\uacbd\ud559\ubd80", "\uc0b0\ub9bc\uc0dd\ud0dc\ubcf4\ud638\ud559\uacfc", "\uc2a4\ub9c8\ud2b8\uc0dd\ubb3c\uc0b0\uc5c5\uae30\uacc4\uacf5\ud559\uacfc", "\uc2dd\ubb3c\uc758\ud559\uacfc", "\uc2dd\ubb3c\uc790\uc6d0\ud559\uacfc", "\uc2dd\ud488\uacf5\ud559\ubd80", "\uc2dd\ud488\uc790\uc6d0\uacbd\uc81c\ud559\uacfc", "\uc6d0\uc608\uacfc\ud559\uacfc", "\uc751\uc6a9\uc0dd\uba85\uacfc\ud559\ubd80", "\ucd95\uc0b0\ud559\uacfc"],
+      "인문계열": ["국어국문학과", "영어영문학과", "응용영어통번역학과", "사학과", "철학과", "프랑스어학과", "스페인어학과", "러시아어학과", "중국어학과", "일본어학과", "한국어학과", "글로벌커뮤니케이션학부(영미어문전공/영미문화전공)", "국제학과"],
 
-      "\uc0ac\ubc94\ub300\ud559 (\uad50\uc721 \uacc4\uc5f4)": ["\uac00\uc815\uad50\uc721\uacfc", "\uad50\uc721\ud559\uacfc", "\uad6d\uc5b4\uad50\uc721\uacfc", "\ub3c5\uc5b4\uad50\uc721\uc804\uacf5", "\ubb3c\ub9ac\uad50\uc721\uacfc", "\uc0dd\ubb3c\uad50\uc721\uacfc", "\uc218\ud559\uad50\uc721\uacfc", "\uc5ed\uc0ac\uad50\uc721\uacfc", "\uc601\uc5b4\uad50\uc721\uacfc", "\uc724\ub9ac\uad50\uc721\uacfc", "\uc77c\ubc18\uc0ac\ud68c\uad50\uc721\uacfc", "\uc815\ubcf4\u00b7\ucef4\ud4e8\ud130\uad50\uc721\uacfc", "\uc9c0\uad6c\uacfc\ud559\uad50\uc721\uacfc", "\uc9c0\ub9ac\uad50\uc721\uacfc", "\uccb4\uc721\uad50\uc721\uacfc", "\ud654\ud559\uad50\uc721\uacfc"],
+      "사회계열": ["정치외교학과", "행정학과", "사회학과", "경제학과", "무역학과", "미디어학과", "경영회계계열(경영학과/회계학과)", "빅데이터응용학과", "Hospitality경영학과", "조리&푸드디자인학과", "관광·엔터테인먼트학부(관광학과/문화엔터테인먼트학과)", "글로벌Hospitality·관광학과", "아동가족학과", "주거환경학과", "의상학과"],
 
-      "\uc758\uc57d\u00b7\ubcf4\uac74\u00b7\uc0dd\ud65c\uacfc\ud559 \uacc4\uc5f4": ["\uac04\ud638\ub300\ud559 (\uac04\ud638\ud559\uacfc)", "\uc218\uc758\uacfc\ub300\ud559 (\uc218\uc758\uc608\uacfc)", "\uc2dd\ud488\uc601\uc591\ud559\uacfc", "\uc544\ub3d9\ud559\ubd80", "\uc57d\ud559\ub300\ud559 (\uc57d\ud559\uacfc)", "\uc758\uacfc\ub300\ud559 (\uc758\uc608\uacfc)", "\uc758\ub958\ud559\uacfc", "\uce58\uacfc\ub300\ud559 (\uce58\uc758\uc608\uacfc)"],
+      "공학/전자/컴퓨터계열": ["기계공학부(기계공학전공/지능로봇공학전공/항공우주모빌리티전공)", "산업경영공학과", "원자력공학과", "화학공학과", "신소재공학과", "사회기반시스템공학과", "건축공학과", "환경학및환경공학과", "건축학과(5년제)", "전자공학부 전자공학과", "전자공학부 반도체공학과", "생체의공학과", "컴퓨터공학부 컴퓨터공학과", "컴퓨터공학부 인공지능학과", "소프트웨어융합학과", "미래정보디스플레이학부"],
 
-      "\uc778\ubb38\u00b7\uc0ac\ud68c\u00b7\uacbd\uc0c1 \uacc4\uc5f4 (\ubb38\uacfc \uc131\ud5a5)": ["\uacbd\uc601\ud559\ubd80", "\uacbd\uc81c\ud1b5\uc0c1\ud559\ubd80", "\uace0\uace0\uc778\ub958\ud559\uacfc", "\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\ub178\uc5b4\ub178\ubb38\ud559\uacfc", "\ub3c5\uc5b4\ub3c5\ubb38\ud559\uacfc", "\ubb38\ud5cc\uc815\ubcf4\ud559\uacfc", "\ubbf8\ub514\uc5b4\ucee4\ubba4\ub2c8\ucf00\uc774\uc158\ud559\uacfc", "\ubd88\uc5b4\ubd88\ubb38\ud559\uacfc", "\uc0ac\ud559\uacfc", "\uc0ac\ud68c\ubcf5\uc9c0\ud559\ubd80", "\uc0ac\ud68c\ud559\uacfc", "\uc2ec\ub9ac\ud559\uacfc", "\uc601\uc5b4\uc601\ubb38\ud559\uacfc", "\uc77c\uc5b4\uc77c\ubb38\ud559\uacfc", "\uc815\uce58\uc678\uad50\ud559\uacfc", "\uc911\uc5b4\uc911\ubb38\ud559\uacfc", "\uc9c0\ub9ac\ud559\uacfc", "\ucca0\ud559\uacfc", "\ud55c\ubb38\ud559\uacfc", "\ud589\uc815\ud559\ubd80"],
+      "자연/생명과학계열": ["수학과", "물리학과", "화학과", "생물학과", "지리학과(인문)", "지리학과(자연)", "응용수학과", "응용물리학과", "응용화학과", "우주과학과", "유전생명공학과", "식품생명공학과", "스마트팜과학과", "융합바이오·신소재공학과", "식품영양학과"],
 
-      "\uc790\uc5f0\uacfc\ud559\u00b7\uacf5\ud559\u00b7IT \uacc4\uc5f4 (\uc774\uacfc \uc131\ud5a5)": ["\uac74\uc124\ubc29\uc7ac\uacf5\ud559\uacfc", "\uac74\ucd95\ud559\ubd80(\uac74\ucd95\uacf5\ud559\uc804\uacf5)", "\uac74\ucd95\ud559\ubd80(\uac74\ucd95\ud559\uc804\uacf5 - 5\ub144\uc81c)", "\uace0\ubd84\uc790\uacf5\ud559\uacfc", "\uae08\uc18d\uc7ac\ub8cc\uacf5\ud559\uacfc", "\uae30\uacc4\uacf5\ud559\ubd80", "\ub098\ub178\uc2e0\uc18c\uc7ac\uacf5\ud559\uacfc", "\ubb3c\ub9ac\ud559\uacfc", "\uc0dd\uba85\uacfc\ud559\ubd80", "\uc0dd\ubb3c\ud559\uacfc", "\uc12c\uc720\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc", "\uc12c\uc720\ud328\uc158\ub514\uc790\uc778\ud559\ubd80(\uc12c\uc720\uacf5\ud559\uc804\uacf5)", "\uc12c\uc720\ud328\uc158\ub514\uc790\uc778\ud559\ubd80(\ud328\uc158\ub514\uc790\uc778\uc804\uacf5)", "\uc18c\ud504\ud2b8\uc6e8\uc5b4\ud559\uacfc", "\uc218\ud559\uacfc", "\uc2a4\ub9c8\ud2b8\ud50c\ub79c\ud2b8\uacf5\ud559\uacfc", "\uc2dd\ud488\uc678\uc2dd\uc0b0\uc5c5\ud559\uacfc", "\uc2e0\uc18c\uc7ac\uacf5\ud559\uacfc", "\uc5d0\ub108\uc9c0\uacf5\ud559\ubd80", "\uc5d0\ub108\uc9c0\ud654\ud559\uacf5\ud559\uacfc", "\uc704\uce58\uc815\ubcf4\uc2dc\uc2a4\ud15c\ud559\uacfc", "\uc751\uc6a9\ud654\ud559\uacf5\ud559\ubd80", "\uc790\ub3d9\ucc28\uacf5\ud559\uacfc", "\uc804\uae30\uacf5\ud559\uacfc", "\uc804\uc790\uacf5\ud559\ubd80", "\uc804\uc790\uacf5\ud559\ubd80(\ubaa8\ubc14\uc77c\uacf5\ud559\uc804\uacf5)", "\uc815\ubc00\uae30\uacc4\uacf5\ud559\uacfc", "\uc9c0\uad6c\uc2dc\uc2a4\ud15c\uacfc\ud559\ubd80", "\uce58\uc704\uc0dd\ud559\uacfc", "\ucef4\ud4e8\ud130\ud559\ubd80(\uc804 \uc804\uacf5)", "\ud1a0\ubaa9\uacf5\ud559\uacfc", "\ud1b5\uacc4\ud559\uacfc", "\ud654\ud559\uacfc", "\ud658\uacbd\uacf5\ud559\uacfc", "\ud658\uacbd\uc548\uc804\uacf5\ud559\uacfc"]
+      "의약/보건계열": ["의예과", "한의예과(인문)", "한의예과(자연)", "치의예과", "약학과", "한약학과", "약과학과", "간호학과"],
 
-    },
+      "예체능계열": ["산업디자인학과", "시각디자인학과", "환경조경디자인학과", "의류디자인학과", "디지털콘텐츠학과", "도예학과", "연극영화학과", "PostModern음악학과", "미술학부", "무용학부", "작곡과", "성악과", "기악과", "체육학과", "스포츠의학과", "골프산업학과", "스포츠지도학과", "태권도학과"],
 
-    "\uacbd\ud76c\ub300\ud559\uad50": {
-
-      "\uacf5\ud559/\uc804\uc790/\ucef4\ud4e8\ud130\uacc4\uc5f4": ["\uac74\ucd95\uacf5\ud559\uacfc", "\uac74\ucd95\ud559\uacfc", "\uae30\uacc4\uacf5\ud559\ubd80", "\ubbf8\ub798\uc815\ubcf4\ub514\uc2a4\ud50c\ub808\uc774\ud559\ubd80", "\ubc18\ub3c4\uccb4\uacf5\ud559\uacfc", "\uc0ac\ud68c\uae30\ubc18\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc", "\uc0dd\uccb4\uc758\uacf5\ud559\uacfc", "\uc18c\ud504\ud2b8\uc6e8\uc5b4\uc735\ud569\ud559\uacfc", "\uc2e0\uc18c\uc7ac\uacf5\ud559\uacfc", "\uc6d0\uc790\ub825\uacf5\ud559\uacfc", "\uc804\uc790\uacf5\ud559\uacfc", "\ucef4\ud4e8\ud130\uacf5\ud559\ubd80(\ucef4\ud4e8\ud130\uacf5\ud559\uacfc/\uc778\uacf5\uc9c0\ub2a5\ud559\uacfc)"],
-
-      "\uc0dd\uba85/\ud658\uacbd\uacc4\uc5f4": ["\uc0dd\ubb3c\ud559\uacfc", "\uc2a4\ub9c8\ud2b8\ud31c\uacfc\ud559\uacfc", "\uc2dd\ud488\uc0dd\uba85\uacf5\ud559\uacfc", "\uc2dd\ud488\uc601\uc591\ud559\uacfc", "\uc720\uc804\uc0dd\uba85\uacf5\ud559\uacfc", "\uc735\ud569\ubc14\uc774\uc624\u00b7\uc2e0\uc18c\uc7ac\uacf5\ud559\uacfc", "\ud658\uacbd\ud559\ubc0f\ud658\uacbd\uacf5\ud559\uacfc"],
-
-      "\uc21c\uc218/\uc751\uc6a9\uacfc\ud559\uacc4\uc5f4": ["\uc6b0\uc8fc\uacfc\ud559\uacfc", "\uc751\uc6a9\ubb3c\ub9ac\ud559\uacfc", "\uc751\uc6a9\uc218\ud559\uacfc", "\uc751\uc6a9\ud654\ud559\uacfc", "\uc9c0\ub9ac\ud559\uacfc", "\ud654\ud559\uacfc"],
-
-      "\uc608\uccb4\ub2a5/\uae30\ud0c0\uacc4\uc5f4": ["\ub3c4\uc608\ud559\uacfc", "\ub514\uc9c0\ud138\ucf58\ud150\uce20\ud559\uacfc", "\uc0b0\uc5c5\ub514\uc790\uc778\ud559\uacfc", "\uc2dc\uac01\ub514\uc790\uc778\ud559\uacfc", "\uc5f0\uadf9\uc601\ud654\ud559\uacfc(\uc601\ud654\uc5f0\ucd9c \ubc0f \uc81c\uc791)", "\uc758\ub958\ub514\uc790\uc778\ud559\uacfc", "\uc790\uc728\uc804\uacf5\ud559\ubd80/\uc790\uc720\uc804\uacf5\ud559\ubd80", "\ud658\uacbd\uc870\uacbd\ub514\uc790\uc778\ud559\uacfc"],
-
-      "\uc758\uc57d/\ubcf4\uac74\uacc4\uc5f4": ["\uac04\ud638\ud559\uacfc", "\uc57d\uacfc\ud559\uacfc", "\uc57d\ud559\uacfc", "\uc758\uc608\uacfc", "\uce58\uc758\uc608\uacfc", "\ud55c\uc57d\ud559\uacfc", "\ud55c\uc758\uc608\uacfc(\uc790\uc5f0)"]
-
+      "자율·자유전공": ["자율전공학부", "자유전공학부"]
     },
 
     "\uace0\ub824\ub300\ud559\uad50": {
@@ -3637,32 +3722,6 @@ document.addEventListener("DOMContentLoaded", () => {
       "이과대학": ["물리학과", "수학과", "통계학과", "화학과"],
 
       "첨단융합대학": ["시스템반도체학부", "의료인공지능공학과", "지능형네트워크융합학과", "컴퓨터·AI학부"]
-
-    },
-
-    "\ubd80\uc0b0\ub300\ud559\uad50": {
-
-      "\uacbd\uc81c\ud1b5\uc0c1\u00b7\uacbd\uc601\ub300\ud559": ["\uacbd\uc601\ud559\uacfc", "\uacbd\uc81c\ud559\ubd80", "\uacf5\uacf5\uc815\ucc45\ud559\ubd80", "\uad00\uad11\ucee8\ubca4\uc158\ud559\uacfc", "\uad6d\uc81c\ud559\ubd80", "\ubb34\uc5ed\ud559\ubd80"],
-
-      "\uacf5\uacfc\ub300\ud559": ["\uac74\ucd95\uacf5\ud559\uacfc", "\uac74\ucd95\ud559\uacfc(5\ub144\uc81c)", "\uace0\ubd84\uc790\uacf5\ud559\uacfc", "\uae30\uacc4\uacf5\ud559\ubd80", "\ub3c4\uc2dc\uacf5\ud559\uacfc", "\uc0ac\ud68c\uae30\ubc18\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc", "\uc0b0\uc5c5\uacf5\ud559\uacfc", "\uc720\uae30\uc18c\uc7ac\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc", "\uc735\ud569/\uc790\uc728\uc804\uacf5(\ucca8\ub2e8IT/\ucca8\ub2e8\uc18c\uc7ac/\ucca8\ub2e8\ubaa8\ube4c\ub9ac\ud2f0/\uc2a4\ub9c8\ud2b8\uc2dc\ud2f0/\ubbf8\ub798\ub3c4\uc2dc\uac74\ucd95 \ub4f1)", "\uc7ac\ub8cc\uacf5\ud559\ubd80", "\uc804\uae30\uc804\uc790\uacf5\ud559\ubd80(\uc804\uae30/\uc804\uc790/\ubc18\ub3c4\uccb4)", "\uc870\uc120\u00b7\ud574\uc591\uacf5\ud559\uacfc", "\ud56d\uacf5\uc6b0\uc8fc\uacf5\ud559\uacfc", "\ud654\uacf5\uc0dd\uba85\uacf5\ud559\uacfc", "\ud658\uacbd\uacf5\ud559\uacfc"],
-
-      "\uc0ac\ubc94\ub300\ud559": ["\uad50\uc721\ud559\uacfc", "\uad6d\uc5b4\uad50\uc721", "\ubb3c\ub9ac\uad50\uc721", "\uc0dd\ubb3c\uad50\uc721", "\uc218\ud559\uad50\uc721", "\uc5ed\uc0ac\uad50\uc721", "\uc601\uc5b4\uad50\uc721", "\uc720\uc544\uad50\uc721\uacfc", "\uc724\ub9ac\uad50\uc721", "\uc77c\ubc18\uc0ac\ud68c\uad50\uc721", "\uc9c0\uad6c\uacfc\ud559\uad50\uc721", "\uc9c0\ub9ac\uad50\uc721", "\ud2b9\uc218\uad50\uc721\uacfc", "\ud654\ud559\uad50\uc721"],
-
-      "\uc0ac\ud68c\uacfc\ud559\ub300\ud559": ["\ubb38\ud5cc\uc815\ubcf4\ud559\uacfc", "\ubbf8\ub514\uc5b4\ucee4\ubba4\ub2c8\ucf00\uc774\uc158\ud559\uacfc", "\uc0ac\ud68c\ubcf5\uc9c0\ud559\uacfc", "\uc0ac\ud68c\ud559\uacfc", "\uc2ec\ub9ac\ud559\uacfc", "\uc815\uce58\uc678\uad50\ud559\uacfc", "\ud589\uc815\ud559\uacfc"],
-
-      "\uc0dd\uba85\uc790\uc6d0\uacfc\ud559\ub300\ud559": ["IT\uc751\uc6a9\uacf5\ud559\uacfc", "\ubc14\uc774\uc624\uc0b0\uc5c5\uae30\uacc4\uacf5\ud559\uacfc", "\ubc14\uc774\uc624\uc18c\uc7ac", "\ubc14\uc774\uc624\ud658\uacbd\uc5d0\ub108\uc9c0", "\uc0dd\uba85\ud658\uacbd\ud654\ud559", "\uc2dd\ud488\uacf5\ud559", "\uc2dd\ud488\uc790\uc6d0\uacbd\uc81c\ud559\uacfc", "\uc6d0\uc608\uc0dd\uba85", "\uc870\uacbd\ud559\uacfc"],
-
-      "\uc0dd\ud65c\uacfc\ud559\ub300\ud559": ["\uc2a4\ud3ec\uce20\uacfc\ud559\uacfc", "\uc2dd\ud488\uc601\uc591\ud559\uacfc", "\uc2e4\ub0b4\ud658\uacbd\ub514\uc790\uc778\ud559\uacfc", "\uc544\ub3d9\uac00\uc871\ud559\uacfc", "\uc758\ub958\ud559\uacfc"],
-
-      "\uc758\uc57d\u00b7\ubcf4\uac74\u00b7\uac04\ud638 \uacc4\uc5f4": ["\uac04\ud638\ub300\ud559 (\uac04\ud638\ud559\uacfc)", "\uc57d\ud559\ub300\ud559 (\uc57d\ud559\ubd80)", "\uc758\uacfc\ub300\ud559 (\uc758\uc608\uacfc)", "\uce58\uacfc\ub300\ud559 (\uce58\uc758\uc608\uacfc)", "\ud55c\uc758\ud559\uc804\ubb38\ub300\ud559\uc6d0"],
-
-      "\uc778\ubb38\ub300\ud559": ["\uace0\uace0\ud559\uacfc", "\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\ub178\uc5b4\ub178\ubb38\ud559\uacfc", "\ub3c5\uc5b4\ub3c5\ubb38\ud559\uacfc", "\ubd88\uc5b4\ubd88\ubb38\ud559\uacfc", "\uc0ac\ud559\uacfc", "\uc5b8\uc5b4\uc815\ubcf4\ud559\uacfc", "\uc601\uc5b4\uc601\ubb38\ud559\uacfc", "\uc77c\uc5b4\uc77c\ubb38\ud559\uacfc", "\uc911\uc5b4\uc911\ubb38\ud559\uacfc", "\ucca0\ud559\uacfc", "\ud55c\ubb38\ud559\uacfc"],
-
-      "\uc790\uc5f0\uacfc\ud559\ub300\ud559": ["\ub300\uae30\ud658\uacbd\uacfc\ud559\uacfc", "\ubb3c\ub9ac\ud559\uacfc", "\ubbf8\uc0dd\ubb3c\ud559\uacfc", "\ubd84\uc790\uc0dd\ubb3c\ud559\uacfc", "\uc0dd\uba85\uacfc\ud559\uacfc", "\uc218\ud559\uacfc", "\uc9c0\uc9c8\ud658\uacbd\uacfc\ud559\uacfc", "\ud1b5\uacc4\ud559\uacfc", "\ud574\uc591\ud559\uacfc", "\ud654\ud559\uacfc"],
-
-      "\uc815\ubcf4\uc758\uc0dd\uba85\uacf5\ud559\ub300\ud559": ["\uc758\uc0dd\uba85\uc735\ud569\uacf5\ud559\ubd80", "\uc815\ubcf4\ucef4\ud4e8\ud130\uacf5\ud559\ubd80(\ucef4\ud4e8\ud130, \uc778\uacf5\uc9c0\ub2a5, \ub514\uc790\uc778\ud14c\ud06c\ub180\ub85c\uc9c0)"],
-
-      "\ud559\ubd80\ub300\ud559": ["\uc751\uc6a9\uc0dd\uba85\uc735\ud569\ud559\ubd80", "\uc790\uc720\uc804\uacf5\ud559\ubd80", "\ucca8\ub2e8\uc735\ud569\ud559\ubd80"]
 
     },
 
@@ -3776,42 +3835,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     },
 
-
-    "\uc544\uc8fc\ub300\ud559\uad50": {
-
-      "\uac1c\uc124\ud559\uacfc": ["AI\uc735\ud569\ud559\ubd80", "\uac04\ud638\ud559\uacfc", "\uac74\ucd95\ud559\uacfc", "\uacbd\uc601\uc815\ubcf4\ud559\ubd80", "\uae30\uacc4\uacf5\ud559\uacfc", "\ubb3c\ub9ac\ud559\uacfc", "\uc0ac\uc774\ubc84\ubcf4\uc548\ud559\uacfc", "\uc0ac\ud68c\ubcf5\uc9c0\ud559\uacfc", "\uc0b0\uc5c5\uacf5\ud559\uacfc", "\uc0dd\uba85\uacfc\ud559\uacfc", "\uc18c\ud504\ud2b8\uc6e8\uc5b4\ud559\uacfc", "\uc218\ud559\uacfc", "\uc758\ud559\uacfc", "\uc804\uc790\uacf5\ud559\uacfc", "\uc815\ubcf4\ubcf4\ud638\ud559\uacfc", "\ucef4\ud4e8\ud130\uacf5\ud559\uacfc", "\ud654\ud559\uacf5\ud559\uacfc", "\ud654\ud559\uacfc"]
-
-
-    },
-
-    "\uc544\uc8fc\ub300\ud559\uad50": {
-
-      "\uac04\ud638\ub300\ud559": ["\uac04\ud638\ud559\uacfc"],
-
-      "\uacbd\uc601\ub300\ud559": ["\uacbd\uc601\uc778\ud154\ub9ac\uc804\uc2a4\ud559\uacfc", "\uacbd\uc601\ud559\uacfc", "\uae00\ub85c\ubc8c\uacbd\uc601\ud559\uacfc(\ud2b9\uc131\ud654\uace0 \uc7ac\uc9c1\uc790)", "\uae08\uc735\uacf5\ud559\uacfc"],
-
-      "\uacf5\uacfc\ub300\ud559": ["\uac74\uc124\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc", "\uac74\ucd95\ud559\uacfc(\uac74\ucd95\uacf5\ud559 4\ub144)", "\uac74\ucd95\ud559\uacfc(\uac74\ucd95\ud559 5\ub144)", "\uad50\ud1b5\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc", "\uae30\uacc4\uacf5\ud559\uacfc", "\uc0b0\uc5c5\uacf5\ud559\uacfc", "\uc735\ud569\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc(\ud2b9\uc131\ud654\uace0 \uc7ac\uc9c1\uc790)", "\uc751\uc6a9\ud654\ud559\uacfc", "\ucca8\ub2e8\uc2e0\uc18c\uc7ac\uacf5\ud559\uacfc", "\ud654\ud559\uacf5\ud559\uacfc", "\ud658\uacbd\uc548\uc804\uacf5\ud559\uacfc"],
-
-      "\ub2e4\uc0b0\ud559\ubd80\ub300\ud559": ["\uc790\uc720\uc804\uacf5\ud559\ubd80(\uc778\ubb38)", "\uc790\uc720\uc804\uacf5\ud559\ubd80(\uc790\uc5f0)"],
-
-      "\uc0ac\ud68c\uacfc\ud559\ub300\ud559": ["\uacbd\uc81c\uc815\uce58\uc0ac\ud68c\uc735\ud569\ud559\ubd80(\uacbd\uc81c\ud559/\uc0ac\ud68c\ud559/\uc815\uce58\uc678\uad50\ud559)", "\uc2a4\ud3ec\uce20\ub808\uc800\ud559\uacfc", "\uc2ec\ub9ac\ud559\uacfc", "\ud589\uc815\ud559\uacfc"],
-
-      "\uc18c\ud504\ud2b8\uc6e8\uc5b4\uc735\ud569\ub300\ud559": ["\uad6d\ubc29\ub514\uc9c0\ud138\uc735\ud569\ud559\uacfc(\uad6d\ubc29IT\uc6b0\uc218\uc778\uc7ac)", "\ub514\uc9c0\ud138\ubbf8\ub514\uc5b4\ud559\uacfc", "\uc0ac\uc774\ubc84\ubcf4\uc548\ud559\uacfc", "\uc18c\ud504\ud2b8\uc6e8\uc5b4\ud559\uacfc"],
-
-      "\uc57d\ud559\ub300\ud559": ["\uc57d\ud559\uacfc"],
-
-      "\uc758\uacfc\ub300\ud559": ["\uc758\ud559\uacfc"],
-
-      "\uc778\ubb38\ub300\ud559": ["\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\ubb38\ud654\ucf58\ud150\uce20\ud559\uacfc", "\ubd88\uc5b4\ubd88\ubb38\ud559\uacfc", "\uc0ac\ud559\uacfc", "\uc601\uc5b4\uc601\ubb38\ud559\uacfc"],
-
-      "\uc790\uc5f0\uacfc\ud559\ub300\ud559": ["\uc218\ud559\uacfc", "\ud504\ub7f0\ud2f0\uc5b4\uacfc\ud559\ud559\ubd80(\ubb3c\ub9ac\u00b7\uc591\uc790\uacfc\ud559)", "\ud504\ub7f0\ud2f0\uc5b4\uacfc\ud559\ud559\ubd80(\uc0dd\uba85\uacfc\ud559\u00b7\uc751\uc6a9\uc0dd\ubb3c\ud559)", "\ud504\ub7f0\ud2f0\uc5b4\uacfc\ud559\ud559\ubd80(\ud654\ud559\u00b7\ubb3c\uc9c8\uacfc\ud559)"],
-
-      "\ucca8\ub2e8ICT\uc735\ud569\ub300\ud559": ["\ubbf8\ub798\ubaa8\ube4c\ub9ac\ud2f0\uacf5\ud559\uacfc", "\uc804\uc790\uacf5\ud559\uacfc", "\uc9c0\ub2a5\ud615\ubc18\ub3c4\uccb4\uacf5\ud559\uacfc"],
-
-      "\ucca8\ub2e8\ubc14\uc774\uc624\uc735\ud569\ub300\ud559": ["\ucca8\ub2e8\ubc14\uc774\uc624\uc18c\uc7ac\uacf5\ud559", "\ud601\uc2e0\uc2e0\uc57d\uacf5\ud559"]
-
-    },
-
     "\uc5f0\uc138\ub300\ud559\uad50": {
 
       "\uacf5\uacfc\ub300\ud559": ["\uac74\uc124\ud658\uacbd\uacf5\ud559\uacfc", "\uac74\ucd95\uacf5\ud559\uacfc", "\uae30\uacc4\uacf5\ud559\ubd80", "\ub3c4\uc2dc\uacf5\ud559\uacfc", "\ub514\uc2a4\ud50c\ub808\uc774\uc735\ud569\uacf5\ud559\uacfc", "\uc0b0\uc5c5\uacf5\ud559\uacfc", "\uc2dc\uc2a4\ud15c\ubc18\ub3c4\uccb4\uacf5\ud559\uacfc", "\uc2e0\uc18c\uc7ac\uacf5\ud559\ubd80", "\uc804\uae30\uc804\uc790\uacf5\ud559\ubd80", "\ud654\uacf5\uc0dd\uba85\uacf5\ud559\ubd80"],
@@ -3836,122 +3859,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
     },
 
-    "\uc778\ucc9c\ub300\ud559\uad50": {
+    "인하대학교": {
 
-      "\uacbd\uc601\ub300\ud559": ["\uacbd\uc601\ud559\ubd80", "\ub370\uc774\ud130\uacfc\ud559\uacfc", "\uc138\ubb34\ud68c\uacc4\ud559\uacfc"],
+      "인문 계열": ["IBT학과", "ISE학과", "KLC학과", "사학과", "영미유럽인문융합학부(영어영문학)", "영미유럽인문융합학부(프랑스언어문화)", "일본언어문화학과", "중국학과", "철학과", "한국어문학과", "인문융합학부"],
 
-      "\uacf5\uacfc\ub300\ud559": ["\uae30\uacc4\uacf5\ud559\uacfc", "\ubc14\uc774\uc624-\ub85c\ubd07\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc", "\uc0b0\uc5c5\uacbd\uc601\uacf5\ud559\uacfc", "\uc2e0\uc18c\uc7ac\uacf5\ud559\uacfc", "\uc548\uc804\uacf5\ud559\uacfc", "\uc5d0\ub108\uc9c0\ud654\ud559\uacf5\ud559\uacfc", "\uc804\uae30\uacf5\ud559\uacfc", "\uc804\uc790\uacf5\ud559\ubd80(\uc804\uc790\uacf5\ud559\uc804\uacf5, \ubc18\ub3c4\uccb4\uc735\ud569\uc804\uacf5)"],
+      "사회 계열": ["미디어커뮤니케이션학과", "사회복지학과", "정치외교학과", "행정학과"],
 
-      "\uae00\ub85c\ubc8c\uc815\uacbd\ub300\ud559": ["Global Trade & Service\ud559\ubd80", "\uacbd\uc81c\ud559\uacfc", "\uc18c\ube44\uc790\ud559\uacfc", "\uc815\uce58\uc678\uad50\ud559\uacfc", "\ud589\uc815\ud559\uacfc"],
+      "경영·상경 계열": ["경영학부(경영학과)", "경영학부(파이낸스경영학과)", "국제통상학과", "아태물류학부", "문화콘텐츠문화경영학과", "금융투자학과", "산업경영학과", "경제학과", "경영융합학부"],
 
-      "\ub3c4\uc2dc\uacfc\ud559\ub300\ud559": ["\ub3c4\uc2dc\uac74\ucd95\ud559\ubd80(\uac74\ucd95\uacf5\ud559\uc804\uacf5, \ub3c4\uc2dc\uac74\ucd95\ud559\uc804\uacf5)", "\ub3c4\uc2dc\uacf5\ud559\uacfc", "\ub3c4\uc2dc\ud589\uc815\ud559\uacfc", "\ub3c4\uc2dc\ud658\uacbd\uacf5\ud559\ubd80(\uac74\uc124\ud658\uacbd\uacf5\ud559\uc804\uacf5, \ud658\uacbd\uacf5\ud559\uc804\uacf5)"],
+      "자연과학 계열": ["생명과학과", "물리학과", "수학과", "통계학과", "화학과"],
 
-      "\uc0ac\ubc94\ub300\ud559": ["\uad6d\uc5b4\uad50\uc721\uacfc", "\uc218\ud559\uad50\uc721\uacfc", "\uc5ed\uc0ac\uad50\uc721\uacfc", "\uc601\uc5b4\uad50\uc721\uacfc", "\uc720\uc544\uad50\uc721\uacfc", "\uc724\ub9ac\uad50\uc721\uacfc", "\uc77c\uc5b4\uad50\uc721\uacfc", "\uccb4\uc721\uad50\uc721\uacfc"],
+      "공학·IT 계열": ["건축학부(건축공학전공)", "건축학부(건축학전공(5년제))", "고분자공학과", "공간정보공학과", "기계공학과", "반도체시스템공학과", "사회인프라공학과", "산업경영공학과", "신소재공학과", "에너지자원공학과", "이차전지융합학과", "전기전자공학부", "항공우주공학과", "화학공학과", "환경공학과", "메카트로닉스공학과", "반도체산업융합학과", "소프트웨어융합공학과", "생명공학과", "데이터사이언스학과", "스마트모빌리티공학과", "인공지능공학과", "컴퓨터공학과"],
 
-      "\uc0ac\ud68c\uacfc\ud559\ub300\ud559": ["\ubb38\ud5cc\uc815\ubcf4\ud559\uacfc", "\ubbf8\ub514\uc5b4\ucee4\ubba4\ub2c8\ucf00\uc774\uc158\ud559\uacfc", "\uc0ac\ud68c\ubcf5\uc9c0\ud559\uacfc", "\ucc3d\uc758\uc778\uc7ac\uac1c\ubc1c\ud559\uacfc"],
+      "의약·보건 계열": ["첨단바이오의약학과", "간호대학(간호학과)", "의과대학(의예과)"],
 
-      "\uc0dd\uba85\uacfc\ud559\uae30\uc220\ub300\ud559": ["\uc0dd\uba85\uacf5\ud559\ubd80(\uc0dd\uba85\uacf5\ud559\uc804\uacf5, \ub098\ub178\ubc14\uc774\uc624\uacf5\ud559\uc804\uacf5)", "\uc0dd\uba85\uacfc\ud559\ubd80(\uc0dd\uba85\uacfc\ud559\uc804\uacf5, \ubd84\uc790\uc758\uc0dd\uba85\uc804\uacf5)"],
+      "농업생명·환경 계열": ["조선해양공학과", "바이오식품공학과", "해양과학과"],
 
-      "\uc608\uc220\uccb4\uc721\ub300\ud559": ["\uacf5\uc5f0\uc608\uc220\ud559\uacfc", "\ub514\uc790\uc778\ud559\ubd80", "\uc2a4\ud3ec\uce20\uacfc\ud559\ubd80", "\uc6b4\ub3d9\uac74\uac15\ud559\ubd80", "\uc870\ud615\uc608\uc220\ud559\ubd80(\ud55c\uad6d\ud654\uc804\uacf5, \uc11c\uc591\ud654\uc804\uacf5)"],
+      "생활과학 계열": ["소비자학과", "아동심리학과", "식품영양학과"],
 
-      "\uc735\ud569\uc790\uc720\uc804\uacf5\ub300\ud559": ["\ub3d9\ubd81\uc544\uad6d\uc81c\ud1b5\uc0c1\ubb3c\ub958\ud559\ubd80(\ub3d9\ubd81\uc544\uad6d\uc81c\ud1b5\uc0c1\uc804\uacf5, \uc2a4\ub9c8\ud2b8\ubb3c\ub958\uacf5\ud559\uc804\uacf5)", "\ubc95\ud559\ubd80", "\uc790\uc720\uc804\uacf5\ud559\ubd80(\uc778\ubb38/\uc790\uc5f0)"],
+      "사범 계열": ["교육학과", "국어교육과", "사회교육과", "수학교육과", "영어교육과", "체육교육과"],
 
-      "\uc778\ubb38\ub300\ud559": ["\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\ub3c5\uc5b4\ub3c5\ubb38\ud559\uacfc", "\ubd88\uc5b4\ubd88\ubb38\ud559\uacfc", "\uc601\uc5b4\uc601\ubb38\ud559\uacfc", "\uc77c\ubcf8\uc9c0\uc5ed\ubb38\ud654\ud559\uacfc", "\uc911\uc5b4\uc911\uad6d\ud559\uacfc"],
+      "예체능 계열": ["디자인테크놀로지학과", "디자인융합학과", "스포츠과학과", "연극영화학과", "의류디자인학과(일반/실기)", "조형예술학과"],
 
-      "\uc790\uc5f0\uacfc\ud559\ub300\ud559": ["\ubb3c\ub9ac\ud559\uacfc", "\uc218\ud559\uacfc", "\ud328\uc158\uc0b0\uc5c5\ud559\uacfc", "\ud574\uc591\ud559\uacfc", "\ud654\ud559\uacfc"],
-
-      "\uc815\ubcf4\uae30\uc220\ub300\ud559": ["\uc784\ubca0\ub514\ub4dc\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc", "\uc815\ubcf4\ud1b5\uc2e0\uacf5\ud559\uacfc", "\ucef4\ud4e8\ud130\uacf5\ud559\ubd80"]
-
-    },
-
-    "\uc778\ud558\ub300\ud559\uad50": {
-
-      "\uacbd\uc601\ub300\ud559": ["\uacbd\uc601\ud559\ubd80(\uacbd\uc601\ud559\uacfc)", "\uacbd\uc601\ud559\ubd80(\ud30c\uc774\ub0b8\uc2a4\uacbd\uc601\ud559\uacfc)", "\uad6d\uc81c\ud1b5\uc0c1\ud559\uacfc", "\uc544\ud0dc\ubb3c\ub958\ud559\ubd80"],
-
-      "\uacf5\uacfc\ub300\ud559": ["\uac74\ucd95\ud559\ubd80(\uac74\ucd95\uacf5\ud559\uc804\uacf5)", "\uac74\ucd95\ud559\ubd80(\uac74\ucd95\ud559\uc804\uacf5(5\ub144\uc81c))", "\uace0\ubd84\uc790\uacf5\ud559\uacfc", "\uacf5\uac04\uc815\ubcf4\uacf5\ud559\uacfc", "\uae30\uacc4\uacf5\ud559\uacfc", "\ubc18\ub3c4\uccb4\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc", "\uc0ac\ud68c\uc778\ud504\ub77c\uacf5\ud559\uacfc", "\uc0b0\uc5c5\uacbd\uc601\uacf5\ud559\uacfc", "\uc2e0\uc18c\uc7ac\uacf5\ud559\uacfc", "\uc5d0\ub108\uc9c0\uc790\uc6d0\uacf5\ud559\uacfc", "\uc774\ucc28\uc804\uc9c0\uc735\ud569\ud559\uacfc", "\uc804\uae30\uc804\uc790\uacf5\ud559\ubd80", "\uc870\uc120\ud574\uc591\uacf5\ud559\uacfc", "\ud56d\uacf5\uc6b0\uc8fc\uacf5\ud559\uacfc", "\ud654\ud559\uacf5\ud559\uacfc", "\ud658\uacbd\uacf5\ud559\uacfc"],
-
-      "\uad6d\uc81c\ud559\ubd80": ["IBT\ud559\uacfc", "ISE\ud559\uacfc", "KLC\ud559\uacfc"],
-
-      "\ubb38\uacfc\ub300\ud559": ["\ubb38\ud654\ucf58\ud150\uce20\ubb38\ud654\uacbd\uc601\ud559\uacfc", "\uc0ac\ud559\uacfc", "\uc601\ubbf8\uc720\ub7fd\uc778\ubb38\uc735\ud569\ud559\ubd80(\uc601\uc5b4\uc601\ubb38\ud559)", "\uc601\ubbf8\uc720\ub7fd\uc778\ubb38\uc735\ud569\ud559\ubd80(\ud504\ub791\uc2a4\uc5b8\uc5b4\ubb38\ud654)", "\uc77c\ubcf8\uc5b8\uc5b4\ubb38\ud654\ud559\uacfc", "\uc911\uad6d\ud559\uacfc", "\ucca0\ud559\uacfc", "\ud55c\uad6d\uc5b4\ubb38\ud559\uacfc"],
-
-      "\ubbf8\ub798\uc735\ud569\ub300\ud559": ["\uae08\uc735\ud22c\uc790\ud559\uacfc", "\uba54\uce74\ud2b8\ub85c\ub2c9\uc2a4\uacf5\ud559\uacfc", "\ubc18\ub3c4\uccb4\uc0b0\uc5c5\uc735\ud569\ud559\uacfc", "\uc0b0\uc5c5\uacbd\uc601\ud559\uacfc", "\uc18c\ud504\ud2b8\uc6e8\uc5b4\uc735\ud569\uacf5\ud559\uacfc"],
-
-      "\ubc14\uc774\uc624\uc2dc\uc2a4\ud15c\uc735\ud569\ud559\ubd80": ["\ubc14\uc774\uc624\uc2dd\ud488\uacf5\ud559\uacfc", "\uc0dd\uba85\uacf5\ud559\uacfc", "\uc0dd\uba85\uacfc\ud559\uacfc", "\ucca8\ub2e8\ubc14\uc774\uc624\uc758\uc57d\ud559\uacfc"],
-
-      "\uc0ac\ubc94\ub300\ud559": ["\uad50\uc721\ud559\uacfc", "\uad6d\uc5b4\uad50\uc721\uacfc", "\uc0ac\ud68c\uad50\uc721\uacfc", "\uc218\ud559\uad50\uc721\uacfc", "\uc601\uc5b4\uad50\uc721\uacfc", "\uccb4\uc721\uad50\uc721\uacfc"],
-
-      "\uc0ac\ud68c\uacfc\ud559\ub300\ud559": ["\uacbd\uc81c\ud559\uacfc", "\ubbf8\ub514\uc5b4\ucee4\ubba4\ub2c8\ucf00\uc774\uc158\ud559\uacfc", "\uc0ac\ud68c\ubcf5\uc9c0\ud559\uacfc", "\uc18c\ube44\uc790\ud559\uacfc", "\uc544\ub3d9\uc2ec\ub9ac\ud559\uacfc", "\uc815\uce58\uc678\uad50\ud559\uacfc", "\ud589\uc815\ud559\uacfc"],
-
-      "\uc18c\ud504\ud2b8\uc6e8\uc5b4\uc735\ud569\ub300\ud559": ["\ub370\uc774\ud130\uc0ac\uc774\uc5b8\uc2a4\ud559\uacfc", "\ub514\uc790\uc778\ud14c\ud06c\ub180\ub85c\uc9c0\ud559\uacfc", "\uc2a4\ub9c8\ud2b8\ubaa8\ube4c\ub9ac\ud2f0\uacf5\ud559\uacfc", "\uc778\uacf5\uc9c0\ub2a5\uacf5\ud559\uacfc", "\ucef4\ud4e8\ud130\uacf5\ud559\uacfc"],
-
-      "\uc608\uc220\uccb4\uc721\ub300\ud559": ["\ub514\uc790\uc778\uc735\ud569\ud559\uacfc", "\uc2a4\ud3ec\uce20\uacfc\ud559\uacfc", "\uc5f0\uadf9\uc601\ud654\ud559\uacfc", "\uc758\ub958\ub514\uc790\uc778\ud559\uacfc(\uc77c\ubc18/\uc2e4\uae30)", "\uc870\ud615\uc608\uc220\ud559\uacfc"],
-
-      "\uc758\uacfc\ub300\ud559 \ubc0f \uac04\ud638\ub300\ud559": ["\uac04\ud638\ub300\ud559(\uac04\ud638\ud559\uacfc)", "\uc758\uacfc\ub300\ud559(\uc758\uc608\uacfc)"],
-
-      "\uc790\uc5f0\uacfc\ud559\ub300\ud559": ["\ubb3c\ub9ac\ud559\uacfc", "\uc218\ud559\uacfc", "\uc2dd\ud488\uc601\uc591\ud559\uacfc", "\ud1b5\uacc4\ud559\uacfc", "\ud574\uc591\uacfc\ud559\uacfc", "\ud654\ud559\uacfc"],
-
-      "\ud504\ub7f0\ud2f0\uc5b4\ucc3d\uc758\ub300\ud559 (\ubb34\uc804\uacf5/\uc735\ud569)": ["\uacbd\uc601\uc735\ud569\ud559\ubd80", "\uacf5\ud559\uc735\ud569\ud559\ubd80", "\uc0ac\ud68c\uacfc\ud559\uc735\ud569\ud559\ubd80", "\uc778\ubb38\uc735\ud569\ud559\ubd80", "\uc790\uc5f0\uacfc\ud559\uc735\ud569\ud559\ubd80", "\uc790\uc720\uc804\uacf5\uc735\ud569\ud559\ubd80"]
-
-    },
-
-    "\uc804\ub0a8\ub300\ud559\uad50": {
-
-      "AI\uc735\ud569\ub300\ud559": ["\ubbf8\ub798\ubaa8\ube4c\ub9ac\ud2f0\ud559\uacfc", "\ube45\ub370\uc774\ud130\uc735\ud569\ud559\uacfc", "\uc778\uacf5\uc9c0\ub2a5\ud559\ubd80"],
-
-      "\uacbd\uc601\ub300\ud559": ["\uacbd\uc601\ud559\ubd80", "\uacbd\uc81c\ud559\ubd80"],
-
-      "\uacf5\uacfc\ub300\ud559": ["\uac74\ucd95\ud559\ubd80", "\uace0\ubd84\uc790\uc735\ud569\uc18c\uc7ac\uacf5\ud559\ubd80", "\uae30\uacc4\uacf5\ud559\ubd80", "\uc0b0\uc5c5\uacf5\ud559\uacfc", "\uc0dd\ubb3c\uacf5\ud559\uacfc", "\uc2e0\uc18c\uc7ac\uacf5\ud559\ubd80", "\uc5d0\ub108\uc9c0\uc790\uc6d0\uacf5\ud559\uacfc", "\uc804\uae30\uacf5\ud559\uacfc", "\uc804\uc790\ucef4\ud4e8\ud130\uacf5\ud559\ubd80", "\ud1a0\ubaa9\uacf5\ud559\uacfc", "\ud654\ud559\uacf5\ud559\ubd80", "\ud658\uacbd\uc5d0\ub108\uc9c0\uacf5\ud559\uacfc"],
-
-      "\uad11\uc8fc \uc9c1\ud560/\uc608\uc220\ub300\ud559": ["\uad6d\uc545\ud559\uacfc", "\ub514\uc790\uc778\ud559\uacfc", "\ubbf8\uc220\ud559\uacfc", "\uc74c\uc545\ud559\uacfc", "\uc790\uc728\uc804\uacf5(1\ub144)", "\uc790\uc728\uc804\uacf5\ud559\ubd80(4\ub144)"],
-
-      "\ub18d\uc5c5\uc0dd\uba85\uacfc\ud559\ub300\ud559": ["\ub18d\uc0dd\uba85\ud654\ud559\uacfc", "\ub18d\uc5c5\uacbd\uc81c\ud559\uacfc", "\ub3d9\ubb3c\uc790\uc6d0\ud559\uacfc", "\ubc14\uc774\uc624\uc5d0\ub108\uc9c0\ud559\uacfc", "\ubd84\uc790\uc0dd\uba85\ud559\uacfc", "\uc0b0\ub9bc\uc790\uc6d0\ud559\uacfc", "\uc2dd\ud488\uacf5\ud559\uacfc", "\uc6d0\uc608\uc0dd\uba85\ud559\uacfc", "\uc735\ud569\ubc14\uc774\uc624\uc2dc\uc2a4\ud15c\uae30\uacc4\uacf5\ud559\uacfc", "\uc751\uc6a9\uc0dd\ubb3c\ud559\uacfc", "\uc751\uc6a9\uc2dd\ubb3c\ud559\uacfc", "\uc784\uc0b0\uacf5\ud559\uacfc", "\uc870\uacbd\ud559\uacfc", "\uc9c0\uc5ed\u00b7\ubc14\uc774\uc624\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc"],
-
-      "\uc0ac\ubc94\ub300\ud559": ["\uac00\uc815\uad50\uc721\uacfc", "\uad50\uc721\ud559\uacfc", "\uad6d\uc5b4\uad50\uc721\uacfc", "\ubb3c\ub9ac\uad50\uc721\uacfc", "\uc0dd\ubb3c\uad50\uc721\uacfc", "\uc218\ud559\uad50\uc721\uacfc", "\uc5ed\uc0ac\uad50\uc721\uacfc", "\uc601\uc5b4\uad50\uc721\uacfc", "\uc720\uc544\uad50\uc721\uacfc", "\uc724\ub9ac\uad50\uc721\uacfc", "\uc9c0\uad6c\uacfc\ud559\uad50\uc721\uacfc", "\uc9c0\ub9ac\uad50\uc721\uacfc", "\ud2b9\uc218\uad50\uc721\ud559\ubd80", "\ud654\ud559\uad50\uc721\uacfc"],
-
-      "\uc0ac\ud68c\uacfc\ud559\ub300\ud559": ["\ubb38\ud5cc\uc815\ubcf4\ud559\uacfc", "\ubb38\ud654\uc778\ub958\uace0\uace0\ud559\uacfc", "\ubbf8\ub514\uc5b4\ucee4\ubba4\ub2c8\ucf00\uc774\uc158\ud559\uacfc", "\uc0ac\ud68c\ud559\uacfc", "\uc2ec\ub9ac\ud559\uacfc", "\uc815\uce58\uc678\uad50\ud559\uacfc", "\uc9c0\ub9ac\ud559\uacfc", "\ud589\uc815\ud559\uacfc"],
-
-      "\uc0dd\ud65c\uacfc\ud559\ub300\ud559": ["\uc0dd\ud65c\ubcf5\uc9c0\ud559\uacfc", "\uc2dd\ud488\uc601\uc591\uacfc\ud559\ubd80", "\uc758\ub958\ud559\uacfc"],
-
-      "\uc5ec\uc218-\uacf5\ud559\ub300\ud559": ["\uac74\ucd95\ub514\uc790\uc778\ud559\uacfc", "\uacf5\ud559\uacc4\uc5f4", "\uc11d\uc720\ud654\ud559\uc18c\uc7ac\uacf5\ud559\uacfc", "\uc758\uacf5\ud559\ubd80"],
-
-      "\uc5ec\uc218-\ubb38\ud654\uc0ac\ud68c\uacfc\ud559\ub300\ud559": ["\uad6d\uc81c\ud559\ubd80", "\uae00\ub85c\ubc8c\ube44\uc988\ub2c8\uc2a4\ud559\ubd80", "\ubb38\ud654\uad00\uad11\uacbd\uc601\ud559\uacfc", "\ubb38\ud654\ucf58\ud150\uce20\ud559\ubd80", "\ubb3c\ub958\uad50\ud1b5\ud559\uacfc"],
-
-      "\uc5ec\uc218-\uc218\uc0b0\ud574\uc591/\uc9c1\ud560": ["\uae30\uad00\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc", "\uc218\uc0b0\uc0dd\uba85\uc758\ud559\uacfc", "\uc2a4\ub9c8\ud2b8\uc218\uc0b0\uc790\uc6d0\uad00\ub9ac\ud559\uacfc", "\uc870\uc120\ud574\uc591\uacf5\ud559\uacfc", "\ucc3d\uc758\uc735\ud569\ud559\ubd80", "\ud574\uc591\uc218\uc0b0\uad11\uc5ed"],
-
-      "\uc758\uc57d\u00b7\ubcf4\uac74\u00b7\uac04\ud638 \uacc4\uc5f4": ["\uac04\ud638\ub300\ud559(\uac04\ud638\ud559\uacfc)", "\uc218\uc758\uacfc\ub300\ud559(\uc218\uc758\uc608\uacfc)", "\uc57d\ud559\ub300\ud559(\uc57d\ud559\ubd80)", "\uc758\uacfc\ub300\ud559(\uc758\ud559\uacfc)", "\uce58\uc758\ud559\uc804\ubb38\ub300\ud559\uc6d0"],
-
-      "\uc778\ubb38\ub300\ud559": ["\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\uc0ac\ud559\uacfc", "\uc5b4\ubb38\uacc4\uc5f4(\ub3c5\uc5b4/\ubd88\uc5b4/\uc911\uc5b4/\uc77c\uc5b4 \ub4f1)", "\uc601\uc5b4\uc601\ubb38\ud559\uacfc", "\ucca0\ud559\uacfc"],
-
-      "\uc790\uc5f0\uacfc\ud559\ub300\ud559": ["\ubb3c\ub9ac\ud559\uacfc", "\uc0dd\uba85\uacfc\ud559\uae30\uc220\ud559\ubd80", "\uc0dd\ubb3c\ud559\uacfc", "\uc218\ud559\uacfc", "\uc9c0\uad6c\ud658\uacbd\uacfc\ud559\ubd80", "\ud1b5\uacc4\ud559\uacfc", "\ud654\ud559\uacfc"]
-
-    },
-
-    "\uc804\ubd81\ub300\ud559\uad50": {
-
-      "\uacbd\uc0c1\ub300\ud559": ["\uacbd\uc601\ud559\uacfc", "\uacbd\uc81c\ud559\ubd80", "\ubb34\uc5ed\ud559\uacfc", "\ud68c\uacc4\ud559\uacfc"],
-
-      "\uacf5\uacfc\ub300\ud559": ["\uac74\ucd95\uacf5\ud559", "\uace0\ubd84\uc790\u00b7\ub098\ub178\uacf5\ud559", "\uae30\uacc4\uacf5\ud559", "\uae30\uacc4\uc124\uacc4\uacf5\ud559", "\uae30\uacc4\uc2dc\uc2a4\ud15c\uacf5\ud559", "\ub098\ub178\ubc14\uc774\uc624\uae30\uacc4\uc2dc\uc2a4\ud15c\uacf5\ud559", "\ub3c4\uc2dc\uacf5\ud559", "\ubc14\uc774\uc624\uba54\ub514\uceec\uacf5\ud559", "\uc0b0\uc5c5\uc815\ubcf4\uc2dc\uc2a4\ud15c\uacf5\ud559", "\uc18c\ud504\ud2b8\uc6e8\uc5b4\uacf5\ud559", "\uc2e0\uc18c\uc7ac\uacf5\ud559(\uae08\uc18d/\uc804\uc790\uc7ac\ub8cc)", "\uc2e0\uc18c\uc7ac\uacf5\ud559\ubd80(\uc815\ubcf4\uc18c\uc7ac\uacf5\ud559)", "\uc591\uc790\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc", "\uc720\uae30\uc18c\uc7ac\uc12c\uc720\uacf5\ud559", "\uc735\ud569\uae30\uc220\uacf5\ud559(IT\uc735\ud569\uae30\uc804\uacf5\ud559/IT\uc751\uc6a9\uc2dc\uc2a4\ud15c\uacf5\ud559)", "\uc804\uae30\uacf5\ud559", "\uc804\uc790\uacf5\ud559\ubd80", "\ucef4\ud4e8\ud130\uc778\uacf5\uc9c0\ub2a5\ud559\ubd80", "\ud1a0\ubaa9/\ud658\uacbd/\uc790\uc6d0\u00b7\uc5d0\ub108\uc9c0\uacf5\ud559\ubd80", "\ud56d\uacf5\uc6b0\uc8fc\uacf5\ud559\uacfc", "\ud654\ud559\uacf5\ud559\ubd80"],
-
-      "\ub18d\uc5c5\uc0dd\uba85\uacfc\ud559\ub300\ud559": ["\ub18d\uacbd\uc81c\uc720\ud1b5\ud559\ubd80", "\ub18d\uc0dd\ubb3c\ud559\uacfc(\uc2dd\ubb3c\uc758\ud559\uacfc)", "\ub3d9\ubb3c\uc0dd\uba85\uacf5\ud559\uacfc", "\ub3d9\ubb3c\uc790\uc6d0\uacfc\ud559\uacfc", "\ubaa9\uc7ac\uc751\uc6a9\uacfc\ud559\uacfc", "\uc0b0\ub9bc\ud658\uacbd\uacfc\ud559\uacfc", "\uc0dd\ubb3c\uc0b0\uc5c5\uae30\uacc4\uacf5\ud559\uacfc", "\uc0dd\ubb3c\ud658\uacbd\ud654\ud559\uacfc", "\uc2a4\ub9c8\ud2b8\ud31c\ud559\uacfc", "\uc2dd\ud488\uacf5\ud559\uacfc", "\uc6d0\uc608\ud559\uacfc", "\uc791\ubb3c\uc0dd\uba85\uacfc\ud559\uacfc", "\uc870\uacbd\ud559\uacfc", "\uc9c0\uc5ed\uac74\uc124\uacf5\ud559\uacfc"],
-
-      "\ub300\ud559\ubcf8\ubd80 \uc9c1\uc18d \ubc0f \uc735\ud569\uc790\uc728\uc804\uacf5": ["\uad6d\uc81c\uc774\uacf5\ud559\ubd80", "\uc735\ud569\uc790\uc728\uc804\uacf5\ud559\ubd80 1(\uc804\uc8fc)", "\uc735\ud569\uc790\uc728\uc804\uacf5\ud559\ubd80 2(\uc775\uc0b0)", "\uc774\ucc28\uc804\uc9c0\uacf5\ud559\uacfc", "\ucca8\ub2e8\ubc29\uc704\uc0b0\uc5c5\ud559\uacfc"],
-
-      "\uc0ac\ubc94\ub300\ud559": ["\uacfc\ud559\uad50\uc721\ud559\ubd80(\ubb3c\ub9ac/\uc0dd\ubb3c/\uc9c0\uad6c\uacfc\ud559/\ud654\ud559)", "\uad50\uc721\ud559\uacfc", "\uad6d\uc5b4\uad50\uc721\uacfc", "\ub3c5\uc5b4\uad50\uc721\uacfc", "\uc0ac\ud68c\uacfc\uad50\uc721\ud559\ubd80(\uc5ed\uc0ac/\uc724\ub9ac/\uc77c\ubc18\uc0ac\ud68c/\uc9c0\ub9ac)", "\uc218\ud559\uad50\uc721\uacfc", "\uc601\uc5b4\uad50\uc721\uacfc", "\uccb4\uc721\uad50\uc721\uacfc"],
-
-      "\uc0ac\ud68c\uacfc\ud559\ub300\ud559": ["\uacf5\uacf5\uc778\uc7ac\ud559\ubd80", "\ubbf8\ub514\uc5b4\ucee4\ubba4\ub2c8\ucf00\uc774\uc158\ud559\uacfc", "\uc0ac\ud68c\ubcf5\uc9c0\ud559\uacfc", "\uc0ac\ud68c\ud559\uacfc", "\uc2ec\ub9ac\ud559\uacfc", "\uc815\uce58\uc678\uad50\ud559\uacfc", "\ud589\uc815\ud559\uacfc"],
-
-      "\uc0dd\ud65c\uacfc\ud559\ub300\ud559": ["\uc2dd\ud488\uc601\uc591\ud559\uacfc", "\uc544\ub3d9\ud559\uacfc", "\uc758\ub958\ud559\uacfc", "\uc8fc\uac70\ud658\uacbd\ud559\uacfc"],
-
-      "\uc608\uc220\ub300\ud559": ["\ubb34\uc6a9\ud559\uacfc(\ubc1c\ub808/\ubb34\uc6a9\uad50\uc721\ud06c\ub9ac\uc5d0\uc774\ud130/\ud55c\uad6d\ubb34\uc6a9/\ucee8\ud15c\ud3ec\ub7ec\ub9ac\ubb34\uc6a9)", "\ubbf8\uc220\ud559\uacfc(\ud55c\uad6d\ud654/\ud68c\ud654/\uc870\uc18c/\uac00\uad6c\uc870\ud615\ub514\uc790\uc778)", "\uc0b0\uc5c5\ub514\uc790\uc778\ud559\uacfc", "\uc74c\uc545\uacfc", "\ud55c\uad6d\uc74c\uc545\ud559\uacfc"],
-
-      "\uc758\uc57d\u00b7\ubcf4\uac74\u00b7\uac04\ud638\u00b7\uc218\uc758\uacc4\uc5f4": ["\uac04\ud638\ub300\ud559(\uac04\ud638\ud559\uacfc)", "\uc218\uc758\uacfc\ub300\ud559(\uc218\uc758\uc608\uacfc)", "\uc57d\ud559\ub300\ud559(\uc57d\ud559\uacfc)", "\uc758\uacfc\ub300\ud559(\uc758\uc608\uacfc)", "\uce58\uacfc\ub300\ud559(\uce58\uc758\uc608\uacfc)"],
-
-      "\uc778\ubb38\ub300\ud559": ["\uace0\uace0\ubb38\ud654\uc778\ub958\ud559\uacfc", "\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\uad6d\uc81c\ud559\ubd80", "\ub3c5\uc77c\ud559\uacfc", "\ubb38\ud5cc\uc815\ubcf4\ud559\uacfc", "\uc0ac\ud559\uacfc", "\uc2a4\ud398\uc778\u00b7\uc911\ub0a8\ubbf8\ud559\uacfc", "\uc601\uc5b4\uc601\ubb38\ud559\uacfc", "\uc77c\ubcf8\ud559\uacfc", "\uc911\uc5b4\uc911\ubb38\ud559\uacfc", "\ucca0\ud559\uacfc", "\ud504\ub791\uc2a4\u00b7\uc544\ud504\ub9ac\uce74\ud559\uacfc"],
-
-      "\uc790\uc5f0\uacfc\ud559\ub300\ud559": ["\uacfc\ud559\ud559\uacfc", "\ubb3c\ub9ac\ud559\uacfc", "\ubc18\ub3c4\uccb4\uacfc\ud559\uae30\uc220\ud559\uacfc", "\ubd84\uc790\uc0dd\ubb3c\ud559\uacfc", "\uc0dd\uba85\uacfc\ud559\uacfc", "\uc218\ud559\uacfc", "\uc2a4\ud3ec\uce20\uacfc\ud559\uacfc", "\uc9c0\uad6c\ud658\uacbd\uacfc\ud559\uacfc", "\ud1b5\uacc4\ud559\uacfc", "\ud654\ud559\uacfc"],
-
-      "\ud658\uacbd\uc0dd\uba85\uc790\uc6d0\ub300\ud559": ["\uc0dd\uba85\uacf5\ud559\ubd80", "\uc0dd\ud0dc\uc870\uacbd\ub514\uc790\uc778\ud559\uacfc"]
-
+      "자율전공": ["공학융합학부", "사회과학융합학부", "자연과학융합학부", "자유전공융합학부"]
     },
 
     "\uc911\uc559\ub300\ud559\uad50": {
@@ -3980,60 +3910,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
     },
 
-    "\ucda9\ub0a8\ub300\ud559\uad50": {
+    "충북대학교": {
 
-      "\uacbd\uc0c1\ub300\ud559": ["\uacbd\uc601\ud559\ubd80", "\uacbd\uc81c\ud559\uacfc", "\ubb34\uc5ed\ud559\uacfc"],
+      "인문 계열": ["고고미술사학과", "국어국문학과", "독일언어문화학과", "러시아언어문화학과", "사학과", "영어영문학과", "중어중문학과", "철학과", "프랑스언어문화학과"],
 
-      "\uacf5\uacfc\ub300\ud559": ["\uac74\ucd95\ud559\uacfc(5\ub144\uc81c)", "\uae30\uacc4\uacf5\ud559\ubd80", "\uba54\uce74\ud2b8\ub85c\ub2c9\uc2a4\uacf5\ud559\uacfc", "\uc2a4\ub9c8\ud2b8\uc2dc\ud2f0\uac74\ucd95\uacf5\ud559\uacfc", "\uc2e0\uc18c\uc7ac\uacf5\ud559\uacfc", "\uc5d0\ub108\uc9c0\uacf5\ud559\uacfc", "\uc720\uae30\uc7ac\ub8cc\uacf5\ud559\uacfc", "\uc751\uc6a9\ud654\ud559\uacf5\ud559\uacfc", "\uc790\uc728\uc6b4\ud56d\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc", "\uc804\uae30\uacf5\ud559\uacfc", "\uc804\uc790\uacf5\ud559\uacfc", "\uc815\ubcf4\ud1b5\uc2e0\uc735\ud569\ud559\ubd80", "\ucef4\ud4e8\ud130\uc778\uacf5\uc9c0\ub2a5\ud559\ubd80", "\ud1a0\ubaa9\uacf5\ud559\uacfc", "\ud56d\uacf5\uc6b0\uc8fc\uacf5\ud559\uacfc", "\ud658\uacbd\uacf5\ud559\uacfc"],
+      "사회 계열": ["사회학과", "심리학과", "정치외교학과", "행정학과"],
 
-      "\ub18d\uc5c5\uc0dd\uba85\uacfc\ud559\ub300\ud559": ["\ub18d\uc0dd\uba85\uc735\ud569\ud559\ubd80", "\ub18d\uc5c5\uacbd\uc81c\ud559\uacfc", "\ub3d9\ubb3c\ubc14\uc774\uc624\uc2dc\uc2a4\ud15c\uacfc\ud559\uacfc", "\ub3d9\ubb3c\uc790\uc6d0\uc0dd\uba85\uacfc\ud559\uacfc", "\uc0b0\ub9bc\ud658\uacbd\uc790\uc6d0\ud559\uacfc", "\uc0dd\ubb3c\ud658\uacbd\ud654\ud559\uacfc", "\uc2a4\ub9c8\ud2b8\ub18d\uc5c5\uc2dc\uc2a4\ud15c\uae30\uacc4\uacf5\ud559\uacfc", "\uc2dd\ubb3c\uc790\uc6d0\ud559\uacfc", "\uc2dd\ud488\uacf5\ud559\uacfc", "\uc6d0\uc608\ud559\uacfc", "\uc751\uc6a9\uc0dd\ubb3c\ud559\uacfc", "\uc9c0\uc5ed\ud658\uacbd\ud1a0\ubaa9\ud559\uacfc", "\ud658\uacbd\uc18c\uc7ac\uacf5\ud559\uacfc"],
+      "경영·상경 계열": ["경영정보학과", "경영학부", "국제경영학과", "경제학과"],
 
-      "\uc0ac\ubc94\ub300\ud559": ["\uac74\uc124\uacf5\ud559\uad50\uc721\uacfc", "\uad50\uc721\ud559\uacfc", "\uad6d\uc5b4\uad50\uc721\uacfc", "\uae30\uacc4\uacf5\ud559\uad50\uc721\uacfc", "\uae30\uc220\uad50\uc721\uacfc", "\uc218\ud559\uad50\uc721\uacfc", "\uc601\uc5b4\uad50\uc721\uacfc", "\uc804\uae30\u00b7\uc804\uc790\u00b7\ud1b5\uc2e0\uacf5\ud559\uad50\uc721\uacfc", "\uccb4\uc721\uad50\uc721\uacfc", "\ud654\ud559\uacf5\ud559\uad50\uc721\uacfc"],
+      "자연과학 계열": ["공업화학과", "물리학과", "미생물학과", "생물학과", "생화학과", "수학과", "정보통계학과", "지구환경과학과", "천문우주학과", "화학과"],
 
-      "\uc0ac\ud68c\uacfc\ud559\ub300\ud559": ["\ub3c4\uc2dc\u00b7\uc790\uce58\uc735\ud569\ud559\uacfc", "\ubb38\ud5cc\uc815\ubcf4\ud559\uacfc", "\uc0ac\ud68c\ubcf5\uc9c0\ud559\uacfc", "\uc0ac\ud68c\ud559\uacfc", "\uc2ec\ub9ac\ud559\uacfc", "\uc5b8\ub860\uc815\ubcf4\ud559\uacfc", "\uc815\uce58\uc678\uad50\ud559\uacfc", "\ud589\uc815\ud559\ubd80"],
+      "공학·IT 계열": ["건축공학과", "건축학과", "기계공학부", "도시공학과", "신소재공학과", "안전공학과", "토목공학부", "화학공학과", "환경공학과", "식품생명공학과", "지역건설공학과", "반도체공학부", "소프트웨어학부", "전기공학부", "전자공학과", "정보통신공학부", "지능로봇공학과", "컴퓨터공학과"],
 
-      "\uc0dd\uba85\uc2dc\uc2a4\ud15c\uacfc\ud559\ub300\ud559": ["\ubbf8\uc0dd\ubb3c\u00b7\ubd84\uc790\uc0dd\uba85\uacfc\ud559\uacfc", "\uc0dd\uba85\uc815\ubcf4\uc735\ud569\ud559\uacfc", "\uc0dd\ubb3c\uacfc\ud559\uacfc"],
+      "의약·보건 계열": ["간호대학(간호학과)", "수의과대학(수의예과)", "약학대학(약학과)", "약학대학(제약학과)", "의과대학(의예과)", "바이오헬스학부"],
 
-      "\uc0dd\ud65c\uacfc\ud559\ub300\ud559": ["\uc18c\ube44\uc790\ud559\uacfc", "\uc2dd\ud488\uc601\uc591\ud559\uacfc", "\uc758\ub958\ud559\uacfc"],
+      "농업생명·환경 계열": ["농업경제학과", "목재‧종이과학과", "바이오시스템공학과", "산림학과", "식물의학과", "식물자원학과", "원예과학과", "축산학과", "특용식물학과", "환경생명화학과"],
 
-      "\uc608\uc220\ub300\ud559": ["\uad00\ud604\uc545\uacfc", "\ub514\uc790\uc778\ucc3d\uc758\ud559\uacfc", "\uc74c\uc545\uacfc", "\uc870\uc18c\uacfc", "\ud68c\ud654\uacfc"],
+      "생활과학 계열": ["소비자학과", "식품영양학과", "아동복지학과", "의류학과", "주거환경학과"],
 
-      "\uc758\uc57d\u00b7\uac04\ud638\u00b7\uc218\uc758\uacc4\uc5f4": ["\uac04\ud638\ud559\uacfc", "\uc218\uc758\uc608\uacfc/\uc218\uc758\ud559\uacfc", "\uc57d\ud559\uacfc", "\uc758\uc608\uacfc/\uc758\ud559\uacfc"],
+      "사범 계열": ["교육학과", "국어교육과", "물리교육과", "사회교육과", "생물교육과", "수학교육과", "역사교육과", "영어교육과", "윤리교육과", "지구과학교육과", "지리교육과", "체육교육과", "화학교육과"],
 
-      "\uc778\ubb38\ub300\ud559": ["\uace0\uace0\ud559\uacfc", "\uad6d\uc0ac\ud559\uacfc", "\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\ub3c5\uc5b4\ub3c5\ubb38\ud559\uacfc", "\ubd88\uc5b4\ubd88\ubb38\ud559\uacfc", "\uc0ac\ud559\uacfc", "\uc5b8\uc5b4\ud559\uacfc", "\uc601\uc5b4\uc601\ubb38\ud559\uacfc", "\uc77c\uc5b4\uc77c\ubb38\ud559\uacfc", "\uc911\uc5b4\uc911\ubb38\ud559\uacfc", "\ucca0\ud559\uacfc", "\ud55c\ubb38\ud559\uacfc"],
+      "예체능 계열": ["디자인학과", "미술학과(동양화/서양화/조소)"],
 
-      "\uc790\uc5f0\uacfc\ud559\ub300\ud559": ["\ubb34\uc6a9\ud559\uacfc", "\ubb3c\ub9ac\ud559\uacfc", "\ubc18\ub3c4\uccb4\uc735\ud569\ud559\uacfc", "\uc0dd\ud654\ud559\uacfc", "\uc218\ud559\uacfc", "\uc2a4\ud3ec\uce20\uacfc\ud559\uacfc", "\uc815\ubcf4\ud1b5\uacc4\ud559\uacfc", "\uc9c0\uc9c8\ud658\uacbd\uacfc\ud559\uacfc", "\ucc9c\ubb38\uc6b0\uc8fc\uacfc\ud559\uacfc", "\ud574\uc591\ud658\uacbd\uacfc\ud559\uacfc", "\ud654\ud559\uacfc"],
-
-      "\ud2b9\uc218 \ubc0f \uc735\ud569\ud559\ubd80": ["\uad6d\uac00\uc548\ubcf4\uc735\ud569\ud559\ubd80(\uad6d\ud1a0\uc548\ubcf4\ud559/\ud574\uc591\uc548\ubcf4\ud559)", "\uad6d\uc81c\ud559\ubd80", "\uc9c0\uc2dd\uc735\ud569\ud559\ubd80(\ubb38\ud654\uc640\uc0ac\ud68c\uc735\ud569/\uacf5\uacf5\uc548\uc804\uc735\ud569/\ub9ac\ub354\uc2ed\uacfc\uc870\uc9c1\uacfc\ud559)", "\ucc3d\uc758\uc735\ud569\ub300\ud559(\uc790\uc728\uc804\uacf5\uc735\ud569/\uc778\ubb38\uc0ac\ud68c\uc735\ud569/\uc790\uc5f0\uacfc\ud559\uc735\ud569/\uacf5\ud559\uc735\ud569)"]
-
-    },
-
-    "\ucda9\ubd81\ub300\ud559\uad50": {
-
-      "\uacbd\uc601\ub300\ud559": ["\uacbd\uc601\uc815\ubcf4\ud559\uacfc", "\uacbd\uc601\ud559\ubd80", "\uacbd\uc601\ud559\uc790\uc728\uc804\uacf5\ud559\ubd80", "\uad6d\uc81c\uacbd\uc601\ud559\uacfc"],
-
-      "\uacf5\uacfc\ub300\ud559": ["\uac74\ucd95\uacf5\ud559\uacfc", "\uac74\ucd95\ud559\uacfc", "\uacf5\uc5c5\ud654\ud559\uacfc", "\uacf5\ud559\uc790\uc728\uc804\uacf5\ud559\ubd80", "\uae30\uacc4\uacf5\ud559\ubd80", "\ub3c4\uc2dc\uacf5\ud559\uacfc", "\uc2e0\uc18c\uc7ac\uacf5\ud559\uacfc", "\uc548\uc804\uacf5\ud559\uacfc", "\ud1a0\ubaa9\uacf5\ud559\ubd80", "\ud654\ud559\uacf5\ud559\uacfc", "\ud658\uacbd\uacf5\ud559\uacfc"],
-
-      "\ub18d\uc5c5\uc0dd\uba85\ud658\uacbd\ub300\ud559": ["\ub18d\uc5c5\uacbd\uc81c\ud559\uacfc", "\ub18d\uc5c5\uc0dd\uba85\ud658\uacbd\uc790\uc728\uc804\uacf5\ud559\ubd80", "\ubaa9\uc7ac\u2027\uc885\uc774\uacfc\ud559\uacfc", "\ubc14\uc774\uc624\uc2dc\uc2a4\ud15c\uacf5\ud559\uacfc", "\uc0b0\ub9bc\ud559\uacfc", "\uc2dd\ubb3c\uc758\ud559\uacfc", "\uc2dd\ubb3c\uc790\uc6d0\ud559\uacfc", "\uc2dd\ud488\uc0dd\uba85\uacf5\ud559\uacfc", "\uc6d0\uc608\uacfc\ud559\uacfc", "\uc9c0\uc5ed\uac74\uc124\uacf5\ud559\uacfc", "\ucd95\uc0b0\ud559\uacfc", "\ud2b9\uc6a9\uc2dd\ubb3c\ud559\uacfc", "\ud658\uacbd\uc0dd\uba85\ud654\ud559\uacfc"],
-
-      "\uc0ac\ubc94\ub300\ud559": ["\uad50\uc721\ud559\uacfc", "\uad6d\uc5b4\uad50\uc721\uacfc", "\ubb3c\ub9ac\uad50\uc721\uacfc", "\uc0ac\ud68c\uad50\uc721\uacfc", "\uc0dd\ubb3c\uad50\uc721\uacfc", "\uc218\ud559\uad50\uc721\uacfc", "\uc5ed\uc0ac\uad50\uc721\uacfc", "\uc601\uc5b4\uad50\uc721\uacfc", "\uc724\ub9ac\uad50\uc721\uacfc", "\uc9c0\uad6c\uacfc\ud559\uad50\uc721\uacfc", "\uc9c0\ub9ac\uad50\uc721\uacfc", "\uccb4\uc721\uad50\uc721\uacfc", "\ud654\ud559\uad50\uc721\uacfc"],
-
-      "\uc0ac\ud68c\uacfc\ud559\ub300\ud559": ["\uacbd\uc81c\ud559\uacfc", "\uc0ac\ud68c\uacfc\ud559\uc790\uc728\uc804\uacf5\ud559\ubd80", "\uc0ac\ud68c\ud559\uacfc", "\uc2ec\ub9ac\ud559\uacfc", "\uc815\uce58\uc678\uad50\ud559\uacfc", "\ud589\uc815\ud559\uacfc"],
-
-      "\uc0dd\ud65c\uacfc\ud559\ub300\ud559": ["\uc0dd\ud65c\uacfc\ud559\uc790\uc728\uc804\uacf5\ud559\ubd80", "\uc18c\ube44\uc790\ud559\uacfc", "\uc2dd\ud488\uc601\uc591\ud559\uacfc", "\uc544\ub3d9\ubcf5\uc9c0\ud559\uacfc", "\uc758\ub958\ud559\uacfc", "\uc8fc\uac70\ud658\uacbd\ud559\uacfc"],
-
-      "\uc608\uc220\ud559\uacfc\uad70": ["\ub514\uc790\uc778\ud559\uacfc", "\ubbf8\uc220\ud559\uacfc(\ub3d9\uc591\ud654/\uc11c\uc591\ud654/\uc870\uc18c)"],
-
-      "\uc758\uc57d/\ubcf4\uac74/\uac04\ud638/\uc218\uc758\uacc4\uc5f4": ["\uac04\ud638\ub300\ud559(\uac04\ud638\ud559\uacfc)", "\uc218\uc758\uacfc\ub300\ud559(\uc218\uc758\uc608\uacfc)", "\uc57d\ud559\ub300\ud559(\uc57d\ud559\uacfc)", "\uc57d\ud559\ub300\ud559(\uc81c\uc57d\ud559\uacfc)", "\uc758\uacfc\ub300\ud559(\uc758\uc608\uacfc)"],
-
-      "\uc778\ubb38\ub300\ud559": ["\uace0\uace0\ubbf8\uc220\uc0ac\ud559\uacfc", "\uad6d\uc5b4\uad6d\ubb38\ud559\uacfc", "\ub3c5\uc77c\uc5b8\uc5b4\ubb38\ud654\ud559\uacfc", "\ub7ec\uc2dc\uc544\uc5b8\uc5b4\ubb38\ud654\ud559\uacfc", "\uc0ac\ud559\uacfc", "\uc601\uc5b4\uc601\ubb38\ud559\uacfc", "\uc778\ubb38\ud559\uc790\uc728\uc804\uacf5\ud559\ubd80", "\uc911\uc5b4\uc911\ubb38\ud559\uacfc", "\ucca0\ud559\uacfc", "\ud504\ub791\uc2a4\uc5b8\uc5b4\ubb38\ud654\ud559\uacfc"],
-
-      "\uc790\uc5f0\uacfc\ud559\ub300\ud559": ["\ubb3c\ub9ac\ud559\uacfc", "\ubbf8\uc0dd\ubb3c\ud559\uacfc", "\uc0dd\ubb3c\ud559\uacfc", "\uc0dd\ud654\ud559\uacfc", "\uc218\ud559\uacfc", "\uc790\uc5f0\uacfc\ud559\uc790\uc728\uc804\uacf5\ud559\ubd80", "\uc815\ubcf4\ud1b5\uacc4\ud559\uacfc", "\uc9c0\uad6c\ud658\uacbd\uacfc\ud559\uacfc", "\ucc9c\ubb38\uc6b0\uc8fc\ud559\uacfc", "\ud654\ud559\uacfc"],
-
-      "\uc804\uc790\uc815\ubcf4\ub300\ud559": ["\ubc18\ub3c4\uccb4\uacf5\ud559\ubd80", "\uc18c\ud504\ud2b8\uc6e8\uc5b4\ud559\ubd80", "\uc804\uae30\uacf5\ud559\ubd80", "\uc804\uc790\uacf5\ud559\uacfc", "\uc804\uc790\uc815\ubcf4\uc790\uc728\uc804\uacf5\ud559\ubd80", "\uc815\ubcf4\ud1b5\uc2e0\uacf5\ud559\ubd80", "\uc9c0\ub2a5\ub85c\ubd07\uacf5\ud559\uacfc", "\ucef4\ud4e8\ud130\uacf5\ud559\uacfc"],
-
-      "\ucc3d\uc758\uc735\ud569\ub300\ud559 \ubc0f \uc9c1\ud560\ud559\ubd80": ["\ubc14\uc774\uc624\ud5ec\uc2a4\ud559\ubd80", "\uc778\ubb38\uc0ac\ud68c\uc790\uc728\uc804\uacf5\uacc4\uc5f4", "\uc790\uc5f0\uacfc\ud559\uc790\uc728\uc804\uacf5\uacc4\uc5f4"]
-
+      "자율전공": ["경영학자율전공학부", "공학자율전공학부", "농업생명환경자율전공학부", "사회과학자율전공학부", "생활과학자율전공학부", "인문학자율전공학부", "자연과학자율전공학부", "전자정보자율전공학부", "인문사회자율전공계열", "자연과학자율전공계열"]
     },
 
     "\ud55c\uad6d\uc678\uad6d\uc5b4\ub300\ud559\uad50": {
@@ -4079,28 +3978,6 @@ document.addEventListener("DOMContentLoaded", () => {
       "\uc11c\uc6b8\ucea0\ud37c\uc2a4 \uc735\ud569\uc804\uacf5": ["\uac74\ucd95\uacf5\uac04\uc608\uc220\uc804\uacf5", "\uacf5\uc5f0\uc608\uc220\uc804\uacf5", "\ub370\uc774\ud130\uc0ac\uc774\uc5b8\uc2a4\uc804\uacf5", "\ub514\uc790\uc778\uc5d4\uc9c0\ub2c8\uc5b4\ub9c1\uc804\uacf5", "\ubb38\ud654\uc608\uc220\uacbd\uc601\uc804\uacf5", "\uc0ac\ubb3c\uc778\ud130\ub137\uacf5\ud559\uc804\uacf5", "\uc2a4\ub9c8\ud2b8\ub3c4\uc2dc\u00b7\ub370\uc774\ud130\uc0ac\uc774\uc5b8\uc2a4\uc804\uacf5", "\uc758\ub8cc\ud5ec\uc2a4\ucf00\uc5b4AI\uc804\uacf5", "\uc9c0\ub2a5\u00b7\ub85c\ubd07\uacf5\ud559\uc804\uacf5", "\ud5ec\uc2a4\ucf00\uc5b4\uc11c\ube44\uc2a4\uc804\uacf5"],
 
       "\ucea0\ud37c\uc2a4\uc790\uc728\uc804\uacf5": ["\uc11c\uc6b8\ucea0\ud37c\uc2a4\uc790\uc728\uc804\uacf5(\uc778\ubb38\u00b7\uc608\ub2a5)", "\uc11c\uc6b8\ucea0\ud37c\uc2a4\uc790\uc728\uc804\uacf5(\uc790\uc5f0\u00b7\uc608\ub2a5)"]
-
-    },
-
-    "서울과학기술대학교": {
-
-      "공과대학": ["건설시스템공학과", "건축학부(건축공학전공, 건축학전공)", "기계공학과", "기계시스템공학부(지능형로봇전공, 미래자동차전공)", "신소재공학과", "안전공학과", "자유전공학부(공과대학)"],
-
-      "교양대학": ["ST자유전공학부"],
-
-      "기술경영융합대학": ["MSDE학과", "경영학과(경영학전공)", "경영학과(글로벌테크노경영전공)", "산업공학과(ITM전공)", "산업공학과(산업정보시스템전공)", "자유전공학부(기술경영융합대학)"],
-
-      "미래융합대학": ["건설환경융합공학과", "문화예술학과", "벤처경영학과", "영어과", "융합기계공학과", "자유전공학부(미래융합대학)", "정보통신융합공학과", "헬스피트니스학과"],
-
-      "에너지바이오대학": ["바이오메디컬학과(신설)", "스포츠과학과", "식품생명공학과", "안경광학과", "자유전공학부(에너지바이오대학)", "정밀화학과", "화공생명공학과", "환경공학과"],
-
-      "인문사회대학": ["문예창작학과", "영어영문학과", "자유전공학부(인문사회대학)", "행정학과"],
-
-      "정보통신대학": ["스마트ICT융합공학과", "자유전공학부(정보통신대학)", "전기정보공학과", "전자공학과", "컴퓨터공학과"],
-
-      "조형대학": ["금속공예디자인학과", "도예학과", "디자인학과(산업디자인전공, 시각디자인전공)", "조형예술학과"],
-
-      "창의융합대학": ["미래에너지융합학과", "인공지능응용학과", "자유전공학부(창의융합대학)", "지능형반도체공학과"]
 
     },
 
@@ -4162,292 +4039,190 @@ document.addEventListener("DOMContentLoaded", () => {
 
     },
 
-    "가톨릭대학교": {
-
-      "신학대학": ["신학과"],
-
-      "인문사회계열 (광역)": ["국어국문학과", "철학과", "국사학과", "영어영문학부", "중국언어문화학과", "일어일본문화학과", "프랑스어문화학과", "사회복지학과", "심리학과", "사회학과", "국제학부", "법학과", "경제학과", "행정학과", "아동학과"],
-
-      "경영대학": ["경영학과", "회계학과", "글로벌경영학부"],
-
-      "자연공학계열 (광역)": ["화학과", "수학과", "물리학과", "공간디자인·소비자학과", "의류학과", "식품영양학과", "에너지환경공학과"],
-
-      "AI전자정보융합대학": ["컴퓨터정보공학부", "미디어기술콘텐츠학과", "정보통신전자공학부", "인공지능학과", "데이터사이언스학과"],
-
-      "바이오헬스융합대학": ["생명공학과", "바이오메디컬화학공학과", "의생명과학과", "바이오메디컬소프트웨어학과", "바이오로직스공학부", "AI의공학과"],
-
-      "사범계열": ["특수교육과"],
-
-      "자유전공학부": ["자유전공학부"],
-
-      "음악과": ["음악과"],
-
-      "약학대학": ["약학과"],
-
-      "의과대학": ["의예과"],
-
-      "간호대학": ["간호학과"]
-
-    },
-
-    "인하대학교": {
-
-      "공과대학": ["기계공학과", "항공우주공학과", "조선해양공학과", "산업경영공학과", "화공에너지공학부(화학공학전공)", "화공에너지공학부(이차전지공학전공)", "고분자공학과", "신소재공학과", "사회인프라공학과", "환경공학과", "공간정보공학과", "건축학부(건축공학전공)", "건축학부(건축학전공)", "에너지자원공학과", "전기전자공학부", "반도체시스템공학과"],
-
-      "자연과학대학": ["수학과", "통계학과", "물리학과", "화학과", "해양과학과", "식품영양학과"],
-
-      "경영대학": ["경영학부(경영학과)", "경영학부(파이낸스경영학과)", "아태물류학부", "국제통상학과"],
-
-      "사범대학": ["국어교육과", "영어교육과", "사회교육과", "체육교육과", "교육학과", "수학교육과"],
-
-      "사회과학대학": ["행정학과", "정치외교학과", "미디어커뮤니케이션학과", "경제학과", "소비자학과", "아동심리학과", "사회복지학과"],
-
-      "문과대학": ["한국어문학과", "사학과", "철학과", "중국학과", "일본언어문화학과", "영미유럽인문융합학부", "문화콘텐츠문화경영학과"],
-
-      "의과대학": ["의예과"],
-
-      "간호대학": ["간호학과"],
-
-      "예술체육대학": ["조형예술학과", "디자인융합학과", "스포츠과학과", "연극영화학과", "의류디자인학과"],
-
-      "소프트웨어융합대학": ["인공지능공학과", "컴퓨터공학과", "데이터사이언스학과", "스마트모빌리티공학과", "디자인테크놀로지학과"],
-
-      "바이오시스템융합학부": ["생명공학과", "생명과학과", "첨단바이오의약학과", "바이오식품공학과"],
-
-      "프런티어창의대학": ["자유전공융합학부", "공학융합학부", "자연과학융합학부", "경영융합학부", "사회과학융합학부", "인문융합학부"],
-
-      "미래융합대학": ["메카트로닉스공학과", "소프트웨어융합공학과", "산업경영학과", "금융투자학과", "반도체산업융합학과"]
-
-    },
-
     "아주대학교": {
 
-      "공과대학": ["기계공학과", "첨단스마트산업공학과", "화학공학과", "첨단신소재공학과", "첨단에코에너지공학과", "건설시스템공학과", "교통시스템공학과", "건축학과(건축학전공5년)", "건축학과(건축공학전공4년)"],
+      "인문 계열": ["국어국문학과", "영어영문학과", "불어불문학과", "사학과", "문화콘텐츠학과"],
 
-      "첨단ICT융합대학": ["전자공학과", "지능형반도체공학과", "미래모빌리티공학과"],
+      "사회 계열": ["디지털미디어학과", "행정학과", "심리학과"],
 
-      "소프트웨어융합대학": ["AI컴퓨터공학부", "사이버보안학과", "디지털미디어학과", "국방디지털융합학과"],
+      "경영·상경 계열": ["경영학과", "경영인텔리전스학과", "글로벌경영학과", "경제정치사회융합학부(경제학)", "경제정치사회융합학부(사회학)", "경제정치사회융합학부(정치외교학)"],
 
-      "자연과학대학": ["수학과", "프런티어과학학부(물리·양자과학전공)", "프런티어과학학부(화학·물질과학전공)", "프런티어과학학부(생명과학·응용생물학전공)"],
+      "자연과학 계열": ["수학과", "프런티어과학학부(물리·양자과학전공)", "프런티어과학학부(화학·물질과학전공)", "프런티어과학학부(생명과학·응용생물학전공)"],
 
-      "경영대학": ["경영학과", "경영인텔리전스학과", "금융공학과", "글로벌경영학과"],
+      "공학·IT 계열": ["기계공학과", "첨단스마트산업공학과", "화학공학과", "첨단신소재공학과", "첨단에코에너지공학과", "건설시스템공학과", "교통시스템공학과", "건축학과(건축학전공5년)", "건축학과(건축공학전공4년)", "전자공학과", "지능형반도체공학과", "미래모빌리티공학과", "AI컴퓨터공학부", "사이버보안학과", "국방디지털융합학과", "금융공학과", "첨단바이오융합대학(혁신신약공학)", "첨단바이오융합대학(바이오첨단소재공학)", "첨단바이오융합대학(디지털바이오공학)"],
 
-      "인문대학": ["국어국문학과", "영어영문학과", "불어불문학과", "사학과", "문화콘텐츠학과"],
+      "의약·보건 계열": ["의학과", "간호학과", "약학과"],
 
-      "사회과학대학": ["행정학과", "심리학과", "스포츠레저학과", "경제정치사회융합학부(경제학)", "경제정치사회융합학부(사회학)", "경제정치사회융합학부(정치외교학)"],
+      "예체능 계열": ["스포츠레저학과"],
 
-      "의과대학": ["의학과"],
-
-      "간호대학": ["간호학과"],
-
-      "약학대학": ["약학과"],
-
-      "첨단바이오융합대학": ["첨단바이오융합대학(혁신신약공학)", "첨단바이오융합대학(바이오첨단소재공학)", "첨단바이오융합대학(디지털바이오공학)"],
-
-      "다산학부대학": ["자유전공학부(자연)", "자유전공학부(인문)"]
-
+      "자율전공": ["자유전공학부(자연)", "자유전공학부(인문)"]
     },
 
     "인천대학교": {
 
-      "인문대학": ["국어국문학과", "영어영문학과", "독어독문학과", "불어불문학과", "일본지역문화학과", "중어중국학과"],
+      "인문 계열": ["국어국문학과", "영어영문학과", "독어독문학과", "불어불문학과", "일본지역문화학과", "중어중국학과"],
 
-      "자연과학대학": ["수학과", "물리학과", "화학과", "패션산업학과", "해양학과"],
+      "사회 계열": ["사회복지학과", "미디어커뮤니케이션학과", "문헌정보학과", "행정학과", "정치외교학과", "도시행정학과", "법학부"],
 
-      "사회과학대학": ["사회복지학과", "미디어커뮤니케이션학과", "문헌정보학과", "창의인재개발학과"],
+      "경영·상경 계열": ["경제학과", "Global Trade & Service학부", "경영학부", "세무회계학과", "동북아국제통상전공"],
 
-      "글로벌정경대학": ["행정학과", "정치외교학과", "경제학과", "Global Trade & Service학부", "소비자학과"],
+      "자연과학 계열": ["수학과", "물리학과", "화학과", "창의인재개발학과", "생명과학부(생명과학전공)"],
 
-      "공과대학": ["기계공학과", "전기공학과", "전자공학부(전자공학전공)", "전자공학부(반도체융합전공)", "산업경영공학과", "신소재공학과", "안전공학과", "에너지화학공학과", "바이오-로봇시스템공학과"],
+      "공학·IT 계열": ["기계공학과", "전기공학과", "전자공학부(전자공학전공)", "전자공학부(반도체융합전공)", "산업경영공학과", "신소재공학과", "안전공학과", "에너지화학공학과", "바이오-로봇시스템공학과", "컴퓨터공학부(컴퓨터공학전공)", "컴퓨터공학부(인공지능전공)", "인공지능정보통신공학부", "인공지능시스템공학과", "데이터과학과", "도시환경공학부(건설환경공학전공)", "도시환경공학부(환경공학전공)", "도시공학과", "도시건축학부(건축공학전공)", "도시건축학부(도시건축학전공)", "생명공학부(생명공학전공)", "생명공학부(나노바이오공학전공)", "스마트물류공학전공"],
 
-      "인공지능대학": ["컴퓨터공학부(컴퓨터공학전공)", "컴퓨터공학부(인공지능전공)", "인공지능정보통신공학부", "인공지능시스템공학과"],
+      "의약·보건 계열": ["생명과학부(분자의생명전공)"],
 
-      "경영대학": ["경영학부", "데이터과학과", "세무회계학과"],
+      "농업생명·환경 계열": ["해양학과"],
 
-      "예술체육대학": ["조형예술학부(한국화전공)", "조형예술학부(서양화전공)", "디자인학부", "공연예술학과", "스포츠과학부", "스포츠의학부"],
+      "생활과학 계열": ["소비자학과"],
 
-      "사범대학": ["국어교육과", "영어교육과", "일어교육과", "수학교육과", "체육교육과", "유아교육과", "역사교육과", "윤리교육과"],
+      "사범 계열": ["국어교육과", "영어교육과", "일어교육과", "수학교육과", "체육교육과", "유아교육과", "역사교육과", "윤리교육과"],
 
-      "도시과학대학": ["도시행정학과", "도시환경공학부(건설환경공학전공)", "도시환경공학부(환경공학전공)", "도시공학과", "도시건축학부(건축공학전공)", "도시건축학부(도시건축학전공)"],
+      "예체능 계열": ["패션산업학과", "조형예술학부(한국화전공)", "조형예술학부(서양화전공)", "디자인학부", "공연예술학과", "스포츠과학부", "스포츠의학부"],
 
-      "생명과학기술대학": ["생명과학부(생명과학전공)", "생명과학부(분자의생명전공)", "생명공학부(생명공학전공)", "생명공학부(나노바이오공학전공)"],
-
-      "동북아국제통상물류학부": ["동북아국제통상전공", "스마트물류공학전공"],
-
-      "법학부": ["법학부"],
-
-      "융합자유전공대학": ["자유전공학부(인문)", "자유전공학부(자연)"]
-
+      "자율전공": ["자유전공학부(인문)", "자유전공학부(자연)"]
     },
 
     "서울과학기술대학교": {
 
-      "공과대학": ["기계시스템공학부(지능형로봇전공)", "기계시스템공학부(미래자동차전공)", "기계공학과", "안전공학과", "신소재공학과", "건설시스템공학과", "건축학부(건축공학전공)", "건축학부(건축학전공)", "자유전공학부(공과대학)"],
+      "인문 계열": ["영어영문학과", "문예창작학과", "영어과"],
 
-      "정보통신대학": ["전기정보공학과", "전자공학과", "ICT융합공학과", "컴퓨터공학과", "자유전공학부(정보통신대학)"],
+      "사회 계열": ["행정학과"],
 
-      "에너지바이오대학": ["화공생명공학과", "환경공학과", "식품생명공학과", "정밀화학과", "안경광학과", "스포츠과학과", "바이오메디컬학과", "양자융합물리학과", "자유전공학부(에너지바이오대학)"],
+      "경영·상경 계열": ["MSDE학과", "경영학과(경영학전공)", "경영학과(글로벌테크노경영전공)", "벤처경영학과"],
 
-      "조형대학": ["산업디자인학과", "시각디자인학과", "도예학과", "금속공예디자인학과", "조형예술학과"],
+      "자연과학 계열": ["정밀화학과", "양자융합물리학과"],
 
-      "인문사회대학": ["행정학과", "영어영문학과", "문예창작학과", "자유전공학부(인문사회대학)"],
+      "공학·IT 계열": ["기계시스템공학부(지능형로봇전공)", "기계시스템공학부(미래자동차전공)", "기계공학과", "안전공학과", "신소재공학과", "건설시스템공학과", "건축학부(건축공학전공)", "건축학부(건축학전공)", "전기정보공학과", "전자공학과", "ICT융합공학과", "컴퓨터공학과", "화공생명공학과", "환경공학과", "식품생명공학과", "산업공학부(산업정보시스템전공)", "산업공학부(ITM전공)", "인공지능응용학과", "지능형반도체공학과", "미래에너지학과", "융합기계공학과", "건설환경융합공학과", "정보통신융합공학과"],
 
-      "기술경영융합대학": ["산업공학부(산업정보시스템전공)", "산업공학부(ITM전공)", "MSDE학과", "경영학과(경영학전공)", "경영학과(글로벌테크노경영전공)", "자유전공학부(기술경영융합대학)"],
+      "의약·보건 계열": ["안경광학과", "바이오메디컬학과"],
 
-      "창의융합대학": ["인공지능응용학과", "지능형반도체공학과", "미래에너지학과", "자유전공학부(창의융합대학)"],
+      "예체능 계열": ["스포츠과학과", "산업디자인학과", "시각디자인학과", "도예학과", "금속공예디자인학과", "조형예술학과", "헬스피트니스학과", "문화예술학과"],
 
-      "미래융합대학": ["융합기계공학과", "건설환경융합공학과", "헬스피트니스학과", "문화예술학과", "영어과", "벤처경영학과", "정보통신융합공학과", "자유전공학부(미래융합대학)"],
-
-      "교양대학(ST자유전공학부)": ["ST자유전공학부_자연", "ST자유전공학부_인문"]
-
+      "자율전공": ["자유전공학부(공과대학)", "자유전공학부(정보통신대학)", "자유전공학부(에너지바이오대학)", "자유전공학부(인문사회대학)", "자유전공학부(기술경영융합대학)", "자유전공학부(창의융합대학)", "자유전공학부(미래융합대학)", "ST자유전공학부_자연", "ST자유전공학부_인문"]
     },
 
     "부산대학교": {
 
-      "인문대학": ["국어국문학과", "중어중문학과", "일어일문학과", "영어영문학과", "불어불문학과", "독어독문학과", "노어노문학과", "한문학과", "언어정보학과", "사학과", "철학과", "고고학과"],
+      "인문 계열": ["국어국문학과", "중어중문학과", "일어일문학과", "영어영문학과", "불어불문학과", "독어독문학과", "노어노문학과", "한문학과", "언어정보학과", "사학과", "철학과", "고고학과"],
 
-      "사회과학대학": ["행정학과", "정치외교학과", "사회복지학과", "사회학과", "심리학과", "문헌정보학과", "미디어커뮤니케이션학과"],
+      "사회 계열": ["행정학과", "정치외교학과", "사회복지학과", "사회학과", "심리학과", "문헌정보학과", "미디어커뮤니케이션학과", "공공정책학부"],
 
-      "자연과학대학": ["수학과", "물리학과", "화학과", "생명과학과", "미생물학과", "분자생물학과", "지질환경과학과", "해양학과", "대기환경과학과"],
+      "경영·상경 계열": ["무역학부", "경제학부", "국제학부", "관광컨벤션학과", "경영학과", "식품자원경제학과"],
 
-      "공과대학": ["기계공학부", "고분자공학과", "유기소재시스템공학과", "화공생명공학과", "환경공학과", "재료공학부", "전기전자공학부(전기공학전공)", "전기전자공학부(전자공학전공)", "전기전자공학부(반도체공학전공)", "건축학과", "건축공학과", "도시공학과", "사회기반시스템공학과", "항공우주공학과", "조선·해양공학과", "미래도시건축환경융합전공", "첨단소재자율전공", "X-모빌리티융합학부", "바이오메디컬공학과"],
+      "자연과학 계열": ["수학과", "물리학과", "화학과", "생명과학과", "미생물학과", "분자생물학과", "지질환경과학과", "대기환경과학과", "통계학과"],
 
-      "사범대학": ["국어교육과", "영어교육과", "교육학과", "유아교육과", "특수교육과", "일반사회교육과", "역사교육과", "지리교육과", "윤리교육과", "수학교육과", "물리교육과", "화학교육과", "생물교육과", "지구과학교육과"],
+      "공학·IT 계열": ["기계공학부", "고분자공학과", "유기소재시스템공학과", "화공생명공학과", "환경공학과", "재료공학부", "전기전자공학부(전기공학전공)", "전기전자공학부(전자공학전공)", "전기전자공학부(반도체공학전공)", "건축학과", "건축공학과", "도시공학과", "사회기반시스템공학과", "항공우주공학과", "미래도시건축환경융합전공", "X-모빌리티융합학부", "바이오메디컬공학과", "바이오산업기계공학과", "IT응용공학과", "AI컴퓨터공학부(컴퓨터공학전공)", "AI컴퓨터공학부(인공지능전공)", "AI컴퓨터공학부(인터랙티브컴퓨팅전공)", "산업공학부", "데이터사이언스학부", "AX융합학부(스마트시티전공)"],
 
-      "경제통상대학": ["무역학부", "경제학부", "국제학부", "관광컨벤션학과", "공공정책학부"],
+      "의약·보건 계열": ["간호학과", "약학부", "의예과", "치의예과", "한의학전문대학원 학·석사통합과정"],
 
-      "경영대학": ["경영학과"],
+      "농업생명·환경 계열": ["해양학과", "조선·해양공학과", "원예생명과학과", "식품공학과", "생명환경화학과", "바이오소재과학과", "바이오환경에너지학과", "조경학과", "응용생명융합학부"],
 
-      "생활과학대학": ["의류학과", "식품영양학과", "실내환경디자인학과", "아동가족학과", "스포츠과학과"],
+      "생활과학 계열": ["의류학과", "식품영양학과", "아동가족학과"],
 
-      "예술대학": ["예술문화영상학과"],
+      "사범 계열": ["국어교육과", "영어교육과", "교육학과", "유아교육과", "특수교육과", "일반사회교육과", "역사교육과", "지리교육과", "윤리교육과", "수학교육과", "물리교육과", "화학교육과", "생물교육과", "지구과학교육과"],
 
-      "간호대학": ["간호학과"],
+      "예체능 계열": ["실내환경디자인학과", "스포츠과학과", "예술문화영상학과"],
 
-      "생명자원과학대학": ["원예생명과학과", "식품공학과", "생명환경화학과", "바이오소재과학과", "바이오산업기계공학과", "IT응용공학과", "바이오환경에너지학과", "조경학과", "식품자원경제학과"],
-
-      "학부대학": ["첨단융합학부", "응용생명융합학부", "자유전공학부"],
-
-      "AI대학": ["AI컴퓨터공학부(컴퓨터공학전공)", "AI컴퓨터공학부(인공지능전공)", "AI컴퓨터공학부(인터랙티브컴퓨팅전공)", "AI컴퓨터공학부(AI컴퓨팅자율전공)", "산업공학부", "데이터사이언스학부", "통계학과", "AX융합학부(스마트시티전공)"],
-
-      "약학대학": ["약학부"],
-
-      "의과대학": ["의예과"],
-
-      "치과대학": ["치의예과"],
-
-      "한의학전문대학원": ["한의학전문대학원 학·석사통합과정"]
-
+      "자율전공": ["첨단소재자율전공", "첨단융합학부", "자유전공학부", "AI컴퓨터공학부(AI컴퓨팅자율전공)"]
     },
 
-    "\uacbd\ubd81\ub300\ud559\uad50": {
-      "인문대학": ["국어국문학과", "영어영문학과", "사학과", "철학과", "불어불문학과", "독어독문학과", "중어중문학과", "고고인류학과", "일어일문학과", "한문학과", "노어노문학과", "인문대학 자율학부"],
-      "사회과학대학": ["정치외교학과", "사회학과", "지리학과", "문헌정보학과", "심리학과", "사회복지학부", "미디어커뮤니케이션학과", "사회과학대학 자율학부"],
-      "자연과학대학": ["수학과", "물리학과", "화학과", "생물학과", "생명공학부", "통계학과", "지구시스템과학부", "자연과학대학 자율학부"],
-      "경상대학": ["경제통상학부", "경영학부", "경상대학 자율학부"],
-      "공과대학": ["금속재료공학과", "신소재공학과", "기계공학부", "건축학부(건축학전공)", "건축학부(건축공학전공)", "토목공학과", "응용화학공학부", "고분자공학과", "섬유시스템공학과", "환경공학과", "에너지공학부", "공과대학 자율학부"],
-      "IT대학": ["전자공학부", "전자공학부(인공지능전공)", "컴퓨터학부(심화컴퓨팅전공)", "컴퓨터학부(인공지능컴퓨팅전공)", "컴퓨터학부(첨단컴퓨팅연구전공)", "전기공학과", "IT대학 자율학부", "IT 첨단자율학부"],
-      "농업생명과학대학": ["응용생명과학부", "식물의학과", "식품공학부", "산림과학·조경학부", "원예과학과", "바이오섬유소재학과", "농업토목공학과", "스마트생물산업기계공학과", "식품자원경제학과", "농산업학과", "농업생명과학대학 자율학부"],
-      "예술대학": ["음악학과", "국악학과", "미술학과", "디자인학과"],
-      "사범대학": ["국어교육과", "영어교육과", "유럽어교육학부(독어교육전공)", "역사교육과", "지리교육과", "일반사회교육과", "윤리교육과", "수학교육과", "물리교육과", "화학교육과", "생물교육과", "지구과학교육과", "가정교육과", "체육교육과", "정보·컴퓨터교육과"],
-      "의과대학": ["의예과"],
-      "치과대학": ["치의예과"],
-      "수의과대학": ["수의예과"],
-      "생활과학대학": ["아동학부", "의류학과", "식품영양학과"],
-      "간호대학": ["간호학과"],
-      "약학대학": ["약학과"],
-      "첨단기술융합대학": ["첨단기술융합대학 자율학부1", "첨단기술융합대학 자율학부2"],
-      "생태환경대학(상주)": ["식물자원학과", "산림생태보호학과", "곤충생명과학과", "축산학과", "동물생명공학과", "말/특수동물학과", "관광학과", "체육학부(체육학전공)", "체육학부(건강운동관리전공)"],
-      "과학기술대학(상주)": ["건설방재공학과", "환경안전공학과", "정밀기계공학과", "자동차공학과", "소프트웨어학과", "나노신소재공학과", "에너지화학공학과", "식품외식산업학과", "섬유패션디자인학부(섬유공학전공)", "섬유패션디자인학부(패션디자인전공)", "위치정보시스템학과", "스마트플랜트공학과", "치위생학과"],
-      "행정학부": ["행정학부"],
-      "자율전공학부": ["자율전공학부"],
-      "공학 첨단자율학부": ["공학 첨단자율학부"],
-      "자율미래인재학부(상주)": ["자율미래인재학부"]
+    "경북대학교": {
 
+      "인문 계열": ["국어국문학과", "영어영문학과", "사학과", "철학과", "불어불문학과", "독어독문학과", "중어중문학과", "일어일문학과", "한문학과", "노어노문학과"],
+
+      "사회 계열": ["고고인류학과", "정치외교학과", "사회학과", "지리학과", "문헌정보학과", "심리학과", "사회복지학부", "미디어커뮤니케이션학과", "행정학부"],
+
+      "경영·상경 계열": ["경제통상학부", "경영학부", "식품자원경제학과", "관광학과"],
+
+      "자연과학 계열": ["수학과", "물리학과", "화학과", "생물학과", "통계학과", "지구시스템과학부", "식품외식산업학과", "위치정보시스템학과"],
+
+      "공학·IT 계열": ["생명공학부", "금속재료공학과", "신소재공학과", "기계공학부", "건축학부(건축학전공)", "건축학부(건축공학전공)", "토목공학과", "응용화학공학부", "고분자공학과", "섬유시스템공학과", "환경공학과", "에너지공학부", "전자공학부", "전자공학부(인공지능전공)", "컴퓨터학부(심화컴퓨팅전공)", "컴퓨터학부(인공지능컴퓨팅전공)", "컴퓨터학부(첨단컴퓨팅연구전공)", "전기공학과", "스마트생물산업기계공학과", "건설방재공학과", "환경안전공학과", "정밀기계공학과", "자동차공학과", "소프트웨어학과", "나노신소재공학과", "에너지화학공학과", "스마트플랜트공학과"],
+
+      "의약·보건 계열": ["의예과", "치의예과", "수의예과", "간호학과", "약학과", "치위생학과"],
+
+      "농업생명·환경 계열": ["응용생명과학부", "식물의학과", "식품공학부", "산림과학·조경학부", "원예과학과", "바이오섬유소재학과", "농업토목공학과", "농산업학과", "식물자원학과", "산림생태보호학과", "곤충생명과학과", "축산학과", "동물생명공학과", "말/특수동물학과"],
+
+      "생활과학 계열": ["아동학부", "의류학과", "식품영양학과"],
+
+      "사범 계열": ["국어교육과", "영어교육과", "유럽어교육학부(독어교육전공)", "역사교육과", "지리교육과", "일반사회교육과", "윤리교육과", "수학교육과", "물리교육과", "화학교육과", "생물교육과", "지구과학교육과", "가정교육과", "체육교육과", "정보·컴퓨터교육과"],
+
+      "예체능 계열": ["음악학과", "국악학과", "미술학과", "디자인학과", "체육학부(체육학전공)", "체육학부(건강운동관리전공)", "섬유패션디자인학부(섬유공학전공)", "섬유패션디자인학부(패션디자인전공)"],
+
+      "자율전공": ["인문대학 자율학부", "사회과학대학 자율학부", "자연과학대학 자율학부", "경상대학 자율학부", "공과대학 자율학부", "IT대학 자율학부", "IT 첨단자율학부", "농업생명과학대학 자율학부", "첨단기술융합대학 자율학부1", "첨단기술융합대학 자율학부2", "자율전공학부", "공학 첨단자율학부", "자율미래인재학부"]
     },
 
-    "\uc804\ubd81\ub300\ud559\uad50": {
-      "인문대학": ["고고문화인류학과", "국어국문학과", "독일학과", "문헌정보학과", "사학과", "스페인·중남미학과", "영어영문학과", "일본학과", "중어중문학과", "철학과", "프랑스·아프리카학과", "국제학부"],
-      "사회과학대학": ["사회복지학과", "사회학과", "미디어커뮤니케이션학과", "심리학과", "정치외교학과", "행정학과", "공공인재학부"],
-      "자연과학대학": ["과학학과", "물리학과", "반도체과학기술학과", "분자생물학과", "생명과학과", "수학과", "스포츠과학과", "지구환경과학과", "통계학과", "화학과"],
-      "경상대학": ["경영학과", "경제학부", "국제무역학과", "회계학과"],
-      "공과대학": ["건축공학과", "고분자·나노공학과", "유기소재섬유공학과", "기계공학과", "기계설계공학부(기계설계공학전공)", "기계설계공학부(나노바이오기계시스템공학전공)", "기계시스템공학부", "도시공학과", "바이오메디컬공학부", "산업정보시스템공학과", "신소재공학부(금속시스템공학전공)", "신소재공학부(전자재료공학전공)", "신소재공학부(정보소재공학전공)", "양자시스템공학과", "융합기술공학부(IT융합기전공학)", "융합기술공학부(IT응용시스템공학)", "전기공학과", "전자공학부", "토목/환경/자원·에너지공학부(토목공학)", "토목/환경/자원·에너지공학부(환경공학)", "토목/환경/자원·에너지공학부(자원·에너지공학)", "항공우주공학과", "화학공학부"],
-      "AI대학": ["소프트웨어공학과", "컴퓨터인공지능학부"],
-      "농업생명과학대학": ["농경제유통학부(농업경제학전공)", "농경제유통학부(식품유통학전공)", "식물의학과", "동물생명공학과", "동물자원과학과", "목재응용과학과", "산림환경과학과", "생명자원융합학과", "생물산업기계공학과", "생물환경화학과", "식품공학과", "원예학과", "작물생명과학과", "조경학과", "지역건설공학과", "스마트팜학과"],
-      "사범대학": ["국어교육과", "과학교육학부(물리교육전공)", "과학교육학부(생물교육전공)", "과학교육학부(지구과학교육전공)", "과학교육학부(화학교육전공)", "교육학과", "독어교육과", "사회과교육학부(역사교육전공)", "사회과교육학부(윤리교육전공)", "사회과교육학부(일반사회교육전공)", "사회과교육학부(지리교육전공)", "수학교육과", "영어교육과", "체육교육과"],
-      "예술대학": ["무용학과", "미술학과", "산업디자인학과", "음악과", "한국음악학과"],
-      "생활과학대학": ["식품영양학과", "아동학과", "의류학과", "주거환경학과"],
-      "의과대학": ["의예과"],
-      "치과대학": ["치의예과"],
-      "수의과대학": ["수의예과", "수의학과"],
-      "약학대학": ["약학과"],
-      "간호대학": ["간호학과"],
-      "환경생명자원대학": ["생명공학부", "생태조경디자인학과", "한약자원학과"]
+    "전북대학교": {
 
+      "인문 계열": ["국어국문학과", "독일학과", "사학과", "스페인·중남미학과", "영어영문학과", "일본학과", "중어중문학과", "철학과", "프랑스·아프리카학과", "국제학부"],
+
+      "사회 계열": ["고고문화인류학과", "문헌정보학과", "사회복지학과", "사회학과", "미디어커뮤니케이션학과", "심리학과", "정치외교학과", "행정학과"],
+
+      "경영·상경 계열": ["경영학과", "경제학부", "국제무역학과", "회계학과"],
+
+      "자연과학 계열": ["공공인재학부", "과학학과", "물리학과", "분자생물학과", "생명과학과", "수학과", "지구환경과학과", "통계학과", "화학과", "생물환경화학과"],
+
+      "공학·IT 계열": ["반도체과학기술학과", "건축공학과", "고분자·나노공학과", "유기소재섬유공학과", "기계공학과", "기계설계공학부(기계설계공학전공)", "기계설계공학부(나노바이오기계시스템공학전공)", "기계시스템공학부", "도시공학과", "바이오메디컬공학부", "산업정보시스템공학과", "신소재공학부(금속시스템공학전공)", "신소재공학부(전자재료공학전공)", "신소재공학부(정보소재공학전공)", "양자시스템공학과", "융합기술공학부(IT융합기전공학)", "융합기술공학부(IT응용시스템공학)", "전기공학과", "전자공학부", "토목/환경/자원·에너지공학부(토목공학)", "토목/환경/자원·에너지공학부(환경공학)", "토목/환경/자원·에너지공학부(자원·에너지공학)", "항공우주공학과", "화학공학부", "소프트웨어공학과", "컴퓨터인공지능학부", "생물산업기계공학과", "지역건설공학과", "생명공학부"],
+
+      "의약·보건 계열": ["의예과", "치의예과", "수의예과", "수의학과", "약학과", "간호학과", "한약자원학과"],
+
+      "농업생명·환경 계열": ["농경제유통학부(농업경제학전공)", "농경제유통학부(식품유통학전공)", "식물의학과", "동물생명공학과", "동물자원과학과", "목재응용과학과", "산림환경과학과", "생명자원융합학과", "식품공학과", "원예학과", "작물생명과학과", "조경학과", "스마트팜학과", "생태조경디자인학과"],
+
+      "생활과학 계열": ["식품영양학과", "아동학과", "의류학과", "주거환경학과"],
+
+      "사범 계열": ["국어교육과", "과학교육학부(물리교육전공)", "과학교육학부(생물교육전공)", "과학교육학부(지구과학교육전공)", "과학교육학부(화학교육전공)", "교육학과", "독어교육과", "사회과교육학부(역사교육전공)", "사회과교육학부(윤리교육전공)", "사회과교육학부(일반사회교육전공)", "사회과교육학부(지리교육전공)", "수학교육과", "영어교육과", "체육교육과"],
+
+      "예체능 계열": ["스포츠과학과", "무용학과", "미술학과", "산업디자인학과", "음악과", "한국음악학과"]
     },
 
-    "\uc804\ub0a8\ub300\ud559\uad50": {
-      "인문대학": ["국어국문학과", "독일언어문학과", "불어불문학과", "사학과", "영어영문학과", "일어일문학과", "중어중문학과", "철학과"],
-      "사회과학대학": ["문헌정보학과", "문화인류고고학과", "사회학과", "미디어커뮤니케이션학과", "심리학과", "정치외교학과", "지리학과", "행정학과"],
-      "경영대학": ["경영학부", "경제학부"],
-      "자연과학대학": ["물리학과", "생명과학기술학부", "생물학과", "수학과", "지구환경과학부", "통계학과", "화학과"],
-      "공과대학": ["건축학부", "고분자융합소재공학부", "기계공학부", "산업공학과", "생물공학과", "신소재공학부", "에너지자원공학과", "전기공학과", "전자컴퓨터공학부(전자공학과)", "전자컴퓨터공학부(컴퓨터정보통신공학과)", "소프트웨어공학과", "토목공학과", "화학공학부", "환경에너지공학과"],
-      "AI융합대학": ["인공지능학부", "빅데이터융합학과", "지능형모빌리티융합학과"],
-      "농업생명과학대학": ["식품공학과", "분자생명공학과", "농생명화학과", "농업경제학과", "동물자원학부", "바이오에너지공학과", "산림자원학과", "임산공학과", "식물생명공학부", "조경학과", "지역·바이오시스템공학과", "융합바이오시스템기계공학과"],
-      "사범대학": ["가정교육과", "교육학과", "국어교육과", "물리교육과", "생물교육과", "수학교육과", "역사교육과", "영어교육과", "유아교육과", "윤리교육과", "음악교육과", "지구과학교육과", "지리교육과", "체육교육과", "특수교육학부", "화학교육과"],
-      "예술대학": ["국악학과", "디자인학과", "미술학과", "음악학과"],
-      "생활과학대학": ["생활복지학과", "식품영양과학부", "의류학과"],
-      "의과대학": ["의예과", "의학과"],
-      "수의과대학": ["수의예과", "수의학과"],
-      "약학대학": ["약학부"],
-      "간호대학": ["간호학과"],
-      "자율전공학부": ["자율전공학부(1년)", "자율전공학부(4년)"],
-      "공학대학(여수)": ["전기·전자통신·컴퓨터공학부", "기계시스템공학과", "기계설계공학과", "메카트로닉스공학과", "냉동공조공학과", "해양토목공학과", "환경시스템공학과", "생명산업공학과", "화공생명공학과", "건축디자인학과", "의공학과", "핼스케어메디컬공학부", "석유화학소재공학과"],
-      "문화사회과학대학(여수)": ["국제학부", "물류교통학과", "글로벌비즈니스학부", "문화콘텐츠학부", "문화관광경영학과"],
-      "수산해양대학(여수)": ["기관시스템공학과", "수산생명의학과", "스마트수산자원관리학과", "양식생물학과", "조선해양공학과", "해양경찰학과", "해양바이오식품학과", "해양생산관리학과", "해양융합과학과"],
-      "창의융합학부(여수)": ["창의융합학부"]
+    "전남대학교": {
 
+      "인문 계열": ["국어국문학과", "독일언어문학과", "불어불문학과", "사학과", "영어영문학과", "일어일문학과", "중어중문학과", "철학과", "문화인류고고학과", "문화콘텐츠학부"],
+
+      "사회 계열": ["문헌정보학과", "사회학과", "미디어커뮤니케이션학과", "심리학과", "정치외교학과", "지리학과", "행정학과"],
+
+      "경영·상경 계열": ["경영학부", "경제학부", "문화관광경영학과"],
+
+      "자연과학 계열": ["물리학과", "생명과학기술학부", "생물학과", "수학과", "지구환경과학부", "통계학과", "화학과", "농생명화학과", "국제학부", "물류교통학과", "글로벌비즈니스학부", "양식생물학과"],
+
+      "공학·IT 계열": ["건축학부", "고분자융합소재공학부", "기계공학부", "산업공학과", "생물공학과", "신소재공학부", "에너지자원공학과", "전기공학과", "전자컴퓨터공학부(전자공학과)", "전자컴퓨터공학부(컴퓨터정보통신공학과)", "소프트웨어공학과", "토목공학과", "화학공학부", "환경에너지공학과", "인공지능학부", "빅데이터융합학과", "지능형모빌리티융합학과", "분자생명공학과", "바이오에너지공학과", "임산공학과", "전기·전자통신·컴퓨터공학부", "기계시스템공학과", "기계설계공학과", "메카트로닉스공학과", "냉동공조공학과", "환경시스템공학과", "생명산업공학과", "화공생명공학과", "의공학과", "핼스케어메디컬공학부", "석유화학소재공학과", "기관시스템공학과"],
+
+      "의약·보건 계열": ["의예과", "의학과", "수의예과", "수의학과", "약학부", "간호학과"],
+
+      "농업생명·환경 계열": ["식품공학과", "농업경제학과", "동물자원학부", "산림자원학과", "식물생명공학부", "조경학과", "지역·바이오시스템공학과", "융합바이오시스템기계공학과", "해양토목공학과", "수산생명의학과", "스마트수산자원관리학과", "조선해양공학과", "해양경찰학과", "해양바이오식품학과", "해양생산관리학과", "해양융합과학과"],
+
+      "생활과학 계열": ["생활복지학과", "식품영양과학부", "의류학과"],
+
+      "사범 계열": ["가정교육과", "교육학과", "국어교육과", "물리교육과", "생물교육과", "수학교육과", "역사교육과", "영어교육과", "유아교육과", "윤리교육과", "음악교육과", "지구과학교육과", "지리교육과", "체육교육과", "특수교육학부", "화학교육과"],
+
+      "예체능 계열": ["국악학과", "디자인학과", "미술학과", "음악학과", "건축디자인학과"],
+
+      "자율전공": ["자율전공학부(1년)", "자율전공학부(4년)", "창의융합학부"]
     },
 
-    "\ucda9\ubd81\ub300\ud559\uad50": {
-      "인문대학": ["국어국문학과", "중어중문학과", "영어영문학과", "독일언어문화학과", "프랑스언어문화학과", "러시아언어문화학과", "철학과", "사학과", "고고미술사학과", "글로벌K컬처학과", "인문학자율전공학부"],
-      "사회과학대학": ["사회학과", "심리학과", "행정학과", "정치외교학과", "경제학과"],
-      "자연과학대학": ["수학과", "정보통계학과", "물리학과", "화학과", "생물학과", "미생물학과", "생화학과", "천문우주학과", "지구환경과학과"],
-      "경영대학": ["경영학부", "국제경영학과", "경영정보학과", "경영학자율전공학부"],
-      "공과대학": ["토목공학부", "기계공학부", "화학공학과", "신소재공학과", "건축공학과", "안전공학과", "환경공학과", "공업화학과", "도시공학과", "건축학과", "테크노산업공학과"],
-      "전자정보대학": ["전기공학부", "전자공학과", "정보통신공학부", "컴퓨터공학과", "소프트웨어학부", "지능로봇공학과", "반도체공학부"],
-      "농업생명환경대학": ["산림학과", "지역건설공학과", "바이오시스템공학과", "목재종이과학과", "농업경제학과", "식물자원학과", "환경생명화학과", "축산학과", "식품생명공학과", "특용식물학과", "원예과학과", "식물의학과"],
-      "사범대학": ["교육학과", "국어교육과", "영어교육과", "역사교육과", "지리교육과", "사회교육과", "윤리교육과", "물리교육과", "화학교육과", "생물교육과", "지구과학교육과", "수학교육과", "체육교육과"],
-      "생활과학대학": ["식품영양학과", "아동복지학과", "의류학과", "주거환경학과", "소비자학과"],
-      "수의과대학": ["수의예과", "수의학과"],
-      "약학대학": ["약학과", "제약학과"],
-      "의과대학": ["의예과", "의학과"],
-      "간호대학": ["간호학과"],
-      "창의융합대학": ["자율전공학부", "바이오헬스학부"],
-      "예술학과군": ["미술학과", "디자인학과"]
+    "충남대학교": {
 
-    },
+      "인문 계열": ["국어국문학과", "영어영문학과", "독어독문학과", "불어불문학과", "중어중문학과", "일어일문학과", "한문학과", "언어학과", "국사학과", "사학과", "고고학과", "철학과", "한국문화학과"],
 
-    "\ucda9\ub0a8\ub300\ud559\uad50": {
-      "인문대학": ["국어국문학과", "영어영문학과", "독어독문학과", "불어불문학과", "중어중문학과", "일어일문학과", "한문학과", "언어학과", "국사학과", "사학과", "고고학과", "철학과"],
-      "사회과학대학": ["사회학과", "문헌정보학과", "심리학과", "언론정보학과", "사회복지학과", "정치외교학과", "행정학부", "도시·자치융합학과"],
-      "자연과학대학": ["수학과", "정보통계학과", "물리학과", "천문우주과학과", "화학과", "생화학과", "지질환경과학과", "해양환경과학과", "스포츠과학과", "무용학과", "반도체융합학과"],
-      "경상대학": ["경제학과", "경영학부", "무역학과", "아시아비즈니스국제학과"],
-      "공과대학": ["건축학과", "건축공학과", "토목공학과", "환경공학과", "기계공학부", "메카트로닉스공학과", "선박해양공학과", "항공우주공학과", "전기공학과", "전자공학과", "전파정보통신공학과", "컴퓨터인공지능학부", "신소재공학과", "응용화학공학과", "유기재료공학과", "자율운항시스템공학과", "에너지공학과", "정보통신융합학부"],
-      "농업생명과학대학": ["식물자원학과", "원예학과", "산림환경자원학과", "환경소재공학과", "동물자원생명과학과", "동물바이오시스템과학과", "응용생물학과", "생물환경화학과", "식품공학과", "지역환경토목학과", "스마트농업시스템기계공학과", "농업경제학과"],
-      "약학대학": ["약학과"],
-      "의과대학": ["의예과", "의학과"],
-      "생활과학대학": ["의류학과", "식품영양학과", "소비자학과"],
-      "예술대학": ["음악과", "관현악과", "회화과", "조소과", "디자인창의학과"],
-      "수의과대학": ["수의예과", "수의학과"],
-      "사범대학": ["국어교육과", "영어교육과", "수학교육과", "교육학과", "체육교육과", "건설공학교육과", "기계공학교육과", "전기·전자·통신공학교육과", "화학공학교육과", "기술교육과"],
-      "간호대학": ["간호학과"],
-      "생명시스템과학대학": ["생물과학과", "미생물·분자생명과학과", "생명정보융합학과"],
-      "지식융합학부": ["인문사회학과", "리더십과조직과학과", "공공안전학과"],
-      "국가안보융합학부": ["국토안보학전공", "해양안보학전공"],
-      "국제학부": ["국제정치경제학과", "한국문화학과"],
-      "창의융합대학": ["자율전공학부"]
+      "사회 계열": ["사회학과", "문헌정보학과", "심리학과", "언론정보학과", "사회복지학과", "정치외교학과", "행정학부", "인문사회학과", "리더십과조직과학과", "공공안전학과", "국토안보학전공"],
 
+      "경영·상경 계열": ["경제학과", "경영학부", "무역학과", "아시아비즈니스국제학과", "국제정치경제학과"],
+
+      "자연과학 계열": ["도시·자치융합학과", "수학과", "정보통계학과", "물리학과", "천문우주과학과", "화학과", "생화학과", "지질환경과학과", "응용생물학과", "생물환경화학과", "생물과학과", "미생물·분자생명과학과", "생명정보융합학과"],
+
+      "공학·IT 계열": ["반도체융합학과", "건축학과", "건축공학과", "토목공학과", "환경공학과", "기계공학부", "메카트로닉스공학과", "항공우주공학과", "전기공학과", "전자공학과", "전파정보통신공학과", "컴퓨터인공지능학부", "신소재공학과", "응용화학공학과", "유기재료공학과", "자율운항시스템공학과", "에너지공학과", "정보통신융합학부", "환경소재공학과", "지역환경토목학과"],
+
+      "의약·보건 계열": ["약학과", "의예과", "의학과", "수의예과", "수의학과", "간호학과"],
+
+      "농업생명·환경 계열": ["해양환경과학과", "선박해양공학과", "식물자원학과", "원예학과", "산림환경자원학과", "동물자원생명과학과", "동물바이오시스템과학과", "식품공학과", "스마트농업시스템기계공학과", "농업경제학과", "해양안보학전공"],
+
+      "생활과학 계열": ["의류학과", "식품영양학과", "소비자학과"],
+
+      "사범 계열": ["국어교육과", "영어교육과", "수학교육과", "교육학과", "체육교육과", "건설공학교육과", "기계공학교육과", "전기·전자·통신공학교육과", "화학공학교육과", "기술교육과"],
+
+      "예체능 계열": ["스포츠과학과", "무용학과", "음악과", "관현악과", "회화과", "조소과", "디자인창의학과"],
+
+      "자율전공": ["자율전공학부"]
     },
 
     "\ud55c\uc591\ub300\ud559\uad50 ERICA": {
@@ -4470,19 +4245,6 @@ document.addEventListener("DOMContentLoaded", () => {
       "글로벌비즈니스대학": ["글로벌학부", "융합경영학부", "자유전공학부(글로벌비즈니스)"],
       "문화스포츠대학": ["국제스포츠학부", "문화융합학부", "자유전공학부(문화스포츠)"],
       "약학대학": ["약학부"]
-
-    },
-
-    "\uc21c\uccad\ud5a5\ub300\ud559\uad50": {
-      "의과대학": ["의예과"],
-      "자연과학대학": ["간호학과", "화학과", "식품영양학과", "환경보건학과", "생명과학과", "스포츠과학과", "사회체육학과", "스포츠의학과"],
-      "인문사회과학대학": ["유아교육과", "특수교육과", "청소년교육상담학과", "법학과", "행정학과", "경찰행정학과", "사회복지학과"],
-      "글로벌경영대학": ["경영학과", "국제통상학과", "관광경영학과", "경제금융학과", "IT금융경영학과", "글로벌문화산업학과", "회계학과"],
-      "공과대학": ["컴퓨터공학과", "정보통신공학과", "전자공학과", "전기공학과", "전자정보공학과", "나노화학공학과", "에너지환경공학과", "디스플레이신소재공학과", "기계공학과", "건축학과", "스마트자동차학과", "에너지공학과"],
-      "SW융합대학": ["컴퓨터소프트웨어공학과", "정보보호학과", "의료IT공학과", "AI빅데이터학과", "사물인터넷학과", "메타버스&게임학과"],
-      "의료과학대학": ["보건행정경영학과", "의료생명공학과", "임상병리학과", "작업치료학과", "의약공학과", "의공학과"],
-      "SCH미디어랩스": ["한국문화콘텐츠학과", "영미학과", "중국학과", "미디어커뮤니케이션학과", "디지털애니메이션학과", "공연영상학과"],
-      "창의라이프대학": ["탄소중립학과", "의생명융합학부", "스마트팩토리공학과", "스마트모빌리티공학과", "융합바이오화학공학과"]
 
     },
 
@@ -4532,6 +4294,26 @@ document.addEventListener("DOMContentLoaded", () => {
       "치과대학": ["치의예과", "치의학과"],
       "의과대학": ["의예과", "의학과", "간호학과", "작업치료학과", "응급구조학과"],
       "독립학과": ["국방기술학과", "자율전공학부"]
+
+    },
+
+    "숙명여자대학교": {
+
+      "인문 계열": ["한국어문학부", "역사문화학과", "문헌정보학과", "영어영문학전공", "테슬(TESL)전공", "독일언어·문화학과", "프랑스언어·문화학과", "중어중문학부", "일본학과", "글로벌협력전공", "문화관광학전공"],
+
+      "사회과학 계열": ["정치외교학과", "행정학과", "법학부", "사회심리학과", "소비자경제학과", "미디어학부", "홍보광고학과", "교육학부", "아동복지학부", "가족자원경영학과"],
+
+      "경영·경제 계열": ["경영학부", "경제학부", "앙트러프러너십전공", "르꼬르동블루외식경영전공"],
+
+      "자연과학 계열": ["수학과", "통계학과", "화학과", "신소재물리학부", "생명시스템학부", "식품영양학과", "의류학과"],
+
+      "공학·IT 계열": ["인공지능공학부", "컴퓨터과학전공", "데이터사이언스전공", "지능형전자시스템학부", "기계시스템학부", "화공생명공학부"],
+
+      "약학 계열": ["약학부"],
+
+      "예체능 계열": ["공예과", "산업디자인과", "시각·영상디자인과", "환경디자인과", "회화과-서양화", "회화과-한국화", "체육교육과"],
+
+      "자유전공": ["전 모집단위(통합선발)"]
 
     }
   };
@@ -4664,6 +4446,362 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
   initMajorSearch();
+
+  // ===================== 생기부 PDF 통합 업로드 =====================
+  // 나이스 '학교생활세부사항기록부' PDF 1개에서 이수과목·세특·창체·행특을 추출한다.
+  // 주민등록번호·주소 등 개인식별정보는 애초에 수집하지 않는다.
+  const recordPdfUpload = document.getElementById("record-pdf-upload");
+  const recordPdfStatus = document.getElementById("record-pdf-status");
+
+  // PDF를 행(y좌표) 단위로 묶고, 각 행의 조각을 x좌표 순으로 정렬해 반환
+  async function srReadRows(file) {
+    const lib = window.pdfjsLib || window['pdfjs-dist/build/pdf'];
+    if (!lib) throw new Error("PDF.js가 로드되지 않았습니다. 페이지를 새로고침 후 다시 시도하세요.");
+    if (!lib.GlobalWorkerOptions.workerSrc) {
+      lib.GlobalWorkerOptions.workerSrc =
+        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    }
+    const pdf = await lib.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
+    const rows = [];
+    for (let p = 1; p <= pdf.numPages; p++) {
+      const tc = await (await pdf.getPage(p)).getTextContent();
+      const bucket = [];
+      tc.items.forEach(it => {
+        const str = (it.str || "").trim();
+        if (!str) return;
+        const x = it.transform[4], y = it.transform[5];
+        let row = bucket.find(r => Math.abs(r.y - y) <= 3);
+        if (!row) { row = { y, items: [] }; bucket.push(row); }
+        row.items.push({ x, str });
+      });
+      bucket.sort((a, b) => b.y - a.y);
+      bucket.forEach(r => {
+        r.page = p;
+        r.items.sort((a, b) => a.x - b.x);
+        r.text = r.items.map(i => i.str).join(" ").replace(/\s+/g, " ").trim();
+        rows.push(r);
+      });
+    }
+    return rows;
+  }
+
+  // 나이스 출력물은 표 머리글 글자 사이에 공백이 섞이므로 비교 전 모두 제거한다
+  const srNorm = t => (t || "").replace(/\s+/g, "");
+
+  // 페이지마다 반복되는 워터마크·표 머리글 행인지 판정 (구양식/대입전형자료 양식 공통)
+  function srIsChrome(text) {
+    const n = srNorm(text);
+    return !text
+      || /\/\d{4}\.\d{2}\.\d{2}\s+\d{1,2}:\d{2}\//.test(text)
+      || /^\d{4}년\s*\d{1,2}월\s*\d{1,2}일$/.test(text)
+      || /^\d{4}\.\d{2}\.\d{2}\.$/.test(n)
+      || /반\s+\d+\s+번호\s+\d+\s+성명/.test(text)
+      || /^학교코드학과\(코드\)반번호성명주민등록번호$/.test(n)
+      || /^개인별대입전형자료조회$/.test(n)
+      || /^학기교과과목학점수/.test(n)
+      || /^학년창의적체험활동상황/.test(n)
+      || /^영역시간특기사항$/.test(n)
+      || /^학년행동특성및종합의견$/.test(n)
+      || /^과목세부능력및특기사항$/.test(n)
+      || /^(원점수\/과목평균|\(표준편차\)|성취도|\(수강자수\)|석차등급|비고|영역|시간|특기사항|학년|학기|교과|과목|학점수)$/.test(n)
+      || /^학년학기세분류능력단위/.test(n)
+      || /^학년조치결정일자조치사항$/.test(n)
+      || /^해당사항없음$/.test(n)
+      || /^일자또는기간/.test(n);
+  }
+
+  // 성적표 한 행을 열 좌표 + 값 형태로 해석
+  function srParseGradeRow(row) {
+    let credit = null, score = null, achv = null, rank = null;
+    const nameParts = [];
+    row.items.forEach(({ x, str }) => {
+      const s = str.trim();
+      if (/^\d+(?:\.\d+)?\/[\d.]+\([\d.]+\)$/.test(s)) { score = s; return; }
+      if (/^\d+(?:\.\d+)?\/[\d.]+$/.test(s)) { score = s; return; }
+      if (/^[A-E]\(\d+\)$/.test(s)) { achv = s; return; }
+      // 대입전형자료 양식은 석차등급이 있는 과목의 성취도 칸에 수강자수만 "(106)"으로 찍힌다
+      if (/^\(\d+\)$/.test(s)) { if (!achv) achv = s; return; }
+      if (s === 'P') { if (!achv) achv = 'P'; return; }
+      if (/^[1-9]$/.test(s) && x >= 430) { rank = s; return; }
+      if (/^\d{1,2}$/.test(s) && x >= 250 && x < 300) { credit = s; return; }
+      if (/^\d{1,2}$/.test(s)) return;               // 학기 표시 등은 버린다
+      if (x >= 110 && x < 260) nameParts.push(s);    // 과목명 열
+    });
+    const subject = nameParts.join(" ").trim();
+    if (!subject || (!score && !achv)) return null;
+    return { subject, credit: credit || "", score: score || "", achv: achv || "", rank: rank || "" };
+  }
+
+  // 줄바꿈으로 잘린 서술형 문장을 이어 붙인다
+  function srAppend(buf, text) {
+    if (!buf.length) { buf.push(text); return; }
+    const prev = buf[buf.length - 1];
+    buf[buf.length - 1] = /[.!?」'"]$/.test(prev) ? prev + " " + text : prev + text;
+  }
+
+  function srJoinLines(lines) {
+    const buf = [];
+    lines.forEach(l => srAppend(buf, l.text));
+    return buf.join("");
+  }
+
+  // 창체·행특 표는 학년/영역 셀이 세로 병합되어 본문 블록 '중앙'에 단독 행으로 놓인다.
+  // 따라서 본문을 줄 간격으로 블록 분할한 뒤, 라벨의 y가 어느 블록 범위에 드는지로 매칭한다.
+  function srBlocks(secRows, minX) {
+    const bodies = [], labels = [];
+    secRows.forEach(r => {
+      const body = r.items.filter(i => i.x >= minX).map(i => i.str).join(" ").replace(/\s+/g, " ").trim();
+      const left = r.items.filter(i => i.x < minX).map(i => ({ x: i.x, s: i.str.trim() })).filter(o => o.s);
+      if (body) bodies.push({ page: r.page, y: r.y, text: body });
+      if (left.length) labels.push({ page: r.page, y: r.y, parts: left });
+    });
+    if (!bodies.length) return { blocks: [], labels };
+
+    const gaps = [];
+    for (let i = 1; i < bodies.length; i++) {
+      if (bodies[i].page === bodies[i - 1].page) gaps.push(Math.abs(bodies[i - 1].y - bodies[i].y));
+    }
+    const sorted = gaps.slice().sort((a, b) => a - b);
+    const median = sorted.length ? sorted[Math.floor(sorted.length / 2)] : 14;
+
+    const blocks = [{ page: bodies[0].page, lines: [bodies[0]] }];
+    for (let i = 1; i < bodies.length; i++) {
+      const prev = bodies[i - 1], cur = bodies[i];
+      if (cur.page !== prev.page || Math.abs(prev.y - cur.y) > median * 1.6) {
+        blocks.push({ page: cur.page, lines: [] });
+      }
+      blocks[blocks.length - 1].lines.push(cur);
+    }
+    blocks.forEach(b => {
+      const ys = b.lines.map(l => l.y);
+      b.yMin = Math.min(...ys); b.yMax = Math.max(...ys);
+      b.labels = labels.filter(l => l.page === b.page && l.y >= b.yMin - median && l.y <= b.yMax + median);
+    });
+    return { blocks, labels };
+  }
+
+  async function srParseRecordPdf(file) {
+    const rows = await srReadRows(file);
+    const courses = [], setuk = [], creative = [], behavior = [], reading = [];
+    const crRows = [], bhRows = [], volRows = [];
+    let section = "", tableMode = false, year = "", volunteer = false;
+    let name = "", klass = "", number = "", grade = "";
+
+    for (const row of rows) {
+      const t = row.text;
+
+      // 학생 식별 정보는 반/번호/성명만 취한다 (주민등록번호·주소는 수집하지 않음)
+      const idm = t.match(/반\s+(\d+)\s+번호\s+(\d+)\s+성명\s+([가-힣]{2,5})/);
+      if (idm) { klass = idm[1]; number = idm[2]; name = idm[3]; continue; }
+      // 대입전형자료 양식: "학교코드 학과(코드) 반 번호 성명 주민등록번호" 행 — 주민번호는 버린다
+      const idm2 = t.match(/^[A-Z]?\d{6,}\s+(?:\S+\s+)?(\d{1,2})\s+(\d{1,2})\s+([가-힣]{2,5})\s+\d{6}\s*-\s*\d{7}$/);
+      if (idm2) { klass = idm2[1]; number = idm2[2]; name = idm2[3]; continue; }
+      if (srIsChrome(t)) continue;
+
+      // 섹션 머리글. 구양식은 번호가 붙고(6. 7. …), 대입전형자료 양식은 번호가 없다.
+      const tn = srNorm(t);
+      if (/^(?:\d\.)?창의적체험활동상황$/.test(tn)) {
+        if (section !== "creative") { section = "creative"; volunteer = false; year = ""; }
+        continue;
+      }
+      if (/^(?:\d\.)?교과학습발달상황$/.test(tn)) { section = "grade"; continue; }
+      if (/^(?:\d\.)?독서활동상황$/.test(tn)) { section = "reading"; continue; }
+      if (/^(?:\d\.)?행동특성및종합의견$/.test(tn)) { section = "behavior"; continue; }
+      if (/^(?:\d\.)?봉사활동실적$/.test(tn)) { section = "creative"; volunteer = true; continue; }
+      // 개인정보가 담긴 인적사항과 평가 대상이 아닌 표는 통째로 건너뛴다
+      if (/^(?:\d\.)?(인적·?학적사항|인적사항|학적사항|출결상황|수상경력|자격증및인증취득상황|국가직무능력표준이수상황|학교폭력조치상황관리)$/.test(tn)) { section = "skip"; continue; }
+      if (/^\s*[1-5]\.\s*[가-힣]/.test(t)) { section = "skip"; continue; }
+
+      const ym = t.match(/^\[(\d)학년\]$/);
+      if (ym) { year = ym[1]; grade = ym[1]; tableMode = true; continue; }
+
+      if (section === "grade") {
+        if (/이수학점\s*합계/.test(t)) { tableMode = false; continue; }
+        if (tableMode) {
+          const c = srParseGradeRow(row);
+          if (c) courses.push({ ...c, year });
+          continue;
+        }
+        // 세부능력 및 특기사항 본문
+        if (/^(\(\d학기\))?\s*[^:]{1,25}:\s*\S/.test(t)) setuk.push((year ? `[${year}학년] ` : "") + t);
+        else srAppend(setuk, t);
+        continue;
+      }
+
+      if (section === "creative") {
+        if (/^봉\s*사\s*활\s*동\s*실\s*적$/.test(t)) { volunteer = true; continue; }
+        (volunteer ? volRows : crRows).push(row);
+        continue;
+      }
+
+      if (section === "behavior") { bhRows.push(row); continue; }
+
+      if (section === "reading") {
+        if (/^학년\s+과목\s*또는\s*영역/.test(t) || /^독서\s*활동\s*상황$/.test(t)) continue;
+        const rt = row.items.filter(i => !(i.x < 80 && /^[1-3]$/.test(i.str.trim())))
+          .map(i => i.str).join(" ").replace(/\s+/g, " ").trim();
+        if (rt) srAppend(reading, rt);
+      }
+    }
+
+    // 창의적 체험활동. 학년/영역 셀은 세로 병합되어 블록 경계를 특정할 수 없으므로,
+    // 블록에 걸친 영역을 임의로 하나 고르지 않고 모두 표기한다(잘못된 단정보다 안전).
+    srBlocks(crRows, 190).blocks.forEach(b => {
+      const areas = [], yrs = [];
+      b.labels.forEach(l => {
+        let area = "", hours = "";
+        l.parts.forEach(({ x, s }) => {
+          if (/^(자율활동|동아리활동|진로활동|봉사활동)$/.test(s)) area = s;
+          else if (/^\d{1,3}$/.test(s) && x >= 150) hours = s;
+          else if (/^[1-3]$/.test(s) && x < 80 && !yrs.includes(s)) yrs.push(s);
+        });
+        if (area) areas.push(area + (hours ? ` ${hours}시간` : ""));
+      });
+      const tag = [
+        yrs.length ? yrs.sort().join("·") + "학년" : "",
+        areas.length ? areas.join(" · ") : "창의적 체험활동"
+      ].filter(Boolean).join(" ");
+      const body = srJoinLines(b.lines);
+      if (body) creative.push(`[${tag}] ${body}`);
+    });
+
+    if (volRows.length) {
+      const vol = volRows.map(r => r.text).filter(Boolean);
+      if (vol.length) creative.push("[봉사활동 실적] " + vol.join(" / "));
+    }
+    if (reading.length) creative.push("[독서활동상황] " + reading.join(" "));
+
+    srBlocks(bhRows, 70).blocks.forEach(b => {
+      const yrs = [];
+      b.labels.forEach(l => l.parts.forEach(({ s }) => {
+        if (/^[1-3]$/.test(s) && !yrs.includes(s)) yrs.push(s);
+      }));
+      const body = srJoinLines(b.lines);
+      if (!body) return;
+      behavior.push(yrs.length ? `[${yrs.sort().join("·")}학년] ${body}` : body);
+    });
+
+    if (!courses.length) {
+      throw new Error("교과학습발달상황을 찾지 못했습니다. 나이스에서 '학교생활세부사항기록부(학교생활기록부II)' 전체를 PDF로 내려받았는지 확인하세요.");
+    }
+    return { name, klass, number, grade, courses, setuk, creative, behavior };
+  }
+
+  // 추출 결과를 기존 입력 폼에 그대로 채워 넣는다
+  function srApplyRecord(rec) {
+    const graded = rec.courses.filter(c => /^[1-9]$/.test(c.rank) && Number(c.credit) > 0);
+    const totalCredits = graded.reduce((s, c) => s + Number(c.credit), 0);
+    const weighted = graded.reduce((s, c) => s + Number(c.rank) * Number(c.credit), 0);
+
+    if (coursesInput) {
+      coursesInput.value = rec.courses.map(c => {
+        const extra = [];
+        if (c.score && c.score !== "P") extra.push(c.score);
+        const cnt = (c.achv.match(/\((\d+)\)/) || [])[1];
+        if (cnt) extra.push(`수강자${cnt}`);
+        const tail = extra.length ? ` [${extra.join(", ")}]` : "";
+        const unit = c.credit ? `(${c.credit}단위)` : "";
+        const val = c.rank ? `${c.rank}등급` : ((c.achv || "P").replace(/\(\d+\)/, "") || "P");
+        return `${c.year ? c.year + "-" : ""}${c.subject}${unit}: ${val}${tail}`;
+      }).join(", ");
+    }
+    if (averageGradeInput) {
+      averageGradeInput.value = totalCredits > 0 ? (weighted / totalCredits).toFixed(2) + " 등급" : "등급 산출 불가";
+    }
+    const afInput = document.getElementById("average-formula");
+    if (afInput && totalCredits > 0) afInput.value = `Σ(${weighted.toFixed(1)}) / ${totalCredits}단위`;
+    if (achievementOnlyInput) {
+      const only = rec.courses.filter(c => !/^[1-9]$/.test(c.rank));
+      achievementOnlyInput.value = only.length
+        ? only.map(c => `${c.subject}(${c.credit}단위): ${(c.achv || "P").replace(/\((\d+)\)/, " / 수강자$1")}`).join(", ")
+        : "해당 없음";
+    }
+    if (subjectInput) subjectInput.value = rec.setuk.join("\n\n");
+    if (creativeInput) creativeInput.value = rec.creative.join("\n\n");
+    if (behaviorInput) behaviorInput.value = rec.behavior.join("\n\n");
+
+    if (gradeInput) gradeInput.value = rec.grade || "";
+    if (classInput) classInput.value = rec.klass || "";
+    if (numberInput) numberInput.value = rec.number || "";
+    if (nameInput) nameInput.value = rec.name || "";
+
+    if (studentSelect && rec.name) {
+      const label = `${rec.grade || "?"}학년 ${rec.klass || "?"}반 ${rec.number || "?"}번 ${rec.name} (PDF)`;
+      let opt = Array.from(studentSelect.options).find(o => o.value === "__pdf__");
+      if (!opt) { opt = document.createElement("option"); opt.value = "__pdf__"; studentSelect.appendChild(opt); }
+      opt.textContent = label;
+      studentSelect.value = "__pdf__";
+    }
+    window.currentStudentSubjects = rec.courses.map(c => c.subject);
+    if (typeof renderCourseTable === "function") {
+      try {
+        renderCourseTable(rec.courses.map(c => ({
+          subject: c.subject, credit: c.credit, grade: c.rank || c.achv,
+          type: c.rank ? "grade" : "achievement", rawScoreInfo: c.score,
+          수강자수: (c.achv.match(/\((\d+)\)/) || [])[1] || ""
+        })));
+      } catch (e) { console.warn("[생기부 PDF] 표 렌더 건너뜀", e); }
+    }
+  }
+
+  if (recordPdfUpload) {
+    recordPdfUpload.addEventListener("change", async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const setStatus = (msg, color) => {
+        if (!recordPdfStatus) return;
+        recordPdfStatus.textContent = msg;
+        recordPdfStatus.style.color = color || "var(--text-secondary)";
+      };
+      setStatus("PDF를 읽는 중입니다...");
+      try {
+        const rec = await srParseRecordPdf(file);
+        srApplyRecord(rec);
+        setStatus(`✅ ${rec.name || "학생"} — 이수과목 ${rec.courses.length}개 · 세특 ${rec.setuk.length}건 · 창체 ${rec.creative.length}건 · 행특 ${rec.behavior.length}건을 불러왔습니다. 주민등록번호와 주소는 수집하지 않았습니다.`, "#7ddc9a");
+      } catch (err) {
+        console.error("[생기부 PDF]", err);
+        setStatus("❌ " + err.message, "#ff8888");
+      } finally {
+        e.target.value = "";
+      }
+    });
+  }
+
+  // 면접 문항 생성 탭에서도 같은 파서로 생기부 PDF를 직접 받는다.
+  // 개인 분석 탭을 거치지 않아도 되도록, 결과는 window.ivPdfRecord로 공유한다.
+  const ivRecordPdf = document.getElementById("iv-record-pdf");
+  const ivRecordPdfStatus = document.getElementById("iv-record-pdf-status");
+  if (ivRecordPdf) {
+    ivRecordPdf.addEventListener("change", async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const setStatus = (msg, color) => {
+        if (!ivRecordPdfStatus) return;
+        ivRecordPdfStatus.textContent = msg;
+        ivRecordPdfStatus.style.color = color || "var(--text-secondary)";
+      };
+      setStatus("PDF를 읽는 중입니다...");
+      try {
+        const rec = await srParseRecordPdf(file);
+        window.ivPdfRecord = rec;
+        const sel = document.getElementById("iv-student-select");
+        if (sel) {
+          const label = `${rec.grade || "?"}학년 ${rec.klass || "?"}반 ${rec.number || "?"}번 ${rec.name || "학생"} (PDF)`;
+          let opt = Array.from(sel.options).find(o => o.value === "__pdf__");
+          if (!opt) { opt = document.createElement("option"); opt.value = "__pdf__"; sel.appendChild(opt); }
+          opt.textContent = label;
+          sel.value = "__pdf__";
+        }
+        setStatus(`✅ ${rec.name || "학생"} — 이수과목 ${rec.courses.length}개 · 세특 ${rec.setuk.length}건 · 창체 ${rec.creative.length}건 · 행특 ${rec.behavior.length}건을 불러왔습니다. 이 PDF로 바로 면접 문항을 생성할 수 있습니다.`, "#7ddc9a");
+      } catch (err) {
+        console.error("[면접 생기부 PDF]", err);
+        window.ivPdfRecord = null;
+        setStatus("❌ " + err.message, "#ff8888");
+      } finally {
+        e.target.value = "";
+      }
+    });
+  }
 
   if (excelUpload) {
     excelUpload.addEventListener("change", (e) => {
@@ -5666,6 +5804,59 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // \ub300\ud559\ubcc4 \ud3c9\uac00 \uae30\uc900 (\uac00\uc774\ub4dc\ubd81 \uae30\ubc18)
   const universityEvalCriteria = {
+    "광주교육대학교": {
+      factors: `
+[광주교육대학교 2027학년도 학생부종합전형(교직적성우수자) 평가 기준 — 모집요강 반영]
+
+■ 인재상: 격조 높은 초등 교원 / 교시: 진리를 탐구하고, 정의롭게 행동하며, 자랑스런 스승의 길을 간다
+■ 전형 구조: 서류평가 70%(700점) + 비대면 면접 30%(300점), 수능최저 없음
+   ※ 서류 또는 면접이 일정 수준 이하이면 선발 대상에서 제외
+   ※ 동점자 처리 순위가 학업역량 > 교직역량 > 공동체역량 순이므로 학업역량이 실질적 1순위
+
+■ 서류평가 3대 요소 (총 100점 · 7등급 척도 A+/A/B+/B/C/D/E)
+
+◆ 학업역량 [40점] — 교원양성대학에서 학업을 충실히 수행할 수 있는 능력
+   ✦ 학업성취도
+     - ==인문·자연 등 특정 계열에 치우치지 않고 균형 있게 과목을 선택·이수했는가== (교대 평가의 최대 특징)
+     - ==체육·예술·기술가정 과목의 성취수준도 양호한가== (초등교사는 전 교과를 가르치므로 비주요 교과도 정식 평가 대상)
+     - 깊이 있는 학습을 보여주는 과목 선택과 학습 성과가 있는가
+   ✦ 학업태도: 수업에 적극 참여하려는 태도, 배운 내용을 학습·탐구활동에 유연하게 적용하는가
+   ✦ 문제해결력: 교과활동에서 다양한 지식·정보를 활용해 문제를 해결한 경험, 문제점 도출과 해결 과정이 구체적으로 드러나는가
+
+◆ 교직역량 [40점] — 교육 및 교직 전반을 이해하기 위한 탐색 노력과 활동 경험
+   ✦ 교육·교직에 대한 탐색활동과 경험
+     - 교육 및 교직 관련 탐색 경험이 있는가 / 관련 활동에 참여한 경험이 있는가
+     - ==지식이나 학습경험을 나누고 함께 성장하려는 협력적 태도==(멘토링·또래교수·학습도우미 등)를 보이는가
+   ✦ 문화적 소양
+     - ==다양한 사회·문화적 배경의 차이를 이해하고 학교생활에서 포용하려 노력한 경험==이 있는가
+     - 인문·사회·예술 등 다양한 분야에서의 활동 경험이 있는가
+
+◆ 공동체역량 [20점] — 교육공동체를 형성하고 이끌어갈 수 있는 능력
+   ✦ 협업과 소통능력: 구성원과 협력해 공동 과제를 수행·완성한 경험, 학교생활에서 리더십을 발휘한 경험
+   ✦ 나눔과 배려: 자발적·지속적으로 나눔을 실천한 경험, 타인을 배려한 경험
+   ✦ 성실성과 규칙준수: 학교수업에 충실히 출석하고 성실히 참여했는가, 공동체 규칙·규정을 준수하는가
+
+■ 평가 방식
+   - 평가위원 2인이 독립적으로 정성평가, 편차 발생 시 제3의 입학사정관 2인이 재평가
+   - 학교생활기록부(교과/비교과) 기반 종합적 정성평가
+
+■ 학교폭력 조치사항 (매우 엄격)
+   - 1~3호: 서류평가에서 정성평가로 반영(감점)
+   - ==4~9호: 부적격 처리(불합격)==
+
+■ 교대 지원자 평가 시 반드시 적용할 관점
+   1. 일반 대학의 '전공적합성'을 그대로 적용하지 말 것. 초등교사는 전 교과를 가르치므로 ==특정 계열 편중은 오히려 감점 요인==이며, 국·영·수·사·과에 더해 체육·음악·미술·기술가정까지 고르게 이수·성취한 기록이 핵심 강점이다.
+   2. 교직역량이 학업역량과 동일한 40점이다. 교육 관련 탐색(교육 도서, 교육 현안 탐구, 진로활동)과 ==가르치는 경험(멘토링·또래교수·학습부장·수업 도우미)==이 기록에 있는지 최우선으로 확인하고, 없다면 결정적 결함으로 지적하라.
+   3. 문화적 소양은 다문화·장애·소외계층 등 ==차이를 이해하고 포용한 경험==으로 평가된다. 예체능 활동 경험도 여기에 해당한다.
+   4. 출결은 성실성과 규칙준수의 직접 근거이자 예비 교사의 기본 자질로 간주되므로, 미인정 출결은 일반 대학보다 더 무겁게 감점하라.
+`,
+      competencies: {
+        academic: "학업역량(전 교과 균형 이수·학업태도·문제해결력) — 40점",
+        career: "교직역량(교육·교직 탐색활동과 경험·문화적 소양) — 40점",
+        community: "공동체역량(협업과 소통·나눔과 배려·성실성과 규칙준수) — 20점"
+      },
+      weights: { academic: 0.40, career: 0.40, community: 0.20 }
+    },
     "\uc11c\uc6b8\ub300\ud559\uad50": {
       factors: `
 [\uc11c\uc6b8\ub300\ud559\uad50 2027\ud559\ub144\ub3c4 \ud559\uc0dd\ubd80\uc885\ud569\uc804\ud615 \ud3c9\uac00 \uae30\uc900 \u2014 \uacf5\uc2dd \uac00\uc774\ub4dc\ubd81 \ubc18\uc601]
@@ -8170,8 +8361,32 @@ ${uniCriteria.factors}
     const modelsToTry = ["gemini-3.1-pro", "gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash-lite"];
     const attemptLogs = [];
     const uniCriteria = universityEvalCriteria[data.university];
-    const weights = uniCriteria?.weights || { academic: 0.33, career: 0.33, community: 0.34 };
-    const competencyNames = uniCriteria ? uniCriteria.competencies : { academic: "\ud559\uc5c5\uc5ed\ub7c9", career: "\uc9c4\ub85c\uc5ed\ub7c9", community: "\uacf5\ub3d9\uccb4\uc5ed\ub7c9" };
+    // 교육대학교는 '진로역량'이 아니라 '교직역량'으로 평가되고 전 교과 균형 이수가 핵심이다
+    const isTeacherCollege = /교육대학교$/.test(data.university || "");
+    const weights = uniCriteria?.weights
+      || (isTeacherCollege ? { academic: 0.40, career: 0.40, community: 0.20 }
+                           : { academic: 0.33, career: 0.33, community: 0.34 });
+    const competencyNames = uniCriteria ? uniCriteria.competencies
+      : (isTeacherCollege
+          ? { academic: "학업역량(전 교과 균형 이수·학업태도·문제해결력)",
+              career: "교직역량(교육·교직 탐색활동과 경험·문화적 소양)",
+              community: "공동체역량(협업과 소통·나눔과 배려·성실성과 규칙준수)" }
+          : { academic: "학업역량", career: "진로역량", community: "공동체역량" });
+
+    const teacherCollegeGuide = !isTeacherCollege ? "" : `
+
+[교육대학교(초등교원 양성대학) 평가 지침 — 최우선 적용]
+※ 초등교사는 전 교과를 가르치므로, 일반 대학의 '전공적합성' 논리를 그대로 적용하면 평가가 왜곡됩니다.
+
+1. [전 교과 균형 이수가 핵심 강점] 인문·자연 등 특정 계열에 치우치지 않고 균형 있게 과목을 선택·이수했는지 최우선으로 확인하십시오. ==특정 계열 편중은 교대에서는 강점이 아니라 감점 요인==입니다.
+2. [비주요 교과도 정식 평가 대상] 체육·음악·미술·기술가정 과목의 성취수준과 수업 태도를 반드시 별도로 점검하고 리포트에 명시하십시오. 초등교사는 이 교과들도 직접 가르칩니다. 이 영역 기록이 부실하면 명확히 지적하십시오.
+3. [교직역량은 학업역량과 동일 비중] 교육·교직 관련 탐색 경험(교육 도서, 교육 현안 탐구, 교육 관련 진로활동)과 ==가르친 경험(멘토링·또래교수·학습도우미·모둠장·수업 도우미)==이 기록에 있는지 최우선으로 찾으십시오. 없다면 결정적 결함으로 지적하십시오.
+4. [문화적 소양] 다문화·장애·소외계층 등 사회문화적 배경의 차이를 이해하고 포용한 경험, 인문·사회·예술 분야의 다양한 활동 경험을 별도로 평가하십시오.
+5. [협력적 태도] 지식이나 학습경험을 나누고 함께 성장하려는 협력적 태도가 드러나는 기록을 교직역량의 핵심 근거로 삼으십시오.
+6. [출결의 가중] 출결은 성실성·규칙준수의 직접 근거이자 예비 교사의 기본 자질이므로, 미인정 출결은 일반 대학보다 더 무겁게 감점하십시오.
+7. [학교폭력] 학교폭력 조치사항이 있다면 최상단에 경고로 명시하십시오. 교대는 타 대학보다 훨씬 엄격하여 부산교대·진주교대·서울교대는 1~9호 전부, 광주교대·공주교대는 4~9호가 부적격 처리됩니다.
+8. [리포트 필수 섹션] overallEvaluation에 ## 🎓 교직 적합성 진단 섹션을 추가하여 (가) 전 교과 균형 이수 여부, (나) 가르친 경험의 유무와 깊이, (다) 문화적 소양과 포용 경험, (라) 예비 교사로서의 결격 요소를 각각 근거와 함께 서술하십시오.
+`;
 
     let profileInfo = "";
     if (data.name || data.grade) {
@@ -8191,11 +8406,37 @@ ${uniCriteria.factors}
 6. [과목 선택의 적극성과 이수 단위 평가] 학생이 지원 전공과 관련된 교과목(진로선택, 융합선택 등)을 위계에 맞게, 그리고 충실한 이수 단위를 들여 이수했는지 반드시 확인하십시오. 수강자 수가 적어 등급이 불리한 소인수 과목임에도 진로를 위해 과감히 도전한 사실이 확인된다면, 이를 학업에 대한 높은 의지로 보고 적극적으로 긍정 평가에 반영하십시오. (진로역량과 학업역량 모두에 반영)
 7. [성적 지표의 맥락적 해석] 수치만으로 판단하지 마십시오. '원점수'와 '과목 평균'을 비교하여 시험의 난이도와 해당 고교의 교육 환경을 유추하십시오. (예: 과목 평균이 낮음에도 높은 원점수를 받았다면 학업 역량이 매우 우수한 것으로 반드시 상향 평가) '성취도별 분포비율'을 확인하여 A등급 비율이 지나치게 높아 성적 부풀리기가 의심되는지, 혹은 정상적인 분포 내에서의 성취인지를 고려하여 성취 수준을 판단하십시오.
 8. [정량 데이터와 정성 기록(세특)의 교차 검증] 원점수·성취도가 높더라도 세특에 학생의 주도적인 탐구 과정이나 논리적 사고력에 대한 구체적 묘사가 없다면 높은 평가를 유보하십시오. 반대로 수치 지표가 다소 아쉽더라도 세특에 어려운 과제에 도전하고 논리적으로 문제를 해결한 구체적인 과정이 있다면, 이를 학업 역량의 우수성으로 반드시 반영하십시오. 이 교차 검증 결과를 overallEvaluation의 별도 섹션으로 서술하십시오.
+9. [3년 수렴성 검증 — 탐색인가 표류인가] 1·2·3학년의 교과 선택, 세특 탐구 주제, 창체 활동이 하나의 관심 축으로 수렴하는지 반드시 추적하십시오. 해마다 새로운 주제를 붙잡았으나 서로 연결되지 않고 흩어져 있다면, 이는 활동량이 많아도 '탐색'이 아니라 ==표류==로 판정하고 진로역량을 강하게 감점하십시오. 단, 진로가 변경된 경우 그 자체는 감점 사유가 아닙니다. 관심사가 바뀌는 과정에서 학생이 보여준 주도적 탐색과 성장의 흐름이 기록으로 확인되면 오히려 긍정 평가하십시오. (판정 기준: 변화에 서사가 있으면 성장, 서사 없이 단절되면 표류)
+10. [학과명은 과목 선택의 지시문] 지원 학과의 명칭을 구성하는 각 요소(예: '융합'바이오공학 → 수학·AI 관련 과목, '사회'학 → 사회문제 탐구)를 해당 전공의 필수 과목 지시문으로 해석하고, 학생이 그 요소들을 교과 선택으로 실제 받아냈는지 대조하십시오. 전공 핵심 과목을 미이수했다면, 활동 기록이 아무리 풍부해도 진로역량 평가에서 이를 결정적 결함으로 지적하십시오.
+11. [출결의 무력화 효과] 미인정 결석·지각·조퇴·결과가 누적되어 있고 학생부에 명확한 해명이 없다면, 이는 단순 감점이 아니라 교과 성적 우위를 통째로 상쇄시키는 치명적 결격 사유로 취급하십시오. 반대로 질병 등 사유가 명확한 출결은 평가에 거의 반영하지 마십시오. 학교폭력 조치사항 기록이 있다면 최우선 결격 요인으로 명시하십시오.
+12. [단일 기록 금지 원칙] 특정 기록 하나만으로 학생의 태도·인성·역량을 단정하지 마십시오. 여러 항목(세특·창체·행특)에서 반복적으로 나타나는 행동 패턴이 확인될 때만 해당 역량을 인정하십시오.
 
 [2015 개정 교육과정 핵심 평가지표 적용]
 - 학업역량: 학업성취도(추이), 학업태도(자기주도성), 탐구력(지식 융합 및 문제해결)
 - 진로역량: 전공 관련 교과 이수 노력(위계 준수), 전공 관련 교과 성취도, 진로 탐색 활동의 진정성
 - 공동체역량: 협업과 소통능력, 나눔과 배려, 성실성과 규칙준수(출결), 리더십
+
+[대학 가이드북 기반 평가 신호 판별표 — 반드시 적용]
+※ 아래는 20개 대학이 공식 가이드북에서 밝힌 실제 평가 관점과, 각 대학 입학사정관이 부정적으로 평가한 사례를 정리한 것입니다. 학생 기록을 이 판별표에 대조하여 점수를 산출하십시오.
+
+◆ 부정 신호(발견 시 해당 역량 과감히 감점, overallEvaluation에 근거와 함께 명시)
+- 학업역량: '성실히 참여함'·'태도가 우수함' 같은 추상적·형식적 표현만 기재 / 교사 제시 내용을 그대로 요약·전사하는 수준에 머묾 / 탐구 과정 없이 결과·정답만 나열 / 특정 과목의 현저히 낮은 성적이 반복되어 교과 간 불균형이 두드러짐 / 전공 관련 과목만 높고 나머지 교과에는 성실한 태도와 탐구가 없음 / 비판적 사고·창의적 문제해결의 흔적이 전무함
+- 진로역량: 활동이 단순 나열되어 전공과의 연결 고리가 없음 / 전공 키워드만 나열하고 참여 사실만 기록됨 / 과목 선택이 성적 관리 위주로 보여 전공 관심과 연계되지 않음 / 지원 계열과 무관한 과목을 다수 선택 / 전공 관련 과목을 단순 이수만 하고 심화 탐구가 없음 / 진로 활동이 산발적이고 연속성·심화가 없음
+- 공동체역량: 직책·임원 경력만 기록되고 구체적 역할과 기여가 드러나지 않음 / 참여 사실은 있으나 협력·배려의 실제 장면이 없음 / 봉사활동이 시간 채우기로만 기록되고 무엇을 배웠는지 없음 / 기록이 개인 중심이어서 공동체 기여가 보이지 않음
+- 발전가능성: 성취가 정체되어 있고 개선 노력이 없음 / 새로운 학습 방법이나 시도가 나타나지 않음 / 실패 경험은 있으나 극복 노력과 성찰이 기록되지 않음
+
+◆ 긍정 신호(발견 시 적극 가점, evidence에 원문 근거와 함께 추출)
+- 교과 이수의 충실성: 위계에 맞는 과목 선택, 수강자 수가 적어 등급이 불리한 소인수·공동교육과정 과목을 진로를 위해 과감히 도전한 사실. 이는 ==학업 주도성과 진로 진정성을 동시에 증명하는 최상위 신호==입니다. 이런 선택으로 등급이 하락했다면, 회피의 결과가 아니라 정면 돌파의 대가로 해석하여 감점하지 마십시오.
+- 성취 추이의 상승: 1학년 대비 2·3학년, 또는 1학기 대비 2학기의 원점수·등급 향상. 특히 이수 인원이 줄어든 심화 과목에서 등급을 유지·향상했다면 강하게 가점하십시오.
+- 교과-교과, 교과-비교과 연계: 하나의 문제의식을 여러 교과의 관점에서 통합적으로 분석하거나(예: 생명과학의 혈당 개념을 미적분으로 모델링), 수업에서 생긴 호기심을 동아리 실험·보고서로 확장한 기록. 단일 교과 지식 습득을 넘어선 자기주도적 탐구역량으로 최고 수준 평가하십시오.
+- '공부의 발자국': 화려한 결과물이나 대학 수준의 난해한 이론 나열은 가점 요인이 아닙니다. 수업 내 수행평가·교사 제시 과제에서 출발한 본인만의 세부 관심사가, 다음 학기나 다른 교과로 꾸준히 확장되어 간 궤적이 ==가장 높은 평가 포인트==입니다.
+- 선택의 이유와 방식: 선택과목을 이수했다는 사실 자체보다, 왜 선택했고 어떻게 이수했는지가 세특에서 확인되는지를 중심으로 평가하십시오.
+- 공동체역량의 본질: 특별하고 화려한 활동이 아니라, 학급 구성원과 협력하며 맡은 책임(1인 1역, 청소, 기피 역할 포함)을 성실히 수행한 일상의 기록이 핵심 근거입니다. 임원 여부보다 역할 수행의 책임감을 우선하십시오.
+- 전공 표현보다 역량: 학과·직업 명칭이 직접 언급되었는지는 중요하지 않습니다. 입학 후 전공을 학습하는 데 필요한 역량을 교과를 통해 성장시킨 증거가 있는지로 판단하십시오.
+
+◆ 변별 원칙
+- 교과 등급은 자격 심사에 가깝고, 실제 당락은 진로역량과 공동체역량에서 갈립니다. 전공교과 등급이 더 높은 지원자가 진로 항목 평가에서 밀려 탈락한 실제 사례가 다수 존재합니다. 등급이 우수하다는 이유만으로 총점을 높게 주지 마십시오.
+- 최근 학생부 기재 수준이 상향 평준화되어 기록만으로는 우열을 가리기 어렵습니다. 따라서 ==다른 학생도 똑같이 쓸 수 있는 문장==인지, 이 학생만의 고유한 사고 과정이 드러나는 문장인지를 기준으로 변별하고, 전자에 해당하면 점수를 올리지 마십시오.
 
 [학생 정보]
 목표 대학: ${data.university}
@@ -8216,7 +8457,8 @@ ${data.creativeActivities}
 ${data.behavioralRecords}
 
 [해당 대학/학과 전형별 평가 기준 및 주안점]
-${uniCriteria ? uniCriteria.factors : "일반적인 학생부종합전형 평가 기준을 적용하되, 전공 관련 학업 및 탐구 역량에 집중하십시오."}
+${uniCriteria ? uniCriteria.factors : (isTeacherCollege ? "해당 교육대학교의 개별 공개 기준은 보유하고 있지 않습니다. 아래 교육대학교 공통 평가 지침을 기준으로 삼으십시오." : "일반적인 학생부종합전형 평가 기준을 적용하되, 전공 관련 학업 및 탐구 역량에 집중하십시오.")}
+${teacherCollegeGuide}
 
 [분석 및 배점 지침]
 1. ${competencyNames.academic} (반영 비율: ${(weights.academic * 100).toFixed(0)}%): 전반적인 학업 기초 역량과 함께 전공 관련 심화 과목 이수 및 탐구 깊이를 엄격히 평가.
@@ -8234,9 +8476,12 @@ overallEvaluation 필드는 아래 형식을 반드시 따르십시오:
 1. 소제목: ## 기호로 굵은 소제목을 붙여 섹션을 구분하십시오. (예: ## ✅ 종합 강점, ## ⚠️ 핵심 보완과제, ## 🎯 합격 가능성 진단, ## 📌 전략적 제언)
 2. 강조 표시: 가장 중요하고 결정적인 핵심 문장이나 단어(합격·불합격 요인, 치명적 약점, 압도적 강점)에는 반드시 ==텍스트== 형식으로 강조 마킹을 하십시오. (예: ==국어 성적이 3등급으로 급격히 하락하여 치명적 약점이 됩니다==)
 3. 각 소제목 아래에는 글머리 기호(-)를 사용하여 핵심 내용을 정리하십시오.
-4. 최소 5개 이상의 소제목 섹션으로 구성하되, 아래 섹션을 반드시 포함하십시오:
-   - ## 📚 과목 선택 분석 (이수 단위, 진로 위계 적합성, 소인수 과목 도전 여부)
+4. 최소 7개 이상의 소제목 섹션으로 구성하되, 아래 섹션을 반드시 포함하십시오:
+   - ## 📚 과목 선택 분석 (이수 단위, 진로 위계 적합성, 소인수 과목 도전 여부, 학과명이 지시하는 핵심 과목의 이수 여부)
    - ## 🔍 성적 맥락 & 정량·정성 교차 검증 (원점수-평균 비교, 분포비율 해석, 수치와 세특의 일치 여부)
+   - ## 🧭 3년 수렴성 진단 (1·2·3학년 교과 선택·세특 탐구 주제·창체 활동이 하나의 축으로 모이는지, '탐색'인지 '표류'인지 판정하고 근거 제시)
+   - ## 🚨 부정 신호 점검 (위 판별표의 부정 신호 중 이 학생부에서 실제로 발견된 항목을 빠짐없이 적시하고, 해당하지 않는 항목은 '해당 없음'으로 명시)
+   - ## 💎 고유성 검증 (이 기록이 다른 학생도 똑같이 쓸 수 있는 상향 평준화된 문장인지, 이 학생만의 '공부의 발자국'이 드러나는지 판별)
    - 그 외 종합 강점 / 핵심 보완과제 / 합격 가능성 진단 / 전략적 제언 섹션`;
 
 
@@ -10769,11 +11014,15 @@ ${fd.content}
       "가천대학교", "서울시립대학교", "숭실대학교", "한국외국어대학교", "세종대학교",
       "건국대학교", "중앙대학교", "경희대학교", "서울과학기술대학교", "서강대학교",
       "성균관대학교", "한양대학교", "한국교원대학교", "광운대학교", "동국대학교",
-      "인하대학교", "아주대학교", "단국대학교", "부산대학교", "인천대학교", "가톨릭대학교", "서울대학교", "국민대학교", "명지대학교", "상명대학교(서울)", "경북대학교", "전북대학교", "전남대학교", "충북대학교", "충남대학교", "한양대학교 ERICA", "고려대학교(세종)", "순천향대학교", "조선대학교", "전주대학교", "원광대학교"
+      "인하대학교", "아주대학교", "단국대학교", "부산대학교", "인천대학교", "가톨릭대학교", "서울대학교", "국민대학교", "명지대학교", "상명대학교(서울)", "경북대학교", "전북대학교", "전남대학교", "충북대학교", "충남대학교", "한양대학교 ERICA", "고려대학교(세종)", "순천향대학교", "조선대학교", "전주대학교", "원광대학교",
+      "연세대학교", "숙명여자대학교",
+      "서울교육대학교", "경인교육대학교", "공주교육대학교", "광주교육대학교", "대구교육대학교",
+      "부산교육대학교", "전주교육대학교", "진주교육대학교", "청주교육대학교", "춘천교육대학교",
+      "서원대학교", "청주대학교"
     ];
 
-    // Populate University Dropdown (✅/⚪ 마커 포함)
-    for (const uni of Object.keys(universityData)) {
+    // Populate University Dropdown (✅/⚪ 마커 포함, 가나다순 정렬)
+    for (const uni of Object.keys(universityData).sort((a, b) => a.localeCompare(b, "ko"))) {
       const opt = document.createElement("option");
       opt.value = uni;
       opt.textContent = (ivUnivDataList.includes(uni) ? "✅ " : "⚪ ") + uni;
@@ -10874,19 +11123,36 @@ ${fd.content}
 
       // Load selected student data
       let studentRecordText = "";
-      try {
-        const savedData = await StorageManager.load("pf_" + studentIdx);
-        if (savedData) {
-          const parsed = JSON.parse(savedData);
-          studentRecordText = `성적: ${parsed.generalGrade}
+
+      // 이 탭에서 직접 올린 생기부 PDF가 있으면 그것을 우선 사용한다
+      if (studentIdx === "__pdf__") {
+        const rec = window.ivPdfRecord;
+        if (!rec) { alert("업로드한 생기부 PDF를 찾을 수 없습니다. PDF를 다시 올려주세요."); return; }
+        const NL = "\n";
+        const gradeLine = rec.courses
+          .map(c => (c.year ? c.year + "학년 " : "") + c.subject + "(" + c.credit + "단위) " + (c.rank ? c.rank + "등급" : (c.achv || "P")))
+          .join(", ");
+        studentRecordText = "성적/이수과목: " + gradeLine + NL
+          + "세부능력 및 특기사항: " + rec.setuk.join(NL) + NL
+          + "창체활동(진로등): " + rec.creative.join(NL) + NL
+          + "행동특성 및 종합의견: " + rec.behavior.join(NL);
+      }
+
+      if (!studentRecordText) {
+        try {
+          const savedData = await StorageManager.load("pf_" + studentIdx);
+          if (savedData) {
+            const parsed = JSON.parse(savedData);
+            studentRecordText = `성적: ${parsed.generalGrade}
 과목별 성취: ${parsed.grades}
 세부능력 및 특기사항: ${parsed.subject}
 창체활동(진로등): ${parsed.career}
 행동특성 및 종합의견: ${parsed.arts}`;
-        }
-      } catch (err) { }
+          }
+        } catch (err) { }
+      }
 
-      if (!studentRecordText || studentRecordText.includes("undefined")) {
+      if (studentIdx !== "__pdf__" && (!studentRecordText || studentRecordText.includes("undefined"))) {
         // Fallback to currently selected in DOM if same student
         const domStudentIdx = document.getElementById("student-select")?.value;
         if (domStudentIdx === studentIdx) {
@@ -11144,17 +11410,76 @@ ${fd.content}
 ` :
                       targetUniv === "경희대학교" ? `
 
-[경희대학교 면접 특이사항 - 필수 반영]
-경희대학교는 다음과 같은 고유한 면접 구조를 가집니다. 아래 기준을 10개 문항 전체에 반드시 반영하세요.
-- 면접관 2인 x 지원자 1인, 10분 이내 (의·약학 계열은 2개 면접실 각 6분) 블라인드 면접
-- 평가 배점: 인성 50% / 전공적합성 50%
-- 10개 문항을 다음 비율로 배분: 인성 5문항, 전공적합성 5문항
-- 인성 문항: 창의적 노력, 진취적 기상, 건설적 협동 가치관 확인. 타인에 대한 공감 및 소통 능력, 성실성(출결 등)을 검증할 것
-- 전공적합성 문항: 전공 기초 소양 및 학업 역량 확인. 사전에 도출된 '탐침 질문(꼬리 질문)' 형식으로 탐구 활동의 진위 여부를 깊이 있게 검증할 것
-- 핵심 질문 설계 포인트: 수행한 실험이나 활동의 세부 **'과학적 원리'**를 완벽히 이해하고 있는지 집요하게 묻는 질문을 포함할 것 (예: DNA 전기영동 실험 언급 시 분자량과 이동 거리의 관계 등)
-- 각 문항 제목(h3) 바로 아래에 반드시 다음 형식으로 면접 평가 기준을 명시하세요:
-  - **📌 평가 항목**: [인성/전공적합성] | **질문 의도**: [이 질문으로 확인하고자 하는 바를 한 문장으로 간략히]
-- 단순 활동 확인을 넘어 지원자의 답변에서 파생되는 심화 꼬리 질문을 설계하여 논리적 사고력을 유도할 것
+[경희대학교 면접 특화 지침 — 필수 반영]
+(출처: 2027학년도 수시 모집요강 + 2027학년도 학생부종합전형 가이드북)
+
+【1. 전형 구조 — 네오르네상스전형】
+- 1단계: 서류평가 100%로 ==모집인원의 3배수== 선발. 단 ==의예과·한의예과(인문/자연)·치의예과·약학과는 4배수==
+- 2단계: ==1단계 성적 70% + 면접평가 30%== (서류 700점 + 면접 300점 = 1,000점)
+- ==면접평가에 결시하면 입학전형 대상에서 제외==됩니다. 반드시 경고로 명시하십시오.
+- 수능최저: 의예과·한의예과·치의예과·약학과만 적용(3개 영역 등급 합 4 이내, 한국사 5등급 이내). ==그 외 모든 학과는 수능최저 없음==
+- 동점자 처리: 서류 총점 → 서류 요소별(==진로역량(자기주도역량) > 학업역량 > 공동체역량==) → 면접 요소별(==인성 > 전공적합성==)
+
+【2. 면접 방식 — 모든 모집단위 공통】
+- ==면접위원 2인 대 지원자 1인의 개인면접, 10분 내외==
+- ==블라인드 면접==(대기실에서 가번호 부여)
+- 구성: ==공통질문(지원동기, 가치관 및 인성) + 개인별 서류확인 면접==
+- ⚠️ ==모든 모집단위에 '출제문항 면접'이 없습니다.== 제시문·교과지식을 묻는 문항을 만들지 마십시오.
+- ⚠️ ==의학계열(의예과·한의예과·치의예과)도 타 모집단위와 완전히 동일하게 '서류확인 면접'만 진행합니다.== 의약학 계열이라고 해서 별도의 다면인적성(MMI)이나 복수 면접실 방식을 적용하지 마십시오. 모집요강에 명시된 사항입니다.
+- 면접일: 2026.12.5(토)~12.6(일), 지원 모집단위가 속한 캠퍼스에서 진행(서울/국제캠퍼스). 의학계열은 12.6(일) 14:00~18:00
+
+【3. 평가요소 및 반영비율 — 인성 50% + 전공적합성 50%】
+◆ 인성 [50%]
+   ✦ 가치관 및 태도 — ==창학이념 적합도==
+     · 창학이념: =='문화 세계의 창조'==
+     · 인재상 3축: ==성찰하는 지성인(진취적 기상)== / ==창조하는 미래인(창의적 노력)== / ==공존하는 세계인(건설적 협동)==
+   ✦ 의사소통능력 — 공감능력, 표현력
+◆ 전공적합성 [50%]
+   ✦ 전공 기초소양 — 전공적성, 학업역량
+   ✦ 논리적 사고력 — 논리력, 사고력
+- 동점자 기준상 ==인성이 전공적합성보다 우선==하므로, 인성 문항을 형식적으로 다루지 마십시오.
+
+【4. 문항 구성 방침 (10문항)】
+- ==인성 5문항 / 전공적합성 5문항==으로 배분하십시오.
+- 인성 문항은 창학이념 3축(진취적 기상·창의적 노력·건설적 협동)과 연결하되, 이념을 암기했는지 묻지 말고 ==학생부의 실제 경험에서 그 태도가 드러나는지== 확인하는 방식으로 구성하십시오.
+- 전공적합성 문항은 학생부에 기록된 탐구 활동을 지목해, 그 ==과정과 의미, 그리고 파생되는 심화 꼬리질문==으로 논리적 사고력을 확인하십시오.
+- 각 문항 제목(h3) 아래에 다음 형식으로 평가 기준을 명시하십시오:
+  - **📌 평가 항목**: [인성/전공적합성] | **질문 의도**: [확인하고자 하는 바 한 문장]
+
+【5. 실제 기출 문항 예시 — 이 유형과 난이도를 기준으로 삼을 것】
+◆ 인성
+  1. 조별 과제나 팀별 활동에서 협업해서 이룬 성과와 본인의 역할은?
+  2. ==미인정 지각이 수회 있는데, 특별한 이유가 있나요?== (출결은 실제로 질문 대상입니다. 학생부에 미인정 출결이 있으면 반드시 해당 문항을 포함하고 대응 방향을 안내하십시오)
+  3. 최근 맡았던 일 중에 끝까지 책임지고 해낸 경험이 있나요?
+  4. 팀 내 의견 충돌(갈등)이 있었을 때 어떻게 해결했나요?
+  5. 주변에서 이타심을 인정받거나 칭찬받은 경험이 있나요?
+  6. 리더십을 발휘하면서 느낀 가장 큰 보람과 어려움은?
+◆ 전공적합성
+  1. 고등학교 재학 중 가장 흥미를 가졌던 과목은? 관심 분야와 관련해 주도적으로 이수한 과목이 있나요?
+  2. 관심을 갖고 깊게 탐구했던 활동을 하나만 소개해 주세요.
+  3. ○○과목 세부능력 및 특기사항에 독서활동이 기록되어 있는데, 어떤 부분이 가장 인상적이었나요?
+  4. ○○개념이 쓰이는 실제 사례나 상황을 말해 볼 수 있을까요?
+
+【6. 면접의 실제 영향력 — '학생 준비 가이드'에 반드시 포함】
+- 면접 변동률(1단계에서 1배수 밖이던 지원자가 면접으로 1배수 안에 진입하는 비율):
+  · 최초 합격자 기준 평균 ==27.5%== / 충원 포함 합격자 전체 기준 ==20.3%==
+  · 계열별(최초합 기준): 자율·자유전공 30.0% · 자연 29.6% · 예술체육 28.1% · 인문 26.6% · ==의·약학 20.3%(전체 기준 8.3%로 가장 낮음)==
+- 즉 ==면접보다 서류평가의 영향력이 큽니다.== 다만 5명 중 1명은 면접으로 순위가 뒤집히므로 결코 소홀히 할 수 없습니다. 특히 의·약학 계열은 변동 폭이 작아 서류 우위를 지키는 것이 중요하다고 안내하십시오.
+- 최근 합격자 평균 면접성적은 86~90점대에 형성되어 있어 ==점수 폭이 좁고 미세한 차이로 갈립니다.==
+
+【7. 답변 태도 — 정답을 외우는 면접이 아님】
+- ==서류확인 면접은 정답이 있는 면접이 아닙니다.== 모범답안은 '정해진 정답'이 아니라 ==지원자가 자기 생각을 진솔하고 명확하게 전달하는 방향==으로 안내하십시오.
+- 학생 준비 가이드에 포함할 것:
+  ① 면접 전 학교생활기록부에 적힌 ==활동의 과정과 의미==를 차분히 정리할 것
+  ② 예상 질문을 뽑아 답변을 소리 내어 연습할 것
+  ③ 면접위원의 질문에 당황하지 말고 ==평소 자기 생각대로 진솔하게== 답할 것 (과도한 부담을 가질 필요 없음)
+
+【8. 유의사항】
+- 태권도학과 지원자는 ==태권도 2단(품) 이상 단증== 소지 필수
+- 조리&푸드디자인학과는 입학 후 전과(부) 불가
+- 음악대학(작곡과·성악과·기악과)은 ==정시모집에서만 선발==하므로, 해당 학과 지원자에게는 수시 면접 대비가 아님을 안내할 것
+- 학교생활기록부에 학교폭력 사실이 기재된 경우 1~9호에 따라 감점 또는 결격 처리
+
 ` :
                         targetUniv === "서울과학기술대학교" ? `
 
@@ -11196,6 +11521,38 @@ ${fd.content}
 - 공동체역량 문항: 실질적 협업 경험과 긍정적 기여 사례 확인
 - 각 문항 제목(h3) 바로 아래에 반드시 다음 형식으로 면접 평가 기준을 명시하세요:
   - **📌 평가 항목**: [심층학업역량/기초학업역량/진로탐구.공동체] | **질문 의도**: [이 질문으로 확인하고자 하는 바를 한 문장으로 간략히]
+
+【★★ 한양대 면접 유형 분기 — 모집단위에 따라 면접 방식이 완전히 다름 ★★】
+(출처: 2026학년도 학생부종합전형 가이드북)
+⚠️ **지원 학과(${targetMajor})가 아래 어느 유형에 속하는지 먼저 판단하고, 해당 유형에 맞춰 10문항을 설계하세요.**
+
+▶ **[유형 A] 제시문 기반 면접 — 공과대학 소속 모집단위 및 한양인터칼리지학부(자연)**
+   (자연계열: 공대, 자연과학대 등)
+   - 면접장 입실 후 **일정 시간 동안 제시문을 읽고 준비하는 시간**이 주어짐
+   - 이후 **별도의 면접위원 없이 비대면 녹화 형식**으로 진행
+   - 제시문 내용을 **어떻게 해석하고 이해했는지**를 바탕으로 학생의 답변을 녹화
+   - 평가 포인트: 논리적 사고력, 문제 해결력, 창의성 / 단순한 정답 이외에도 **논리 전개, 설명 능력, 탐구 태도**를 중시
+   - ✅ 이 유형이면 **문항을 [제시문] + [질문] 구조로 작성**하고, 학생부 인용형 확인 질문은 최소화할 것
+   - ✅ 제시문은 다음 HTML로 감싸 출력: <div style="background-color:#eef3ff; padding:15px; border-radius:8px; color:#222; font-size:0.97em; margin:12px 0; border-left:5px solid #4a6fd4; line-height:1.75;"><b>[제시문]</b><br>...</div>
+   - 💡 Tip(학생 준비 가이드에 포함): **모의면접 예시문제를 통해 사고력 중심 문항에 익숙해지는 연습**이 필요함
+
+▶ **[유형 B] 학생부 기반 면접 — 사범대학 소속 모집단위**
+   (교육학과, 국어교육과, 수학교육과, 영어교육과 등)
+   - **교직 적성과 교육적 태도**를 확인하기 위해 학생부 기반 면접 진행
+   - 제출한 학교생활기록부 내용을 중심으로 **활동의 진정성, 교육자로서의 태도와 가치관, 공동체 역량** 확인
+   - **자기주도성 있게 학교생활을 해온 과정**, **타인과 협력하며 성장한 경험**을 면접 질문을 통해 구체적으로 확인
+   - ✅ 이 유형이면 **학생부 원문 인용으로 시작하는 문항**으로 구성하고, 교직 적성·교육관을 묻는 문항을 3문항 이상 포함할 것
+   - 💡 Tip(학생 준비 가이드에 포함): 본인의 학생부를 꼼꼼히 읽고, **활동마다 의미와 동기, 배운 점을 본인만의 언어로 정리**해볼 것
+
+▶ **[유형 C] 그 외 모집단위**: 위 두 유형에 해당하지 않으면 학생부 기반(유형 B) 방식을 기본으로 하되, 심층학업역량 문항의 비중을 높일 것
+
+【한양대 합격생 실전 Tip — '학생 준비 가이드' 섹션에 반드시 포함】
+(출처: 2026학년도 학생부종합전형 가이드북 — 면접전형 Tip)
+1. **'탐구 계기 → 탐구 내용 → 알게 된 점' 3단 정리법** (교육학과 25학번 합격생)
+   학생부를 보면서 전공 관련 내용이 서술된 **모든 과목을 정리**하여 위 3단 짜임으로 탐구 내용을 상기하고 암기 → 어떤 질문이 나올지 몰라도 정리했던 내용에서 **인용하여 대답**할 수 있어 갑작스러운 질문에도 대비 가능. 실제 면접 질문도 **학생부 기반 질문**이었음
+2. **뻔한 예상 질문도 소홀히 하지 말 것**: '지원 동기, 가장 열심히 공부했던 과목, 자신의 장단점' 같은 기본 문항에도 **참신한 대답**을 미리 구상해 갈 것 → 10문항 중 1~2문항은 이런 기본 문항을 포함하되, 차별화된 답변 가이드를 제시할 것
+3. **형광펜 활동 정리법** (수학교육과 25학번 합격생): 생활기록부를 출력해 형광펜으로 했던 활동을 모두 정리 → 정리한 활동을 바탕으로 **예상 질문을 짜고 답변도 직접 써보며** 3년 활동을 상기. 자기소개·장단점 등 일반 문항도 함께 준비
+4. **진로 적합성 문항 대비**: 실제 면접에서 학생부 기반 문항 외에 **진로 적합성 관련 문항**(예: 수학교육과 → "'수포자'를 어떻게 해결할 것인지")이 출제됨 → 전공 관련 **현실적 문제 상황에 대한 견해를 묻는 문항을 1~2개 반드시 포함**할 것
 ` :
                               targetUniv === "한국교원대학교" ? `
 
@@ -11236,6 +11593,15 @@ ${fd.content}
 - 인성 및 사회성 문항: 협업 능력, 공감 능력 확인. 특히 **'출결 상황(미인정 지각/결석/조퇴)'**이 있다면 반드시 그 사유와 개선 노력을 묻는 질문을 포함할 것
 - 각 문항 제목(h3) 바로 아래에 반드시 다음 형식으로 면접 평가 기준을 명시하세요:
   - **📌 평가 항목**: [전공적합성/발전가능성/전형취지적합성/인성및사회성] | **질문 의도**: [이 질문으로 확인하고자 하는 바를 한 문장으로 간략히]
+
+【동국대 공식 가이드북 '면접 답변 준비 Tip' — 모범답안 작성 시 필수 반영】
+(출처: 2027학년도 학생부위주전형 가이드북)
+⚠️ 아래 4가지는 동국대가 공식 가이드북에서 직접 제시한 답변 작성 원칙입니다. **모든 모범답안 가이드를 이 형식에 맞춰 작성하세요.**
+1. **지원학과 기초 정보 준비**: 동국대 입학처 홈페이지의 **전공 가이드북**을 참고하여 지원 전공에 대한 기초적인 정보를 이해하고 있어야 함 → 학과 관련 문항의 모범답안에는 전공 기초 이해가 드러나도록 구성
+2. **★ 두괄식 답변 (가장 중요)**: 먼저 **결론을 간단히 말한 뒤**, 그 이유나 근거를 덧붙이거나 구체적인 예시로 설명 → **모든 모범답안을 반드시 '결론 먼저 → 근거·예시 나중' 구조로 작성**할 것
+3. **요약해서 말하기**: 한 질문에 너무 길고 장황하게 답변하면 면접위원이 준비한 다른 질문을 충분히 받지 못함 → 모범답안은 **전하고 싶은 핵심을 먼저 정리한 간결한 분량**으로 작성 (장황한 답변 예시 금지)
+4. **공식적인 말투**: 면접은 공식적인 자리이므로 **"~했습니다."와 같은 공식적인 말투**로 작성 → 모범답안의 문체를 반드시 '~습니다'체로 통일
+- '학생 준비 가이드' 섹션에 위 4가지 Tip을 그대로 안내할 것
 ` :
                                     targetUniv === "인하대학교" ? `
 
@@ -11541,6 +11907,100 @@ ${fd.content}
 - 모든 질문은 반드시 지원자의 **생기부 기록 내용의 인용**으로 시작해야 합니다.
 - 단순 확인이 아닌, '실패 극복 과정', '주도적 해결 노력', '구체적 역할'을 묻는 **파생(꼬리) 질문 패턴**을 다수 포함하세요.
 - 총 10문항 중 발전역량(도전/문제해결) 4문항, 진로역량 3문항, 공동체/의사소통 3문항 비율로 구성하세요.
+
+【인천대 공식 가이드북 FAQ — 문항 설계 시 반드시 준수】
+(출처: 2027학년도 학생부종합전형 가이드북)
+- ❌ **학생부에 기재되지 않은 단순 지식·암기 내용을 확인하는 질문은 절대 출제 금지**
+- ❌ **문제를 직접 푸는 형태(구술 문제풀이)의 문항 절대 금지**
+- ✅ 학생부에 기록된 활동을 바탕으로, **그 활동과 관련된 개념이나 이해 정도를 확인하는 질문**은 가능
+- ✅ 평가의 초점은 "활동 여부 확인"이 아니라 **"무엇을 배우고 느꼈는지, 어떤 역량을 키웠는지"**
+- ✅ 모든 문항은 활동의 **참여동기 → 과정 → 결과 → 느낀 점** 중 최소 2개 이상을 구체적으로 답하게 설계할 것
+- ✅ 면접은 말을 유창하게 하는 학생을 뽑는 자리가 아니라 **서류에서 확인된 강점을 대면으로 재확인하는 절차**임 → 모범답안 가이드에는 "화려한 표현보다 경험과 과정을 구체적으로 설명하면 충분하다"는 점을 반영할 것
+` : targetUniv === "연세대학교" ? `
+
+[연세대학교 면접 특이사항 - 필수 반영 / ★★ 매우 중요: 제시문 기반 면접 ★★]
+⚠️ **연세대학교 학생부종합전형 면접은 다른 대학과 근본적으로 다릅니다.**
+연세대는 **학생부 기반 확인 면접이 아니라, '제시문 기반' 면접**을 실시합니다.
+(출처: 2027학년도 학생부종합전형 안내서)
+
+【면접 기본 구조 — 반드시 숙지】
+- **대상 전형**: 활동우수형, 국제형(국내고), 국제인재, 기회균형 — **전 전형 모두 제시문 기반 면접**
+- **면접 목적**: 서류에 드러나지 않는 **논리적 사고력, 창의적 사고력, 의사소통 능력** 확인
+- **진행 방식**: ① 제시문을 읽고 답변을 준비하는 시간 → ② **비대면 현장 녹화** 방식으로 답변 녹화
+- **핵심 특징**: 면접관이 앞에 없고, **태블릿 PC에 비친 자기 얼굴을 보며 답변**을 녹화함
+- 활동우수형 기준 면접 반영 비율 40% (1단계 4배수 선발)
+
+【★ 문항 생성 방식 — 다른 대학과 완전히 다르게 설계할 것 ★】
+❌ **금지**: "세특에 ~라고 적혀 있는데 설명해보세요" 같은 **학생부 인용형 확인 질문은 출제하지 마세요.**
+✅ **필수**: 10개 문항 전부 **[제시문] + [질문]** 구조로 작성하세요.
+
+각 문항은 반드시 다음 형식을 따르세요:
+1) 먼저 **<제시문>** 블록을 제시 (가·나·다 형태로 2~3개 자료 제시 가능)
+   - 제시문 유형: 짧은 지문(인문·사회), 통계/그래프 설명, 상반된 두 관점의 주장, 사례 상황, 자료 해석용 표 등
+   - **반드시 고등학교 교육과정 수준**에서 이해 가능해야 하며, 전공 선행지식을 요구해서는 안 됨
+   - 지원 학과(${targetMajor})와 관련된 주제를 다루되, **전공 지식이 아니라 사고력으로 풀 수 있게** 설계
+2) 그 아래 **질문**을 노란색 박스로 제시
+   - 유형: ① 제시문 요약·핵심 파악 ② 제시문 간 비교·대조 ③ 특정 입장 선택 후 논거 제시 ④ 제시문 내용을 새로운 상황에 적용 ⑤ 반론에 대한 재반박
+3) 질문 아래 **꼬리 질문(추가 질문) 1~2개**를 반드시 포함
+
+【제시문 기반 면접의 절대 원칙 — 모범답안 가이드에 반드시 반영】
+- ✅ **답변은 반드시 제시문에 근거해야 함**: 지원자는 해당 면접이 '제시문 기반'임을 명확히 인지하고, **제시문에서 언급한 내용에 기반하여** 답변을 구성해야 함
+- ✅ 제시된 자료를 **정확하게 분석**하고, 그 이유에 대해 **논리적인 근거를 가진 답변**을 구성할 것
+- ❌ 제시문을 벗어난 개인 경험·학생부 활동을 장황하게 말하는 것은 **감점 요인**
+- ✅ 정답을 맞히는 것보다 **논리 전개 과정**이 핵심
+
+【학생 준비 팁 — '학생 준비 가이드' 섹션에 반드시 포함】
+(출처: 연세대 공식 안내서 '학생부종합전형 면접 꿀팁')
+1. **제한 시간 안에 답변 준비하기**: 연세대 면접은 '제시문을 읽고 답변을 준비하는 시간'과 '답변을 녹화하는 시간'으로 나뉨 → 평소 시간을 정해놓고 제시문을 정리하고 답변하는 연습 필수
+2. **전자기기로 얼굴 보며 연습하기**: 현장 녹화 방식이므로 면접관이 아닌 **태블릿에 비친 자기 모습**을 보며 답변해야 함 → 어색해서 당황하지 않도록 스마트폰·태블릿으로 미리 녹화 연습
+3. **전년도 기출문제 살펴보기**: 연세대 입학처 홈페이지의 **'선행학습영향평가 결과 보고서'**에 전년도 면접 기출문제가 공개됨 → 반드시 확인하고 현장 녹화 방식을 미리 연습할 것
+
+【각 문항 표기 형식】
+- 각 문항 제목(h3) 아래에 반드시 다음 형식으로 명시:
+  - **📌 평가 항목**: [논리적 사고력/창의적 사고력/의사소통능력] | **질문 의도**: [이 질문으로 확인하고자 하는 바를 한 문장으로 간략히]
+- 10문항 배분: 논리적 사고력 4문항, 창의적 사고력 3문항, 의사소통능력(설명·설득력) 3문항
+- 제시문은 다음 HTML로 감싸 출력하세요:
+  <div style="background-color:#eef3ff; padding:15px; border-radius:8px; color:#222; font-size:0.97em; margin:12px 0; border-left:5px solid #4a6fd4; line-height:1.75;"><b>[제시문]</b><br>...</div>
+` : targetUniv === "숙명여자대학교" ? `
+
+[숙명여자대학교 면접 특이사항 - 필수 반영]
+숙명여자대학교 학생부종합전형 면접은 **철저한 제출서류(학생부) 기반 면접**입니다.
+(출처: 2027학년도 입학전형안내 — 학생부종합전형 면접시험 Q&A)
+
+【면접 기본 구조】
+- **대상 전형**: 숙명인재(면접형), 소프트웨어인재, 특수교육대상자 등
+- **1단계 선발**: 모집인원의 **3배수** (특수교육대상자는 전 계열 4배수)
+- **2단계 면접 반영 비율: 40%** — 실제로 **1단계 순위가 낮아도 면접에서 우수한 평가를 받아 최초합격한 사례가 상당수** 존재 (역전 가능성이 큰 전형이므로 철저한 대비 필요)
+
+【평가 항목 — 2개 항목】
+- **① 진로역량**
+  - 학생부에 기재된 활동에 관한 질의응답을 통해 **진로탐색 및 전공선택 과정**을 확인
+  - 그 과정에서 쌓아온 지원자의 역량을 확인
+  - 고교 활동에 근거한 질문에서 시작 → **이어지는 추가(꼬리) 질문**을 통해 지원자의 **이해력, 논리적 사고력, 다양한 시각 및 관점**을 파악하여 평가
+- **② 의사소통능력 및 태도**
+  - 면접 과정에서 드러나는 **면접 태도, 의사소통능력, 협업, 배려, 가치관** 등을 함께 확인
+
+【★ 출제 범위의 명확한 한계 — 반드시 준수 ★】
+- ✅ 지원 전공(계열)과 관련한 **수업 내용, 수행평가, 탐구활동**이 학생부에 기재되어 있다면, 그 내용을 **충분히 배우고 이해했는지 확인하는 차원의 질의응답**은 가능
+- ❌ **단독으로 교과 지식을 확인하는 질문은 하지 않음** (예: "산화환원 반응을 설명하세요" 같은 순수 지식 질문 금지)
+- ❌ **고교 교육과정을 벗어난 활동에 관한 질문은 하지 않음**
+- ❌ 심층적인 전공지식을 묻는 질문 금지 — 어디까지나 **학생부 기재 활동이 출발점**
+
+【문항 설계 원칙】
+- 모든 문항은 반드시 **학생부에 기재된 활동(수행평가·동아리활동·자율활동·진로활동 등)의 원문 인용**으로 시작
+- **"활동을 하게 된 계기 → 그 과정에서 배운 것 → 느낀 점·성장"** 구조를 묻는 질문을 중심으로 설계
+- 각 문항마다 **이어지는 추가 질문(꼬리 질문)을 1~2개 반드시 포함**하여 이해력·논리적 사고력·다양한 관점을 검증
+- 10문항 배분: **진로역량 7문항 / 의사소통능력 및 태도 3문항**
+- 각 문항 제목(h3) 아래에 반드시 다음 형식으로 명시:
+  - **📌 평가 항목**: [진로역량/의사소통능력및태도] | **질문 의도**: [이 질문으로 확인하고자 하는 바를 한 문장으로 간략히]
+
+【학생 준비 팁 — '학생 준비 가이드' 섹션에 반드시 포함】
+(출처: 숙명여대 공식 면접시험 Q&A)
+1. **학교생활기록부 숙지가 최우선**: 면접은 학생부 기재 내용에서 근거를 찾아 활동의 과정과 결과를 질문함 → 학생부에 기재된 다양한 활동에서 했던 진로탐색의 노력, 그 과정에서 배운 것·느낀 점을 정리할 것. 본인 활동을 충분히 숙지하는 것이 **면접 자신감**으로 이어짐
+2. **화려한 말솜씨보다 질문 의도 파악**: 질문의 의도를 정확히 파악하고 자신의 생각을 **논리적으로** 답변하는 것이 중요
+3. **❌ 서술식 답변 암기 금지 → ✅ 키워드 중심 정리**: 예상질문에 대한 서술식 답변을 준비해 외우기보다, 학생부에 기재된 **활동을 하게 된 계기**와 **그 활동을 통해 얻고 성장한 것**을 **키워드 중심으로 정리해서 말하는 연습**을 충분히 할 것
+4. **모의면접 적극 활용**: 학교 친구·선생님과 모의면접 상황을 설정하여, 질문 의도에 따라 정리한 키워드를 **본인의 언어로 정리해 전달하는 연습**을 충분히 경험하면 핵심 내용을 일목요연하게 답하는 데 도움이 됨
+5. **면접은 또 한 번의 기회**: 학생부에 다 담아내기 어려운 3년간의 진로 관련 노력·역량·활동의 구체적 모습을 적극적으로 드러낼 수 있는 기회임
 ` : targetUniv === "가톨릭대학교" ? `
 
 [가톨릭대학교 면접 특이사항 - 필수 반영]
@@ -11717,6 +12177,223 @@ ${fd.content}
 - 단순 '느낀 점' 질문이 아닌, 활동의 동기·과정·의미를 3단계로 캐묻는 깊이 있는 질문
 - 학업소양·전공적합성·인성이 균형 있게 (4-4-2 또는 3-4-3 비율) 분포하는 10문항 구성
 - 예측 불가능한 꼬리질문을 고려하여 변칙적인 질문도 포함
+
+【서울대 공식 안내서 반영 — 면접 준비의 기본 방향】
+(출처: 2027학년도 학생부종합전형 안내서)
+- **일반전형 면접 및 구술고사**는 단순 정답·단편 지식을 묻는 것이 아니라, **교과 지식과 기본 개념 이해를 토대로 사고력·창의력·문제 해결 능력을 종합 평가**합니다.
+- **지역균형전형 / 기회균형특별전형(사회통합)** 면접은 **제출서류를 내용으로 서류내용과 기본적인 학업소양을 확인**합니다. → 이 전형 지원자는 학생부 기반 문항 중심으로 설계
+- 단순 문제풀이·암기 위주 학습이 아니라 **독서, 글쓰기, 토론, 발표, 과제 수행**을 통해 역량을 함양했는지가 드러나는 문항을 포함할 것
+- 💡 웹진 **「아로리」**에 기출 제시문과 면접 우수자 인터뷰가 공개되어 있으므로 '학생 준비 가이드'에 활용을 권할 것
+
+【서울대 합격생이 전하는 면접 실전 Tip — '학생 준비 가이드'에 반드시 포함】
+(출처: 2027학년도 학생부종합전형 안내서)
+
+▶ 학교생활기록부 기반 면접
+1. **예상 질문 암기보다 '나만의 가치관' 정리가 우선**: 면접은 외운 답을 전하는 자리가 아니라 **평소 어떤 기준으로 생각하는지 보여주는 자리**. '나는 무엇을 중요하게 생각하는가'를 스스로 질문하며 가치관의 중심을 세우면 예상치 못한 질문에도 흔들리지 않음
+2. **학생부 체화와 진정성 강조**: 방대한 예상 질문이나 학원에 의존하기보다, **3년간의 활동을 차분히 복기하며 가장 잘 아는 나만의 이야기**로 만들어야 자신감이 생김
+3. **모르는 질문에도 당황하지 말 것**: 아는 지식의 한계를 묻는 **압박 질문을 받더라도 실패한 면접이 아님**. 완벽한 정답이 아니더라도 **질문의 의도를 나만의 관점으로 재해석하고 진솔하게 생각을 말하며 위기를 극복하는 자세**가 중요
+
+▶ 공동 출제 문항 활용 면접 (일반전형 등)
+4. **답변 구조화 연습 (인문/사회과학)**: 정답을 맞히는 데 연연하기보다 **내 생각을 논리적으로 전달하는 구조**를 익힐 것. **키워드 정의 중심, 비교·대조, 사례 축약** 등 질문 성격에 맞는 답변 틀을 마련하고 기출문제를 여러 방식으로 반복 연습
+5. **핵심 아이디어와 흐름 위주 설명 (수학)**: 수학 구술면접은 **풀이 과정을 말로 설명**해야 하므로 평소 말하는 연습이 필수. 연습지에는 복잡한 계산을 일일이 나열하기보다 **문제 해결의 핵심 아이디어와 전체 흐름이 한눈에 보이도록** 정리
+6. **꼬리 질문 대처와 시간 관리**: 예리한 추가 질문에 답이 바로 떠오르지 않으면 **면접관에게 질문의 의미를 되물으며 차분히 생각을 정리할 시간을 버는 것**도 요령. 계산이 길어지거나 까다로운 반론을 만나도 **아는 범위 내에서 끝까지 답변을 마무리**할 것
+` : targetUniv === "순천향대학교" ? `
+
+[순천향대학교 면접 특화 지침 — 필수 반영]
+(출처: 2027학년도 순천향대학교 수시 모집요강)
+
+⚠️ 최우선 확인 — ==2027학년도에 '학생부교과(교과면접전형)' 220명이 폐지되었습니다.==
+작년 기준으로 교과면접전형을 준비하던 학생이라면 지원 전략을 다시 세워야 합니다. 또한 ==대부분의 학생부교과·학생부종합 일반 전형에는 면접이 없습니다.== 면접을 실시하는 전형은 아래 네 가지뿐이므로, 해당 전형 지원자가 아니라면 이 점을 먼저 안내하십시오.
+
+【1. 면접 실시 전형과 방식】
+◆ ==학생부교과(지역의사선발전형)== — 2027학년도 신설
+  · 면접관 2인 / ==10분 내외==
+  · 1단계: 교과 100%로 ==3배수== → 2단계: ==1단계 성적 60% + 면접 40%==
+  · 의예과 대상이며 수능최저학력기준이 적용됩니다. 면접 비중이 40%로 매우 높습니다.
+◆ ==학생부종합(조기취업형계약학과전형)==
+  · 면접관 2인 / ==15분 내외==(가장 긴 면접)
+  · 1단계: 서류 100%로 ==5배수== → 2단계: ==1단계 성적 10% + 면접 90%==
+  · ==면접이 사실상 당락을 결정==합니다. 취업 연계 전형이므로 직무 이해도와 근무 의지를 확인하는 문항을 반드시 포함하십시오.
+◆ ==학생부종합(평생학습자전형)==
+  · 면접관 2인 / ==7분 내외==
+  · ==일괄합산 면접 100%== — 면접만으로 선발합니다. 짧은 시간에 핵심을 전달하는 훈련이 필수입니다.
+  · 동점자 처리: ① 면접 전공적합성 점수 ② 면접 발전가능성 점수 순
+◆ ==실기/실적(특기자전형)== — 스포츠과학과·스포츠응용산업학과
+  · ==면접관 3인 이상== / 7분 내외
+  · 실적 비중이 76.4%로 압도적이며 면접은 보조 역할
+
+【2. 면접 평가요소 — 전 전형 공통, 각 33.3% 동일 배점】
+① ==전공적합성== : 전공에 대한 관심과 열정 / 지속적인 전공 관련 활동
+② ==발전가능성== : 구체적인 진로 목표 / ==대학생활 계획==
+③ ==의사소통능력== : 정확한 의사전달 및 표현 능력 / ==면접관의 질문 이해 능력==
+- 세 요소가 동일 비중이므로 특정 영역에 문항을 몰지 말고 ==10문항을 3:3:4 또는 4:3:3으로 고르게 배분==하십시오.
+- '대학생활 계획'이 평가내용에 명시되어 있으므로, ==입학 후 무엇을 어떻게 할 것인지 구체적으로 묻는 문항을 반드시 1개 이상== 포함하십시오.
+- '면접관의 질문 이해 능력'이 평가 대상입니다. 따라서 ==질문의 의도를 되묻거나 잘못 이해한 채 답하는 것이 감점 요인==이 될 수 있음을 학생 준비 가이드에 안내하십시오.
+
+【3. 서류평가 요소 — 면접 문항의 근거로 활용】
+학생부종합전형 서류평가는 2인 이상 평가자의 정성평가이며 배점은 다음과 같습니다.
+- ==학업역량 40%== : 학업성취도 25% + 학업태도 및 의지 15%
+- ==진로역량 40%== : 전공(계열) 관련 교과 이수 노력 및 성취도 25% + 진로 탐색 활동과 경험 15%
+- ==공동체역량 20%== : 협업과 소통 능력 10% + 성실성과 규칙 준수 10%
+- 반영 학기: 졸업예정자는 ==3학년 1학기까지==, 졸업자는 3학년 2학기까지
+- 진로역량이 학업역량과 동일한 40%이므로, ==전공 관련 과목 이수와 진로 탐색의 연속성==을 확인하는 문항을 비중 있게 배치하십시오.
+
+【4. 블라인드 면접 원칙 — 경고로 포함】
+- 면접 중 ==성명·수험번호·출신고교명== 및 ==학생부 기재 금지사항==을 언급하거나 답변하면 ==평가에서 불이익==을 받습니다.
+- ==교복·군복 등 신분 확인이 가능한 복장 착용 금지==
+
+【5. 고사장 유의사항】
+- 수험표(면접응시표)와 유효 신분증 지참 필수. ==순천향대는 모바일 신분증도 인정==합니다(단, 신분증을 촬영한 이미지 파일은 인정하지 않음)
+- ==어떠한 전자기기도 반입 불가==(휴대전화, 스마트워치, 태블릿, 전자계산기, 블루투스 이어폰 등). 반입 시 대기실에서 제출해야 하며 ==미제출 시 부정행위로 간주==
+- 지정된 면접 일정은 변경 불가
+
+【6. 학교폭력】
+- 학교생활기록부에 학교폭력 가해학생 조치사항이 있는 경우 ==전형 총점에서 3점 이내 감점==됩니다. 해당 기록이 있다면 문항 생성 전 최상단에 명시하십시오.
+` : targetUniv === "청주대학교" ? `
+
+[청주대학교 면접 특화 지침 — 필수 반영]
+(출처: 2027학년도 청주대학교 수시 모집요강 — 교과면접전형)
+
+【1. 전형 구조와 면접의 무게】
+- 교과면접전형: ==학생부 교과 70% + 면접 30%== (단 ==항공서비스학과는 교과 60% + 면접 40%==)
+- ==동점자 선발 1순위가 '면접고사 성적이 우수한 자'==입니다. 교과 성적은 2순위이므로, 경계선에서는 면접이 당락을 직접 가릅니다. 이 점을 학생 준비 가이드 첫머리에 명시하십시오.
+- 배점은 최고 300점 / 최저 60점(항공서비스학과는 400/80)이라 기본점수가 존재하지만, 그만큼 ==실질 변별은 평가영역별 미세한 차이==에서 발생합니다.
+- ==면접고사에 응시하지 않으면 입학사정 대상에서 제외(불합격)==됩니다.
+
+【2. 평가영역 — 일반 모집단위 (항공서비스학과 제외)】
+① ==대학교육 이념과의 적합성== : 건학정신 및 교육이념의 부합성
+② ==모집단위와의 적합성(전공 적성 및 비전)== : 모집단위 특성에 부합하는 학생인지
+③ ==학생의 특성 및 학업성== : 이해력, 분석력, 사고력, 창의력, 표현력(토론·설득력)
+④ ==인성·가치관·학습동기== : 리더십, 책임감, 사회봉사성, 도덕성
+
+【3. 평가영역 — 항공서비스학과 (면접 40%)】
+① 대학교육 이념 및 ==전공 인재상==과의 적합성 : 발전가능성, 목표의식
+② 모집단위와의 적합성 : ==전공 특성(승무원 양성)==에 적합한 강점·역량·태도
+③ 학업성 및 사고력(문제해결능력) : 이해력·사고력·분석력·창의력, ==표현력(전달력)==, 학업동기와 열정, ==대학생활 계획==
+④ 인성과 가치관 : 개인품성, 책임감, ==의사소통능력==, 도덕성, 리더십, 봉사정신, 인생관(삶의 자세와 목적)
+- 항공서비스학과 지원자에게는 서비스 마인드, 위기 상황 대처, 팀워크, 외국어 및 의사소통 태도를 확인하는 문항을 반드시 포함하십시오.
+
+【4. 청주대 고유 항목 — '대학교육 이념과의 적합성' 문항을 반드시 1개 이상 포함】
+다른 대학에는 없는 독립 평가영역입니다. 아래 사실을 근거로 문항과 모범답안을 구성하십시오.
+- 설립자: 청암 김원근·석정 김영근 형제
+- 건학정신: =='교육구국(敎育救國)'== — 교육을 통해 나라를 구한다
+- 교육이념: =='실학성세(實學成世)'== — 실질적인 학문으로 세상을 이룬다
+- 1947년 광복 이후 ==최초의 4년제 대학==으로 출범
+- 특성화 분야: ICT-Energy, BT/보건의료과학, 디자인/콘텐츠, 항공·국방
+- 문항 예시 방향: 실학성세라는 교육이념을 지원 전공과 연결해 설명하기 / 배운 지식을 실제 문제 해결에 적용한 경험 말하기 / 교육구국 정신을 오늘날 자신의 진로에 비추어 재해석하기
+- ※ 단순 암기 확인이 아니라 ==학생부의 실제 경험과 연결==해 답하도록 유도하는 문항으로 만드십시오.
+
+【5. 문항 구성 방침 (10문항)】
+- ==대학교육 이념 적합성 1~2문항== (위 4항 근거 활용, 지원 전공과 연결)
+- ==모집단위 적합성 3문항== — 왜 이 학과인지, 학생부의 어떤 경험이 이 전공과 닿아 있는지, 입학 후 학업 계획과 졸업 후 비전
+- ==학업성·사고력 2~3문항== — 이해력·분석력·창의력을 확인하는 문항. 평가내용에 ==토론·설득력==이 명시되어 있으므로, 찬반이 갈리는 주제에 대해 근거를 들어 자기 입장을 설득하는 문항을 1개 이상 포함
+- ==인성·가치관·학습동기 2문항== — 리더십, 책임감, ==사회봉사성==, 도덕성을 학생부 기록에 근거해 확인
+- 각 문항은 학생부의 구체적 기록을 근거로 삼되, 표현력과 전달력도 평가되므로 ==말로 설명하게 하는 형태==로 구성하십시오.
+
+【6. 면접 일정 — 단과대학별로 다름 (학생 준비 가이드에 안내)】
+- 보건의료과학대학: 2026.10.17.(토)~10.18.(일)
+- 경상대학·인문사회대학·예술대학·자유전공학부: 2026.10.24.(토)
+- 공과대학·AI·SW융합대학·항공·국방대학: 2026.10.25.(일)
+- 개인별 고사실은 2026.10.02.(금) 홈페이지 게시
+
+【7. 고사 유의사항 — 경고로 포함】
+- ==신분증 미지참 시 응시 불가==(모바일 신분증 불가). 주민등록증·여권·운전면허증·학생증(사진/이름/생년월일 기재)·청소년증 등 유효기간 내 실물만 인정
+- 휴대폰·통신기기·녹음기·카메라 등 ==반입 금지==, 지정 시간까지 입실 필수
+- 항공운항학과는 ==수능최저학력기준(상위 2개 영역 등급 합 8 이내, 한국사 응시 필수)==이 있으며 수능 미응시·미충족 시 불합격
+
+【8. 체육특기자전형(생활체육학과) 전공적성 구술면접 — 해당 학과 지원 시 적용】
+- 평가영역: ==자긍심==(체육 특기자로서의 사명감), ==자질==(체육 지도자로서 기본 소양과 인성), ==장래성==(특기 종목별 발전 가능성). 반영 30%(300/60)
+- ==입상실적이 없거나 면접에 응시하지 않으면 불합격==. 특기자 입학자는 타 학과 전과 불가
+` : targetUniv === "서원대학교" ? `
+
+[서원대학교 면접 특화 지침 — 필수 반영]
+(출처: 2027학년도 서원대학교 수시 모집요강)
+
+⚠️ 가장 중요한 전제 — 서원대 면접은 ==학생부 기반 면접이 아닙니다==
+- 모집요강에 "학생부 기반의 면접이 아닌, 본교 홈페이지에 공개된 문항 중 질문"이라고 명시되어 있습니다.
+- 따라서 학생부의 세특·활동 내역을 캐묻는 일반적인 서류 확인형 문항을 주력으로 만들지 마십시오.
+- 대신 ==사전 공개 문항(지원동기·인상 깊은 활동 등)에 학생 자신의 경험을 녹여 답변하도록 준비시키는 것==이 이 대학 면접 대비의 핵심입니다.
+- 학생부는 '답변의 재료'로만 쓰십시오. 즉, 공개 문항에 답할 때 근거로 끌어올 수 있는 학생 고유의 경험을 학생부에서 찾아 제시하는 방식으로 문항과 모범답안을 구성하십시오.
+
+【1. 전형별 면접 방식 — 지원 학과에 맞는 쪽을 적용할 것】
+
+◆ 일반전형 사범대학 (교직적성 대면 면접)
+- 대상: 사범대학 지원자 전원. 단 ==체육교육과·음악교육과는 면접 없음==(음악교육과는 실기고사 시행)
+- ==2027학년도 변경: 기존 온라인 비대면(영상 업로드) 방식에서 대면 면접으로 전환==되었고, 질문 수도 2문항에서 3문항으로 늘었습니다. 이 변경을 학생 준비 가이드에 반드시 알릴 것
+- 방식: 공개된 ==5문항 중 3문항== 질문 — ①지원동기(필수) + ②인상 깊은 활동(필수) + ③④⑤ 중 1문항 선택
+- 평가: 교직적성(교직태도 20% · 의사소통능력 20% · 인성·가치관 20%) + 전공적성(전공적합성 20% · 문제해결능력 20%)
+- 배점: 기본점수 40점 + 면접위원 평균 × 1.6 = ==200점 만점==
+
+◆ 창의면접전형 (일반학과)
+- 대상: 창의면접전형 지원자 전체 (호텔외식조리학부, 경찰행정학부, 소방행정학과, 응급구조학과, 사회복지학과, 상담심리학과, 뷰티학과, 헬스케어운동학과, 레저스포츠학부, 웹툰콘텐츠학과, 패션의류학과, 컴퓨터공학과, 항공관광학과 등)
+- 방식: 공개된 ==5문항 중 2문항== 질문 — 필수 1문항(지원동기) + 선택 1문항
+- 평가: 기본소양(==교양상식 20%== · 의사소통능력 20% · 인성·가치관 20%) + 전공적성(전공적합성 20% · 문제해결능력 20%)
+- 배점: 기본점수 90점 + 면접위원 평균 × 3.6 = ==450점 만점==. 전형요소는 교과 55% + 면접 45%로 ==면접 비중이 매우 큼==
+- ※ 사범대와 달리 '교직태도' 대신 =='교양상식'==이 평가요소이므로, 시사·일반교양 관련 대비 문항을 반드시 포함할 것
+
+【2. 문항 생성 방침】
+- 10개 문항을 다음 비율로 구성하십시오.
+  · ==지원동기 심화 4문항== — 지원동기는 두 전형 모두 필수 질문입니다. 단순 동기 진술에 그치지 않도록, 왜 하필 이 학과인지 / 그 동기가 형성된 계기가 학생부의 어떤 경험인지 / 입학 후 무엇을 할 것인지 / 졸업 후 진로까지 단계적으로 파고드는 문항과 꼬리질문을 만드십시오.
+  · ==인상 깊은 활동 3문항== (사범대 지원자는 필수 질문이므로 반드시 포함) — 학생부에서 실제로 근거가 되는 활동을 지목해, 무엇을 배웠고 그것이 지원 전공과 어떻게 연결되는지 묻는 문항
+  · ==전공적합성·문제해결능력 2문항== — 전공 관련 상황을 제시하고 대처를 묻는 문항
+  · ==인성·가치관 1문항== (창의면접전형 지원자는 여기에 ==교양상식·시사 문항==을 1개 포함)
+- 사범대 지원 학생에게는 ==교직태도==(교사가 되려는 이유, 바람직한 교사상, 학생을 대하는 자세)를 묻는 문항을 반드시 넣으십시오.
+
+【3. 블라인드 면접 — 학생 준비 가이드에 경고로 포함】
+- ==블라인드형 대면면접==입니다. 면접위원 3인이 수험생 1인 또는 다수를 구술 평가합니다.
+- ==교복 착용 금지, 사복 착용==. 수험표와 신분증 필참, 고사 시작 30분 전까지 대기실 입실
+- ==면접 결시자는 불합격 처리==됩니다. 이 점을 반드시 경고로 명시하십시오.
+
+【4. 준비 전략】
+- ==면접 문제가 2026.05.29.에 학교 홈페이지에 사전 공지==됩니다. 공개된 실제 문항을 반드시 확인하고 답변을 준비하라고 안내하십시오. 이 대학은 문항을 미리 알 수 있으므로, 준비 여부가 곧 점수 차이로 직결됩니다.
+- 평가요소에 의사소통능력이 20% 배정되어 있으므로, 내용뿐 아니라 ==말하기 태도·전달력·논리적 구성==을 함께 연습하도록 지도하십시오.
+` : targetUniv.includes("교육대학교") ? `
+
+[교육대학교(초등교원 양성대학) 면접 특화 지침 — 필수 반영]
+(출처: 서울시교육청 교육연구정보원 '대학별 지원전략 및 면접 대비 방법', 광주교대 2027 모집요강)
+
+⚠️ 일반 대학 면접과 근본적으로 다르므로 아래를 최우선 적용하십시오.
+
+【1. 교대 면접의 3대 평가축】
+① 교직 인성 — 올바른 가치관과 도덕성, 면접 태도와 적극성, 예비 교사로서의 품성
+② 교직 적성 — 예비 교사로서의 기본 소양과 관심 정도, 발전가능성
+③ 문제해결역량·의사소통 — 문제 인식 및 상황 대처 능력, 논리적 표현력
+
+【2. '전공적합성' 질문을 만들지 말 것 — 교대의 결정적 차이】
+- 초등교사는 ==전 교과를 가르치는 교사==입니다. 따라서 특정 과목·계열에 대한 심화 지식을 캐묻는 일반 대학식 전공 질문은 부적절합니다.
+- 대신 ==전 교과를 균형 있게 이수했는지==, 체육·음악·미술·기술가정 등 비주요 교과에도 성실히 임했는지를 확인하는 문항을 포함하십시오.
+- 특정 과목을 깊이 파고든 기록이 있다면 "그 지식을 초등학생 눈높이로 어떻게 가르치겠는가"로 전환해 물으십시오.
+
+【3. 반드시 포함해야 할 교대 고유 문항 유형 (10문항 중 최소 5문항)】
+① ==가르친 경험 검증==: 멘토링·또래교수·학습도우미·모둠장 경험을 근거로, 이해하지 못하는 친구를 어떻게 도왔는지, 설명 방식을 어떻게 바꾸었는지
+② ==교직관·교사상==: 어떤 교사가 되고 싶은가를 학생부 기록과 연결해 묻고, 상반된 두 교사상(예: 지식 전달에 능한 교사 vs 스스로 배우도록 돕는 교사) 중 선택하게 한 뒤 근거를 요구
+③ ==교육 현안에 대한 견해==: 제시문 기반으로 자신의 입장과 근거를 밝히게 하는 문항. 실제 기출 주제 — 소규모 학교 통·폐합, 초등 교과담임제 도입, AI 교육에서 개념·원리 교육 대 활용 교육, 디지털 디바이드 완화 방안, 에코 챔버와 인포데믹스, 배리어 프리 디자인, 10년 후 교실의 모습과 교사의 준비
+④ ==문화적 소양과 포용==: 다문화·장애·소외계층 등 차이를 이해하고 포용한 경험, 다양한 배경의 학생을 어떻게 지도할 것인지
+⑤ ==교실 상황 대처==: 구체적 교실 갈등 상황(따돌림, 수업 방해, 학부모 항의 등)을 제시하고 교사로서 어떻게 대처할지 묻는 상황 문항
+
+【4. 대학별 면접 방식 — 해당 대학에 맞춰 문항 형식과 난이도를 조정할 것】
+- ==광주교대==: 서류 70% + 비대면 면접 30%. 비대면은 ==교직인성 100점 단일 요소==(올바른 교직관, 답변의 논리성·타당성)이며 공개 문항에 대한 답변을 녹화 제출. 대면 면접은 문제해결역량 40 + 교직적합성 30 + 교직인성 30이며 ==학생부 기반 진위 확인 및 관련 역량 질의==, 2인이 1명을 10분 내외 평가
+- ==서울교대==: 4~6행의 짧은 제시문 + 질문, 7분 준비 후 10분 답변. 복수 위원의 ==심층 문답==. 교직인성·교직적성·교직교양 3영역
+- ==공주교대==: 제시문 면접, 3분 숙지 + 4분 순차 답변. 교직관·교양·표현력·태도
+- ==대구교대==: ==집단 면접==(수험생 3명 + 복수 면접관), 10~15분. 문제해결능력·교직소양·인성·의사소통능력. 타인의 의견을 경청하고 조율하는 태도가 함께 평가되므로 그 점을 문항에 반영
+- ==부산교대==: ==사전 공개 3문항을 3분 이내 영상 녹화 제출==(비대면). 의사소통역량·교직인성 및 전문성 개발역량·창의융합역량
+- ==전주교대==: 교양 + 교직관, 5분 이내. 고교 교육과정을 정상 이수했으면 파악 가능한 평이한 제시문 수준으로 출제
+- ==청주교대==: ==제시문 없이 인·적성 개방형 질문==. 교직인성 40% + 교직적성 40% + 의사소통능력 20%
+- ==진주교대==: 2026학년도부터 면접 폐지(면접 대비 문항 대신 서류 기반 자기점검 질문 위주로 구성하고 이 사실을 안내할 것)
+- ==춘천교대==: 학교폭력 조치사항이 정량 반영되며 1호 100점 감점, 2~9호 부적격
+
+【5. 블라인드 면접 원칙 — '학생 준비 가이드'에 반드시 경고로 포함】
+- 성명·출신고교명·부모(친인척)의 실명과 직업·직위 등 사회경제적 지위를 언급하면 안 됨. 교복·이름표 착용 금지
+- ==학생부 기재금지 항목, 사교육 유발 교외활동, 대입에 제공되지 않는 학생부 항목(수상경력·독서활동 등)을 언급하면 부적격(F·0점) 처리==될 수 있음
+- 비대면 면접은 미제출·대리응시 시 0점
+
+【6. 학교폭력 조치사항 — 교대는 타 대학보다 훨씬 엄격】
+- 부산교대·진주교대·서울교대: 1~9호 전부 부적격 / 광주교대·공주교대: 4~9호 부적격
+- 학생부에 관련 기재가 있다면 문항 생성 전 이 사실을 최상단에 경고로 명시할 것
+
+【7. 준비 조언】
+- 평소 교육 현안에 대한 자기 생각을 정리해 ==말로 표현해 보는 연습==이 핵심. 정답을 맞히기보다 근거를 갖춘 자기 입장을 논리적으로 전달하는 구조를 익힐 것
+- 면접 실질반영 비율이 낮은 대학이라도(전주교대 2.2%, 부산교대 4.8%, 청주교대 9.1%) ==합격선 근처에서는 당락이 바뀌므로== 소홀히 하지 말 것. 면접위원 전원이 0점을 주면 1단계 성적과 무관하게 탈락하는 대학도 있음
 ` : `
 
 [면접 문항 생성 공통 지침 - 필수 반영]
@@ -11732,6 +12409,11 @@ ${fd.content}
 
       const prompt = `당신은 대한민국 대학 입시 전문 면접관이자 진학 지도 교사입니다.
 다음 학생의 생활기록부 요약본과 목표 전공, 그리고 제공된 '면접 기출 참고자료'와 '전공별 권장이수과목 참고자료'를 종합 분석하여 학생 맞춤형 면접 문항 10개를 생성하세요.
+
+⚠️ **이 작업의 핵심 산출물은 '본 질문 10개 + 각 질문마다 꼬리질문(탐침질문) 2~3개'입니다.**
+실제 대입 면접에서 당락을 가르는 것은 첫 질문이 아니라 그 뒤에 이어지는 꼬리질문입니다.
+따라서 10개 문항 전부에 꼬리질문 블록을 빠짐없이 포함해야 하며, 꼬리질문이 누락된 문항이 하나라도 있으면 잘못된 출력입니다.
+또한 **10개 문항 중 최소 1문항은 학생의 '선택과목 이수 내역'을 직접 다루는 과목 선택 문항**이어야 합니다.
 
 [목표 전공]
 대학: ${targetUniv}
@@ -11751,17 +12433,96 @@ ${univPromptSupplement}
 1. 목표 학과(${targetMajor})의 핵심 역량에 부합하면서, 학생 생기부 내용(특정 과목 세특 탐구, 진로활동 등)을 파고드는 맞춤형 문항을 설계하세요.
    - **반드시 [전공별 권장이수과목 참고자료]를 확인하여, ${targetMajor}가 속한 학과/계열에서 요구하는 권장 이수 과목(또는 핵심 단원)과 학생의 이수 내역/세특을 교차 검증**하세요.
    - 학생이 목표 학과의 권장 과목 세특을 잘 쌓았다면 그 과목의 심화 탐구 내용을 묻고, 만약 권장 과목을 이수하지 않았거나 관련 세특이 빈약하다면 이를 방어/보완할 수 있는지 묻는 날카로운 질문을 반드시 포함하세요. (예: "우리 학과는 물리 역량이 중요한데, 물리Ⅱ를 이수하지 않았네요. 대학 진학 후 이 부분을 어떻게 보완할 계획인가요?" 또는 "수학 권장 과목은 이수했는데 세특에 프로그래밍 관련 내용이 없네요. 이유가 있나요?")
-2. 기출문제 참고자료에 해당 대학/학과의 기출 또는 유사 기출이 존재하면 적극 반영하세요. 다음 **실제 대입 면접 5대 기출 패턴**을 10문제에 골고루 반영해 문항을 구성하세요:
+2. ★★★ **[필수] '과목 선택' 관련 문항을 반드시 1문항 이상 포함** ★★★
+   10개 문항 중 **최소 1문항은 반드시 학생의 '선택과목 이수 내역' 자체를 소재로 한 문항**이어야 합니다. 이 문항이 없으면 잘못된 출력입니다.
+
+   【대학이 과목 선택을 보는 관점 — 문항 설계의 전제】
+   - 대학은 선택과목 이수 내역을 통해 **"이 학생이 우리 학과에서 공부할 준비가 되었는가"**를 판단합니다.
+   - 핵심 권장과목은 **지원 자격과는 무관하지만 서류평가에 실질적으로 반영**됩니다. 실제 데이터상 지원자 대비 합격자의 핵심과목 이수율이 뚜렷하게 높습니다.
+     (예: 동국대 열린전공학부(자연) — 물리학Ⅰ 지원자 57.8% → 최초합격자 98.0% / 물리학Ⅱ 41.8% → 88.0%, 화학Ⅱ 79.8% → 94.0%)
+   - 최근 경향: **확률과 통계·기하의 위상 강화**, 진로선택과목은 관심사에 따라 충실히 이수하되 **그 지식을 실제로 활용했는지**에 방점.
+   - 과목 이수는 **위계**가 중요합니다 (일반선택 → 진로선택/융합선택 → 전문교과). 위계를 건너뛴 이수는 오히려 약점이 될 수 있습니다.
+
+   【과목 선택 문항의 3가지 유형 — 학생 상황에 맞는 것을 골라 최소 1개 출제】
+   ① **선택 이유형** (권장과목을 잘 이수한 경우)
+      "○○과목을 선택한 이유는 무엇인가요? 그 과목이 우리 학과 공부에 어떻게 도움이 될 거라고 생각했나요?"
+   ② **위계·깊이 검증형** (이수했지만 활용이 약한 경우)
+      "○○을 이수했는데, 그 과목에서 배운 개념 중 지원 학과와 가장 직접적으로 연결된다고 생각하는 것은 무엇인가요?"
+      "일반선택 ○○을 듣고 진로선택 ○○까지 이어서 들었는데, 두 과목을 연결해 설명해 볼래요?"
+   ③ **미이수 방어형** (핵심 권장과목을 이수하지 않은 경우 — 가장 날카로운 문항)
+      "우리 학과는 ○○ 역량이 중요한데 ○○을 이수하지 않았네요. 어떤 이유가 있었나요? 대학에서 어떻게 보완할 계획인가요?"
+      ※ 학생 생기부의 실제 이수 내역과 [전공별 권장이수과목 참고자료]를 반드시 대조하여, 실제로 빠진 과목이 있을 때만 이 유형을 쓰세요.
+
+   【과목 선택 문항의 모범답안 가이드 작성 원칙】
+   - ❌ "학교에서 열려서", "친구들이 많이 들어서", "성적 받기 유리해서" 같은 **수동적 이유는 최악의 답변**
+   - ✅ **"스스로 선택했으니 책임감 있게 이수했다"**는 태도가 드러나야 함 — 선택의 주체성 + 이수 과정의 충실성
+   - ✅ 그 과목에서 배운 **구체적 개념·단원**을 언급하고, 그것이 **지원 학과의 어떤 공부와 연결되는지**까지 설명
+   - ✅ 미이수 과목이 있다면 솔직히 인정하되, **대체 학습 경험**(독서·탐구·온라인 강의 등)과 **입학 후 구체적 보완 계획**을 제시
+
+3. **[서류 기반 면접의 본질 — 모든 문항에 적용]** 실제 대학 가이드북의 서류 기반 면접 문항들은 **탐구 활동의 소재가 된 '교과 개념 자체'를 직접 설명하라고 요구**합니다.
+   - 실제 사례: "전자기유도를 이용한 무선 충전 방식의 **원리를 설명해보세요**" / "뉴턴의 **세 가지 법칙은 무엇인가요?** 실험은 어떻게 설계했나요?" / "'사회계층이동'의 **유형이 무엇이 있는지 정의해주세요**" / "한시의 고체시와 근체시의 형식, 압운법을 **예시를 들어 구체적으로 설명해보세요**"
+   - 핵심 시사점: **자료 조사만으로는 답변할 수 없고, 탐구에 사용된 교과 지식에 대한 진짜 이해가 필요**합니다. 대학은 이를 통해 면접의 변별도를 확보합니다.
+   - 따라서 탐구 활동을 소재로 한 문항에는 **반드시 그 바탕이 된 교과 개념·원리·용어를 직접 정의하거나 설명하도록 요구하는 요소**를 포함하세요.
+   - 모범답안 가이드에는 **그 개념을 고교 교과 수준에서 정확히 정의하는 문장**을 반드시 포함시키세요.
+
+4. 기출문제 참고자료에 해당 대학/학과의 기출 또는 유사 기출이 존재하면 적극 반영하세요. 다음 **실제 대입 면접 5대 기출 패턴**을 10문제에 골고루 반영해 문항을 구성하세요:
    - (가) 생기부 진위 및 깊이 확인: "세특에 ~를 조사했다고 나오는데, 구체적으로 어떤 원리/개념인지 설명하고 가장 기억에 남는 점은?"
    - (나) 문제 해결 및 극복 경험: "동아리/탐구 과정에서 ~한 어려움이나 실험 실패 경험이 있었나요? 이를 어떻게 극복했나요?"
    - (다) 지식의 전이 및 미래 응용: "수업에서 배웠던 ~개념을 미래 우리 학과의 특정 분야나 사회 문제 해결에 어떻게 활용할 수 있을까요?"
    - (라) 진로 압박 및 동기 검증: "진로활동에서 확인되는 기존 관심사(또는 장래희망)가 현재 지원한 학과와 잘 맞지 않거나 중간에 변경된 것 같은데, 우리 학과를 선택하게 된 결정적 계기와 연결 고리는 무엇인가요?"
    - (마) 인성/행특 검증 및 갈등 관리: "행특/자율활동에서 선생님이나 친구들이 학생을 ~하다고 평가한 부분이 있는데, 어떤 긍정적 기여를 했는지 구체적인 갈등 조정이나 리더십 사례를 들어볼래요?"
-3. 난이도는 기초 인성/동기 확인부터 시작하여 점차 깊이 있는 전공적합성 꼬리 질문으로 확장되도록 1문항부터 10문항까지 순서대로 작성하세요.
-4. **[초강력 지침] 면접 질문의 말투**: 절대 '~에 대해 설명해 주세요'나 '~에 대한 질문입니다'와 같은 정형화된 문어체/설명조를 쓰지 마세요. 실제 면접장에 서 있는 면접관이 학생에게 직접 "말을 거는" 생생한 구어체(예: "학생, 여기 세특을 보니까 ~ 활동을 했네요? 이 과정에서 가장 고민했던 지점은 뭐였나요?")로 작성하세요. 특히 **[질문 내용]** 부분은 면접관이 입으로 내뱉는 "진짜 질문" 그 자체여야 합니다.
-5. 각 질문에 대해 '생기부 출처'를 적을 때는 **반드시 생기부에 적혀 있는 세특 원문(내용 그대로)을 큰따옴표로 인용하여 명시**하고, 그 아래에 출처 의도와 '면접 모범답안 가이드(어떻게 대답하는 것이 좋은지)'를 함께 제시하세요.
-6. **[필수] 면접관 종합 분석 의견 작성**: 본격적인 문항 생성에 앞서, 학생의 전체 생활기록부와 지원 전공 간의 정합성, 핵심 강점, 그리고 면접에서 중점적으로 검증해야 할 전략적 포인트를 짚어주는 '면접관 종합 분석 의견'을 반드시 작성하세요.
-7. 마크다운 형식으로 가독성 좋게 출력하십시오. 질문 문항과 지원 대학 정보는 아래의 포맷을 반드시 준수하세요.
+5. 난이도는 기초 인성/동기 확인부터 시작하여 점차 깊이 있는 전공적합성 꼬리 질문으로 확장되도록 1문항부터 10문항까지 순서대로 작성하세요.
+6. **[초강력 지침] 면접 질문의 말투**: 절대 '~에 대해 설명해 주세요'나 '~에 대한 질문입니다'와 같은 정형화된 문어체/설명조를 쓰지 마세요. 실제 면접장에 서 있는 면접관이 학생에게 직접 "말을 거는" 생생한 구어체(예: "학생, 여기 세특을 보니까 ~ 활동을 했네요? 이 과정에서 가장 고민했던 지점은 뭐였나요?")로 작성하세요. 특히 **[질문 내용]** 부분은 면접관이 입으로 내뱉는 "진짜 질문" 그 자체여야 합니다.
+7. 각 질문에 대해 '생기부 출처'를 적을 때는 **반드시 생기부에 적혀 있는 세특 원문(내용 그대로)을 큰따옴표로 인용하여 명시**하고, 그 아래에 출처 의도와 '면접 모범답안 가이드(어떻게 대답하는 것이 좋은지)'를 함께 제시하세요.
+
+8. ★★★ **[최우선 필수 지침] 꼬리질문(탐침질문) 생성** ★★★
+   **10개 문항 각각에 대해, 그 문항에 이어지는 꼬리질문을 반드시 2~3개씩 생성하세요.** 꼬리질문이 없는 문항은 단 하나도 있어서는 안 됩니다.
+
+   【꼬리질문의 정의】
+   꼬리질문이란 면접관이 지원자의 답변에 대해 **'왜?', '어떻게?', '구체적으로?'** 등을 통해 더 깊이 파고드는 질문입니다.
+   지원자의 **진정성, 논리적 사고, 문제해결력, 전공적합성**을 더 깊이 확인하는 것이 목적입니다.
+   ⚠️ 꼬리질문은 새로운 주제의 질문이 아니라, **반드시 앞선 본 질문의 답변에서 자연스럽게 파생**되어야 합니다.
+
+   【꼬리질문 5대 유형 — 각 문항의 성격에 맞는 유형을 골라 배치】
+   ① **이유/선택 확인** (동기·가치 검증) — 대표 질문: "왜 ~을 선택했나요?"
+      예) "다른 선택지와 비교했을 때 이것에서 특히 배우고 싶었던 것은 무엇인가요?" / "처음 기대했던 것과 달랐던 점도 있었나요?"
+   ② **구체성/사실 확인** (경험의 진정성 검증) — 대표 질문: "구체적으로 어떤 활동을 했나요?"
+      예) "그 과정에서 본인이 맡은 역할은 정확히 무엇이었나요?" / "그 해석을 뒷받침하는 사례를 하나 구체적으로 설명해 보세요."
+   ③ **심화/확장 확인** (사고의 깊이 검증) — 대표 질문: "이 내용이 어떤 결론으로 이어졌나요?"
+      예) "그 개념을 다른 단원과 연결해서 설명할 수 있나요?" / "탐구 전과 후에 이해가 어떻게 달라졌나요?"
+   ④ **대안/비교 확인** (논리·문제해결력 검증) — 대표 질문: "다른 방법은 없었나요?"
+      예) "그 방법을 쓰지 않고도 해결할 수 있었나요?" / "본인이 제시한 해결책의 한계나 부작용은 없을까요?"
+   ⑤ **전공적합성/미래계획** (지속성·실행력 검증) — 대표 질문: "앞으로 어떻게 공부할 계획인가요?"
+      예) "그 역량을 대학 학업에서 어떻게 활용할 수 있을까요?" / "대학에 가서 이와 관련해 더 공부하고 싶은 내용은 무엇인가요?"
+
+   【자주 나오는 꼬리질문 패턴 — 실제 문장 작성 시 참고】
+   - 왜 그렇게 생각했나요? (이유·동기) / 다른 방법은 없었나요? (대안·비교)
+   - 구체적으로 어떻게 했나요? (과정·역할) / 그 결과는 무엇이었나요? (성과·영향)
+   - 만약 ~라면 어떻게 할 건가요? (상황·대응) / 이 활동에서 배운 점은? (성찰·성장)
+   - 전공과 어떤 관련이 있나요?
+
+   【교과 계열별 탐침 전략 — 해당 문항이 다루는 과목에 맞춰 적용】
+   - **국어/인문**: 구체적 장면 → 근거 → 반론 → 한계 순으로 파고들 것
+   - **사회**: 가치 판단이 포함된 답변에는 **반대 입장**과 **제도의 한계**까지 확인할 것
+   - **수학**: 개념 설명 → 해결 과정 → 다른 표현·상황으로의 적용 → **수학적 모델의 한계** 순
+   - **과학(화학·지구과학)**: **변인 통제, 오차 요인, 자료의 신뢰성**을 반드시 확인할 것
+   - **과학(생명·물리)**: 개념 이해를 넘어 **윤리적 쟁점, 적용 가능성, 기술적 한계**까지 확장할 것
+
+   【꼬리질문 작성 규칙】
+   - 본 질문과 동일하게 **면접관이 실제로 입으로 말하는 구어체**로 작성 (문어체 금지)
+   - 각 꼬리질문 끝에 괄호로 **유형**을 표기 — 예: (구체성/사실 확인)
+   - 난이도는 뒤로 갈수록 깊어지게 배치 (구체적 사실 → 근거 → 반론·한계)
+
+9. **[필수] 꼬리질문 대비 답변 가이드**: 각 문항의 꼬리질문 바로 아래에, 학생이 꼬리질문에 어떻게 대응해야 하는지 **'꼬리질문 대비 포인트'**를 2~3문장으로 제시하세요. 다음 원칙을 반드시 반영하세요.
+   - **답변 구조는 반드시 '결론 → 근거 → 구체 사례/데이터 → 의미·시사점' 순서** (PREP/STAR 기법)
+   - **✅ 우수한 답변**: 수치·역할·과정이 드러남 (예: "5명이", "실험 설계와 데이터 분석을 담당", "논문을 참고해 조건을 최적화")
+   - **❌ 아쉬운 답변**: 추상적 표현 (예: "팀에서 실험을 했습니다", "환경이 좋아 보여서 선택했습니다") → 신뢰도가 떨어짐
+   - **한계를 인정하고 확장·보완한 과정**을 말하면 사고의 깊이가 드러남 ("다음 단계까지 고민한 내용" 제시)
+   - **모르는 질문 대응**: "정확히는 모르지만, 제가 생각하는 방향은 ~입니다"라고 말하고 아는 범위에서 논리적으로 접근
+   - **일관성 유지**: 앞선 답변과 모순되지 않도록 내용의 일관성을 확인
+
+10. **[필수] 면접관 종합 분석 의견 작성**: 본격적인 문항 생성에 앞서, 학생의 전체 생활기록부와 지원 전공 간의 정합성, 핵심 강점, 그리고 면접에서 중점적으로 검증해야 할 전략적 포인트를 짚어주는 '면접관 종합 분석 의견'을 반드시 작성하세요.
+11. 마크다운 형식으로 가독성 좋게 출력하십시오. 질문 문항과 지원 대학 정보는 아래의 포맷을 반드시 준수하세요.
 
 **형식:**
 🏛️ **지원 정보**
@@ -11783,10 +12544,38 @@ ${univPromptSupplement}
   
   [이 원문이 왜 주목되었는지, 질문의 출처 의도를 2~3문장으로 설명]
 
-- **✅ 모범답안 가이드**: 
-  [학생이 이 질문에 어떻게 대답하면 좋을지, 핵심 포인트와 가능한 답변 방향을 3~4문장으로 제시]
+- **✅ 모범답안 가이드**:
+  [학생이 이 질문에 어떻게 대답하면 좋을지, 핵심 포인트와 가능한 답변 방향을 3~4문장으로 제시. 반드시 '결론 → 근거 → 구체 사례 → 의미' 구조로 안내]
 
-(이 구조를 10번까지 반복)
+<div style="background-color:#eaf4ff; padding:14px 16px; border-radius:8px; margin:12px 0; border-left:5px solid #2f6fd0;">
+<b>🔍 꼬리질문 (탐침질문)</b><br/>
+<b>①</b> [첫 번째 꼬리질문을 면접관 구어체로 작성] <i>(유형: 구체성/사실 확인)</i><br/>
+<b>②</b> [두 번째 꼬리질문] <i>(유형: 심화/확장 확인)</i><br/>
+<b>③</b> [세 번째 꼬리질문] <i>(유형: 대안/비교 확인)</i>
+</div>
+
+- **🎯 꼬리질문 대비 포인트**:
+  [위 꼬리질문들에 학생이 어떻게 대응해야 하는지 2~3문장으로 제시. 답변 구조(결론-근거-사례-의미), 반드시 준비해야 할 구체적 수치·역할·과정, 한계를 인정하며 확장하는 방법을 포함]
+
+(이 구조를 10번까지 반복 — **모든 문항에 꼬리질문 블록이 빠짐없이 포함되어야 함**)
+
+※ **10개 문항 구성 시 필수 체크리스트** (출력 전 스스로 점검할 것)
+- [ ] **'과목 선택' 관련 문항이 1개 이상 포함되었는가?** (생성 지침 2번 — 없으면 반드시 추가)
+- [ ] 모든 문항에 꼬리질문 2~3개가 빠짐없이 달렸는가?
+- [ ] 탐구 활동 소재 문항에 **교과 개념을 직접 설명하도록 요구하는 요소**가 들어갔는가?
+- [ ] 평가 항목이 해당 대학의 배점 비율대로 배분되었는가?
+
+<hr/>
+
+## 🧭 꼬리질문 대응 핵심 원칙
+[아래 5가지를 학생 맞춤 조언으로 재구성하여 제시]
+1. **잠깐 멈추고 의도 파악하기** — 질문의 핵심 의도를 파악한 뒤 핵심만 구조화해 답변
+2. **구조적으로 답하기** — 결론 → 근거 → 구체 사례/데이터 → 의미·시사점 순서
+3. **모르는 질문도 침착하게** — "정확히는 모르지만, 제가 생각하는 방향은 ~입니다"라고 말하고 아는 범위에서 논리적으로 접근
+4. **면접관과 '대화' 유지** — 일방적 암기 답변이 아닌 상호작용하는 태도
+5. **일관성과 진정성 유지** — 앞선 답변과 모순되지 않도록 내용의 일관성 점검
+
+> 💡 **면접 성공의 3요소 = 진정성(경험의 진실함) + 논리성(생각의 구조화) + 전공적합성(관심과 열정)**
 `;
 
       try {
@@ -11833,7 +12622,7 @@ ${univPromptSupplement}
               <span style="font-size: 1.8rem;">🎓</span>
               <div>
                 <div style="font-size: 1.05rem; font-weight: 700; color: #4db6ac;">가천대학교 면접 가이드</div>
-                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 2px;">서류 50% + 면접 50% | 역전률 60% | 블라인드 3대1 면접</div>
+                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 2px;">인성 40% + 진학의지 40% | 면접 50% (역전률 60%) | 블라인드 3대1 면접</div>
               </div>
             </div>
             <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
@@ -11858,12 +12647,12 @@ ${univPromptSupplement}
               <span style="font-size: 1.8rem;">🎓</span>
               <div>
                 <div style="font-size: 1.05rem; font-weight: 700; color: #96baff;">서울시립대학교 면접 가이드</div>
-                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 2px;">서류 50% + 면접 50% | 역전률 57% | 2인 면접관 12분 블라인드</div>
+                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 2px;">잠재역량 40% + 학업역량 35% | 면접 50% (역전률 57%) | 2인 12분 블라인드</div>
               </div>
             </div>
             <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
-              <button onclick="window.showSeoulGuideModal()" style="background:rgba(124,131,253,0.2); border:1px solid rgba(124,131,253,0.5); color:#96baff; padding:0.5rem 1rem; border-radius:8px; font-size:0.88rem; font-weight:600; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(124,131,253,0.35)'" onmouseout="this.style.background='rgba(124,131,253,0.2)'">📋 가이드 보기</button>
-              <button onclick="window.printSeoulGuide()" style="background:rgba(150,186,255,0.15); border:1px solid var(--panel-border); color:var(--text-secondary); padding:0.5rem 1rem; border-radius:8px; font-size:0.88rem; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(150,186,255,0.25)'" onmouseout="this.style.background='rgba(150,186,255,0.15)'">🖨️ PDF 인쇄</button>
+              <button onclick="window.showUosGuideModal()" style="background:rgba(124,131,253,0.2); border:1px solid rgba(124,131,253,0.5); color:#96baff; padding:0.5rem 1rem; border-radius:8px; font-size:0.88rem; font-weight:600; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(124,131,253,0.35)'" onmouseout="this.style.background='rgba(124,131,253,0.2)'">📋 가이드 보기</button>
+              <button onclick="window.printUosGuide()" style="background:rgba(150,186,255,0.15); border:1px solid var(--panel-border); color:var(--text-secondary); padding:0.5rem 1rem; border-radius:8px; font-size:0.88rem; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(150,186,255,0.25)'" onmouseout="this.style.background='rgba(150,186,255,0.15)'">🖨️ PDF 인쇄</button>
             </div>
           </div>`;
         } else if (targetUniv === "숭실대학교") {
@@ -12041,56 +12830,6 @@ ${univPromptSupplement}
               <button onclick="window.printSeoulTechGuide()" style="background:rgba(150,186,255,0.15); border:1px solid var(--panel-border); color:var(--text-secondary); padding:0.5rem 1rem; border-radius:8px; font-size:0.88rem; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(150,186,255,0.25)'" onmouseout="this.style.background='rgba(150,186,255,0.15)'">🖨️ PDF 인쇄</button>
             </div>
           </div>`;
-        } else if (targetUniv === "가천대학교") {
-          guideBannerHtml = `<div id="iv-gachon-guide-banner" style="
-            background: linear-gradient(135deg, rgba(0,74,152,0.15), rgba(0,74,152,0.1));
-            border: 1.5px solid rgba(0,74,152,0.5);
-            border-radius: 12px;
-            padding: 1rem 1.5rem;
-            margin-bottom: 1.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 1rem;
-            flex-wrap: wrap;
-          ">
-            <div style="display:flex; align-items:center; gap: 0.75rem;">
-              <span style="font-size: 1.8rem;">🎓</span>
-              <div>
-                <div style="font-size: 1.05rem; font-weight: 700; color: #90caf9;">가천대학교 면접 가이드</div>
-                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 2px;">인성 40% | 진학의지 40% | 경험 중심의 구체적 사례 어필 중점</div>
-              </div>
-            </div>
-            <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
-              <button onclick="window.showGachonGuideModal()" style="background:rgba(0,74,152,0.2); border:1px solid rgba(0,74,152,0.5); color:#90caf9; padding:0.5rem 1rem; border-radius:8px; font-size:0.88rem; font-weight:600; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(0,74,152,0.35)'" onmouseout="this.style.background='rgba(0,74,152,0.2)'">📋 가이드 보기</button>
-              <button onclick="window.printGachonGuide()" style="background:rgba(150,186,255,0.15); border:1px solid var(--panel-border); color:var(--text-secondary); padding:0.5rem 1rem; border-radius:8px; font-size:0.88rem; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(150,186,255,0.25)'" onmouseout="this.style.background='rgba(150,186,255,0.15)'">🖨️ PDF 인쇄</button>
-            </div>
-          </div>`;
-        } else if (targetUniv === "서울시립대학교") {
-          guideBannerHtml = `<div id="iv-seoul-guide-banner" style="
-            background: linear-gradient(135deg, rgba(0,47,108,0.15), rgba(0,47,108,0.1));
-            border: 1.5px solid rgba(0,47,108,0.5);
-            border-radius: 12px;
-            padding: 1rem 1.5rem;
-            margin-bottom: 1.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 1rem;
-            flex-wrap: wrap;
-          ">
-            <div style="display:flex; align-items:center; gap: 0.75rem;">
-              <span style="font-size: 1.8rem;">🎓</span>
-              <div>
-                <div style="font-size: 1.05rem; font-weight: 700; color: #90caf9;">서울시립대학교 면접 가이드</div>
-                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 2px;">잠재역량 40% | 학업역량 35% | 활동의 연계성 및 개념 이해 심화 검증</div>
-              </div>
-            </div>
-            <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
-              <button onclick="window.showSeoulGuideModal()" style="background:rgba(0,47,108,0.2); border:1px solid rgba(0,47,108,0.5); color:#90caf9; padding:0.5rem 1rem; border-radius:8px; font-size:0.88rem; font-weight:600; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(0,47,108,0.35)'" onmouseout="this.style.background='rgba(0,47,108,0.2)'">📋 가이드 보기</button>
-              <button onclick="window.printSeoulGuide()" style="background:rgba(150,186,255,0.15); border:1px solid var(--panel-border); color:var(--text-secondary); padding:0.5rem 1rem; border-radius:8px; font-size:0.88rem; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(150,186,255,0.25)'" onmouseout="this.style.background='rgba(150,186,255,0.15)'">🖨️ PDF 인쇄</button>
-            </div>
-          </div>`;
         } else if (targetUniv === "서강대학교") {
           guideBannerHtml = `<div id="iv-sogang-guide-banner" style="
             background: linear-gradient(135deg, rgba(144,19,25,0.15), rgba(144,19,25,0.1));
@@ -12239,6 +12978,56 @@ ${univPromptSupplement}
             <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
               <button onclick="window.showDonggukGuideModal()" style="background:rgba(234,84,33,0.2); border:1px solid rgba(234,84,33,0.5); color:#ffccbc; padding:0.5rem 1rem; border-radius:8px; font-size:0.88rem; font-weight:600; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(234,84,33,0.35)'" onmouseout="this.style.background='rgba(234,84,33,0.2)'">📋 가이드 보기</button>
               <button onclick="window.printDonggukGuide()" style="background:rgba(150,186,255,0.15); border:1px solid var(--panel-border); color:var(--text-secondary); padding:0.5rem 1rem; border-radius:8px; font-size:0.88rem; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(150,186,255,0.25)'" onmouseout="this.style.background='rgba(150,186,255,0.15)'">🖨️ PDF 인쇄</button>
+            </div>
+          </div>`;
+        } else if (targetUniv === "연세대학교") {
+          guideBannerHtml = `<div id="iv-yonsei-guide-banner" style="
+            background: linear-gradient(135deg, rgba(0,50,115,0.22), rgba(0,80,160,0.12));
+            border: 1.5px solid rgba(70,130,200,0.55);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+          ">
+            <div style="display:flex; align-items:center; gap: 0.75rem;">
+              <span style="font-size: 1.8rem;">📄</span>
+              <div>
+                <div style="font-size: 1.05rem; font-weight: 700; color: #8ab6e8;">연세대학교 면접 가이드</div>
+                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 2px;">⚠️ 제시문 기반 면접 | 비대면 현장 녹화 | 면접 40% (활동우수형)</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
+              <button onclick="window.showYonseiGuideModal()" style="background:rgba(0,80,160,0.25); border:1px solid rgba(70,130,200,0.55); color:#8ab6e8; padding:0.5rem 1rem; border-radius:8px; font-size:0.88rem; font-weight:600; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(0,80,160,0.4)'" onmouseout="this.style.background='rgba(0,80,160,0.25)'">📋 가이드 보기</button>
+              <button onclick="window.printYonseiGuide()" style="background:rgba(150,186,255,0.15); border:1px solid var(--panel-border); color:var(--text-secondary); padding:0.5rem 1rem; border-radius:8px; font-size:0.88rem; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(150,186,255,0.25)'" onmouseout="this.style.background='rgba(150,186,255,0.15)'">🖨️ PDF 인쇄</button>
+            </div>
+          </div>`;
+        } else if (targetUniv === "숙명여자대학교") {
+          guideBannerHtml = `<div id="iv-sookmyung-guide-banner" style="
+            background: linear-gradient(135deg, rgba(0,45,90,0.2), rgba(120,60,130,0.12));
+            border: 1.5px solid rgba(150,110,180,0.5);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+          ">
+            <div style="display:flex; align-items:center; gap: 0.75rem;">
+              <span style="font-size: 1.8rem;">🎓</span>
+              <div>
+                <div style="font-size: 1.05rem; font-weight: 700; color: #c9a6dd;">숙명여자대학교 면접 가이드</div>
+                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 2px;">서류 기반 면접 | 면접 40% (역전 사례 多) | 1단계 3배수</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
+              <button onclick="window.showSookmyungGuideModal()" style="background:rgba(120,60,130,0.25); border:1px solid rgba(150,110,180,0.5); color:#c9a6dd; padding:0.5rem 1rem; border-radius:8px; font-size:0.88rem; font-weight:600; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(120,60,130,0.4)'" onmouseout="this.style.background='rgba(120,60,130,0.25)'">📋 가이드 보기</button>
+              <button onclick="window.printSookmyungGuide()" style="background:rgba(150,186,255,0.15); border:1px solid var(--panel-border); color:var(--text-secondary); padding:0.5rem 1rem; border-radius:8px; font-size:0.88rem; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(150,186,255,0.25)'" onmouseout="this.style.background='rgba(150,186,255,0.15)'">🖨️ PDF 인쇄</button>
             </div>
           </div>`;
         }
@@ -12629,7 +13418,7 @@ ${univPromptSupplement}
   };
 
   // ----- 서울시립대 면접 가이드 모달 및 PDF 인쇄 -----
-  window.showSeoulGuideModal = function () {
+  window.showUosGuideModal = function () {
     const modalTitle = document.getElementById("modalTitle");
     const modalBody = document.getElementById("modalBody");
     const modalOverlay = document.getElementById("analysisModal");
@@ -12670,13 +13459,13 @@ ${univPromptSupplement}
         <h3 style="color:var(--accent-primary);">5. 전략 요약</h3>
         <p>서울시립대 면접은 면접관이 학생부 전체를 본 상태에서 진행되므로, <strong>서류에 기재된 활동의 원리와 사회적 적용, 자신만의 해결책</strong>을 논리적으로 설명할 수 있도록 준비해야 합니다.</p>
         <div style="margin-top:1.5rem; text-align:right;">
-          <button onclick="window.printSeoulGuide()" style="background:var(--accent-gradient);color:#fff;border:none;padding:0.6rem 1.4rem;border-radius:8px;font-size:0.9rem;font-weight:600;cursor:pointer;">🖨️ PDF로 인쇄</button>
+          <button onclick="window.printUosGuide()" style="background:var(--accent-gradient);color:#fff;border:none;padding:0.6rem 1.4rem;border-radius:8px;font-size:0.9rem;font-weight:600;cursor:pointer;">🖨️ PDF로 인쇄</button>
         </div>
       </div>`;
     modalOverlay.classList.remove("hidden");
   };
 
-  window.printSeoulGuide = function () {
+  window.printUosGuide = function () {
     const printWin = window.open("", "_blank", "width=900,height=700");
     printWin.document.write(`<!DOCTYPE html><html lang="ko"><head>
       <meta charset="UTF-8">
@@ -13201,8 +13990,10 @@ ${univPromptSupplement}
       </style>
       <div id="khu-guide-content" style="line-height:1.8; font-size:1.0rem; color:var(--text-primary);">
         <h3 style="color:#ffab91; margin-top:0;">1. 면접 비중 및 진행 방식</h3>
-        <p>경희대는 2단계에서 <strong>서류 성적 70% + 면접 30%</strong>를 합합하여 최종 선발합니다.<br>
-        역전률은 약 23~27% 수준이며, 의·약학 계열의 경우 2개 면접실을 도는 다중 면접 방식으로 더욱 정밀하게 평가합니다.</p>
+        <p>경희대는 2단계에서 <strong>서류 성적 70% + 면접 30%</strong>를 합산하여 최종 선발합니다(서류 700점 + 면접 300점).<br>
+          1단계는 서류 100%로 <strong>3배수</strong>(의예·한의예·치의예·약학과는 <strong>4배수</strong>)를 선발합니다.<br>
+          면접 변동률은 최초 합격자 기준 평균 <strong>27.5%</strong>, 충원 포함 전체 기준 <strong>20.3%</strong>로 서류평가의 영향력이 더 큽니다.<br>
+          <strong>모든 모집단위에 출제문항 면접이 없으며, 의학계열(의예·한의예·치의예)도 타 모집단위와 동일하게 서류확인 면접만 진행합니다.</strong></p>
         <h3 style="color:#ffab91;">2. 면접 주요 특징: 심층 꼬리 질문</h3>
         <ul>
           <li><strong>평가 위원</strong>: 입학사정관 2인이 10분 이내의 블라인드 면접을 실시합니다.</li>
@@ -13323,70 +14114,6 @@ ${univPromptSupplement}
   window.printSeoulTechGuide = function () {
     const printWin = window.open("", "_blank", "width=900,height=700");
     printWin.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>서울과학기술대학교 면접 가이드</title><style>body{font-family:'Malgun Gothic',sans-serif;padding:2rem;line-height:1.8;}h1{color:#37474f;border-bottom:3px solid #37474f;}h2{color:#263238;margin-top:1.5rem;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;padding:10px;text-align:left;}th{background:#f8f9fa;}</style></head><body><h1>🎓 서울과학기술대학교 면접 가이드</h1><h2>1. 평가 비중 (40:35:25)</h2><table><tr><th>진로역량</th><th>학업역량</th><th>공동체역량</th></tr><tr><td>40%</td><td>35%</td><td>25%</td></tr></table><h2>2. 핵심 포인트</h2><p>과기대는 <strong>성적 공개 면접</strong>입니다. 활동의 결과보다 <strong>'동기(Why)'</strong>와 <strong>'적용 원리(Logic)'</strong>를 논리적으로 설명하는 것이 중요합니다.</p></body></html>`);
-    printWin.document.close();
-    printWin.focus();
-    setTimeout(() => { printWin.print(); }, 500);
-  };
-
-  window.showGachonGuideModal = function () {
-    const modalTitle = document.getElementById("modalTitle");
-    const modalBody = document.getElementById("modalBody");
-    const modalOverlay = document.getElementById("analysisModal");
-    if (!modalTitle || !modalBody || !modalOverlay) return;
-    modalTitle.innerText = "가천대학교 면접 가이드";
-    modalBody.innerHTML = `
-      <div style="font-family:'Malgun Gothic', sans-serif;">
-        <p>가천대는 <strong>'인성'</strong>과 <strong>'진학의지'</strong>를 각각 40%씩 반영하여 매우 중요하게 평가합니다.</p>
-        <h3 style="color:#1a237e; margin-top:1.5rem;">1. 면접 평가 요소 및 비중</h3>
-        <ul>
-          <li><strong>인성 (40%):</strong> 공동체 의식, 협업 능력, 성실성</li>
-          <li><strong>진학의지 (40%):</strong> 전공 관심도, 자발적 탐구, 발전 가능성</li>
-          <li><strong>의사소통역량 (20%):</strong> 질문 의도 파악 능력, 응답의 논리성·일관성</li>
-        </ul>
-        <h3 style="color:#1a237e; margin-top:1.5rem;">2. 주요 특징</h3>
-        <ul>
-          <li><strong>3인 면접:</strong> 다수의 면접관이 지원자의 진실성과 열정을 다각도로 검증</li>
-          <li><strong>경험 중심:</strong> 아이디어를 실제 행동으로 옮긴 구체적 사례 어필 필요</li>
-        </ul>
-      </div>`;
-    modalOverlay.classList.remove("hidden");
-  };
-
-  window.printGachonGuide = function () {
-    const printWin = window.open("", "_blank", "width=900,height=700");
-    printWin.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>가천대학교 면접 가이드</title><style>body{font-family:'Malgun Gothic',sans-serif;padding:2rem;line-height:1.8;}h1{color:#1a237e;border-bottom:3px solid #1a237e;}h2{color:#004a98;margin-top:1.5rem;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;padding:10px;text-align:left;}th{background:#f8f9fa;}</style></head><body><h1>🎓 가천대학교 면접 가이드</h1><h2>1. 평가 비중 (40:40:20)</h2><table><tr><th>인성</th><th>진학의지</th><th>학업역량</th></tr><tr><td>40%</td><td>40%</td><td>20%</td></tr></table><h2>2. 핵심 포인트</h2><p>가천대는 <strong>인성</strong>과 <strong>진학의지</strong>의 비중이 매우 높습니다. 학교 활동에 주도적으로 참여한 경험과 전공을 향한 열정을 적극적으로 표현하세요.</p></body></html>`);
-    printWin.document.close();
-    printWin.focus();
-    setTimeout(() => { printWin.print(); }, 500);
-  };
-
-  window.showSeoulGuideModal = function () {
-    const modalTitle = document.getElementById("modalTitle");
-    const modalBody = document.getElementById("modalBody");
-    const modalOverlay = document.getElementById("analysisModal");
-    if (!modalTitle || !modalBody || !modalOverlay) return;
-    modalTitle.innerText = "서울시립대학교 면접 가이드";
-    modalBody.innerHTML = `
-      <div style="font-family:'Malgun Gothic', sans-serif;">
-        <p>시립대는 <strong>'잠재역량'</strong>을 통해 교과와 진로 활동의 연계성을 심도 있게 확인합니다.</p>
-        <h3 style="color:#01579b; margin-top:1.5rem;">1. 평가 요소 및 비중</h3>
-        <ul>
-          <li><strong>잠재역량 (40%):</strong> 전공 관련 활동의 연계성, 문제해결 대안 제시</li>
-          <li><strong>학업역량 (35%):</strong> 교과 지식 이해, 학업적 호기심</li>
-          <li><strong>사회역량 (25%):</strong> 공동체 의식, 협동 능력, 윤리 의식</li>
-        </ul>
-        <h3 style="color:#01579b; margin-top:1.5rem;">2. 주요 특징</h3>
-        <ul>
-          <li><strong>심층 꼬리 질문:</strong> 탐구 내용의 본질적 원리를 직접 요구하므로 철저한 개념 숙지 필요</li>
-          <li><strong>대안 제시:</strong> 활동에서 발견한 문제에 대해 '나만의 해결책'을 묻는 경우가 많음</li>
-        </ul>
-      </div>`;
-    modalOverlay.classList.remove("hidden");
-  };
-
-  window.printSeoulGuide = function () {
-    const printWin = window.open("", "_blank", "width=900,height=700");
-    printWin.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>서울시립대학교 면접 가이드</title><style>body{font-family:'Malgun Gothic',sans-serif;padding:2rem;line-height:1.8;}h1{color:#002f6c;border-bottom:3px solid #002f6c;}h2{color:#01579b;margin-top:1.5rem;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;padding:10px;text-align:left;}th{background:#f8f9fa;}</style></head><body><h1>🎓 서울시립대학교 면접 가이드</h1><h2>1. 평가 비중 (40:35:25)</h2><table><tr><th>잠재역량</th><th>학업역량</th><th>사회역량</th></tr><tr><td>40%</td><td>35%</td><td>25%</td></tr></table><h2>2. 핵심 포인트</h2><p>시립대는 <strong>활동의 연계성</strong>과 <strong>개념 이해</strong>를 중시합니다. 꼬리 질문에 대비하여 탐구 주제와 관련된 교과 지식을 완벽히 정리하세요.</p></body></html>`);
     printWin.document.close();
     printWin.focus();
     setTimeout(() => { printWin.print(); }, 500);
@@ -13601,6 +14328,115 @@ ${univPromptSupplement}
   window.printDonggukGuide = function () {
     const printWin = window.open("", "_blank", "width=900,height=700");
     printWin.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>동국대학교 면접 가이드</title><style>body{font-family:'Malgun Gothic',sans-serif;padding:2rem;line-height:1.8;}h1{color:#bf360c;border-bottom:3px solid #bf360c;}h2{color:#e65100;margin-top:1.5rem;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;padding:10px;text-align:left;}th{background:#fff3e0;}</style></head><body><h1>🎓 동국대학교 면접 가이드 (DoDream)</h1><h2>1. 평가 항목 및 비중</h2><p>전공적합성(30%), 발전가능성(30%), 전형취지적합성(20%), 인성 및 사회성(20%)</p><h2>2. 주요 포인트</h2><p>면접의 실질 영향력이 매우 높습니다(인문 40%, 자연 46%). <strong>'출결'</strong>을 비롯한 학교 생활의 성실성과 <strong>'지원 학과에 대한 심화 이해'</strong>를 답변에 반드시 녹여내세요.</p></body></html>`);
+    printWin.document.close();
+    printWin.focus();
+    setTimeout(() => { printWin.print(); }, 500);
+  };
+
+  window.showYonseiGuideModal = function () {
+    const modalTitle = document.getElementById("modalTitle");
+    const modalBody = document.getElementById("modalBody");
+    const modalOverlay = document.getElementById("analysisModal");
+    if (!modalTitle || !modalBody || !modalOverlay) return;
+    modalTitle.innerText = "연세대학교 면접 가이드 (제시문 기반)";
+    modalBody.innerHTML = `
+      <div style="font-family:'Malgun Gothic', sans-serif; line-height:1.7;">
+        <div style="background:#fff3cd; border-left:5px solid #f0ad4e; padding:12px 15px; border-radius:6px; color:#664d03; margin-bottom:1.2rem;">
+          <strong>⚠️ 다른 대학과 근본적으로 다릅니다.</strong><br>
+          연세대 학생부종합전형 면접은 <strong>학생부 확인 면접이 아니라 '제시문 기반' 면접</strong>입니다.
+          활동우수형·국제형(국내고)·국제인재·기회균형 <strong>전 전형이 제시문 기반</strong>으로 진행됩니다.
+        </div>
+
+        <h3 style="color:#00366f; margin-top:1.5rem; border-bottom:1px solid #eee; padding-bottom:5px;">1. 면접 진행 방식</h3>
+        <ul>
+          <li><strong>1단계:</strong> 제시문을 읽고 <strong>답변을 준비하는 시간</strong></li>
+          <li><strong>2단계:</strong> <strong>비대면 현장 녹화</strong> 방식으로 답변 녹화</li>
+          <li><strong>특징:</strong> 면접관이 앞에 없고, <strong>태블릿 PC에 비친 자기 얼굴</strong>을 보며 답변</li>
+          <li><strong>반영 비율:</strong> 활동우수형 기준 면접 40% (1단계 4배수)</li>
+        </ul>
+
+        <h3 style="color:#00366f; margin-top:1.5rem; border-bottom:1px solid #eee; padding-bottom:5px;">2. 평가 요소</h3>
+        <ul>
+          <li>서류에 드러나지 않는 <strong>논리적 사고력</strong></li>
+          <li><strong>창의적 사고력</strong></li>
+          <li><strong>의사소통 능력</strong></li>
+        </ul>
+
+        <h3 style="color:#00366f; margin-top:1.5rem; border-bottom:1px solid #eee; padding-bottom:5px;">3. 절대 원칙</h3>
+        <ul>
+          <li>✅ 답변은 <strong>반드시 제시문에 근거</strong>해야 함 — 제시된 자료를 정확히 분석하고 논리적 근거를 갖춘 답변 구성</li>
+          <li>❌ 제시문을 벗어나 <strong>개인 경험·학생부 활동을 장황하게 말하면 감점 요인</strong></li>
+          <li>✅ 정답을 맞히는 것보다 <strong>논리 전개 과정</strong>이 핵심</li>
+        </ul>
+
+        <h3 style="color:#00366f; margin-top:1.5rem; border-bottom:1px solid #eee; padding-bottom:5px;">4. 공식 가이드북 꿀팁</h3>
+        <ul>
+          <li><strong>제한 시간 안에 답변 준비하기:</strong> 평소 시간을 정해놓고 제시문을 정리하고 답변하는 연습이 필수</li>
+          <li><strong>전자기기로 얼굴 보며 연습하기:</strong> 현장 녹화 방식이라 태블릿에 비친 자기 모습이 어색해 당황하는 경우가 많음 → 스마트폰으로 미리 녹화 연습</li>
+          <li><strong>전년도 기출 살펴보기:</strong> 연세대 입학처 홈페이지 <strong>'선행학습영향평가 결과 보고서'</strong>에 전년도 면접 기출문제 공개</li>
+        </ul>
+        <p style="font-size:0.85rem;color:#777;margin-top:1.2rem;">출처: 2027학년도 학생부종합전형 안내서</p>
+      </div>`;
+    modalOverlay.classList.remove("hidden");
+  };
+
+  window.printYonseiGuide = function () {
+    const printWin = window.open("", "_blank", "width=900,height=700");
+    printWin.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>연세대학교 면접 가이드</title><style>body{font-family:'Malgun Gothic',sans-serif;padding:2rem;line-height:1.8;}h1{color:#00366f;border-bottom:3px solid #00366f;}h2{color:#0050a0;margin-top:1.5rem;}.warn{background:#fff3cd;border-left:5px solid #f0ad4e;padding:12px 15px;margin:1rem 0;}</style></head><body><h1>📄 연세대학교 면접 가이드 (제시문 기반)</h1><div class="warn"><strong>⚠️ 연세대 면접은 학생부 확인 면접이 아니라 '제시문 기반' 면접입니다.</strong><br>활동우수형·국제형(국내고)·국제인재·기회균형 전 전형이 제시문 기반으로 진행됩니다.</div><h2>1. 진행 방식</h2><p>제시문을 읽고 답변을 준비하는 시간 → <strong>비대면 현장 녹화</strong> 방식으로 답변 녹화. 면접관이 아닌 <strong>태블릿에 비친 자기 모습</strong>을 보며 답변합니다. (활동우수형 면접 40%, 1단계 4배수)</p><h2>2. 평가 요소</h2><p>논리적 사고력 / 창의적 사고력 / 의사소통 능력</p><h2>3. 절대 원칙</h2><p>답변은 <strong>반드시 제시문에 근거</strong>해야 합니다. 제시문을 벗어나 개인 경험이나 학생부 활동을 장황하게 말하는 것은 감점 요인입니다. 정답보다 <strong>논리 전개 과정</strong>이 핵심입니다.</p><h2>4. 공식 가이드북 꿀팁</h2><ul><li>제한 시간을 정해놓고 제시문 정리 + 답변 연습</li><li>스마트폰·태블릿으로 얼굴 보며 녹화 연습 (현장 녹화 대비)</li><li>입학처 '선행학습영향평가 결과 보고서'에서 전년도 기출 확인</li></ul><p style="font-size:0.85rem;color:#777;margin-top:2rem;">출처: 2027학년도 학생부종합전형 안내서</p></body></html>`);
+    printWin.document.close();
+    printWin.focus();
+    setTimeout(() => { printWin.print(); }, 500);
+  };
+
+  window.showSookmyungGuideModal = function () {
+    const modalTitle = document.getElementById("modalTitle");
+    const modalBody = document.getElementById("modalBody");
+    const modalOverlay = document.getElementById("analysisModal");
+    if (!modalTitle || !modalBody || !modalOverlay) return;
+    modalTitle.innerText = "숙명여자대학교 면접 가이드";
+    modalBody.innerHTML = `
+      <div style="font-family:'Malgun Gothic', sans-serif; line-height:1.7;">
+        <div style="background:#f3e8f8; border-left:5px solid #9b6bb5; padding:12px 15px; border-radius:6px; color:#4a2d5c; margin-bottom:1.2rem;">
+          <strong>💡 면접 40% — 역전이 자주 일어나는 전형입니다.</strong><br>
+          1단계 순위가 낮아도 <strong>면접에서 우수한 평가를 받아 최초합격한 사례가 상당수</strong> 있습니다. 1단계를 통과했다면 철저한 대비가 필요합니다.
+        </div>
+
+        <h3 style="color:#6a3d82; margin-top:1.5rem; border-bottom:1px solid #eee; padding-bottom:5px;">1. 면접 구조</h3>
+        <ul>
+          <li><strong>대상 전형:</strong> 숙명인재(면접형), 소프트웨어인재, 특수교육대상자 등</li>
+          <li><strong>1단계 선발:</strong> 모집인원의 <strong>3배수</strong> (특수교육대상자는 전 계열 4배수)</li>
+          <li><strong>2단계 면접 반영:</strong> <strong>40%</strong></li>
+          <li><strong>방식:</strong> 철저한 <strong>제출서류(학생부) 기반 면접</strong></li>
+        </ul>
+
+        <h3 style="color:#6a3d82; margin-top:1.5rem; border-bottom:1px solid #eee; padding-bottom:5px;">2. 평가 항목 (2개)</h3>
+        <ul>
+          <li><strong>진로역량:</strong> 학생부 기재 활동에 관한 질의응답으로 <strong>진로탐색 및 전공선택 과정</strong> 확인. 활동 기반 질문에서 시작해 <strong>이어지는 추가 질문</strong>으로 이해력·논리적 사고력·다양한 관점을 평가</li>
+          <li><strong>의사소통능력 및 태도:</strong> 면접 과정에서 드러나는 태도, 의사소통능력, 협업, 배려, 가치관</li>
+        </ul>
+
+        <h3 style="color:#6a3d82; margin-top:1.5rem; border-bottom:1px solid #eee; padding-bottom:5px;">3. 출제 범위의 한계 (공식 Q&A)</h3>
+        <ul>
+          <li>✅ 전공 관련 <strong>수업 내용·수행평가·탐구활동</strong>이 학생부에 있다면, 충분히 배우고 이해했는지 확인하는 질문은 가능</li>
+          <li>❌ <strong>단독으로 교과 지식을 확인하는 질문은 하지 않음</strong></li>
+          <li>❌ <strong>고교 교육과정을 벗어난 활동에 관한 질문은 하지 않음</strong></li>
+        </ul>
+
+        <h3 style="color:#6a3d82; margin-top:1.5rem; border-bottom:1px solid #eee; padding-bottom:5px;">4. 준비 전략</h3>
+        <ul>
+          <li><strong>학생부 숙지가 최우선:</strong> 활동에서 했던 진로탐색 노력, 배운 것, 느낀 점을 정리 → 면접 자신감으로 이어짐</li>
+          <li><strong>화려한 말솜씨보다 질문 의도 파악:</strong> 의도를 정확히 파악하고 논리적으로 답변하는 것이 중요</li>
+          <li>❌ 서술식 답변 암기 → ✅ <strong>키워드 중심 정리</strong>: 활동 계기와 성장한 점을 키워드로 정리해 말하는 연습</li>
+          <li><strong>모의면접 활용:</strong> 친구·선생님과 상황을 설정해 정리한 키워드를 <strong>본인의 언어로</strong> 전달하는 연습</li>
+        </ul>
+        <p style="font-size:0.85rem;color:#777;margin-top:1.2rem;">출처: 2027학년도 입학전형안내 — 학생부종합전형 면접시험 Q&A</p>
+      </div>`;
+    modalOverlay.classList.remove("hidden");
+  };
+
+  window.printSookmyungGuide = function () {
+    const printWin = window.open("", "_blank", "width=900,height=700");
+    printWin.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>숙명여자대학교 면접 가이드</title><style>body{font-family:'Malgun Gothic',sans-serif;padding:2rem;line-height:1.8;}h1{color:#4a2d5c;border-bottom:3px solid #6a3d82;}h2{color:#6a3d82;margin-top:1.5rem;}.tip{background:#f3e8f8;border-left:5px solid #9b6bb5;padding:12px 15px;margin:1rem 0;}</style></head><body><h1>🎓 숙명여자대학교 면접 가이드</h1><div class="tip"><strong>면접 40% — 역전이 자주 일어나는 전형입니다.</strong><br>1단계 순위가 낮아도 면접에서 우수한 평가를 받아 최초합격한 사례가 상당수 있습니다.</div><h2>1. 면접 구조</h2><p>숙명인재(면접형)·소프트웨어인재 등 / 1단계 3배수(특수교육대상자 4배수) / 2단계 면접 40% / 제출서류(학생부) 기반 면접</p><h2>2. 평가 항목</h2><p><strong>진로역량</strong> — 학생부 활동 질의응답으로 진로탐색 및 전공선택 과정 확인, 추가 질문으로 이해력·논리적 사고력·다양한 관점 평가<br><strong>의사소통능력 및 태도</strong> — 면접 태도, 의사소통능력, 협업, 배려, 가치관</p><h2>3. 출제 범위의 한계</h2><p>학생부에 기재된 전공 관련 수업·수행평가·탐구활동의 이해도를 확인하는 질문은 가능하지만, <strong>단독 교과 지식 질문</strong>과 <strong>고교 교육과정을 벗어난 활동 질문</strong>은 하지 않습니다.</p><h2>4. 준비 전략</h2><ul><li>학생부 숙지가 최우선 — 활동의 계기·배운 것·느낀 점 정리</li><li>화려한 말솜씨보다 질문 의도 파악과 논리적 답변</li><li>서술식 답변 암기 대신 <strong>키워드 중심 정리</strong></li><li>모의면접으로 본인의 언어로 전달하는 연습</li></ul><p style="font-size:0.85rem;color:#777;margin-top:2rem;">출처: 2027학년도 입학전형안내</p></body></html>`);
     printWin.document.close();
     printWin.focus();
     setTimeout(() => { printWin.print(); }, 500);

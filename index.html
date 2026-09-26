@@ -206,6 +206,11 @@
             </div>
           </div>
           <div class="form-group">
+            <label for="record-pdf-upload" style="color: var(--text-secondary); font-weight: 500;">📄 생기부 PDF 업로드 <span class="label-desc" style="color: #96baff; font-weight: normal;">(나이스에서 내려받은 학교생활기록부 PDF 1개로 아래 항목을 한 번에 채웁니다)</span></label>
+            <input type="file" id="record-pdf-upload" accept=".pdf" style="background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-primary); border-radius: 8px; padding: 0.75rem 1rem; width: 100%;">
+            <div id="record-pdf-status" style="margin-top: 0.6rem; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;">주민등록번호·주소 등 인적사항은 아예 읽지 않고, 성적·세특·창체·행특만 추출합니다.</div>
+          </div>
+          <div class="form-group">
             <label for="student-select" style="color: var(--text-secondary); font-weight: 500;">학생 선택 <span class="label-desc" style="color: #96baff; font-weight: normal;">(인적사항 파일 업로드 후 자동 목록 표시)</span></label>
             <select id="student-select" required style="background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-primary); border-radius: 8px; padding: 0.75rem 1rem; width: 100%;">
               <option value="" disabled selected>파일을 업로드하면 학생 목록이 표시됩니다</option>
@@ -941,13 +946,19 @@
   <main id="view-interview" class="main-container view-section hidden">
     <section class="glass-panel form-section" id="sidebar-interview-settings">
       <h2 class="section-title">🎤 면접 문항 생성 설정</h2>
-      <p style="color: var(--text-secondary); margin-bottom: 2.2rem; line-height: 1.7; font-size: 0.95rem;">각 대학의 면접 가이드북을 학습한 AI가 10가지 맞춤 질문과 평가 영역, 모범 답안을 제시합니다. (*주의: 개인 분석에서 학생 데이터를 먼저 불러온 후 진행)</p>
+      <p style="color: var(--text-secondary); margin-bottom: 2.2rem; line-height: 1.7; font-size: 0.95rem;">각 대학의 면접 가이드북을 학습한 AI가 10가지 맞춤 질문과 평가 영역, 모범 답안을 제시합니다. (생기부 PDF를 직접 올리거나, 개인 분석에서 불러온 학생을 선택해 진행하세요.)</p>
       <form id="interviewForm" novalidate>
         <div class="form-group" style="display: none;">
           <label for="iv-api-key" style="color: var(--text-secondary); font-weight: 500;">Google Gemini API Key <span class="label-desc" style="color: #96baff; font-weight: normal;">(필수)</span></label>
           <input type="password" id="iv-api-key" placeholder="API 키를 입력하세요..." required style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.75rem 1rem;width:100%;">
         </div>
         
+        <div class="form-group">
+          <label for="iv-record-pdf" style="color: var(--text-secondary); font-weight: 500;">📄 생기부 PDF 업로드 <span class="label-desc" style="color: #96baff; font-weight: normal;">(개인 분석을 거치지 않고 PDF 1개로 바로 생성)</span></label>
+          <input type="file" id="iv-record-pdf" accept=".pdf" style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.75rem 1rem;width:100%;">
+          <div id="iv-record-pdf-status" style="margin-top:0.6rem;font-size:0.85rem;color:var(--text-secondary);line-height:1.6;">주민등록번호·주소 등 인적사항은 아예 읽지 않고, 성적·세특·창체·행특만 추출합니다.</div>
+        </div>
+
         <div class="form-group">
           <label for="iv-student-select" style="color: var(--text-secondary); font-weight: 500;">학생 선택 <span class="label-desc" style="color: #96baff; font-weight: normal;">(개인 분석 연동)</span></label>
           <select id="iv-student-select" required style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.75rem 1rem;width:100%;">
@@ -1969,7 +1980,7 @@
 console.log('[AA] Babel script started');
 const { useState, useEffect, useMemo, useRef } = React;
 console.log('[AA] React destructured OK');
-const { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } = Recharts;
+const { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend, PieChart, Pie, Cell } = Recharts;
 
 // ▼ 앱스크립트 배포 후 아래 URL을 붙여넣으세요
 //   (admission_gas.gs 배포 → 웹 앱 URL 복사)
@@ -1979,6 +1990,32 @@ const GAS_URL = 'https://script.google.com/macros/s/AKfycbyFmjavISW4Xux2vJWpUdqK
 const COLORS = { '합격': '#10B981', '충원합격': '#3B82F6', '불합격': '#EF4444', '기타': '#9CA3AF' };
 const RESULT_CATEGORIES = ['합격', '충원합격', '불합격', '기타'];
 const CHART_TYPES = ['학생부위주(교과)', '학생부위주(종합)', '실기/실적위주'];
+const TYPE_COLORS = { '학생부위주(교과)': '#6366f1', '학생부위주(종합)': '#10b981', '실기/실적위주': '#f59e0b' };
+
+// ─── 대학 그룹 (지방거점국립대 / 수도권 주요대) ─────────────────────────────
+// members: 대학명에 포함되면 해당 그룹으로 집계 / exclude: 그룹에서 빼는 캠퍼스 키워드
+const UNIV_GROUPS = [
+  {
+    key: 'flagship',
+    label: '지방거점국립대학교',
+    desc: '9개 거점국립대',
+    color: '#0ea5e9',
+    members: ['강원대', '경북대', '경상국립대', '경상대', '부산대', '전남대', '전북대', '충남대', '충북대', '제주대'],
+    exclude: [],
+  },
+  {
+    key: 'metro',
+    label: '수도권 주요 대학',
+    desc: '인서울 상위 16개교',
+    color: '#a855f7',
+    // 정식 명칭(숙명여자대학교)과 약칭(숙명여대) 표기가 섞여 있어 둘 다 등록
+    members: ['서울대', '연세대', '고려대', '서강대', '성균관대', '한양대', '중앙대', '경희대',
+              '한국외국어대', '한국외대', '서울시립대', '건국대', '동국대', '홍익대',
+              '숙명여대', '숙명여자대', '이화여대', '이화여자대', '숭실대'],
+    // 지방에 있는 이원화·분교 캠퍼스는 수도권이 아니므로 제외
+    exclude: ['미래', '원주', '세종', '글로컬', '충주', '와이즈', 'WISE', '경주'],
+  },
+];
 const YEAR_OPTIONS = ['2025', '2024', '전체'];
 
 // ─── SVG 아이콘 ─────────────────────────────────────────────────────────────
@@ -2006,6 +2043,173 @@ const getResultCategory = (result) => {
   if (result.includes('합격') || result.includes('최초')) return '합격';
   return '기타';
 };
+
+// ─── 수능 최저학력기준 판정 ──────────────────────────────────────────────────
+// 모의고사 성적 시트 (앱의 '내신 & 모의고사 분석' 탭과 같은 스프레드시트)
+const MOCK_SHEET_ID = '1JbgXRiCB02XFeZnNR9pswLhihYY7wObCpjWreTYTe7s';
+const MOCK_SHEET_NAME = (year) => `${year}-3학년 모의고사 성적`;
+const roundNo = (r) => parseInt(String(r).replace(/[^0-9]/g, ''), 10) || 99;
+const KO_NUM = { '두': 2, '세': 3, '네': 4, '1': 1, '2': 2, '3': 3, '4': 4 };
+
+// 자유서술로 적힌 최저학력기준을 판정 가능한 규칙으로 해석. 해석 불가 시 mode='unparsed'
+// uni: 대학별 보정 규칙(아래 '공주대' 케이스)을 적용하기 위한 대학명
+function parseMinStandard(rawText, uni) {
+  if (!rawText) return null;
+  let s = String(rawText).replace(/[\r\n]+/g, ' ').replace(/["“”]/g, ' ').replace(/\s+/g, ' ').trim();
+  s = s.replace(/^[*○·\-\s]*수능최저기준\s*:?\s*/, '').replace(/^[*○·\-\s]+/, '');
+  if (!s) return null;
+
+  const caveats = [];
+  const tamguAvg2 = /탐구[^.]{0,30}(?:2\s*과목|두\s*과목|2개\s*과목)[^.]{0,20}평균|평균등급|등급\s*평균/.test(s);
+  const khMatch = s.match(/한국사\s*(\d)\s*등급\s*이내/);
+  const engMatch = s.match(/영어\s*(\d)\s*등급\s*이내/);
+
+  if (/미적분|기하/.test(s) && /(상향|감산|하향)/.test(s)) caveats.push('수학 선택과목에 따른 등급 상향/감산');
+  const afterMarker = s.split(/※|\(단[,)]|단\)/).slice(1).join(' ');
+  if (/계열|모집단위|대학|학부/.test(afterMarker) && /이내/.test(afterMarker)) caveats.push('모집단위·계열별 차등 기준');
+  if (/직업탐구/.test(s)) caveats.push('직업탐구 예외');
+  if (/제2외국어/.test(s)) caveats.push('제2외국어 대체 조건');
+
+  const base = {
+    raw: String(rawText).trim(),
+    tamgu: tamguAvg2 ? 'avg2' : 'top1',
+    tamguRound: /반올림/.test(s),
+    koreanHistoryMax: khMatch ? Number(khMatch[1]) : null,
+    englishMax: engMatch ? Number(engMatch[1]) : null,
+    caveats,
+  };
+
+  // "상위 N개 등급과 <영역> 등급 합이 M 이내" → N+1개 중 해당 영역 필수
+  let m = s.match(/상위\s*(\d)\s*개\s*(?:영역\s*)?등급과\s*(수학|탐구|국어|영어)\s*영역\s*(?:\([^)]*\)\s*)?등급\s*합이?\s*(\d+)\s*등?급?\s*이내/);
+  if (m) return { ...base, mode: 'sum', count: Number(m[1]) + 1, require: [m[2]], sumMax: Number(m[3]) };
+
+  // "N개 영역 각 M등급 이내" (합산이 아니라 각각)
+  m = s.match(/(\d)\s*개\s*영역\s*각\s*(\d)\s*등급\s*이내/);
+  if (m) return { ...base, mode: 'each', count: Number(m[1]), eachMax: Number(m[2]) };
+
+  // 필수 포함 영역: 모집단위별로 갈리는 조건은 제외하고 전체 적용 조건만 인정
+  // ('수학과'의 '학과' 오탐을 피하려고 단과대 나열 여부로 판별)
+  const require = (() => {
+    const out = [];
+    const clauses = s.split(/※|\(단[,)]|단\)|\d\)/);
+    const cond = (c) => /계열|모집단위/.test(c) || (c.match(/대학|학부/g) || []).length >= 2;
+    if (clauses.some(c => !cond(c) && /수학[^.]{0,12}(?:필수\s*)?포함|수학을\s*포함|수학[^.]{0,24}(?:의무|필수)\s*반영/.test(c))) out.push('수학');
+    if (clauses.some(c => !cond(c) && /(?:과학)?탐구[^.]{0,16}필수\s*반영/.test(c))) out.push('탐구');
+    return out;
+  })();
+
+  // 축약형 "상위 2합 8", "3합 12"
+  m = s.match(/(?:상위\s*)?(\d)\s*합\s*(\d+)(?!\s*개)/);
+  if (m && !/\d\s*개/.test(s.slice(0, m.index))) {
+    return { ...base, mode: 'sum', count: Number(m[1]), require, sumMax: Number(m[2]) };
+  }
+
+  // 일반형. "수능 4개 영역(국어,수학,영어,탐구) 중 상위 2개 영역 등급 합 8 이내"에서
+  // 앞쪽 '4개 영역'은 후보 풀이므로, 합산 절에 가장 가까운 'N개'를 반영 수로 본다
+  const sumClause = (s.match(/합(?:이|산)?\s*(\d+)\s*등?급?\s*(?:이내|이하|포함)/g) || []).pop();
+  if (sumClause) {
+    const at = s.lastIndexOf(sumClause);
+    const head = s.slice(0, at);
+    const cnt = (head.match(/(\d|두|세|네)\s*개(?:의)?\s*(?:영역|과목|등급)/g) || []).pop();
+    const sumMax = Number((sumClause.match(/(\d+)/) || [])[1]);
+    if (cnt && sumMax) {
+      const c = (cnt.match(/(\d|두|세|네)/) || [])[1];
+      const count = KO_NUM[c] ?? Number(c);
+      if (count) return { ...base, mode: 'sum', count, require, sumMax };
+    }
+    // 반영 수는 없지만 영역이 나열된 경우 → 나열된 영역 전부를 합산
+    // 예) "수학, 영어 및 과학탐구(1과목) 영역 합산 12등급 이내"
+    if (!cnt && sumMax) {
+      const listed = [];
+      if (/국어/.test(head)) listed.push('국어');
+      if (/수학/.test(head)) listed.push('수학');
+      if (/영어/.test(head)) listed.push('영어');
+      if (/탐구|과탐|사탐/.test(head)) listed.push('탐구');
+      if (listed.length >= 2) {
+        return { ...base, mode: 'sum', count: listed.length, require: listed, sumMax, listedAreas: true };
+      }
+    }
+  }
+
+  // 대학별 보정: 공주대의 "합산 N등급 이내" 표기는 2개 영역 합산 기준
+  const bare = s.match(/^합산\s*(\d+)\s*등?급?\s*이\s*내$/);
+  if (bare && uni && /공주대/.test(uni)) {
+    return { ...base, mode: 'sum', count: 2, require: [], sumMax: Number(bare[1]),
+             uniRule: '공주대 — 합산 표기는 2개 영역 합산으로 해석' };
+  }
+
+  // "1개 영역 M등급 이내" 류
+  m = s.match(/(\d)\s*개\s*(?:영역|과목)\s*(?:이상이\s*)?(?:등급이?\s*)?(\d+)\s*등?급?\s*이내/);
+  if (m) return { ...base, mode: 'sum', count: Number(m[1]), require, sumMax: Number(m[2]) };
+
+  return { ...base, mode: 'unparsed',
+    reason: /합산\s*\d+\s*등?급?\s*이내/.test(s) ? '반영 영역 수가 명시되지 않음' : '지원하지 않는 표기' };
+}
+
+// 한 회차 성적(g)으로 규칙 충족 여부 판정
+function evalMinStandard(rule, g) {
+  if (!rule || rule.mode === 'unparsed') return { status: 'unknown', reason: rule && rule.reason };
+  if (!g) return { status: 'unknown', reason: '해당 회차 성적 없음' };
+
+  const tamgu = (() => {
+    const a = g['탐구1'], b = g['탐구2'];
+    if (rule.tamgu === 'avg2') {
+      if (a == null || b == null) return a != null ? a : (b != null ? b : null);
+      const avg = (a + b) / 2;
+      return rule.tamguRound ? Math.round(avg) : Math.floor(avg);
+    }
+    if (a == null) return b != null ? b : null;
+    if (b == null) return a;
+    return Math.min(a, b);
+  })();
+  const areas = { 국어: g['국어'], 수학: g['수학'], 영어: g['영어'], 탐구: tamgu };
+
+  const fails = [];
+  if (rule.koreanHistoryMax != null) {
+    if (g['한국사'] == null) return { status: 'unknown', reason: '한국사 등급 없음' };
+    if (g['한국사'] > rule.koreanHistoryMax) fails.push(`한국사 ${g['한국사']}등급`);
+  }
+  if (rule.englishMax != null) {
+    if (areas.영어 == null) return { status: 'unknown', reason: '영어 등급 없음' };
+    if (areas.영어 > rule.englishMax) fails.push(`영어 ${areas.영어}등급`);
+  }
+
+  if (rule.mode === 'each') {
+    const avail = Object.keys(areas).filter(k => areas[k] != null).sort((a, b) => areas[a] - areas[b]);
+    if (avail.length < rule.count) return { status: 'unknown', reason: '반영 가능한 영역 부족' };
+    const picked = avail.slice(0, rule.count);
+    if (picked.some(k => areas[k] > rule.eachMax)) fails.push(`각 ${rule.eachMax}등급 미달`);
+    return { status: fails.length ? 'fail' : 'pass', fails,
+             detail: picked.map(k => `${k} ${areas[k]}`).join(' · ') };
+  }
+
+  const req = rule.require || [];
+  for (const r of req) if (areas[r] == null) return { status: 'unknown', reason: `필수 영역(${r}) 등급 없음` };
+  const rest = Object.keys(areas).filter(k => areas[k] != null && req.indexOf(k) < 0)
+    .sort((a, b) => areas[a] - areas[b]);
+  const need = rule.count - req.length;
+  if (need < 0 || rest.length < need) return { status: 'unknown', reason: '반영 가능한 영역 부족' };
+  const picked = [...req, ...rest.slice(0, need)];
+  const sum = picked.reduce((a, k) => a + areas[k], 0);
+  if (sum > rule.sumMax) fails.push(`등급 합 ${sum}`);
+  return { status: fails.length ? 'fail' : 'pass', sum, fails,
+           detail: picked.map(k => `${k} ${areas[k]}`).join(' + ') + ` = ${sum}` };
+}
+
+// 규칙을 사람이 읽을 수 있는 한 줄로
+function describeRule(rule) {
+  if (!rule || rule.mode === 'unparsed') return null;
+  const head = rule.mode === 'each'
+    ? `상위 ${rule.count}개 영역 각 ${rule.eachMax}등급 이내`
+    : (rule.count === 1 ? `1개 영역 ${rule.sumMax}등급 이내`
+       : `상위 ${rule.count}개 영역 등급 합 ${rule.sumMax} 이내`);
+  const bits = [head];
+  if (rule.require && rule.require.length) bits.push(`${rule.require.join('·')} 필수 포함`);
+  if (rule.koreanHistoryMax != null) bits.push(`한국사 ${rule.koreanHistoryMax}등급 이내`);
+  if (rule.englishMax != null) bits.push(`영어 ${rule.englishMax}등급 이내`);
+  bits.push(rule.tamgu === 'avg2' ? '탐구 2과목 평균' : '탐구 상위 1과목');
+  return bits.join(' · ');
+}
 
 // ─── 공통 파싱 함수 (파일·GAS 공용) ────────────────────────────────────────
 function getVal(row, keywords) {
@@ -2245,6 +2449,69 @@ const AdmissionAnalysis = () => {
     if (GAS_URL) loadDataFromGAS(selectedYear);
   }, [selectedYear]);
 
+  // ─── 모의고사 성적 로드 (수능 최저 충족 판정용) ──────────────────────────
+  // { '2025': { '1-2': { '3월': {국어,수학,영어,한국사,탐구1,탐구2} } } }
+  const [mockGrades, setMockGrades] = useState({});
+  const [mockState, setMockState] = useState('idle');   // idle | loading | ready | error
+  const [mockError, setMockError] = useState('');
+
+  useEffect(() => {
+    const years = selectedYear === '전체' ? ['2025', '2024'] : [selectedYear];
+    const missing = years.filter(y => !mockGrades[y]);
+    if (!missing.length) { setMockState('ready'); return; }
+
+    let cancelled = false;
+    setMockState('loading');
+    (async () => {
+      const loaded = {};
+      const errors = [];
+      for (const y of missing) {
+        const url = `https://docs.google.com/spreadsheets/d/${MOCK_SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(MOCK_SHEET_NAME(y))}`;
+        try {
+          const res = await fetch(url);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const text = await res.text();
+          const json = JSON.parse(text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1));
+          const byStudent = {};
+          (json.table && json.table.rows ? json.table.rows : []).forEach(row => {
+            const cells = row.c || [];
+            const raw = (i) => (cells[i] && cells[i].v != null ? cells[i].v : '');
+            const toN = (i) => { const v = raw(i); if (v === '') return null; const n = parseFloat(String(v)); return isNaN(n) ? null : n; };
+            if (!Number(raw(0))) return;                 // 2단 헤더행 걸러내기
+            const key = `${raw(3)}-${raw(4)}`;
+            const round = String(raw(1) || '');
+            if (!round) return;
+            const rec = {
+              이름: String(raw(5) || ''),
+              국어: toN(10), 수학: toN(15), 영어: toN(17),
+              한국사: toN(19), 탐구1: toN(24), 탐구2: toN(29),
+            };
+            // 행은 있으나 등급이 하나도 없으면 미응시 — 판정 대상에서 제외
+            if ([rec['국어'], rec['수학'], rec['영어'], rec['탐구1'], rec['탐구2']].every(v => v == null)) return;
+            if (!byStudent[key]) byStudent[key] = {};
+            byStudent[key][round] = rec;
+          });
+          loaded[y] = byStudent;
+        } catch (e) {
+          errors.push(`${y}년 ${e.message}`);
+        }
+      }
+      if (cancelled) return;
+      setMockGrades(prev => ({ ...prev, ...loaded }));
+      setMockError(errors.join(' / '));
+      setMockState(errors.length && !Object.keys(loaded).length ? 'error' : 'ready');
+    })();
+    return () => { cancelled = true; };
+  }, [selectedYear]);
+
+  // 해당 지원 건의 학생이 치른 회차별 성적
+  const roundsForItem = (item) => {
+    if (!item) return null;
+    const byStudent = mockGrades[item.year] || mockGrades[selectedYear];
+    if (!byStudent) return null;
+    return byStudent[`${item.cls}-${item.num}`] || null;
+  };
+
   // ─── 파생 데이터 ─────────────────────────────────────────────────────────
   const uniList = useMemo(() =>
     [...new Set(data.map(d => d.uni))].sort((a, b) => a.localeCompare(b, 'ko'))
@@ -2329,6 +2596,20 @@ const AdmissionAnalysis = () => {
     });
     return dist;
   }, [data]);
+
+  // ─── 전형 유형별 비율 (현재 필터가 반영된 filteredData 기준) ───────────────
+  const typeDistribution = useMemo(() => {
+    const counts = {};
+    CHART_TYPES.forEach(ct => { counts[ct] = 0; });
+    filteredData.forEach(item => {
+      if (item._dummy) return;
+      counts[item.chartType] = (counts[item.chartType] || 0) + 1;
+    });
+    const total = Object.values(counts).reduce((a, b) => a + b, 0);
+    return CHART_TYPES
+      .map(ct => ({ name: ct, value: counts[ct], pct: total ? +(counts[ct] / total * 100).toFixed(1) : 0 }))
+      .filter(d => d.value > 0);
+  }, [filteredData]);
 
   const uniDistribution = useMemo(() => {
     const map = {};
@@ -2435,6 +2716,120 @@ const AdmissionAnalysis = () => {
       };
     }).filter(Boolean);
   }, [data]);
+
+  // ─── 대학 그룹별(지방거점국립대 / 수도권 주요대) 지원·합격 현황 ───────────
+  const univGroupStats = useMemo(() => {
+    const norm = (s) => String(s || '').replace(/[\s()·・\-]/g, '');
+    return UNIV_GROUPS.map(g => {
+      const perUni = new Map();
+      let pass = 0, waitPass = 0, fail = 0, etc = 0, total = 0;
+      data.forEach(item => {
+        const u = norm(item.uni);
+        if (!g.members.some(m => u.includes(norm(m)))) return;
+        if (g.exclude.some(x => u.toUpperCase().includes(norm(x).toUpperCase()))) return;
+        const cat = getResultCategory(item.result);
+        if (!perUni.has(item.uni)) {
+          perUni.set(item.uni, { name: item.uni, '합격': 0, '충원합격': 0, '불합격': 0, '기타': 0, total: 0 });
+        }
+        const row = perUni.get(item.uni);
+        row[cat]++; row.total++;
+        total++;
+        if (cat === '합격') pass++;
+        else if (cat === '충원합격') waitPass++;
+        else if (cat === '불합격') fail++;
+        else etc++;
+      });
+      // 합격률은 결과가 확정된 건수(합격+충원합격+불합격) 기준 — 전형별 합격률과 동일
+      const decided = pass + waitPass + fail;
+      return {
+        ...g, total, pass, waitPass, fail, etc,
+        initialRate: decided ? +(pass / decided * 100).toFixed(1) : null,
+        finalRate:   decided ? +((pass + waitPass) / decided * 100).toFixed(1) : null,
+        unis: [...perUni.values()].sort((a, b) => b.total - a.total || a.name.localeCompare(b.name, 'ko')),
+      };
+    });
+  }, [data]);
+
+  // ─── 모의고사 회차별 수능 최저 충족 현황 ─────────────────────────────────
+  const [minSearch, setMinSearch] = useState('');
+  const [minResults, setMinResults] = useState([...RESULT_CATEGORIES]);
+  const [minClass, setMinClass] = useState('');
+  const [showUnjudged, setShowUnjudged] = useState(false);
+  const minStdStats = useMemo(() => {
+    const withStd = data.filter(d => d.minStandard && String(d.minStandard).trim());
+    const cases = [];
+    const roundSet = new Set();
+    const unparsed = [];    // 기준 자동 해석 불가
+    const noMock = [];      // 모의고사 성적 없음
+
+    withStd.forEach(item => {
+      const rule = parseMinStandard(item.minStandard, item.uni);
+      if (!rule || rule.mode === 'unparsed') {
+        unparsed.push({ item, reason: (rule && rule.reason) || '기준 해석 불가' });
+        return;
+      }
+      const rounds = roundsForItem(item);
+      if (!rounds || !Object.keys(rounds).length) { noMock.push({ item }); return; }
+      const perRound = {};
+      let name = '';
+      Object.keys(rounds).forEach(rk => {
+        roundSet.add(rk);
+        perRound[rk] = evalMinStandard(rule, rounds[rk]);
+        if (!name) name = rounds[rk]['이름'] || '';
+      });
+      cases.push({ item, rule, desc: describeRule(rule), rounds, perRound, name });
+    });
+
+    const roundList = [...roundSet].sort((a, b) => roundNo(a) - roundNo(b));
+    const classList = [...new Set(cases.map(c => String(c.item.cls)))]
+      .sort((a, b) => (parseInt(a, 10) || 0) - (parseInt(b, 10) || 0));
+
+    // 판정 불가 건은 기준 원문끼리 묶어서 보여준다
+    const unparsedGroups = [];
+    const byText = new Map();
+    unparsed.forEach(u => {
+      const key = String(u.item.minStandard).replace(/\s+/g, ' ').trim();
+      if (!byText.has(key)) {
+        const g = { text: key, reason: u.reason, items: [] };
+        byText.set(key, g); unparsedGroups.push(g);
+      }
+      byText.get(key).items.push(u.item);
+    });
+    unparsedGroups.sort((a, b) => b.items.length - a.items.length);
+
+    return { cases, roundList, classList, totalWithStd: withStd.length,
+             unparsedCount: unparsed.length, noMockCount: noMock.length,
+             unparsedGroups, noMock };
+  }, [data, mockGrades, selectedYear]);
+
+  const minStdFiltered = useMemo(() => {
+    const q = minSearch.trim().toLowerCase();
+    return minStdStats.cases.filter(c => {
+      if (minResults.indexOf(getResultCategory(c.item.result)) < 0) return false;
+      if (minClass && String(c.item.cls) !== minClass) return false;
+      if (!q) return true;
+      return c.item.uni.toLowerCase().includes(q) || c.item.major.toLowerCase().includes(q) ||
+        (c.name && c.name.toLowerCase().includes(q)) ||
+        `${c.item.cls}-${c.item.num}`.includes(q);
+    });
+  }, [minStdStats, minSearch, minResults, minClass]);
+
+  // 충족률 요약은 필터가 적용된 사례만으로 계산
+  const minSummary = useMemo(() => {
+    const out = {};
+    minStdStats.roundList.forEach(rk => {
+      const s = { pass: 0, fail: 0, unknown: 0 };
+      minStdFiltered.forEach(c => { const r = c.perRound[rk]; if (r) s[r.status]++; });
+      s.total = s.pass + s.fail + s.unknown;
+      s.judged = s.pass + s.fail;                       // 충족률은 판정된 건수 기준
+      s.rate = s.judged ? (s.pass / s.judged * 100) : null;
+      out[rk] = s;
+    });
+    return out;
+  }, [minStdStats, minStdFiltered]);
+
+  const minToggleResult = (c) =>
+    setMinResults(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]);
 
   const toggleFilter = (c) =>
     setActiveFilters(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]);
@@ -2909,134 +3304,638 @@ const AdmissionAnalysis = () => {
                 </div>
               </div>
 
-              {/* 전형별 합격률 대시보드 */}
+              {/* 전형 유형별 비율 */}
               <div style={{ ...card }}>
-                <p style={{ margin: '0 0 0.85rem', fontWeight: 700, fontSize: '0.9rem', color: t.textHeading,
+                <p style={{ margin: '0 0 0.75rem', fontWeight: 700, fontSize: '0.9rem', color: t.textHeading,
                   display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  🎯 전형별 합격률
+                  🥧 전형 유형별 비율
+                  <span style={{ fontSize: '0.72rem', color: t.textMuted, fontWeight: 400 }}>
+                    (표시된 {displayedCount}건 기준)
+                  </span>
                 </p>
+                {typeDistribution.length === 0 ? (
+                  <div style={{ padding: '1.5rem 0', textAlign: 'center', fontSize: '0.8rem', color: t.textMuted }}>
+                    표시할 데이터가 없습니다.
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ height: '210px' }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={typeDistribution}
+                            dataKey="value"
+                            nameKey="name"
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={48}
+                            outerRadius={78}
+                            paddingAngle={2}
+                            stroke={t.bgCard}
+                            strokeWidth={2}
+                          >
+                            {typeDistribution.map(d => (
+                              <Cell key={d.name} fill={TYPE_COLORS[d.name] || '#9CA3AF'} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            contentStyle={{ backgroundColor: t.bgCard, color: t.text,
+                              border: `1px solid ${t.border}`, borderRadius: '8px', fontSize: '0.8rem' }}
+                            itemStyle={{ color: t.text }}
+                            formatter={(value, name) => {
+                              const d = typeDistribution.find(x => x.name === name);
+                              return [`${value}건 (${d ? d.pct : 0}%)`, name];
+                            }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginTop: '0.3rem' }}>
+                      {typeDistribution.map(d => (
+                        <div key={d.name} style={{ display: 'flex', alignItems: 'center',
+                          justifyContent: 'space-between', fontSize: '0.78rem' }}>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem',
+                            color: t.text, minWidth: 0 }}>
+                            <span style={{ width: '9px', height: '9px', borderRadius: '3px', flexShrink: 0,
+                              backgroundColor: TYPE_COLORS[d.name] || '#9CA3AF' }} />
+                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.name}</span>
+                          </span>
+                          <span style={{ flexShrink: 0, marginLeft: '0.5rem' }}>
+                            <span style={{ fontWeight: 700, color: t.textHeading }}>{d.pct}%</span>
+                            <span style={{ fontWeight: 400, color: t.textMuted, fontSize: '0.7rem' }}> ({d.value}건)</span>
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
 
-                {/* 교과 / 종합 전체 합격률 */}
+          {/* ── 전형별 합격률 대시보드 (가로) ── */}
+          <div style={{ ...card, marginBottom: '1.25rem' }}>
+            <p style={{ margin: '0 0 1.25rem', fontWeight: 700, fontSize: '1.05rem', color: t.textHeading,
+              display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              🎯 전형별 합격률
+            </p>
+
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.75rem', alignItems: 'flex-start' }}>
+              {/* 교과 / 종합 전체 합격률 (위아래 배치) */}
+              <div style={{ flex: '1 1 360px', minWidth: '300px', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                 {[
                   { key: 'subject',       label: '교과 전형', color: '#6366f1' },
                   { key: 'comprehensive', label: '종합 전형', color: '#10b981' },
                 ].map(({ key, label, color }) => {
                   const d = acceptanceRate[key];
                   if (!d) return (
-                    <div key={key} style={{ marginBottom: '1rem', padding: '0.5rem 0.7rem',
-                      backgroundColor: t.bgSub, borderRadius: '8px',
-                      fontSize: '0.78rem', color: t.textMuted, textAlign: 'center' }}>
+                    <div key={key} style={{ padding: '1rem 1.1rem',
+                      backgroundColor: t.bgSub, borderRadius: '10px', border: `1px solid ${t.border}`,
+                      fontSize: '0.85rem', color: t.textMuted, textAlign: 'center' }}>
                       {label} 데이터 없음
                     </div>
                   );
                   return (
-                    <div key={key} style={{ marginBottom: '1.1rem' }}>
+                    <div key={key} style={{ padding: '1.1rem 1.25rem',
+                      backgroundColor: t.bgSub, borderRadius: '12px', border: `1px solid ${t.border}` }}>
                       {/* 헤더 */}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                        <span style={{ fontSize: '0.82rem', fontWeight: 700, color }}>{label}</span>
-                        <span style={{ fontSize: '0.73rem', color: t.textMuted }}>총 {d.total}건</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                        <span style={{ fontSize: '1.05rem', fontWeight: 700, color }}>{label}</span>
+                        <span style={{ fontSize: '0.85rem', color: t.textMuted }}>총 {d.total}건</span>
                       </div>
                       {/* 최초합 bar */}
-                      <div style={{ marginBottom: '0.38rem' }}>
+                      <div style={{ marginBottom: '0.6rem' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between',
-                          fontSize: '0.72rem', color: t.textMuted, marginBottom: '0.18rem' }}>
+                          fontSize: '0.85rem', color: t.textMuted, marginBottom: '0.3rem' }}>
                           <span>최초합 ({d.pass}건)</span>
-                          <span style={{ fontWeight: 700, color: COLORS['합격'] }}>{d.initialRate}%</span>
+                          <span style={{ fontWeight: 700, fontSize: '0.95rem', color: COLORS['합격'] }}>{d.initialRate}%</span>
                         </div>
-                        <div style={{ height: '7px', borderRadius: '4px', backgroundColor: t.bgSub, overflow: 'hidden' }}>
+                        <div style={{ height: '11px', borderRadius: '6px', backgroundColor: t.bg, overflow: 'hidden' }}>
                           <div style={{ height: '100%', width: `${d.initialRate}%`,
-                            backgroundColor: COLORS['합격'], borderRadius: '4px',
+                            backgroundColor: COLORS['합격'], borderRadius: '6px',
                             transition: 'width 0.5s ease' }} />
                         </div>
                       </div>
                       {/* 충원포함 bar */}
-                      <div style={{ marginBottom: '0.55rem' }}>
+                      <div style={{ marginBottom: '0.9rem' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between',
-                          fontSize: '0.72rem', color: t.textMuted, marginBottom: '0.18rem' }}>
+                          fontSize: '0.85rem', color: t.textMuted, marginBottom: '0.3rem' }}>
                           <span>충원포함 ({d.pass + d.waitPass}건)</span>
-                          <span style={{ fontWeight: 700, color: COLORS['충원합격'] }}>{d.finalRate}%</span>
+                          <span style={{ fontWeight: 700, fontSize: '0.95rem', color: COLORS['충원합격'] }}>{d.finalRate}%</span>
                         </div>
-                        <div style={{ height: '7px', borderRadius: '4px', backgroundColor: t.bgSub, overflow: 'hidden' }}>
+                        <div style={{ height: '11px', borderRadius: '6px', backgroundColor: t.bg, overflow: 'hidden' }}>
                           <div style={{ height: '100%', width: `${d.finalRate}%`,
-                            backgroundColor: COLORS['충원합격'], borderRadius: '4px',
+                            backgroundColor: COLORS['충원합격'], borderRadius: '6px',
                             transition: 'width 0.5s ease' }} />
                         </div>
                       </div>
                       {/* 건수 배지 */}
-                      <div style={{ display: 'flex', gap: '0.35rem' }}>
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
                         {[
                           { label: '최초합', val: d.pass,     color: COLORS['합격'] },
                           { label: '충원합', val: d.waitPass, color: COLORS['충원합격'] },
                           { label: '불합격', val: d.fail,     color: COLORS['불합격'] },
                         ].map(s => (
                           <div key={s.label} style={{ flex: 1, textAlign: 'center',
-                            padding: '0.28rem 0.1rem', backgroundColor: t.bgSub,
-                            borderRadius: '6px', border: `1px solid ${t.border}` }}>
-                            <div style={{ color: s.color, fontWeight: 700, fontSize: '0.82rem' }}>{s.val}</div>
-                            <div style={{ color: t.textMuted, fontSize: '0.67rem', marginTop: '0.08rem' }}>{s.label}</div>
+                            padding: '0.45rem 0.2rem', backgroundColor: t.bg,
+                            borderRadius: '8px', border: `1px solid ${t.border}` }}>
+                            <div style={{ color: s.color, fontWeight: 700, fontSize: '1.05rem' }}>{s.val}</div>
+                            <div style={{ color: t.textMuted, fontSize: '0.75rem', marginTop: '0.15rem' }}>{s.label}</div>
                           </div>
                         ))}
                       </div>
                     </div>
                   );
                 })}
+              </div>
 
-                {/* 등급별 합격률 테이블 */}
-                {gradeAcceptanceRate.length > 0 && (
-                  <>
-                    <div style={{ borderTop: `1px solid ${t.border}`, margin: '0.6rem 0 0.75rem' }} />
-                    <p style={{ margin: '0 0 0.5rem', fontSize: '0.78rem', fontWeight: 700, color: t.textHeading }}>
-                      등급별 합격률
-                    </p>
-                    <div style={{ overflowX: 'auto' }}>
-                      <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: '0.72rem' }}>
-                        <thead>
-                          <tr style={{ borderBottom: `1px solid ${t.border}` }}>
-                            <th style={{ padding: '0.28rem 0.3rem', color: t.textMuted, fontWeight: 600,
-                              textAlign: 'center', whiteSpace: 'nowrap' }}>등급</th>
-                            <th style={{ padding: '0.28rem 0.3rem', color: '#6366f1', fontWeight: 600,
-                              textAlign: 'center', whiteSpace: 'nowrap' }}>교과<br/>최초/충원</th>
-                            <th style={{ padding: '0.28rem 0.3rem', color: '#10b981', fontWeight: 600,
-                              textAlign: 'center', whiteSpace: 'nowrap' }}>종합<br/>최초/충원</th>
+              {/* 등급별 합격률 테이블 */}
+              {gradeAcceptanceRate.length > 0 && (
+                <div style={{ flex: '1 1 360px', minWidth: '300px' }}>
+                  <p style={{ margin: '0 0 0.75rem', fontSize: '1.05rem', fontWeight: 700, color: t.textHeading }}>
+                    등급별 합격률
+                  </p>
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: '0.82rem' }}>
+                      <thead>
+                        <tr style={{ borderBottom: `1px solid ${t.border}` }}>
+                          <th style={{ padding: '0.4rem 0.4rem', color: t.textMuted, fontWeight: 600,
+                            textAlign: 'center', whiteSpace: 'nowrap' }}>등급</th>
+                          <th style={{ padding: '0.4rem 0.4rem', color: '#6366f1', fontWeight: 600,
+                            textAlign: 'center', whiteSpace: 'nowrap' }}>교과<br/>최초/충원</th>
+                          <th style={{ padding: '0.4rem 0.4rem', color: '#10b981', fontWeight: 600,
+                            textAlign: 'center', whiteSpace: 'nowrap' }}>종합<br/>최초/충원</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {gradeAcceptanceRate.map(r => (
+                          <tr key={r.grade} style={{ borderBottom: `1px solid ${t.border}` }}>
+                            <td style={{ padding: '0.42rem', textAlign: 'center',
+                              color: t.textHeading, fontWeight: 600 }}>{r.grade}등급</td>
+                            <td style={{ padding: '0.42rem', textAlign: 'center' }}>
+                              {r.sTotal > 0 ? (
+                                <span style={{ color: t.text }}>
+                                  <span style={{ color: COLORS['합격'], fontWeight: 700 }}>{r.sInitial}%</span>
+                                  <span style={{ color: t.textMuted }}> / </span>
+                                  <span style={{ color: COLORS['충원합격'], fontWeight: 700 }}>{r.sFinal}%</span>
+                                  <span style={{ color: t.textMuted, fontSize: '0.72rem', display: 'block' }}>({r.sTotal}건)</span>
+                                </span>
+                              ) : <span style={{ color: t.textMuted }}>-</span>}
+                            </td>
+                            <td style={{ padding: '0.42rem', textAlign: 'center' }}>
+                              {r.cTotal > 0 ? (
+                                <span style={{ color: t.text }}>
+                                  <span style={{ color: COLORS['합격'], fontWeight: 700 }}>{r.cInitial}%</span>
+                                  <span style={{ color: t.textMuted }}> / </span>
+                                  <span style={{ color: COLORS['충원합격'], fontWeight: 700 }}>{r.cFinal}%</span>
+                                  <span style={{ color: t.textMuted, fontSize: '0.72rem', display: 'block' }}>({r.cTotal}건)</span>
+                                </span>
+                              ) : <span style={{ color: t.textMuted }}>-</span>}
+                            </td>
                           </tr>
-                        </thead>
-                        <tbody>
-                          {gradeAcceptanceRate.map(r => (
-                            <tr key={r.grade} style={{ borderBottom: `1px solid ${t.border}` }}>
-                              <td style={{ padding: '0.3rem', textAlign: 'center',
-                                color: t.textHeading, fontWeight: 600 }}>{r.grade}등급</td>
-                              <td style={{ padding: '0.3rem', textAlign: 'center' }}>
-                                {r.sTotal > 0 ? (
-                                  <span style={{ color: t.text }}>
-                                    <span style={{ color: COLORS['합격'], fontWeight: 700 }}>{r.sInitial}%</span>
-                                    <span style={{ color: t.textMuted }}> / </span>
-                                    <span style={{ color: COLORS['충원합격'], fontWeight: 700 }}>{r.sFinal}%</span>
-                                    <span style={{ color: t.textMuted, fontSize: '0.65rem', display: 'block' }}>({r.sTotal}건)</span>
-                                  </span>
-                                ) : <span style={{ color: t.textMuted }}>-</span>}
-                              </td>
-                              <td style={{ padding: '0.3rem', textAlign: 'center' }}>
-                                {r.cTotal > 0 ? (
-                                  <span style={{ color: t.text }}>
-                                    <span style={{ color: COLORS['합격'], fontWeight: 700 }}>{r.cInitial}%</span>
-                                    <span style={{ color: t.textMuted }}> / </span>
-                                    <span style={{ color: COLORS['충원합격'], fontWeight: 700 }}>{r.cFinal}%</span>
-                                    <span style={{ color: t.textMuted, fontSize: '0.65rem', display: 'block' }}>({r.cTotal}건)</span>
-                                  </span>
-                                ) : <span style={{ color: t.textMuted }}>-</span>}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <p style={{ margin: '0.5rem 0 0', fontSize: '0.75rem', color: t.textMuted, lineHeight: 1.5 }}>
+                    최초: 최초합 기준 / 충원: 충원합격 포함 기준
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ── 지방거점국립대 · 수도권 주요대 지원/합격 현황 ── */}
+          <div style={{ ...card, marginBottom: '1.25rem' }}>
+            <p style={{ margin: '0 0 1.25rem', fontWeight: 700, fontSize: '1.05rem', color: t.textHeading,
+              display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+              <Icons.Landmark /> 지방거점국립대 · 수도권 주요대 지원 및 합격 현황
+              <span style={{ fontSize: '0.8rem', color: t.textMuted, fontWeight: 400 }}>
+                (전체 {data.length}건 기준)
+              </span>
+            </p>
+
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.75rem', alignItems: 'flex-start' }}>
+              {univGroupStats.map(g => (
+                <div key={g.key} style={{ flex: '1 1 380px', minWidth: '320px',
+                  padding: '1.1rem 1.25rem', backgroundColor: t.bgSub,
+                  borderRadius: '12px', border: `1px solid ${t.border}` }}>
+
+                  {/* 그룹 헤더 */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
+                    gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.9rem' }}>
+                    <span style={{ fontSize: '1.05rem', fontWeight: 700, color: g.color }}>
+                      {g.label}
+                      <span style={{ fontSize: '0.75rem', fontWeight: 400, color: t.textMuted, marginLeft: '0.4rem' }}>
+                        {g.desc}
+                      </span>
+                    </span>
+                    <span style={{ fontSize: '0.85rem', color: t.textMuted }}>
+                      지원 <b style={{ color: t.textHeading, fontSize: '1rem' }}>{g.total}</b>건
+                      {g.unis.length > 0 && ` · ${g.unis.length}개교`}
+                    </span>
+                  </div>
+
+                  {g.total === 0 ? (
+                    <div style={{ padding: '1.5rem 0', textAlign: 'center',
+                      fontSize: '0.85rem', color: t.textMuted }}>
+                      해당 그룹 지원 사례가 없습니다.
                     </div>
-                    <p style={{ margin: '0.4rem 0 0', fontSize: '0.67rem', color: t.textMuted, lineHeight: 1.5 }}>
-                      최초: 최초합 기준 / 충원: 충원합격 포함 기준
-                    </p>
-                  </>
+                  ) : (
+                    <>
+                      {/* 합격률 bar */}
+                      <div style={{ marginBottom: '0.6rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between',
+                          fontSize: '0.85rem', color: t.textMuted, marginBottom: '0.3rem' }}>
+                          <span>최초합 ({g.pass}건)</span>
+                          <span style={{ fontWeight: 700, fontSize: '0.95rem', color: COLORS['합격'] }}>
+                            {g.initialRate === null ? '-' : `${g.initialRate}%`}
+                          </span>
+                        </div>
+                        <div style={{ height: '11px', borderRadius: '6px', backgroundColor: t.bg, overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${g.initialRate || 0}%`,
+                            backgroundColor: COLORS['합격'], borderRadius: '6px',
+                            transition: 'width 0.5s ease' }} />
+                        </div>
+                      </div>
+                      <div style={{ marginBottom: '0.9rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between',
+                          fontSize: '0.85rem', color: t.textMuted, marginBottom: '0.3rem' }}>
+                          <span>충원포함 ({g.pass + g.waitPass}건)</span>
+                          <span style={{ fontWeight: 700, fontSize: '0.95rem', color: COLORS['충원합격'] }}>
+                            {g.finalRate === null ? '-' : `${g.finalRate}%`}
+                          </span>
+                        </div>
+                        <div style={{ height: '11px', borderRadius: '6px', backgroundColor: t.bg, overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${g.finalRate || 0}%`,
+                            backgroundColor: COLORS['충원합격'], borderRadius: '6px',
+                            transition: 'width 0.5s ease' }} />
+                        </div>
+                      </div>
+
+                      {/* 건수 배지 */}
+                      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+                        {[
+                          { label: '최초합', val: g.pass,     color: COLORS['합격'] },
+                          { label: '충원합', val: g.waitPass, color: COLORS['충원합격'] },
+                          { label: '불합격', val: g.fail,     color: COLORS['불합격'] },
+                          { label: '기타',   val: g.etc,      color: COLORS['기타'] },
+                        ].map(s => (
+                          <div key={s.label} style={{ flex: 1, textAlign: 'center',
+                            padding: '0.45rem 0.2rem', backgroundColor: t.bg,
+                            borderRadius: '8px', border: `1px solid ${t.border}` }}>
+                            <div style={{ color: s.color, fontWeight: 700, fontSize: '1.05rem' }}>{s.val}</div>
+                            <div style={{ color: t.textMuted, fontSize: '0.75rem', marginTop: '0.15rem' }}>{s.label}</div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* 대학별 상세 */}
+                      <p style={{ margin: '0 0 0.5rem', fontSize: '0.8rem', fontWeight: 700, color: t.textHeading }}>
+                        대학별 현황
+                      </p>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.7rem',
+                        maxHeight: '340px', overflowY: 'auto' }}>
+                        {g.unis.map(u => (
+                          <div key={u.name}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between',
+                              alignItems: 'baseline', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                              <span style={{ fontSize: '0.85rem', fontWeight: 600, color: t.text,
+                                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {u.name}
+                              </span>
+                              <span style={{ fontSize: '0.78rem', color: t.textMuted, flexShrink: 0, whiteSpace: 'nowrap' }}>
+                                <span style={{ color: COLORS['합격'], fontWeight: 700 }}>{u['합격']}</span>
+                                <span> / </span>
+                                <span style={{ color: COLORS['충원합격'], fontWeight: 700 }}>{u['충원합격']}</span>
+                                <span> / </span>
+                                <span style={{ color: COLORS['불합격'], fontWeight: 700 }}>{u['불합격']}</span>
+                                <span style={{ marginLeft: '0.35rem' }}>({u.total}건)</span>
+                              </span>
+                            </div>
+                            {/* 결과 비율 누적 바 */}
+                            <div style={{ display: 'flex', height: '8px', borderRadius: '4px',
+                              overflow: 'hidden', backgroundColor: t.bg }}>
+                              {RESULT_CATEGORIES.map(cat => (
+                                u[cat] > 0 ? (
+                                  <div key={cat} title={`${cat} ${u[cat]}건`}
+                                    style={{ width: `${u[cat] / u.total * 100}%`, backgroundColor: COLORS[cat] }} />
+                                ) : null
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <p style={{ margin: '0.5rem 0 0', fontSize: '0.72rem', color: t.textMuted, lineHeight: 1.5 }}>
+                        건수 표기: <span style={{ color: COLORS['합격'] }}>최초합</span> /
+                        <span style={{ color: COLORS['충원합격'] }}> 충원합</span> /
+                        <span style={{ color: COLORS['불합격'] }}> 불합격</span>
+                      </p>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <p style={{ margin: '1rem 0 0', fontSize: '0.72rem', color: t.textMuted, lineHeight: 1.6 }}>
+              ※ 지방거점국립대: 강원대·경북대·경상국립대·부산대·전남대·전북대·충남대·충북대·제주대 (이원화 캠퍼스 포함)<br/>
+              ※ 수도권 주요대: 서울대·연세대·고려대·서강대·성균관대·한양대·중앙대·경희대·한국외대·서울시립대·건국대·동국대·홍익대·숙명여대·이화여대·숭실대
+              &nbsp;— 지방에 있는 분교·이원화 캠퍼스(연세대 미래, 고려대 세종, 건국대 글로컬, 동국대 와이즈, 홍익대 세종 등)는 제외했습니다.
+            </p>
+          </div>
+
+          {/* ── 모의고사 회차별 수능 최저 충족 현황 ── */}
+          <div style={{ ...card, marginBottom: '1.25rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end',
+              flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1rem' }}>
+              <div>
+                <p style={{ margin: '0 0 0.2rem', fontWeight: 700, fontSize: '1.05rem', color: t.textHeading,
+                  display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  🎯 모의고사 회차별 수능 최저 충족 현황
+                </p>
+                <p style={{ margin: 0, fontSize: '0.78rem', color: t.textMuted, lineHeight: 1.6 }}>
+                  최저학력기준이 있는 {minStdStats.totalWithStd}건 중 <b style={{ color: t.text }}>{minStdStats.cases.length}건</b>을 회차별로 판정했습니다.
+                  {minStdStats.unparsedCount > 0 && ` 기준 자동 해석 불가 ${minStdStats.unparsedCount}건`}
+                  {minStdStats.noMockCount > 0 && ` · 모의고사 성적 없음 ${minStdStats.noMockCount}건`}
+                  {(minStdStats.unparsedCount > 0 || minStdStats.noMockCount > 0) && '은 제외했습니다.'}
+                </p>
+              </div>
+              {minStdStats.cases.length > 0 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem',
+                  backgroundColor: t.bgSub, border: `1px solid ${minSearch ? t.btnActive : t.border}`,
+                  borderRadius: '8px', padding: '0.3rem 0.65rem', minWidth: '210px' }}>
+                  <span style={{ color: t.textMuted, fontSize: '0.88rem' }}>🔍</span>
+                  <input type="text" value={minSearch} onChange={e => setMinSearch(e.target.value)}
+                    placeholder="대학·학과·학생(반-번호) 검색..."
+                    style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent',
+                      color: t.text, fontSize: '0.82rem', minWidth: 0 }} />
+                  {minSearch && (
+                    <button onClick={() => setMinSearch('')} style={{ background: 'none', border: 'none',
+                      cursor: 'pointer', color: t.textMuted, fontSize: '0.85rem', padding: 0, lineHeight: 1 }}>✕</button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* 결과 · 반 필터 */}
+            {minStdStats.cases.length > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem 1.1rem',
+                flexWrap: 'wrap', marginBottom: '1rem', paddingBottom: '0.9rem',
+                borderBottom: `1px solid ${t.border}` }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '0.78rem', fontWeight: 700, color: t.textMuted }}>결과</span>
+                  {RESULT_CATEGORIES.map(cat => {
+                    const on = minResults.includes(cat);
+                    return (
+                      <button key={cat} onClick={() => minToggleResult(cat)} style={{
+                        display: 'flex', alignItems: 'center', gap: '0.25rem',
+                        padding: '0.22rem 0.65rem', borderRadius: '999px',
+                        fontSize: '0.76rem', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
+                        border: `1px solid ${on ? t.btnActive : t.border}`,
+                        backgroundColor: on ? t.btnActive : t.btnInactive,
+                        color: on ? t.btnActiveTxt : t.btnInactiveTxt,
+                      }}>
+                        <span style={{ width: '7px', height: '7px', borderRadius: '50%', flexShrink: 0,
+                          backgroundColor: on ? '#fff' : COLORS[cat] }} />
+                        {cat}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '0.78rem', fontWeight: 700, color: t.textMuted }}>반</span>
+                  {[''].concat(minStdStats.classList).map(cl => {
+                    const on = minClass === cl;
+                    return (
+                      <button key={cl || 'all'} onClick={() => setMinClass(cl)} style={{
+                        padding: '0.22rem 0.65rem', borderRadius: '999px',
+                        fontSize: '0.76rem', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
+                        border: `1px solid ${on ? t.btnActive : t.border}`,
+                        backgroundColor: on ? t.btnActive : t.btnInactive,
+                        color: on ? t.btnActiveTxt : t.btnInactiveTxt,
+                      }}>{cl === '' ? '전체' : `${cl}반`}</button>
+                    );
+                  })}
+                </div>
+
+                {(minResults.length !== RESULT_CATEGORIES.length || minClass || minSearch) && (
+                  <button onClick={() => { setMinResults([...RESULT_CATEGORIES]); setMinClass(''); setMinSearch(''); }}
+                    style={{ marginLeft: 'auto', background: 'none', border: `1px solid ${t.border}`,
+                      borderRadius: '8px', padding: '0.22rem 0.7rem', cursor: 'pointer',
+                      fontSize: '0.75rem', fontWeight: 600, color: t.textMuted }}>
+                    필터 초기화
+                  </button>
                 )}
               </div>
-            </div>
+            )}
+
+            {mockState === 'loading' ? (
+              <p style={{ margin: 0, padding: '1.5rem 0', textAlign: 'center', fontSize: '0.85rem', color: t.textMuted }}>
+                모의고사 성적 불러오는 중…
+              </p>
+            ) : mockState === 'error' ? (
+              <p style={{ margin: 0, padding: '1.5rem 0', textAlign: 'center', fontSize: '0.85rem', color: '#f87171' }}>
+                모의고사 성적을 불러오지 못했습니다{mockError ? ` (${mockError})` : ''}.
+              </p>
+            ) : minStdStats.cases.length === 0 ? (
+              <p style={{ margin: 0, padding: '1.5rem 0', textAlign: 'center', fontSize: '0.85rem', color: t.textMuted }}>
+                판정할 수 있는 사례가 없습니다.
+              </p>
+            ) : (
+              <>
+                {/* 회차별 충족률 요약 */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem', marginBottom: '1.1rem' }}>
+                  {minStdStats.roundList.map(rk => {
+                    const s = minSummary[rk];
+                    return (
+                      <div key={rk} style={{ flex: '1 1 110px', minWidth: '104px',
+                        padding: '0.65rem 0.7rem', backgroundColor: t.bgSub,
+                        borderRadius: '10px', border: `1px solid ${t.border}` }}>
+                        <div style={{ fontSize: '0.78rem', color: t.textMuted, marginBottom: '0.2rem' }}>{rk}</div>
+                        <div style={{ fontSize: '1.25rem', fontWeight: 700, color: COLORS['합격'], lineHeight: 1.1 }}>
+                          {s.rate == null ? '–' : `${s.rate.toFixed(1)}%`}
+                        </div>
+                        <div style={{ fontSize: '0.7rem', color: t.textMuted, marginTop: '0.15rem' }}>
+                          충족 {s.pass} / {s.judged}건
+                          {s.unknown > 0 && <span style={{ color: COLORS['기타'] }}> · 판정불가 {s.unknown}</span>}
+                        </div>
+                        <div style={{ height: '6px', borderRadius: '3px', backgroundColor: t.bg,
+                          overflow: 'hidden', marginTop: '0.35rem' }}>
+                          <div style={{ height: '100%', width: `${s.rate || 0}%`,
+                            backgroundColor: COLORS['합격'], borderRadius: '3px', transition: 'width 0.5s ease' }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* 사례 × 회차 매트릭스 */}
+                <p style={{ margin: '0 0 0.5rem', fontSize: '0.8rem', fontWeight: 700, color: t.textHeading }}>
+                  지원 사례별 상세
+                  <span style={{ fontSize: '0.74rem', fontWeight: 400, color: t.textMuted, marginLeft: '0.4rem' }}>
+                    ({minStdFiltered.length}
+                    {minStdFiltered.length !== minStdStats.cases.length ? `/${minStdStats.cases.length}` : ''}건)
+                  </span>
+                </p>
+                <div style={{ overflow: 'auto', maxHeight: '480px',
+                  border: `1px solid ${t.border}`, borderRadius: '10px' }}>
+                  <table style={{ borderCollapse: 'separate', borderSpacing: 0, width: '100%', fontSize: '0.78rem' }}>
+                    <thead>
+                      <tr>
+                        {['학생', '대학', '모집단위', '결과', '해석된 기준'].map((h, i) => (
+                          <th key={h} style={{ position: 'sticky', top: 0, zIndex: 2,
+                            backgroundColor: t.bgCard, color: t.textMuted, fontWeight: 600,
+                            textAlign: 'left', padding: '0.5rem 0.6rem', whiteSpace: 'nowrap',
+                            borderBottom: `1px solid ${t.border}` }}>{h}</th>
+                        ))}
+                        {minStdStats.roundList.map(rk => (
+                          <th key={rk} style={{ position: 'sticky', top: 0, zIndex: 2,
+                            backgroundColor: t.bgCard, color: t.textHeading, fontWeight: 700,
+                            textAlign: 'center', padding: '0.5rem 0.4rem', whiteSpace: 'nowrap',
+                            borderBottom: `1px solid ${t.border}` }}>{rk}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {minStdFiltered.length === 0 && (
+                        <tr>
+                          <td colSpan={5 + minStdStats.roundList.length}
+                            style={{ padding: '1.8rem 1rem', textAlign: 'center',
+                              fontSize: '0.82rem', color: t.textMuted }}>
+                            선택한 조건에 맞는 사례가 없습니다.
+                          </td>
+                        </tr>
+                      )}
+                      {minStdFiltered.map((c, i) => {
+                        const cat = getResultCategory(c.item.result);
+                        return (
+                          <tr key={i}>
+                            <td style={{ padding: '0.42rem 0.6rem', borderBottom: `1px solid ${t.border}`,
+                              color: t.text, whiteSpace: 'nowrap' }}>
+                              {c.item.cls}-{c.item.num}{c.name ? ` ${c.name}` : ''}
+                            </td>
+                            <td style={{ padding: '0.42rem 0.6rem', borderBottom: `1px solid ${t.border}`,
+                              color: t.textHeading, fontWeight: 600, whiteSpace: 'nowrap' }}>{c.item.uni}</td>
+                            <td style={{ padding: '0.42rem 0.6rem', borderBottom: `1px solid ${t.border}`,
+                              color: t.text, whiteSpace: 'nowrap' }}>{c.item.major}</td>
+                            <td style={{ padding: '0.42rem 0.6rem', borderBottom: `1px solid ${t.border}`,
+                              whiteSpace: 'nowrap' }}>
+                              <span style={{ color: COLORS[cat], fontWeight: 700 }}>{cat}</span>
+                            </td>
+                            <td title={c.item.minStandard}
+                              style={{ padding: '0.42rem 0.6rem', borderBottom: `1px solid ${t.border}`,
+                                color: t.textMuted, fontSize: '0.72rem', maxWidth: '230px',
+                                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'help' }}>
+                              {c.desc}
+                              {c.rule.caveats.length > 0 && <span style={{ color: '#f59e0b' }}> ⚠</span>}
+                            </td>
+                            {minStdStats.roundList.map(rk => {
+                              const res = c.perRound[rk];
+                              if (!res) return (
+                                <td key={rk} style={{ textAlign: 'center', padding: '0.42rem 0.4rem',
+                                  borderBottom: `1px solid ${t.border}`, color: t.border }}>·</td>
+                              );
+                              const col = res.status === 'pass' ? COLORS['합격']
+                                : res.status === 'fail' ? COLORS['불합격'] : COLORS['기타'];
+                              const mark = res.status === 'pass' ? '○' : res.status === 'fail' ? '✕' : '?';
+                              return (
+                                <td key={rk}
+                                  title={`${rk} — ${res.detail || res.reason || ''}`}
+                                  style={{ textAlign: 'center', padding: '0.42rem 0.4rem',
+                                    borderBottom: `1px solid ${t.border}`, cursor: 'help' }}>
+                                  <span style={{ color: col, fontWeight: 700, fontSize: '0.92rem' }}>{mark}</span>
+                                  {res.sum != null && (
+                                    <span style={{ color: t.textMuted, fontSize: '0.66rem', display: 'block',
+                                      marginTop: '0.05rem' }}>{res.sum}</span>
+                                  )}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                <p style={{ margin: '0.6rem 0 0', fontSize: '0.72rem', color: t.textMuted, lineHeight: 1.6 }}>
+                  <span style={{ color: COLORS['합격'], fontWeight: 700 }}>○</span> 충족 ·
+                  <span style={{ color: COLORS['불합격'], fontWeight: 700 }}> ✕</span> 미충족 ·
+                  <span style={{ color: COLORS['기타'], fontWeight: 700 }}> ?</span> 판정불가 ·
+                  <span style={{ color: t.border }}> ·</span> 해당 회차 미응시.
+                  숫자는 계산된 등급 합이며, 칸에 마우스를 올리면 계산 근거가 보입니다.
+                  <br/>
+                  ⚠ 표시된 기준은 미적분·기하 상향이나 모집단위별 차등 조건을 반영하지 못했습니다 — 기준 칸에 마우스를 올려 원문을 확인하세요.
+                </p>
+              </>
+            )}
+
+            {/* ── 판정 불가 목록 ── */}
+            {(minStdStats.unparsedCount > 0 || minStdStats.noMockCount > 0) && (
+              <div style={{ marginTop: '1.1rem', paddingTop: '0.9rem', borderTop: `1px solid ${t.border}` }}>
+                <button onClick={() => setShowUnjudged(v => !v)}
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.4rem',
+                    background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+                    fontSize: '0.85rem', fontWeight: 700, color: t.textHeading }}>
+                  <span style={{ color: COLORS['기타'] }}>{showUnjudged ? '▼' : '▶'}</span>
+                  판정하지 못한 {minStdStats.unparsedCount + minStdStats.noMockCount}건 {showUnjudged ? '접기' : '보기'}
+                </button>
+
+                {showUnjudged && (
+                  <div style={{ marginTop: '0.7rem', display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
+                    {minStdStats.unparsedGroups.map((g, i) => (
+                      <div key={i} style={{ padding: '0.7rem 0.85rem', backgroundColor: t.bgSub,
+                        borderRadius: '9px', border: `1px solid ${t.border}` }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between',
+                          alignItems: 'baseline', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.3rem' }}>
+                          <span style={{ fontSize: '0.8rem', fontWeight: 700, color: COLORS['기타'] }}>
+                            {g.items.length}건 · {g.reason}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '0.74rem', color: t.text, lineHeight: 1.6,
+                          padding: '0.4rem 0.55rem', backgroundColor: t.bg,
+                          borderRadius: '6px', border: `1px solid ${t.border}`, marginBottom: '0.45rem' }}>
+                          {g.text}
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.18rem' }}>
+                          {g.items.map((it, j) => (
+                            <div key={j} style={{ fontSize: '0.74rem', color: t.textMuted, lineHeight: 1.5 }}>
+                              · <b style={{ color: t.textHeading, fontWeight: 600 }}>{it.uni}</b> {it.major}
+                              <span style={{ marginLeft: '0.35rem' }}>
+                                ({it.year ? `${it.year} ` : ''}{it.cls}-{it.num},{' '}
+                                <span style={{ color: COLORS[getResultCategory(it.result)] }}>
+                                  {getResultCategory(it.result)}
+                                </span>)
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+
+                    {minStdStats.noMock.length > 0 && (
+                      <div style={{ padding: '0.7rem 0.85rem', backgroundColor: t.bgSub,
+                        borderRadius: '9px', border: `1px solid ${t.border}` }}>
+                        <div style={{ fontSize: '0.8rem', fontWeight: 700, color: COLORS['기타'], marginBottom: '0.35rem' }}>
+                          {minStdStats.noMock.length}건 · 모의고사 성적을 찾지 못함
+                        </div>
+                        {minStdStats.noMock.map((u, j) => (
+                          <div key={j} style={{ fontSize: '0.74rem', color: t.textMuted, lineHeight: 1.5 }}>
+                            · <b style={{ color: t.textHeading, fontWeight: 600 }}>{u.item.uni}</b> {u.item.major}
+                            <span style={{ marginLeft: '0.35rem' }}>({u.item.cls}-{u.item.num})</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <p style={{ margin: 0, fontSize: '0.72rem', color: t.textMuted, lineHeight: 1.6 }}>
+                      위 사례는 기준 원문만으로는 반영 영역을 확정할 수 없어 판정에서 제외했습니다.
+                      모집요강을 확인해 기준을 알려주시면 반영할 수 있습니다.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* ── 대학별 현황 ── */}
@@ -3275,17 +4174,91 @@ const AdmissionAnalysis = () => {
                   <ModalRow label="세부유형"     value={selectedPoint.typeDetail} />
                   <ModalRow label="모집인원"     value={selectedPoint.count ? `${selectedPoint.count}명` : null} />
                   <ModalRow label="최초후보순위" value={selectedPoint.rank} highlight={hasRank} />
-                  {selectedPoint.minStandard && (
-                    <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: `1px solid ${t.border}` }}>
-                      <p style={{ margin: '0 0 0.35rem', fontSize: '0.72rem', fontWeight: 700, color: t.textMuted }}>최저학력기준</p>
-                      <div style={{ backgroundColor: isDark ? '#1a1f3a' : '#eef2ff',
-                        border: `1px solid ${isDark ? '#3730a3' : '#c7d2fe'}`, borderRadius: '7px',
-                        padding: '0.6rem 0.8rem', fontSize: '0.8rem',
-                        color: isDark ? '#a5b4fc' : '#3730a3', whiteSpace: 'pre-wrap', lineHeight: 1.7 }}>
-                        {selectedPoint.minStandard}
+                  {selectedPoint.minStandard && (() => {
+                    const rule = parseMinStandard(selectedPoint.minStandard, selectedPoint.uni);
+                    const desc = describeRule(rule);
+                    const rounds = roundsForItem(selectedPoint);
+                    const roundKeys = rounds
+                      ? Object.keys(rounds).sort((a, b) => roundNo(a) - roundNo(b))
+                      : [];
+                    return (
+                      <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: `1px solid ${t.border}` }}>
+                        <p style={{ margin: '0 0 0.35rem', fontSize: '0.72rem', fontWeight: 700, color: t.textMuted }}>최저학력기준</p>
+                        <div style={{ backgroundColor: isDark ? '#1a1f3a' : '#eef2ff',
+                          border: `1px solid ${isDark ? '#3730a3' : '#c7d2fe'}`, borderRadius: '7px',
+                          padding: '0.6rem 0.8rem', fontSize: '0.8rem',
+                          color: isDark ? '#a5b4fc' : '#3730a3', whiteSpace: 'pre-wrap', lineHeight: 1.7 }}>
+                          {selectedPoint.minStandard}
+                        </div>
+
+                        {/* ── 모의고사 회차별 충족 여부 ── */}
+                        <p style={{ margin: '0.85rem 0 0.35rem', fontSize: '0.72rem', fontWeight: 700, color: t.textMuted }}>
+                          모의고사 회차별 최저 충족 여부
+                        </p>
+
+                        {desc ? (
+                          <p style={{ margin: '0 0 0.5rem', fontSize: '0.74rem', color: t.text,
+                            backgroundColor: t.bgSub, border: `1px solid ${t.border}`,
+                            borderRadius: '6px', padding: '0.35rem 0.55rem', lineHeight: 1.5 }}>
+                            해석된 기준 — {desc}
+                          </p>
+                        ) : (
+                          <p style={{ margin: '0 0 0.5rem', fontSize: '0.74rem', color: '#f59e0b', lineHeight: 1.5 }}>
+                            ⚠ 이 기준은 자동 해석이 어려워 판정하지 않았습니다
+                            {rule && rule.reason ? ` (${rule.reason})` : ''}. 위 원문을 직접 확인해 주세요.
+                          </p>
+                        )}
+
+                        {mockState === 'loading' && (
+                          <p style={{ margin: 0, fontSize: '0.75rem', color: t.textMuted }}>모의고사 성적 불러오는 중…</p>
+                        )}
+                        {mockState === 'error' && (
+                          <p style={{ margin: 0, fontSize: '0.75rem', color: '#f87171' }}>
+                            모의고사 성적을 불러오지 못했습니다{mockError ? ` (${mockError})` : ''}.
+                          </p>
+                        )}
+                        {mockState === 'ready' && !roundKeys.length && (
+                          <p style={{ margin: 0, fontSize: '0.75rem', color: t.textMuted }}>
+                            이 학생({selectedPoint.cls}-{selectedPoint.num})의 모의고사 성적을 찾지 못했습니다.
+                          </p>
+                        )}
+
+                        {desc && roundKeys.length > 0 && (
+                          <>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                              {roundKeys.map(rk => {
+                                const g = rounds[rk];
+                                const res = evalMinStandard(rule, g);
+                                const c = res.status === 'pass' ? COLORS['합격']
+                                  : res.status === 'fail' ? COLORS['불합격'] : COLORS['기타'];
+                                const mark = res.status === 'pass' ? '충족'
+                                  : res.status === 'fail' ? '미충족' : '판정불가';
+                                return (
+                                  <div key={rk}
+                                    title={`${rk} — 국${g['국어'] ?? '-'} 수${g['수학'] ?? '-'} 영${g['영어'] ?? '-'} 탐${g['탐구1'] ?? '-'}/${g['탐구2'] ?? '-'} 한${g['한국사'] ?? '-'}\n${res.detail || res.reason || ''}`}
+                                    style={{ flex: '1 1 72px', minWidth: '68px', textAlign: 'center',
+                                      padding: '0.35rem 0.3rem', borderRadius: '7px',
+                                      backgroundColor: t.bgSub, border: `1px solid ${c}`, cursor: 'help' }}>
+                                    <div style={{ fontSize: '0.72rem', color: t.textMuted }}>{rk}</div>
+                                    <div style={{ fontSize: '0.8rem', fontWeight: 700, color: c }}>{mark}</div>
+                                    {res.sum != null && (
+                                      <div style={{ fontSize: '0.67rem', color: t.textMuted }}>합 {res.sum}</div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            <p style={{ margin: '0.45rem 0 0', fontSize: '0.68rem', color: t.textMuted, lineHeight: 1.55 }}>
+                              칸에 마우스를 올리면 그 회차의 영역별 등급과 계산 근거가 보입니다.
+                              {rule.caveats.length > 0 && (
+                                <><br/>⚠ 반영하지 못한 조건: {rule.caveats.join(', ')} — 실제 충족 여부는 달라질 수 있습니다.</>
+                              )}
+                            </p>
+                          </>
+                        )}
                       </div>
-                    </div>
-                  )}
+                    );
+                  })()}
                 </div>
               </div>
             </div>
