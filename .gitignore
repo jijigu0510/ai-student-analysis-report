@@ -1,0 +1,46 @@
+# 의존성
+node_modules/
+
+# 학생 개인정보 (성적, 인적사항)
+*.xlsx
+*.csv
+인적사항.xlsx
+
+# PDF 파일 (모집요강, 성적통지표 등)
+*.pdf
+3월 학평 문제지/
+
+# 구버전 및 미사용 파일
+app_v8.js
+admission_analysis.jsx
+extract-pdf-text.mjs
+dgu_guidebook.txt
+
+# Google Apps Script (서버에서 별도 관리)
+*.gs
+# 단, 원격 저장소에 이미 보관 중인 두 파일은 유지
+!card-sheets.gs
+!code.gs
+
+# Firebase 규칙 (콘솔에서 관리)
+database.rules.json
+firestore.rules
+
+# OS 자동 생성 파일
+.DS_Store
+Thumbs.db
+
+# 에디터 설정
+.vscode/
+.idea/
+
+# ── 아래는 GitHub 연동 시 추가 ──
+# 수동 백업본 (git이 이력을 관리하므로 불필요, 각 9MB x 40개)
+card-payload.backup-before-*.json
+*.bak-*
+
+# Claude Code 설정 (로컬 경로·사용자 실명 포함 — 공개 저장소에 올리지 않음)
+.claude/
+
+# 일회성 검증 스크립트
+verify_jnu*.py
