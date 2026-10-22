@@ -47,6 +47,25 @@ window.__promptAppKey = function (msg) {
   return false;
 };
 
+// 페이지를 열 때 비밀번호가 필요한지 확인하고, 필요하면 바로 받는다.
+// (기능을 누르기 전에 미리 받아두어야 어느 경로로 호출하든 막히지 않는다)
+window.addEventListener('DOMContentLoaded', function () {
+  setTimeout(async function () {
+    try {
+      if (!(await window.__checkAppKeyRequired())) return;   // 비밀번호 불필요
+      if (window.__getAppKey()) return;                      // 이미 입력함
+      for (var i = 0; i < 3; i++) {
+        if (!window.__promptAppKey(
+              i === 0 ? '이 프로그램의 접근 비밀번호를 입력하세요.'
+                      : '비밀번호가 맞지 않습니다. 다시 입력하세요.')) return;
+        var r = await window.__rawFetch(window.__withAppKey('/api/gas?t=__ping__'));
+        if (r.status !== 401) return;                        // 통과
+        window.__setAppKey('');
+      }
+    } catch (e) { console.warn('[접근키 확인 건너뜀]', e); }
+  }, 300);
+});
+
 // /api/gas 요청에 키를 자동으로 덧붙이고, 401이면 한 번 재시도한다.
 (function () {
   var orig = window.fetch.bind(window);
