@@ -15,7 +15,24 @@ const HEADERS = [
   '2027모집인원', '2026경쟁률', '최초합격자평균', '면접/시험일정', '전략', '_json'
 ];
 
+// ── 프록시 서버만 호출할 수 있도록 하는 토큰 검증 ─────────────
+// 토큰 값은 코드에 적지 말고 [프로젝트 설정 > 스크립트 속성]에 저장합니다.
+//   속성 이름: ACCESS_TOKEN
+//   값       : (Vercel 환경변수 GAS_TOKEN 과 동일한 문자열)
+function checkToken_(e) {
+  var required = PropertiesService.getScriptProperties().getProperty('ACCESS_TOKEN');
+  if (!required) return null;                 // 속성 미설정 시 검증 생략
+  var given = (e && e.parameter && e.parameter.token) || '';
+  if (given === required) return null;        // 통과
+  return ContentService
+    .createTextOutput(JSON.stringify({ ok: false, message: '접근 권한이 없습니다.' }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
 function doPost(e) {
+  const denied = checkToken_(e);
+  if (denied) return denied;
+
   try {
     const data = JSON.parse(e.postData.contents);
     const header = data.header || {};
@@ -90,6 +107,9 @@ function doPost(e) {
 }
 
 function doGet(e) {
+  const denied = checkToken_(e);
+  if (denied) return denied;
+
   const params = e && e.parameter ? e.parameter : {};
   if (params.action === 'fetch') {
     return _fetchStudentData(params.hakbun || '', params.name || '');

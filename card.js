@@ -1383,8 +1383,15 @@ window.initCardTab = function() {
 
     // ==================== Google Sheets 내보내기 ====================
     const _SHEETS_URL_KEY = 'susicard_sheets_url';
-    const _SHEETS_DEFAULT_URL = 'https://script.google.com/macros/s/AKfycbxFAk8OQV8bTBDJqzWm_hbBglasp74myp8s4Rv7fwMtL6Ia-1hDP7ib0Qr0FF0hBiKS/exec';
+    // 실제 GAS 주소는 서버 프록시(/api/gas) 뒤에 숨긴다. 별칭 'card' → Vercel 환경변수 GAS_URLS 에 등록.
+    // app.js의 fetch 래퍼가 /api/gas 요청에 접근키(key=)를 자동으로 덧붙이고, 프록시가 GAS_TOKEN 을 더해 호출한다.
+    const _SHEETS_DEFAULT_URL = '/api/gas?t=card';
     function _sheetsUrl() { return localStorage.getItem(_SHEETS_URL_KEY) || _SHEETS_DEFAULT_URL; }
+    // 기본 URL에 이미 '?'(…?t=card)가 있을 수 있으므로 쿼리 결합 문자를 상황에 맞게 고른다.
+    function _sheetsGet(query) {
+      const base = _sheetsUrl();
+      return base + (base.indexOf('?') !== -1 ? '&' : '?') + query;
+    }
 
     function cardSheetsConfig() {
       const cur = localStorage.getItem(_SHEETS_URL_KEY) || _SHEETS_DEFAULT_URL;
@@ -1523,8 +1530,6 @@ window.initCardTab = function() {
     }
 
     async function cardSheetsLoad() {
-      const url = _sheetsUrl();
-
       const btn = el('cardSheetsLoadBtn');
       const orig = btn.textContent;
       btn.textContent = '목록 로딩 중…';
@@ -1532,7 +1537,7 @@ window.initCardTab = function() {
 
       try {
         // 1. 전체 학생 목록 가져오기
-        const res = await fetch(`${url}?action=list`);
+        const res = await fetch(_sheetsGet('action=list'));
         const json = await res.json();
 
         if (!json.ok) { cardShowFileStatus('⚠️ ' + json.message); return; }
@@ -1547,7 +1552,7 @@ window.initCardTab = function() {
             const param = student.hakbun
               ? `hakbun=${encodeURIComponent(student.hakbun)}`
               : `name=${encodeURIComponent(student.name)}`;
-            const r2 = await fetch(`${url}?action=fetch&${param}`);
+            const r2 = await fetch(_sheetsGet('action=fetch&' + param));
             const j2 = await r2.json();
 
             if (!j2.ok) { cardShowFileStatus('⚠️ ' + j2.message); return; }
