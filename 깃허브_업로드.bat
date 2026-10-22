@@ -1,95 +1,104 @@
 @echo off
-chcp 65001 >nul
 setlocal enabledelayedexpansion
 cd /d "%~dp0"
 
 echo ============================================
-echo   ë¶€ì•ˆê³  ì§„í•™ì§€ë„ í”„ë¡œê·¸ëž¨ - GitHub ì—…ë¡œë“œ
+echo   ºÎ¾È°í ÁøÇÐÁöµµ ÇÁ·Î±×·¥ - GitHub ¾÷·Îµå
 echo ============================================
 echo.
 
-rem --- git ì„¤ì¹˜ í™•ì¸ ---
+rem --- git ¼³Ä¡ È®ÀÎ ---
 where git >nul 2>nul
 if errorlevel 1 (
-    echo [ì˜¤ë¥˜] gitì´ ì„¤ì¹˜ë˜ì–´ ìžˆì§€ ì•ŠìŠµë‹ˆë‹¤.
-    echo        https://git-scm.com ì—ì„œ ì„¤ì¹˜ í›„ ë‹¤ì‹œ ì‹¤í–‰í•˜ì„¸ìš”.
+    echo [¿À·ù] gitÀÌ ¼³Ä¡µÇ¾î ÀÖÁö ¾Ê½À´Ï´Ù.
+    echo        https://git-scm.com ¿¡¼­ ¼³Ä¡ ÈÄ ´Ù½Ã ½ÇÇàÇÏ¼¼¿ä.
     pause
     exit /b 1
 )
 
-rem --- ì €ìž¥ì†Œ í™•ì¸ ---
+rem --- ÀúÀå¼Ò È®ÀÎ ---
 if not exist ".git" (
-    echo [ì˜¤ë¥˜] ì´ í´ë”ëŠ” git ì €ìž¥ì†Œê°€ ì•„ë‹™ë‹ˆë‹¤.
+    echo [¿À·ù] ÀÌ Æú´õ´Â git ÀúÀå¼Ò°¡ ¾Æ´Õ´Ï´Ù.
     pause
     exit /b 1
 )
 
-rem --- ì›ê²© í™•ì¸ ---
+rem --- ¿ø°Ý È®ÀÎ ---
 git remote get-url origin >nul 2>nul
 if errorlevel 1 (
-    echo [ì˜¤ë¥˜] ì—°ê²°ëœ GitHub ì €ìž¥ì†Œê°€ ì—†ìŠµë‹ˆë‹¤.
-    echo        git remote add origin ì €ìž¥ì†Œì£¼ì†Œ
+    echo [¿À·ù] ¿¬°áµÈ GitHub ÀúÀå¼Ò°¡ ¾ø½À´Ï´Ù.
+    echo        git remote add origin ÀúÀå¼ÒÁÖ¼Ò
     pause
     exit /b 1
 )
 
-echo [1/4] ë³€ê²½ëœ íŒŒì¼ì„ í™•ì¸í•©ë‹ˆë‹¤...
+echo [1/4] º¯°æµÈ ÆÄÀÏÀ» È®ÀÎÇÕ´Ï´Ù...
 echo.
 git status --short
 echo.
 
-rem --- ë³€ê²½ì‚¬í•­ ì—†ìœ¼ë©´ ì¢…ë£Œ ---
+rem --- º¯°æ»çÇ× ¾øÀ¸¸é Á¾·á ---
 for /f %%i in ('git status --porcelain ^| find /c /v ""') do set CHANGES=%%i
+for /f %%i in ('git rev-list --count @{u}..HEAD 2^>nul') do set AHEAD=%%i
+if not defined AHEAD set AHEAD=0
+
 if "!CHANGES!"=="0" (
-    echo ë³€ê²½ëœ ë‚´ìš©ì´ ì—†ìŠµë‹ˆë‹¤. ì—…ë¡œë“œí•  ê²ƒì´ ì—†ìŠµë‹ˆë‹¤.
+    if "!AHEAD!"=="0" (
+        echo º¯°æµÈ ³»¿ëÀÌ ¾ø½À´Ï´Ù. ¾÷·ÎµåÇÒ °ÍÀÌ ¾ø½À´Ï´Ù.
+        echo.
+        pause
+        exit /b 0
+    )
+    echo »õ·Î ¹Ù²ï ÆÄÀÏÀº ¾øÁö¸¸, ¾ÆÁ÷ Àü¼ÛµÇÁö ¾ÊÀº ±â·Ï !AHEAD!°ÇÀÌ ÀÖ½À´Ï´Ù.
+    echo ÀÌ°Í¸¸ GitHub·Î Àü¼ÛÇÕ´Ï´Ù.
     echo.
-    pause
-    exit /b 0
+    goto PUSHONLY
 )
 
-echo ìœ„ íŒŒì¼ë“¤ì„ GitHubì— ì˜¬ë¦½ë‹ˆë‹¤.
-set /p MSG="ë³€ê²½ ë‚´ìš©ì„ ê°„ë‹¨ížˆ ì ì–´ì£¼ì„¸ìš” (ê·¸ëƒ¥ ì—”í„° = ë‚ ì§œë¡œ ê¸°ë¡): "
+echo À§ ÆÄÀÏµéÀ» GitHub¿¡ ¿Ã¸³´Ï´Ù.
+set /p MSG="º¯°æ ³»¿ëÀ» °£´ÜÈ÷ Àû¾îÁÖ¼¼¿ä (±×³É ¿£ÅÍ = ³¯Â¥·Î ±â·Ï): "
 
 if "!MSG!"=="" (
     for /f "tokens=1-3 delims=-/ " %%a in ("%date%") do set TODAY=%%a-%%b-%%c
-    set MSG=ì—…ë°ì´íŠ¸ !TODAY! %time:~0,5%
+    set MSG=¾÷µ¥ÀÌÆ® !TODAY! %time:~0,5%
 )
 
 echo.
-echo [2/4] íŒŒì¼ì„ ì¶”ê°€í•©ë‹ˆë‹¤...
+echo [2/4] ÆÄÀÏÀ» Ãß°¡ÇÕ´Ï´Ù...
 git add -A
 if errorlevel 1 goto FAIL
 
-echo [3/4] ë³€ê²½ ë‚´ìš©ì„ ê¸°ë¡í•©ë‹ˆë‹¤...
+echo [3/4] º¯°æ ³»¿ëÀ» ±â·ÏÇÕ´Ï´Ù...
 git commit -m "!MSG!"
 if errorlevel 1 goto FAIL
 
-echo [4/4] GitHubë¡œ ì „ì†¡í•©ë‹ˆë‹¤...
+:PUSHONLY
+echo [4/4] GitHub·Î Àü¼ÛÇÕ´Ï´Ù...
 git push
 if errorlevel 1 goto PUSHFAIL
 
 echo.
 echo ============================================
-echo   ì—…ë¡œë“œ ì™„ë£Œ
+echo   ¾÷·Îµå ¿Ï·á
 echo ============================================
-git log -1 --pretty="  ê¸°ë¡: %%s (%%cr)"
+git log -1 --pretty="  ±â·Ï: %%s (%%cr)"
 echo.
 pause
 exit /b 0
 
 :PUSHFAIL
 echo.
-echo [ì „ì†¡ ì‹¤íŒ¨] ì•„ëž˜ë¥¼ í™•ì¸í•˜ì„¸ìš”.
-echo   - ì¸í„°ë„· ì—°ê²° ìƒíƒœ
-echo   - GitHub ë¡œê·¸ì¸ ì—¬ë¶€ (ì²˜ìŒì´ë©´ ë¡œê·¸ì¸ ì°½ì´ ëœ¹ë‹ˆë‹¤)
-echo   - ë‹¤ë¥¸ ì»´í“¨í„°ì—ì„œ ì˜¬ë¦° ë‚´ìš©ì´ ìžˆë‹¤ë©´: git pull ë¨¼ì € ì‹¤í–‰
+echo [Àü¼Û ½ÇÆÐ] ¾Æ·¡¸¦ È®ÀÎÇÏ¼¼¿ä.
+echo   - ÀÎÅÍ³Ý ¿¬°á »óÅÂ
+echo   - GitHub ·Î±×ÀÎ ¿©ºÎ (Ã³À½ÀÌ¸é ·Î±×ÀÎ Ã¢ÀÌ ¶å´Ï´Ù)
+echo   - ´Ù¸¥ ÄÄÇ»ÅÍ¿¡¼­ ¿Ã¸° ³»¿ëÀÌ ÀÖ´Ù¸é: git pull ¸ÕÀú ½ÇÇà
 echo.
 pause
 exit /b 1
 
 :FAIL
 echo.
-echo [ì˜¤ë¥˜] ì²˜ë¦¬ ì¤‘ ë¬¸ì œê°€ ë°œìƒí–ˆìŠµë‹ˆë‹¤. ìœ„ ë©”ì‹œì§€ë¥¼ í™•ì¸í•˜ì„¸ìš”.
+echo [¿À·ù] Ã³¸® Áß ¹®Á¦°¡ ¹ß»ýÇß½À´Ï´Ù. À§ ¸Þ½ÃÁö¸¦ È®ÀÎÇÏ¼¼¿ä.
 echo.
 pause
 exit /b 1
