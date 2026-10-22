@@ -6,6 +6,45 @@ console.log('[APP] v8 loaded');
 window.__isDirectGasUrl = function (u) {
   return typeof u === 'string' && u.indexOf('script.google.com') !== -1;
 };
+
+// ── 접근 키(APP_PASSWORD) 처리 ────────────────────────────
+// 서버(/api/gas)가 APP_PASSWORD를 요구하면 401이 돌아온다.
+// 키는 이 브라우저 탭에만 보관하며(sessionStorage), 서버로만 전송된다.
+window.__getAppKey = function () {
+  try { return sessionStorage.getItem('appKey') || ''; } catch { return ''; }
+};
+window.__setAppKey = function (k) {
+  try { k ? sessionStorage.setItem('appKey', k) : sessionStorage.removeItem('appKey'); } catch {}
+};
+window.__withAppKey = function (url) {
+  if (typeof url !== 'string' || url.indexOf('/api/gas') !== 0) return url;
+  var k = window.__getAppKey();
+  if (!k || url.indexOf('key=') !== -1) return url;
+  return url + (url.indexOf('?') !== -1 ? '&' : '?') + 'key=' + encodeURIComponent(k);
+};
+window.__promptAppKey = function (msg) {
+  var k = window.prompt(msg || '이 프로그램의 접근 비밀번호를 입력하세요.', '');
+  if (k) { window.__setAppKey(k); return true; }
+  return false;
+};
+
+// /api/gas 요청에 키를 자동으로 덧붙이고, 401이면 한 번 재시도한다.
+(function () {
+  var orig = window.fetch.bind(window);
+  window.fetch = async function (input, init) {
+    var isStr = typeof input === 'string';
+    var url = isStr ? input : (input && input.url) || '';
+    if (url.indexOf('/api/gas') !== 0) return orig(input, init);
+
+    var res = await orig(window.__withAppKey(url), init);
+    if (res.status === 401) {
+      if (window.__promptAppKey('접근 비밀번호가 필요합니다.')) {
+        return orig(window.__withAppKey(url), init);
+      }
+    }
+    return res;
+  };
+})();
 // Firebase에서 GAS URL을 받아오는 콜백 — urls = { '1': {'3': url, ...}, '2': {...}, '3': {...} }
 window.onFirebaseGasUrls = function (urls) {
   if (!urls) return;
@@ -1757,7 +1796,7 @@ document.addEventListener("DOMContentLoaded", () => {
       };
 
       const sep = cleanUrl.includes('?') ? '&' : '?';
-      script.src = cleanUrl + sep + 'callback=' + cbName;
+      script.src = window.__withAppKey(cleanUrl + sep + 'callback=' + cbName);
       document.head.appendChild(script);
     });
   }
@@ -14651,7 +14690,7 @@ ${univPromptSupplement}
 
       const qs = new URLSearchParams(params);
       qs.set('callback', cbName);
-      script.src = url + (url.includes('?') ? '&' : '?') + qs.toString();
+      script.src = window.__withAppKey(url + (url.includes('?') ? '&' : '?') + qs.toString());
       document.head.appendChild(script);
     });
   }

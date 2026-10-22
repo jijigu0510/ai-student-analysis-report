@@ -1,0 +1,49 @@
+각 Apps Script 파일 맨 위에 아래 두 개를 붙여넣고,
+doGet / doPost 함수의 첫 줄에 검증 호출을 추가하세요.
+
+────────────────────────────────────────────
+① 파일 맨 위에 추가
+────────────────────────────────────────────
+// 프록시 서버만 호출할 수 있도록 하는 토큰 검증
+// 토큰 값은 코드에 적지 말고 [프로젝트 설정 > 스크립트 속성]에 저장합니다.
+//   속성 이름: ACCESS_TOKEN
+//   값       : (Vercel 환경변수 GAS_TOKEN 과 동일한 문자열)
+function checkToken_(e) {
+  var required = PropertiesService.getScriptProperties().getProperty('ACCESS_TOKEN');
+  if (!required) return null;                 // 속성 미설정 시 검증 생략
+  var given = (e && e.parameter && e.parameter.token) || '';
+  if (given === required) return null;        // 통과
+  return ContentService
+    .createTextOutput(JSON.stringify({ success: false, error: '접근 권한이 없습니다.' }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+────────────────────────────────────────────
+② doGet 함수의 첫 줄에 추가
+────────────────────────────────────────────
+function doGet(e) {
+  var denied = checkToken_(e);
+  if (denied) return denied;        // ← 이 두 줄을 맨 앞에 추가
+
+  ... 기존 코드 그대로 ...
+}
+
+────────────────────────────────────────────
+③ doPost 함수가 있다면 동일하게 추가
+────────────────────────────────────────────
+function doPost(e) {
+  var denied = checkToken_(e);
+  if (denied) return denied;
+
+  ... 기존 코드 그대로 ...
+}
+
+────────────────────────────────────────────
+④ 적용 후 반드시 [배포 > 배포 관리 > 편집(연필) > 버전: 새 버전] 으로 재배포
+   (URL은 그대로 유지됩니다)
+────────────────────────────────────────────
+
+※ 적용 순서 권장
+   1) passfail (합불사례 — 실명 데이터)  ← 가장 먼저
+   2) mock_1_3 / mock_2_3 / mock_3_3 / mock_3_5 (모의고사 성적)
+   3) subject (권장과목 — 개인정보 아님, 나중에 해도 무방)

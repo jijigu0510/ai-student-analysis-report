@@ -8,6 +8,7 @@
 //  필요한 환경변수
 //   GAS_URLS     : 별칭 → 실제 URL 매핑 (JSON 문자열)
 //   APP_PASSWORD : (선택) 설정하면 이 키를 가진 요청만 허용
+//   GAS_TOKEN    : (선택) GAS로 전달할 비밀 토큰 (GAS가 검증)
 // ============================================================
 
 function loadMap() {
@@ -45,6 +46,9 @@ export default async function handler(req, res) {
   }
 
   // ── 실제 GAS 호출 ──
+  // GAS_TOKEN이 설정되어 있으면 토큰을 함께 보낸다.
+  // GAS 쪽에서 이 토큰을 검사하면, 주소를 알아도 호출할 수 없다.
+  if (process.env.GAS_TOKEN) params.token = process.env.GAS_TOKEN;
   const qs = new URLSearchParams(params).toString();
   const url = target + (qs ? (target.includes('?') ? '&' : '?') + qs : '');
 
