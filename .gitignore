@@ -44,3 +44,10 @@ card-payload.backup-before-*.json
 
 # 일회성 검증 스크립트
 verify_jnu*.py
+
+# 실제 GAS 주소 (절대 커밋 금지 — Vercel 환경변수로만 관리)
+_gas_urls_backup.json
+_vercel_env.txt
+.env
+.env.local
+.vercel

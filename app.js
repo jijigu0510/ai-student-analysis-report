@@ -1,6 +1,11 @@
 ﻿
 
 console.log('[APP] v8 loaded');
+// 직접 GAS 주소(script.google.com)는 더 이상 사용하지 않는다.
+// 서버 프록시(/api/gas)를 거치도록, 저장된 옛 주소는 무시한다.
+window.__isDirectGasUrl = function (u) {
+  return typeof u === 'string' && u.indexOf('script.google.com') !== -1;
+};
 // Firebase에서 GAS URL을 받아오는 콜백 — urls = { '1': {'3': url, ...}, '2': {...}, '3': {...} }
 window.onFirebaseGasUrls = function (urls) {
   if (!urls) return;
@@ -10,6 +15,7 @@ window.onFirebaseGasUrls = function (urls) {
     Object.keys(gradeUrls).forEach(month => {
       const serverUrl = gradeUrls[month] || '';
       if (!serverUrl) return;
+      if (window.__isDirectGasUrl(serverUrl)) return; // 옛 직접 주소는 건너뜀
       // 서버 데이터를 우선하여 localStorage 갱신
       localStorage.setItem(`mockGasUrl_${grade}_${month}`, serverUrl);
     });
@@ -866,16 +872,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 학년/월별 GAS URL 관리
   const DEFAULT_MOCK_GAS_URLS = {
-    "1_3": "https://script.google.com/macros/s/AKfycbzDtgZjPR0VG4EEI6W0Nlxkqdp8X6m-sQGwqQKtmF39B-xujLZdrXMGUTB0hYNFHLzQ/exec",
-    "2_3": "https://script.google.com/macros/s/AKfycbzDaNGMS0UHmB4Elj1FLJmw8LPUi1RxsrKvzYGfHPzNQHHetFxUcTo8qh8uyRHMKDUc/exec",
-    "3_3": "https://script.google.com/macros/s/AKfycbzUAyVobtXg6GgnKUuqajcytNZ1SX9g0zFNHroYX69CBosk8QJZYMVzIiTkjBd7hmpqJw/exec",
-    "3_5": "https://script.google.com/macros/s/AKfycbypV0Mc8SFv1Hj-GmrtCbhQhNZJNcX2XURwGYpybSOXoNQfysqQuoSgZBWqWfvf7s75AQ/exec"
+    "1_3": "/api/gas?t=mock_1_3",
+    "2_3": "/api/gas?t=mock_2_3",
+    "3_3": "/api/gas?t=mock_3_3",
+    "3_5": "/api/gas?t=mock_3_5"
   };
 
   function getMockGasUrl(grade, month) {
     const key = `mockGasUrl_${grade}_${month}`;
     const stored = localStorage.getItem(key);
-    if (stored && stored.trim() !== "") return stored;
+    if (stored && stored.trim() !== "" && !window.__isDirectGasUrl(stored)) return stored;
     return DEFAULT_MOCK_GAS_URLS[`${grade}_${month}`] || "";
   }
 
@@ -3193,7 +3199,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let pfDetails = { grades: [], subjects: [], creatives: [], behaviors: [] };
 
   // ── GAS 연동 ────────────────────────────────────────────────────────────────
-  const PF_GAS_URL = 'https://script.google.com/macros/s/AKfycbyFmjavISW4Xux2vJWpUdqKmjo7VBYN_kDtXyFhZlhOAfnOFY86REFDqmGsKwN_LrgAmQ/exec';
+  const PF_GAS_URL = '/api/gas?t=passfail';
 
   function _pfGasGetVal(row, keywords) {
     for (const kw of keywords) {
@@ -14588,7 +14594,7 @@ ${univPromptSupplement}
   let isCompareInitialized = false;
 
   // 기본 내장 GAS URL (변경 시 여기를 수정)
-  const DEFAULT_GPA_GAS_URL = 'https://script.google.com/macros/s/AKfycbzwXdBu1ahjkIrimBnXOSBZQgRIvXqsNgXcB9WjivaCSCCE28DLSV5lNettqxaN1Wjd/exec';
+  const DEFAULT_GPA_GAS_URL = '/api/gas?t=gpa';
 
   // 모의고사 성적 구글 시트 ID
   const GPA_MOCK_SHEET_ID = '1JbgXRiCB02XFeZnNR9pswLhihYY7wObCpjWreTYTe7s';
@@ -14599,7 +14605,7 @@ ${univPromptSupplement}
   const compareLoadDataBtn = document.getElementById('compareLoadDataBtn');
 
   if (compareGasUrlInput) {
-    compareGasUrlInput.value = localStorage.getItem('gpaMockGasUrl') || DEFAULT_GPA_GAS_URL;
+    compareGasUrlInput.value = (function(){var v=localStorage.getItem('gpaMockGasUrl'); return (v && !window.__isDirectGasUrl(v)) ? v : DEFAULT_GPA_GAS_URL;})();
   }
 
   if (compareGasUrlSaveBtn) {
@@ -14768,7 +14774,7 @@ ${univPromptSupplement}
       }
     } catch (error) {
       console.error("gviz 로드 실패, GAS fallback 시도:", error);
-      const gasUrl = localStorage.getItem('gpaMockGasUrl') || DEFAULT_GPA_GAS_URL;
+      const gasUrl = (function(){var v=localStorage.getItem('gpaMockGasUrl'); return (v && !window.__isDirectGasUrl(v)) ? v : DEFAULT_GPA_GAS_URL;})();
       try {
         let data;
         if (typeof google !== 'undefined' && google.script && google.script.run) {
@@ -16840,7 +16846,9 @@ ${univPromptSupplement}
     let spInitialized = false;
 
     // GAS 연동 상태
-    let spGasUrl = localStorage.getItem('spGasUrl') || 'https://script.google.com/macros/s/AKfycby27jVGduT6RPjwxSxdVZ74Pf1vIH3c4gXwITX6UXCnCN2QYy_VKERqKNiz183YsLOD/exec';
+    let spGasUrl = localStorage.getItem('spGasUrl');
+    if (window.__isDirectGasUrl(spGasUrl)) spGasUrl = null;
+    spGasUrl = spGasUrl || '/api/gas?t=subject';
     let spGasData = null;
     let spRegionMap = {};
 
