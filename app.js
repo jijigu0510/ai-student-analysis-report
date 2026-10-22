@@ -16,6 +16,25 @@ window.__getAppKey = function () {
 window.__setAppKey = function (k) {
   try { k ? sessionStorage.setItem('appKey', k) : sessionStorage.removeItem('appKey'); } catch {}
 };
+window.__needsAppKey = null;   // null=미확인, true=필요, false=불필요
+
+// 서버가 비밀번호를 요구하는지 한 번만 확인한다.
+window.__checkAppKeyRequired = async function () {
+  if (window.__needsAppKey !== null) return window.__needsAppKey;
+  try {
+    var r = await window.__rawFetch('/api/gas?t=__ping__');
+    window.__needsAppKey = (r.status === 401);
+  } catch { window.__needsAppKey = false; }
+  return window.__needsAppKey;
+};
+
+// /api/gas 를 호출하기 직전에, 필요하면 비밀번호를 먼저 받는다.
+window.__ensureAppKey = async function () {
+  if (!(await window.__checkAppKeyRequired())) return true;
+  if (window.__getAppKey()) return true;
+  return window.__promptAppKey('이 프로그램의 접근 비밀번호를 입력하세요.');
+};
+
 window.__withAppKey = function (url) {
   if (typeof url !== 'string' || url.indexOf('/api/gas') !== 0) return url;
   var k = window.__getAppKey();
@@ -31,14 +50,17 @@ window.__promptAppKey = function (msg) {
 // /api/gas 요청에 키를 자동으로 덧붙이고, 401이면 한 번 재시도한다.
 (function () {
   var orig = window.fetch.bind(window);
+  window.__rawFetch = orig;            // 확인용(키 없이 호출)
   window.fetch = async function (input, init) {
     var isStr = typeof input === 'string';
     var url = isStr ? input : (input && input.url) || '';
     if (url.indexOf('/api/gas') !== 0) return orig(input, init);
 
+    await window.__ensureAppKey();     // 필요하면 먼저 비밀번호를 받는다
     var res = await orig(window.__withAppKey(url), init);
-    if (res.status === 401) {
-      if (window.__promptAppKey('접근 비밀번호가 필요합니다.')) {
+    if (res.status === 401) {          // 비밀번호가 틀린 경우 한 번 더
+      window.__setAppKey('');
+      if (window.__promptAppKey('비밀번호가 맞지 않습니다. 다시 입력하세요.')) {
         return orig(window.__withAppKey(url), init);
       }
     }
@@ -14666,7 +14688,8 @@ ${univPromptSupplement}
     });
   }
 
-  function fetchGpaMockJsonp(url, params) {
+  async function fetchGpaMockJsonp(url, params) {
+    await window.__ensureAppKey();   // 비밀번호가 필요하면 먼저 받는다
     return new Promise((resolve, reject) => {
       const cbName = '__gpaMockJsonp_' + Date.now() + '_' + Math.random().toString(36).slice(2);
       const script = document.createElement('script');

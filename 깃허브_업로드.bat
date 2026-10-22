@@ -39,7 +39,7 @@ echo.
 
 rem --- 변경사항 없으면 종료 ---
 for /f %%i in ('git status --porcelain ^| find /c /v ""') do set CHANGES=%%i
-for /f %%i in ('git rev-list --count @{u}..HEAD 2^>nul') do set AHEAD=%%i
+for /f %%i in ('git rev-list --count origin/main..HEAD 2^>nul') do set AHEAD=%%i
 if not defined AHEAD set AHEAD=0
 
 if "!CHANGES!"=="0" (
@@ -74,7 +74,14 @@ if errorlevel 1 goto FAIL
 
 :PUSHONLY
 echo [4/4] GitHub로 전송합니다...
-git push
+git rev-parse --abbrev-ref --symbolic-full-name @{u} >nul 2>nul
+if errorlevel 1 (
+    for /f %%b in ('git branch --show-current') do set BR=%%b
+    echo    첫 전송이라 대상을 지정합니다 ^(origin/!BR!^)
+    git push -u origin !BR!
+) else (
+    git push
+)
 if errorlevel 1 goto PUSHFAIL
 
 echo.
