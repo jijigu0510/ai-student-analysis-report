@@ -20,7 +20,7 @@
 
   // ── 건국대 데이터 배열 (GAS에서 불러옴, 실패 시 샘플 데이터) ────────────
   let KU_DATA = [];
-  const KU_GAS_URL = 'https://script.google.com/macros/s/AKfycbwU6VdOuvZlg6RMInDYmyY-hLLWqZzf3x0BKj3hkOxi8oPq6PDH9EWXcXQiDhIk5UU/exec';
+  const KU_GAS_URL = '/api/gas?t=ku';
 
   function getKuSampleData() {
     return [
@@ -69,7 +69,7 @@
 
   // ── 경희대 학생부교과 데이터 배열 (GAS, 실패 시 샘플) ──────────────────────────────────────────────
   let KHU_GWAGYO_DATA = [];
-  let KHU_GWAGYO_GAS_URL = 'https://script.google.com/macros/s/AKfycbxJ-DN07gFRm1qOB6OeeP65LvJn2ZP9rI_masf04XnKQP-z8QaAbeIWUV4Mn2dZ-6PTKA/exec';
+  let KHU_GWAGYO_GAS_URL = '/api/gas?t=khu_gwagyo';
 
   function getKhuGwagyoSampleData() {
     return [
@@ -93,7 +93,7 @@
 
   // ── 경희대 학생부종합(네오르네상스) 데이터 배열 (GAS, 실패 시 샘플) ────────────────
   let KHU_JONGHAP_DATA = [];
-  const KHU_JONGHAP_GAS_URL = 'https://script.google.com/macros/s/AKfycbwMJQN_ecpVwtY1jLWKS3amK_6XC0IRdbcOv1ZDIbqnlKa6l6Bc0MRtix05FWenUbki/exec';
+  const KHU_JONGHAP_GAS_URL = '/api/gas?t=khu_jonghap';
 
   function getKhuJonghapSampleData() {
     return [
@@ -302,36 +302,36 @@
     '홍익대': true
   };
 
-  const KUNSAN_GAS_URL = 'https://script.google.com/macros/s/AKfycby-QuO_J2HgM6Zjv8YGebU3yt0o3aqzdpziHM4DDEQoRd7TfnOCx2_-w9UULTDxhEViAQ/exec';
+  const KUNSAN_GAS_URL = '/api/gas?t=kunsan';
   let KUNSAN_DATA = [];
 
-  const DGU_GAS_URL = 'https://script.google.com/macros/s/AKfycbxyLCbdoYTs5u4sK3eHfesps1RDFYZXiX02wNzLzU6f_c4mhp__YUcGkrqBatjCGnvArw/exec';
+  const DGU_GAS_URL = '/api/gas?t=dgu';
   let DGU_DATA = [];
 
-  const SGU_GAS_URL = 'https://script.google.com/macros/s/AKfycbyUZDxdwBsM-7IoPHjDHpov058LCG-7dN_tSJ3IAMfcwykTz8q20jmlpkd05oAMMQyuRg/exec';
+  const SGU_GAS_URL = '/api/gas?t=sgu';
   let SGU_DATA = [];
 
-  const UOS_GAS_URL = 'https://script.google.com/macros/s/AKfycbxSgqmq8xB5K9Cs773ij1ncVL7MdHwAqJqLxaOg0VqsQGVRSpahrPqjAdHDKVfZmVFo/exec';
+  const UOS_GAS_URL = '/api/gas?t=uos';
   let UOS_DATA = [];
 
-  const SKU_GAS_URL = 'https://script.google.com/macros/s/AKfycbwuseOZCbY2La4aaHQR-5vi2xZ3Lu6Tm1cRld0h1fJQj7wlr2hOBdxCftjw3wgDpK662A/exec';
+  const SKU_GAS_URL = '/api/gas?t=sku';
   let SKU_DATA = [];
 
-  const WSU_GAS_URL = 'https://script.google.com/macros/s/AKfycbypU2ilINtxBb4QdTlishVwTVH2m4iafTOKBJFUT9kzzDv7r2NVWeOxtW91LIWmR8_5Yg/exec';
+  const WSU_GAS_URL = '/api/gas?t=wsu';
   let WSU_DATA = [];
 
-  const WKU_GAS_URL = 'https://script.google.com/macros/s/AKfycbxq4Utz9QsDIDOL-Br1YV9PChOoPolKXdo_MCR9ZJb4I74fkDsnLaRQoEc5UXFQE4mW5w/exec';
+  const WKU_GAS_URL = '/api/gas?t=wku';
   let WKU_DATA = [];
 
-  const JNU_GAS_URL = 'https://script.google.com/macros/s/AKfycbwTeQxO8DmQVATLSrCNrrcatFLNl3SbnwJofL0laU7BbeTaGHAWEYTrA7ELtyIm0ylb/exec';
+  const JNU_GAS_URL = '/api/gas?t=jnu';
   let JNU_DATA = [];
 
-  const JJU_GAS_URL = 'https://script.google.com/macros/s/AKfycbzz9UeBJks2skFzGeFB1Yz5vkfzj5akZJ_4xLXefo0ExorUZ6k1D5zxrlQzuF7AK--A-Q/exec';
+  const JJU_GAS_URL = '/api/gas?t=jju';
   let JJU_DATA = [];
 
   const JBNU_GAS_URL = 'https://script.google.com/macros/s/AKfycbySdYZbJiB0mvxpvUch2p7i22IQS4aOgNcXZKxWYyMKNHxSWIed7saajcp7uHQlh2c_Eg/exec';
 
-  const CAU_GAS_URL = 'https://script.google.com/macros/s/AKfycbwQ8dCK5uaBMghg-woMHvaOQMseVsLQcYQNZJ-7N0Lew-kO6UldFYjwiaANm_qrdnZS/exec';
+  const CAU_GAS_URL = '/api/gas?t=cau';
   let CAU_DATA = [];
 
   const CNU_SHEET_ID = '1CHXWhqYoRbeM4EjU_66pr58wF64UyilYYLULDtvGs7A';
@@ -434,31 +434,27 @@
   };
 
   // ════════════════════════════════════════════════════════════════════════════
-  // ██  데이터 로드 함수 (GAS JSONP)
+  // ██  데이터 로드 함수 (서버 프록시 /api/gas 경유)
+  //     실제 GAS 주소는 별칭으로 프록시 뒤에 숨긴다. 같은 출처라 CORS가 없고,
+  //     app.js의 fetch 래퍼가 /api/gas 요청에 접근키(key=)를 자동 부착하며
+  //     프록시가 GAS_TOKEN을 더해 호출한다. (함수명은 호환 위해 유지)
   // ════════════════════════════════════════════════════════════════════════════
-  function fetchGasJsonp(url, params) {
-    return new Promise((resolve, reject) => {
-      const cbName = '__gasJsonp_' + Date.now() + '_' + Math.random().toString(36).slice(2);
-      const script = document.createElement('script');
-
-      const timer = setTimeout(() => {
-        cleanup(); reject(new Error('GAS Timeout'));
-      }, 10000);
-
-      function cleanup() {
-        clearTimeout(timer);
-        delete window[cbName];
-        if (script.parentNode) script.parentNode.removeChild(script);
-      }
-
-      window[cbName] = function (data) { cleanup(); resolve(data); };
-      script.onerror = function () { cleanup(); reject(new Error('GAS Network Error')); };
-
-      const qs = new URLSearchParams(params);
-      qs.set('callback', cbName);
-      script.src = url + '?' + qs.toString();
-      document.head.appendChild(script);
-    });
+  async function fetchGasJsonp(url, params) {
+    const qs = new URLSearchParams(params || {}).toString();
+    // url에 이미 '?'(…?t=별칭)가 있으면 '&'로, 없으면 '?'로 쿼리를 잇는다.
+    const full = url + (qs ? (url.indexOf('?') !== -1 ? '&' : '?') + qs : '');
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 20000);
+    try {
+      const res = await fetch(full, { signal: ctrl.signal });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return await res.json();
+    } catch (err) {
+      if (err.name === 'AbortError') throw new Error('GAS Timeout');
+      throw err;
+    } finally {
+      clearTimeout(timer);
+    }
   }
 
   async function fetchKuDataFromGas() {
