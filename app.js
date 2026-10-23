@@ -3328,7 +3328,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const setStatus = (msg, color) => { if (statusEl) { statusEl.textContent = msg; statusEl.style.color = color || 'var(--text-secondary)'; } };
     setStatus(`${year}년 스프레드시트에서 불러오는 중...`, '#96baff');
     try {
-      const res = await fetch(`${PF_GAS_URL}?action=all&year=${year}`);
+      const res = await fetch(`${PF_GAS_URL}&action=all&year=${year}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       if (json.error) throw new Error(json.error);
