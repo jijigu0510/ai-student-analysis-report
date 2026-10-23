@@ -598,6 +598,10 @@ document.addEventListener("DOMContentLoaded", () => {
       { uniId: 'uni-excel-upload', targetId: 'excel-upload' },
       { uniId: 'uni-course-upload', targetId: 'course-excel-upload' },
       { uniId: 'uni-batch-upload', targetId: 'batch-excel-upload' },
+      // 면접 문항 생성 탭의 엑셀 업로드 → 개인 분석 탭의 실제 입력으로 미러링(학생 데이터 공유)
+      { uniId: 'iv-excel-upload', targetId: 'excel-upload' },
+      { uniId: 'iv-course-upload', targetId: 'course-excel-upload' },
+      { uniId: 'iv-batch-upload', targetId: 'batch-excel-upload' },
       { uniId: 'uni-pf-results-upload', targetId: 'pf-results-upload' },
       { uniId: 'uni-pf-course', targetId: 'pf-upload-course' },
       { uniId: 'uni-pf-subject', targetId: 'pf-upload-subject' },
