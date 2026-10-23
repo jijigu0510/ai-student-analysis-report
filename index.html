@@ -43,72 +43,58 @@
     <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.12; pointer-events: none; z-index: 0;">
       <img src="부안고등학교%20로고.png" alt="부안고 워터마크" style="height: 140px; width: auto; filter: grayscale(100%);">
     </div>
-    <div class="container" style="position: relative; z-index: 1;">
-      <h1><span class="gradient-text">부안고등학교</span> 진학지도 프로그램</h1>
-      <p>클릭 한 번으로 시각화하는 우리 학교만의 맞춤형 입시 대시보드</p>
-
-      <!-- 방문자 카운터 -->
-      <div id="visitor-counter" class="visitor-counter">
-        <div class="visitor-item">
-          <span class="visitor-label">지금 접속 중</span>
-          <span class="visitor-value" id="vc-online">—</span>
-          <span class="visitor-unit">명</span>
+    <div class="container app-topbars" style="position: relative; z-index: 1;">
+      <!-- 상단 바: 제목(좌) + 방문 현황·초기화(우) -->
+      <div class="app-headbar">
+        <h1 class="app-headbar-title"><span class="gradient-text">부안고등학교</span> 진학지도 프로그램</h1>
+        <div class="app-headbar-right">
+          <div id="visitor-counter" class="visitor-counter">
+            <div class="visitor-item">
+              <span class="visitor-label">지금 접속</span>
+              <span class="visitor-value" id="vc-online">—</span>
+              <span class="visitor-unit">명</span>
+            </div>
+            <div class="visitor-divider"></div>
+            <div class="visitor-item">
+              <span class="visitor-label">오늘</span>
+              <span class="visitor-value" id="vc-today">—</span>
+              <span class="visitor-unit">명</span>
+            </div>
+            <div class="visitor-divider"></div>
+            <div class="visitor-item">
+              <span class="visitor-label">누적</span>
+              <span class="visitor-value" id="vc-total">—</span>
+              <span class="visitor-unit">명</span>
+            </div>
+          </div>
+          <button id="reset-data-btn" class="btn-secondary" title="모든 데이터를 초기화하고 저장된 정보를 삭제합니다.">데이터 초기화</button>
         </div>
-        <div class="visitor-divider"></div>
-        <div class="visitor-item">
-          <span class="visitor-label">오늘 방문</span>
-          <span class="visitor-value" id="vc-today">—</span>
-          <span class="visitor-unit">명</span>
-        </div>
-        <div class="visitor-divider"></div>
-        <div class="visitor-item">
-          <span class="visitor-label">누적 방문</span>
-          <span class="visitor-value" id="vc-total">—</span>
-          <span class="visitor-unit">명</span>
+      </div>
+      <!-- 하단 바: 부제목(좌) + API Key(우) -->
+      <div class="app-subbar">
+        <p class="app-subbar-desc">클릭 한 번으로 시각화하는 우리 학교만의 맞춤형 입시 대시보드</p>
+        <div class="app-apikey">
+          <label for="uni-api-key">🔑 API Key</label>
+          <input type="password" id="uni-api-key" placeholder="AI Studio에서 발급받은 Gemini API 키 입력...">
         </div>
       </div>
 
-      <div id="globalAlert" role="alert" class="global-alert hidden" aria-live="polite" style="margin-top:0.75rem; padding:0.75rem 1rem; border-radius:8px; display:none; font-weight:600; position:relative;">
+      <div id="globalAlert" role="alert" class="global-alert hidden" aria-live="polite" style="margin-top:0.6rem; padding:0.75rem 1rem; border-radius:2px; display:none; font-weight:600; position:relative;">
         <span id="globalAlertMessage"></span>
         <button id="globalAlertUndo" type="button" aria-label="되돌리기" style="position:absolute; right:2.4rem; top:0.5rem; border:none; background:transparent; color:inherit; font-size:0.95rem; cursor:pointer;">↶</button>
         <button id="globalAlertClose" type="button" aria-label="닫기" style="position:absolute; right:0.6rem; top:0.5rem; border:none; background:transparent; color:inherit; font-size:1.1rem; cursor:pointer;">✕</button>
       </div>
-      <div class="header-actions">
-        <button id="reset-data-btn" class="btn-secondary" title="모든 데이터를 초기화하고 저장된 정보를 삭제합니다.">데이터 초기화</button>
-      </div>
     </div>
   </header>
 
-  <!-- Add a globally floating or fixed toggle button just in case the tab is hidden -->
-  <button id="show-tabs-btn" class="btn-secondary" style="position: fixed; left: 0; top: 100px; z-index: 1000; border-radius: 0 8px 8px 0; padding: 0.75rem; background: var(--glass-bg); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-left: none; color: var(--accent-primary); font-weight: bold; font-size: 1.2rem; cursor: pointer; display: none;">▶<div style="font-size:0.75rem; margin-top:0.2rem;">메뉴</div></button>
-  <!-- API Key 입력 섹션 -->
-  <div id="universalUploadSection" class="container" style="margin-bottom: 2rem;">
-    <section class="glass-panel" style="padding: 1.5rem 2rem;">
-      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; cursor: pointer;" onclick="document.getElementById('universal-upload-body').classList.toggle('hidden');">
-        <h2 class="section-title" style="margin-bottom: 0; border-bottom: none; display: flex; align-items: center; gap: 0.5rem;">
-          <span>🔑 API Key 입력하기</span>
-          <span style="font-size: 0.85rem; color: var(--text-secondary); font-weight: normal;">(모든 분석 탭에 공통 적용됩니다)</span>
-        </h2>
-        <span style="color: var(--accent-primary); font-size: 1.2rem;">▼</span>
-      </div>
-      
-      <div id="universal-upload-body" class="universal-upload-body">
-        <!-- 공통 설정 (API Key) -->
-        <div style="margin-bottom: 1.5rem; background: var(--upload-card-bg); padding: 1rem; border-radius: 12px; border: 1px solid rgba(150, 186, 255, 0.3);">
-          <label for="uni-api-key" style="color: var(--clr-h4-blue); font-weight: bold; font-size: 0.95rem; margin-bottom: 0.5rem; display: block;">🔑 Google Gemini API Key <span style="font-size: 0.8rem; font-weight: normal; color: var(--text-secondary);">(모든 분석 탭에 공통 적용됩니다)</span></label>
-          <input type="password" id="uni-api-key" placeholder="AI Studio에서 발급받은 API 키를 입력하세요..." style="background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-primary); border-radius: 8px; padding: 0.75rem 1rem; width: 100%;">
-        </div>
-
-        <!-- 파일 업로드는 각 분석 탭으로 이동됨 (이 섹션은 공통 API Key 입력 전용) -->
-      </div>
-    </section>
-  </div>
+  <!-- 탭이 숨겨졌을 때 다시 여는 컴팩트 버튼 -->
+  <button id="show-tabs-btn" class="tab-toggle-float" title="메뉴 열기" style="display: none;">▶</button>
 
   <div class="app-layout">
     <div class="tabs-container" id="main-tabs-container" style="display: flex; flex-direction: column; justify-content: space-between; transition: margin-left 0.3s ease;">
       <nav class="app-tabs">
-        <button id="toggle-tabs-btn" class="tab-btn" style="text-align:center; font-weight:700; color:var(--accent-primary); border-bottom: 2px solid rgba(255,255,255,0.1); display:flex; justify-content:center; align-items:center; gap:0.5rem; padding: 1rem;">
-           <span class="btn-text">◀ 탭 숨기기</span>
+        <button id="toggle-tabs-btn" class="tab-btn" title="탭 숨기기" style="text-align:center; font-weight:700; color:var(--accent-primary); border-bottom: 1px solid var(--panel-border); display:flex; justify-content:center; align-items:center; gap:0.3rem; padding: 0.4rem;">
+           <span class="btn-text">◀ 숨기기</span>
         </button>
         <button id="tab-card" class="tab-btn">🗂️ 수시지원상담카드 작성하기</button>
         <button id="tab-individual" class="tab-btn active">학교생활기록부 정성평가 분석(전형 추천)</button>
