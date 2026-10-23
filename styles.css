@@ -3607,11 +3607,23 @@ header.header { padding: 0.75rem 0 0.5rem !important; text-align: left !importan
 
 /* 탭을 화면 좌측에 밀착 */
 .app-layout { padding-left: 0 !important; gap: 1rem !important; }
-.tabs-container { flex-basis: 210px !important; top: 0.5rem !important; }
+.tabs-container { flex-basis: 240px !important; top: 0.5rem !important; }
 .app-tabs {
   border-radius: 0 2px 2px 0 !important; border-left: none !important;
   box-shadow: none !important; backdrop-filter: none !important; background: var(--panel-bg) !important;
 }
+/* 탭 제목 한 줄 맞춤: 작은 글씨 + 줄바꿈 금지(그림 제거된 텍스트 전용) */
+.app-tabs .tab-btn {
+  font-size: 0.74rem !important;
+  font-weight: 500 !important;
+  padding: 0.5rem 0.65rem !important;
+  letter-spacing: -0.2px !important;
+  white-space: nowrap !important;
+  border-left-width: 3px !important;
+  border-bottom: 1px solid var(--clr-border-subtle) !important;
+}
+.app-tabs .tab-btn.active { font-weight: 700 !important; }
+#toggle-tabs-btn { font-size: 0.74rem !important; white-space: nowrap !important; }
 
 /* 컴팩트 토글 버튼 */
 #toggle-tabs-btn { padding: 0.4rem !important; font-size: 0.78rem !important; }
