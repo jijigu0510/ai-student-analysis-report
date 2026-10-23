@@ -598,10 +598,6 @@ document.addEventListener("DOMContentLoaded", () => {
       { uniId: 'uni-excel-upload', targetId: 'excel-upload' },
       { uniId: 'uni-course-upload', targetId: 'course-excel-upload' },
       { uniId: 'uni-batch-upload', targetId: 'batch-excel-upload' },
-      // 면접 문항 생성 탭의 엑셀 업로드 → 개인 분석 탭의 실제 입력으로 미러링(학생 데이터 공유)
-      { uniId: 'iv-excel-upload', targetId: 'excel-upload' },
-      { uniId: 'iv-course-upload', targetId: 'course-excel-upload' },
-      { uniId: 'iv-batch-upload', targetId: 'batch-excel-upload' },
       { uniId: 'uni-pf-results-upload', targetId: 'pf-results-upload' },
       { uniId: 'uni-pf-course', targetId: 'pf-upload-course' },
       { uniId: 'uni-pf-subject', targetId: 'pf-upload-subject' },
@@ -5285,6 +5281,57 @@ document.addEventListener("DOMContentLoaded", () => {
       saveState();
     });
   }
+
+  // ===== 생기부 EXCEL 통합 업로드: 한 박스 → 파일 종류 자동 분류 → 기존 입력으로 분배 =====
+  async function classifyRecordFile(file) {
+    try {
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(new Uint8Array(buf), { type: "array" });
+      let blob = wb.SheetNames.join(" ");
+      for (const sn of wb.SheetNames) {
+        const rows = XLSX.utils.sheet_to_json(wb.Sheets[sn], { header: 1 });
+        blob += " " + rows.slice(0, 25).map(r => (r || []).join("")).join(" ");
+      }
+      const n = blob.replace(/\s+/g, "");
+      if (/세부능력|창의적체험활동|행동특성및종합의견/.test(n)) return "batch";   // 세특·창체·행특
+      if (/학기교과과목|석차등급|학점수|단위수|성취도|원점수/.test(n)) return "course"; // 교과학습발달상황(이수과목)
+      return "roster";                                                            // 인적사항
+    } catch (err) { console.error("[classifyRecordFile]", err); return "roster"; }
+  }
+
+  async function handleCombinedRecordFiles(fileList, statusEl) {
+    const files = Array.from(fileList || []);
+    if (!files.length) return;
+    if (statusEl) statusEl.textContent = "파일 분류 중...";
+    const groups = { roster: [], course: [], batch: [] };
+    for (const f of files) { groups[await classifyRecordFile(f)].push(f); }
+
+    const feed = (id, arr) => {
+      if (!arr.length) return;
+      const input = document.getElementById(id);
+      if (!input) return;
+      const dt = new DataTransfer();
+      arr.forEach(f => dt.items.add(f));
+      input.files = dt.files;
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+    };
+    feed("excel-upload", groups.roster.slice(0, 1));
+    feed("course-excel-upload", groups.course.slice(0, 1));
+    feed("batch-excel-upload", groups.batch);
+
+    if (statusEl) {
+      const parts = [];
+      if (groups.roster.length) parts.push("인적사항 " + groups.roster.length + "개");
+      if (groups.course.length) parts.push("이수과목 " + groups.course.length + "개");
+      if (groups.batch.length) parts.push("세특/비교과 " + groups.batch.length + "개");
+      statusEl.textContent = parts.length ? ("✅ 분류 완료: " + parts.join(", ")) : "⚠️ 인식된 생기부 엑셀이 없습니다. 파일을 확인하세요.";
+    }
+  }
+
+  ["record-excel-combined", "iv-record-excel-combined"].forEach(id => {
+    const inp = document.getElementById(id);
+    if (inp) inp.addEventListener("change", (e) => handleCombinedRecordFiles(e.target.files, document.getElementById(id + "-status")));
+  });
 
   function extractBatchData(jsonsArray, targetName) {
     if (!targetName) return;

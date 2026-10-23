@@ -1,32 +1,33 @@
 /* =============== Reset & Variables =============== */
 :root {
-  --bg-color: #0b0d17;
-  --bg-gradient: radial-gradient(circle at top right, #1a1a2e 0%, #0d0f1a 50%, #07080f 100%);
-  --panel-bg: rgba(25, 27, 42, 0.4);
-  --panel-border: rgba(255, 255, 255, 0.1);
-  --text-primary: #f8f9fa;
-  --text-secondary: #adb5bd;
+  /* 딱딱한(flat·angular) 테마: 그라데이션 제거·불투명 패널·선명한 스틸 테두리 */
+  --bg-color: #0f1219;
+  --bg-gradient: none;
+  --panel-bg: #171b28;
+  --panel-border: rgba(148, 163, 184, 0.22);
+  --text-primary: #f1f3f5;
+  --text-secondary: #9aa4b2;
   --accent-primary: #5e6ad2;
-  --accent-gradient: linear-gradient(135deg, #7c83fd, #96baff);
-  --accent-hover: linear-gradient(135deg, #6b73eb, #85a9ee);
-  --input-bg: rgba(0, 0, 0, 0.3);
-  --input-border: rgba(255, 255, 255, 0.15);
-  --input-focus: rgba(124, 131, 253, 0.6);
-  --error-color: #ff6b6b;
-  --success-color: #20c997;
+  --accent-gradient: #5e6ad2;
+  --accent-hover: #6f79e0;
+  --input-bg: #0c0e15;
+  --input-border: rgba(148, 163, 184, 0.28);
+  --input-focus: rgba(99, 110, 210, 0.75);
+  --error-color: #e5484d;
+  --success-color: #2a9d6f;
   /* Semantic colors for dynamic content */
-  --clr-raw: #96baff;
-  --clr-std: #6bcb77;
-  --clr-h4-blue: #96baff;
-  --clr-h4-pink: #ff6b81;
-  --clr-mock-head: #ff8e9e;
-  --clr-inset-bg: rgba(255, 255, 255, 0.04);
-  --clr-border-subtle: rgba(255, 255, 255, 0.07);
-  --clr-checkbox-bg: rgba(0, 0, 0, 0.3);
-  --clr-chart-bg: rgba(0, 0, 0, 0.2);
-  --upload-card-bg: rgba(0, 0, 0, 0.2);
-  --glass-bg: rgba(255, 255, 255, 0.05);
-  --glass-border: rgba(255, 255, 255, 0.10);
+  --clr-raw: #8fb0f0;
+  --clr-std: #5bb86c;
+  --clr-h4-blue: #8fb0f0;
+  --clr-h4-pink: #e86b7f;
+  --clr-mock-head: #e8818f;
+  --clr-inset-bg: rgba(255, 255, 255, 0.03);
+  --clr-border-subtle: rgba(148, 163, 184, 0.16);
+  --clr-checkbox-bg: rgba(0, 0, 0, 0.35);
+  --clr-chart-bg: rgba(0, 0, 0, 0.25);
+  --upload-card-bg: #12151f;
+  --glass-bg: #141826;
+  --glass-border: rgba(148, 163, 184, 0.2);
 }
 
 * {
@@ -3519,4 +3520,53 @@ body.light-mode .card-hist-modal-close:hover { color:#1e2a60; background:rgba(94
   body.print-card:not(.print-history) .history-print-appendix { display:none !important; }
 }
 /* ==================== /수시지원상담카드 ==================== */
+
+/* ============================================================
+   딱딱한(flat · angular) 테마 — 전역 오버라이드
+   · 둥근 모서리 → 각진 2px (탭 0)
+   · 글래스 블러/반투명 → 불투명 평면 + 선명한 스틸 테두리
+   · 그라데이션/소프트 글로우 제거 (버튼 의미색은 유지)
+   인라인 border-radius 를 덮기 위해 일부 !important 사용.
+   ============================================================ */
+body { background: var(--bg-color) !important; }
+
+.glass-panel {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background: var(--panel-bg) !important;
+  border: 1px solid var(--panel-border) !important;
+  border-radius: 2px !important;
+  box-shadow: none !important;
+}
+
+/* 패널·카드·컨테이너류 각지게 */
+.main-container, .single-container, .form-section, .result-section,
+.sidebar, .uni-upload-card, .gr-container, .gr-header, .card,
+.file-box, .export-group, .search-results-dropdown, .formula-box,
+details, .detail-modal-trigger, .save-status, .radio-group,
+.result-header, .loading-state, .markdown-body, .upload-card-bg {
+  border-radius: 2px !important;
+}
+
+/* 입력·버튼·탭·배지류 각지게 + 블러 제거 */
+input, select, textarea, button, .btn, .btn-primary, .btn-secondary,
+.btn-upload, .btn-green, .btn-reset, .gr-filter-btn, .gr-select,
+.tab-btn, .badge, .history-level-badge, .detail-modal-trigger {
+  border-radius: 2px !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+.tab-btn { border-radius: 0 !important; }
+
+/* 그라데이션 강조 버튼 → 평면 단색 (의미색 버튼은 인라인 색 유지) */
+.btn-primary, .btn-secondary {
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+/* 포커스: 소프트 글로우 → 선명한 링 */
+input:focus, select:focus, textarea:focus {
+  box-shadow: 0 0 0 2px var(--input-focus) !important;
+  border-color: var(--accent-primary) !important;
+}
 

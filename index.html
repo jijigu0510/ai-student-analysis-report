@@ -136,15 +136,15 @@
       <h2 class="section-title">👤 학생 정보 입력 및 개인 분석</h2>
       <p style="color: var(--text-secondary); margin-bottom: 2.2rem; line-height: 1.7; font-size: 0.95rem;">각 학급의 학생부 자료를 활용하여 각 대학의 학생부종합전형 가이드북을 학습한 AI가 점수 산출 및 평가 근거를 제시하고 피드백을 통해 보완 방향을 제시합니다. (담임교사용)</p>
       <form id="evalForm" novalidate>
-          <div class="form-group-row">
-            <div class="form-group">
-              <label for="excel-upload" style="color: var(--text-secondary); font-weight: 500;">📊 인적사항 파일 (엑셀) <span class="label-desc" style="color: #96baff; font-weight: normal;">(경로: 나이스 - 학급담임 - 학교생활기록부 - 학생부 항목별 조회 - 인적·학적사항 - 인적사항)</span></label>
-              <input type="file" id="excel-upload" accept=".xlsx, .xls" style="background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-primary); border-radius: 8px; padding: 0.75rem 1rem; width: 100%;">
-            </div>
-            <div class="form-group">
-              <label for="course-excel-upload" style="color: var(--text-secondary); font-weight: 500;">📘 이수과목 파일 (엑셀) <span class="label-desc" style="color: #96baff; font-weight: normal;">(경로: 나이스 - 학급담임 - 학교생활기록부 - 학생부 항목별 조회 - 교과학습발달상황 - 교과학습발달상황)</span></label>
-              <input type="file" id="course-excel-upload" accept=".xlsx, .xls" style="background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-primary); border-radius: 8px; padding: 0.75rem 1rem; width: 100%;">
-            </div>
+          <div class="form-group">
+            <label for="record-excel-combined" style="color: var(--text-secondary); font-weight: 500;">📊 생기부 EXCEL 업로드 <span class="label-desc" style="color: #96baff; font-weight: normal;">인적사항, 교과학습발달상황, 교과/창체/행특 세특 업로드 (여러 개 한 번에 선택 — 파일 종류를 자동 분류합니다)</span></label>
+            <input type="file" id="record-excel-combined" accept=".xlsx, .xls" multiple style="background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-primary); border-radius: 8px; padding: 0.75rem 1rem; width: 100%;">
+            <div id="record-excel-combined-status" style="margin-top: 0.5rem; font-size: 0.82rem; color: var(--text-secondary);"></div>
+          </div>
+          <!-- 실제 파싱 입력(숨김): 통합 업로드가 파일 종류별로 여기에 분배 -->
+          <div style="display:none;">
+            <input type="file" id="excel-upload" accept=".xlsx, .xls">
+            <input type="file" id="course-excel-upload" accept=".xlsx, .xls">
           </div>
           <div class="form-group">
             <label for="record-pdf-upload" style="color: var(--text-secondary); font-weight: 500;">📄 생기부 PDF 업로드 <span class="label-desc" style="color: #96baff; font-weight: normal;">(나이스에서 내려받은 학교생활기록부 PDF 1개로 아래 항목을 한 번에 채웁니다)</span></label>
@@ -165,8 +165,8 @@
             <label for="api-key" style="color: var(--text-secondary); font-weight: 500;">Google Gemini API Key <span class="label-desc" style="color: #96baff; font-weight: normal;">(필수 - AI 심층 분석에 필요합니다)</span></label>
             <input type="password" id="api-key" placeholder="AI Studio에서 발급받은 Gemini API 키를 입력하세요..." required style="background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-primary); border-radius: 8px; padding: 0.75rem 1rem; width: 100%;">
           </div>
-          <div class="form-group">
-            <label for="batch-excel-upload" style="color: var(--text-secondary); font-weight: 500;">📑 세특/비교과 일괄 업로드 (엑셀) <span class="label-desc" style="color: #96baff; font-weight: normal;">① 창의적체험활동 ② 세부능력및특기사항 ③ 행동특성및종합의견 (여러 개 선택)</span></label>
+          <div class="form-group" style="display: none;">
+            <label for="batch-excel-upload" style="color: var(--text-secondary); font-weight: 500;">세특/비교과 일괄 (엑셀)</label>
             <input type="file" id="batch-excel-upload" accept=".xlsx, .xls" multiple style="background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-primary); border-radius: 8px; padding: 0.75rem 1rem; width: 100%;">
           </div>
           <div class="form-group major-search-group">
@@ -902,21 +902,9 @@
         </div>
 
         <div class="form-group">
-          <label style="color: var(--text-secondary); font-weight: 500;">📊 또는 엑셀로 학생 불러오기 <span class="label-desc" style="color: #96baff; font-weight: normal;">(개인 분석과 연동 — 업로드하면 아래 학생 목록에 반영됩니다)</span></label>
-          <div class="form-group-row" style="margin-top:0.5rem;">
-            <div class="form-group">
-              <label for="iv-excel-upload" style="font-size:0.85rem; color: var(--text-secondary);">인적사항 (엑셀)</label>
-              <input type="file" id="iv-excel-upload" accept=".xlsx, .xls" style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.6rem 0.9rem;width:100%;font-size:0.85rem;">
-            </div>
-            <div class="form-group">
-              <label for="iv-course-upload" style="font-size:0.85rem; color: var(--text-secondary);">이수과목 (엑셀)</label>
-              <input type="file" id="iv-course-upload" accept=".xlsx, .xls" style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.6rem 0.9rem;width:100%;font-size:0.85rem;">
-            </div>
-          </div>
-          <div style="margin-top:0.5rem;">
-            <label for="iv-batch-upload" style="font-size:0.85rem; color: var(--text-secondary);">세특/비교과 일괄 (엑셀, 다중)</label>
-            <input type="file" id="iv-batch-upload" accept=".xlsx, .xls" multiple style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.6rem 0.9rem;width:100%;font-size:0.85rem;">
-          </div>
+          <label for="iv-record-excel-combined" style="color: var(--text-secondary); font-weight: 500;">📊 생기부 EXCEL 업로드 <span class="label-desc" style="color: #96baff; font-weight: normal;">인적사항, 교과학습발달상황, 교과/창체/행특 세특 업로드 (여러 개 한 번에 — 개인 분석과 연동)</span></label>
+          <input type="file" id="iv-record-excel-combined" accept=".xlsx, .xls" multiple style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.75rem 1rem;width:100%;">
+          <div id="iv-record-excel-combined-status" style="margin-top: 0.5rem; font-size: 0.82rem; color: var(--text-secondary);"></div>
         </div>
 
         <div class="form-group">
