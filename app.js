@@ -726,27 +726,16 @@ document.addEventListener("DOMContentLoaded", () => {
     return ['1', '2', '3'].flatMap(g => mockDataByMonth[`${g}_${currentMockMonth}`] || []);
   }
 
-  // Firebase 모듈에서 데이터를 받아오는 콜백 — 키: '${grade}_${month}'
-  window.onFirebaseMockData = function (gradeMonthKey, serverData) {
-    if (!serverData || !Array.isArray(serverData.data)) return;
-    mockServerData[gradeMonthKey] = {
-      count: serverData.count || serverData.data.length,
-      uploadedAt: serverData.uploadedAt
-    };
-    if (!mockDataByMonth[gradeMonthKey] || mockDataByMonth[gradeMonthKey].length === 0) {
-      mockDataByMonth[gradeMonthKey] = serverData.data;
-      if (gradeMonthKey === dataKey() || gradeMonthKey.endsWith(`_${currentMockMonth}`)) showMockResults();
-    }
-    if (gradeMonthKey === dataKey()) refreshMockServerStatus();
-  };
+  // 서버(Firebase) 연동 비활성화 — 모의고사 데이터는 로컬(IndexedDB)에만 저장한다.
+  window.onFirebaseMockData = function () { /* no-op: 서버 저장/불러오기 사용 안 함 */ };
 
+  // 로컬 저장 현황 표시 (기존 '서버 저장' 표시를 로컬 기준으로 대체)
   function refreshMockServerStatus() {
     const el = document.getElementById('mockServerStatus');
     if (!el) return;
-    const info = mockServerData[dataKey()];
-    if (info) {
-      const ts = info.uploadedAt ? new Date(info.uploadedAt.seconds * 1000).toLocaleString('ko-KR') : '';
-      el.innerHTML = `<span style="color:#4caf50;">✅ 서버에 저장된 데이터: ${currentMockYear}년 ${currentMockMonth}월 (${currentMockGrade}학년) ${info.count}건${ts ? ` (저장: ${ts})` : ''}</span>`;
+    const rows = mockDataByMonth[dataKey()] || [];
+    if (rows.length > 0) {
+      el.innerHTML = `<span style="color:#4caf50;">💾 이 브라우저에 저장됨: ${currentMockYear}년 ${currentMockMonth}월 (${currentMockGrade}학년) ${rows.length}건</span>`;
     } else {
       el.innerHTML = '';
     }
