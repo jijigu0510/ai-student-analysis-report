@@ -1071,15 +1071,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function processMockFiles(files) {
     const addedKeys = new Set();
+    const mockStatusEl = document.getElementById('mockUploadStatus');
+    const setMockStatus = (msg, color) => {
+      if (!mockStatusEl) return;
+      mockStatusEl.textContent = msg;
+      mockStatusEl.style.color = color || 'var(--text-secondary)';
+    };
+    setMockStatus('⏳ 성적표를 분석하는 중입니다...', '#7cb9ff');
+    // '분석 중' 문구가 먼저 그려지도록 잠깐 양보 후 파싱 시작
+    await new Promise(r => setTimeout(r, 30));
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       const fname = file.name.toLowerCase();
       try {
         if (fname.endsWith('.pdf')) {
+          setMockStatus(`⏳ '${file.name}' 성적표를 분석하는 중...`, '#7cb9ff');
           const { data: extracted, detected } = await parseMockPDF(file);
           if (extracted.length === 0) {
-            alert(`추출 자료가 없습니다 (${file.name}). 성적표 파일이 맞는지 확인해 주세요.`);
+            setMockStatus(`⚠️ 분석 불가: '${file.name}' 에서 데이터를 추출하지 못했습니다. 성적통지표 원본(PDF) 형식인지 확인해 주세요.`, '#ff6b6b');
             continue;
           }
           // 학년별로 그룹화: detected.grade 우선, 없으면 student.학년 사용
@@ -1125,7 +1135,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       } catch (err) {
         console.error(`Error processing file ${file.name}:`, err);
-        alert(`파일 처리 오류 (${file.name}): ${err.message}`);
+        setMockStatus(`⚠️ 분석 불가: '${file.name}' 처리 중 오류 — ${err.message}`, '#ff6b6b');
       }
     }
 
@@ -1136,11 +1146,12 @@ document.addEventListener("DOMContentLoaded", () => {
       // 누적 현황 알림
       const summary = [...addedKeys].map(k => {
         const [g, m] = k.split('_');
-        return `${g}학년 ${m}월: ${mockDataByMonth[k].length}건`;
+        return `${g}학년 ${m}월 ${mockDataByMonth[k].length}건`;
       }).join(', ');
       console.log(`[모의고사] 누적 현황: ${summary}`);
+      setMockStatus(`✅ 분석 완료 — ${currentMockYear}년 ${currentMockMonth}월 (${summary})`, '#4caf50');
     } else {
-      alert('추출 자료가 없습니다. 성적표 파일이 맞는지 확인해 주세요.');
+      setMockStatus('⚠️ 분석 불가: 성적통지표에서 데이터를 추출하지 못했습니다. PDF 원본 또는 올바른 CSV인지 확인해 주세요.', '#ff6b6b');
     }
   }
 
