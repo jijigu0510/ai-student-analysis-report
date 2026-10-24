@@ -715,6 +715,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let mockDataByMonth = {}; // 키: '${grade}_${month}', 예: '1_3', '3_5'
   let currentMockMonth = '3';
   let currentMockGrade = '1';
+  let currentMockYear = String(new Date().getFullYear());  // 성적통지표에서 감지한 모의고사 연도
   const MONTHS_BY_GRADE = { '1': ['3', '6', '9', '11'], '2': ['3', '6', '9', '11'], '3': ['3', '5', '6', '7', '9', '11'] };
   const mockServerData = {}; // { '${grade}_${month}': { count, uploadedAt } }
 
@@ -745,7 +746,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const info = mockServerData[dataKey()];
     if (info) {
       const ts = info.uploadedAt ? new Date(info.uploadedAt.seconds * 1000).toLocaleString('ko-KR') : '';
-      el.innerHTML = `<span style="color:#4caf50;">✅ 서버에 저장된 데이터: ${currentMockGrade}학년 ${currentMockMonth}월 ${info.count}건${ts ? ` (저장: ${ts})` : ''}</span>`;
+      el.innerHTML = `<span style="color:#4caf50;">✅ 서버에 저장된 데이터: ${currentMockYear}년 ${currentMockMonth}월 (${currentMockGrade}학년) ${info.count}건${ts ? ` (저장: ${ts})` : ''}</span>`;
     } else {
       el.innerHTML = '';
     }
@@ -1103,6 +1104,7 @@ document.addEventListener("DOMContentLoaded", () => {
           if (detected) {
             currentMockGrade = detected.grade;
             currentMockMonth = detected.month;
+            if (detected.year) currentMockYear = detected.year;
             const mockGradeSelectEl = document.getElementById('mockGradeSelect');
             if (mockGradeSelectEl) { mockGradeSelectEl.value = currentMockGrade; }
             updateMonthSelectForGrade(currentMockGrade);
@@ -1151,8 +1153,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const norm = pageText.replace(/\s/g, '');
     const gradeM = norm.match(/고([123])전국연합/);
     const monthM = norm.match(/학년도(\d+)월/);
+    const yearM  = norm.match(/(\d{4})학년도/);   // 예: "2026학년도 5월" → year 2026, month 5
     if (!gradeM || !monthM) return null;
-    return { grade: gradeM[1], month: monthM[1] };
+    return { year: yearM ? yearM[1] : null, grade: gradeM[1], month: monthM[1] };
   }
 
   async function parseMockPDF(file) {
@@ -1865,7 +1868,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (btn) { btn.disabled = true; btn.textContent = '연결 중...'; }
 
     try {
-      const data = await gasGetJson(`${gasUrl}?action=sheets`);
+      const data = await gasGetJson(`${gasUrl}${gasUrl.includes('?') ? '&' : '?'}action=sheets`);
       if (!data.success) throw new Error(data.error || '시트 목록 로드 실패');
 
       mockSheetNames = data.sheets || [];
@@ -1895,24 +1898,33 @@ document.addEventListener("DOMContentLoaded", () => {
       .toLowerCase();
   }
 
-  /** CSV 과목명 ↔ 스프레드시트 시트명 매칭 (퍼지) */
+  /** CSV 과목명 ↔ 스프레드시트 시트명 매칭 (퍼지)
+   *  시트명은 "연도/월/과목" 형식(예: 2026/5/국어(화법과작문)).
+   *  감지한 연도+월('2026/5/')로 먼저 후보를 거른 뒤, 과목 부분으로 매칭한다.
+   *  (연도/월 접두 시트가 하나도 없으면 전체 시트명으로 폴백) */
   function matchSubjectToSheet(subjectName) {
     if (!mockSheetNames || mockSheetNames.length === 0) return null;
     const normSubj = normalizeSubjectName(subjectName);
 
+    const prefix = `${currentMockYear}/${currentMockMonth}/`;
+    const prefixed = mockSheetNames.filter(s => s.startsWith(prefix));
+    const pool = prefixed.length ? prefixed : mockSheetNames;
+    // 매칭에 쓸 과목 부분(접두 "연도/월/" 제거). 접두 시트가 없으면 시트명 전체 사용.
+    const subjPart = (s) => prefixed.length ? s.slice(prefix.length) : s;
+
     // 1. 완전 일치
-    for (const sheet of mockSheetNames) {
-      if (normalizeSubjectName(sheet) === normSubj) return sheet;
+    for (const sheet of pool) {
+      if (normalizeSubjectName(subjPart(sheet)) === normSubj) return sheet;
     }
     // 2. 포함 관계
-    for (const sheet of mockSheetNames) {
-      const normSheet = normalizeSubjectName(sheet);
+    for (const sheet of pool) {
+      const normSheet = normalizeSubjectName(subjPart(sheet));
       if (normSubj.includes(normSheet) || normSheet.includes(normSubj)) return sheet;
     }
     // 3. 괄호 제거 후 핵심어 매칭
     const coreSubj = normalizeSubjectName(subjectName.replace(/[（(][^)）]*[)）]/g, ''));
-    for (const sheet of mockSheetNames) {
-      const coreSheet = normalizeSubjectName(sheet.replace(/[（(][^)）]*[)）]/g, ''));
+    for (const sheet of pool) {
+      const coreSheet = normalizeSubjectName(subjPart(sheet).replace(/[（(][^)）]*[)）]/g, ''));
       if (coreSubj === coreSheet || coreSubj.includes(coreSheet) || coreSheet.includes(coreSubj)) return sheet;
     }
     return null;
@@ -1925,7 +1937,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const gasUrl = getMockGasUrl(currentMockGrade, currentMockMonth);
     if (!gasUrl) throw new Error(`${currentMockGrade}학년 ${currentMockMonth}월 GAS 연동 설정이 되어 있지 않습니다.`);
 
-    const data = await gasGetJson(`${gasUrl}?action=sheetData&sheet=${encodeURIComponent(sheetName)}`);
+    const data = await gasGetJson(`${gasUrl}${gasUrl.includes('?') ? '&' : '?'}action=sheetData&sheet=${encodeURIComponent(sheetName)}`);
     if (!data.success) throw new Error(data.error || `시트 '${sheetName}' 데이터 로드 실패`);
 
     const rows = data.data || [];
@@ -14616,45 +14628,54 @@ ${univPromptSupplement}
   const PROJECT_MANUAL_MD = `
 # 부안고등학교 진학지도 프로그램 설명서
 
-<통합 파일 업로드하기>
+## 🔑 시작하기 — API Key 입력
 
-1. Google Gemini API Key: 각자의 API Key가 있다면 자신의 API Key를 입력하고, 없는 경우는 보내드린 API Key를 입력 (대신 유출 금지!)
-
-2.개인 분석용 파일
- 1) 인적사항 엑셀파일: 나이스(NEIS) - 학급담임 - 학교생활기록부 - 학생부 항목별 조회 - 인적,학적사항 - 인적사항 → XLS data로 다운받아 업로드
- 2) 이수과목 엑셀파일: 나이스(NEIS) - 학급담임 - 학교생활기록부 - 학생부 항목별 조회 - 교과학습발달상황 - 교과학습발달상황 → XLS data로 다운받아 업로드
- 3) 세특/비교과 일괄 엑셀파일
-  ① 나이스(NEIS) - 학급담임 - 학교생활기록부 - 학생부 항목별 조회 - 창의적체험활동 - 창의적체험활동 → XLS data로 다운받아 업로드
-  ② 나이스(NEIS) - 학급담임 - 학교생활기록부 - 학생부 항목별 조회 - 교과학습발달상황 - 세부능력및특기사항 → XLS data로 다운받아 업로드
-  ③ 나이스(NEIS) - 학급담임 - 학교생활기록부 - 학생부 항목별 조회 - 행동특성및종합의견 - 행동특성및종합의견 → XLS data로 다운받아 업로드
-  > ①②③을 모두 드래그하여 한꺼번에 업로드
-
-3. 합불합 분석용 파일
- 1) 수시진학관리: 보내드린 '수시진학관리' 엑셀 파일 업로드 (대교협 파일)
- 2) 성적 엑셀 & 세특 엑셀 & 창체 엑셀 & 행특 엑셀: 보내드린 '합불합 분석.zip' 에서 찾아 각각 업로드
-
-4. 모의고사 / 내신 분석용
- 1) 모의고사 성적표: 각 학급의 모의고사 성적표를 csv 파일로 변환하여 업로드. (안되는 경우 종종 있으니 저에게 학급 모의고사 성적표 주시면 양식에 맞게 변환해드립니다.)
-      * csv 파일 변환법 → ilovepdf와 같이 pdf를 변환할 수 있는 프로그램을 이용하셔서 pdf→excel로 변환하되, 한 시트에 다 들어오게 해주시고, 그 excel 파일을 다른 이름으로 저장해서 파일 형식을 .csv로 바꾸시면 됩니다.
- 2) 내신 석차 데이터: 나이스(NEIS) - 학급담임 - 학교생활기록부 - 학생부 항목별 조회 - 교과학습발달상황 - 교과학습발달상황 → XLS data로 다운 → csv 파일로 변환 후 업로드
-
-> **💡 업로드한 파일은 한 번 업로드하면 브라우저에 저장되어 있어 사용하시는 데 불편함이 없도록 하였습니다.**
+화면 상단 바 우측의 **API Key 입력칸**에 Google Gemini API Key를 입력합니다. (각자 키가 있으면 본인 키, 없으면 배부된 키 — 유출 금지!) 입력한 키는 모든 AI 분석 탭에 공통 적용됩니다.
 
 ---
 
-## 🛠️ 기능 소개
+## 📂 자료 업로드 — 각 분석 탭 안에서
 
-1. **개인 분석:** 각 학급의 학교생활기록부 자료를 활용하여 학생의 학생부가 각 대학의 학생부종합전형에서 어떻게 평가되는지에 대한 분석을 각 대학의 학생부종합전형 가이드북을 학습한 AI가 도움을 드립니다. 학생의 학생부가 평가 영역에 따라 점수화가 되며, 산출 및 평가 근거가 제시되고, 피드백을 통해 보완해나가야 할 방향을 제시합니다. **(담임교사용)**
-2. **합불합 분석:** 수시진학관리 파일 및 졸업생의 성적 및 세특을 활용하여 우리 학교의 학생부종합전형의 합격, 불합격 사례를 통해 합격한 이유와 불합격한 이유를 각 대학의 모집요강과 학생부종합전형 가이드북을 학습한 AI가 분석해드립니다. 이를 통해 각 학급 학생이 가고자 하는 학과 또는 대학을 가는 데에 있어 방향을 제시합니다. **(담임교사용)**
-3. **합불합 사례 확인하기:** 수시진학관리 파일을 활용하여 우리 학교의 대학 입시 결과를 한 눈에 볼 수 있는 시각화 자료입니다. 이를 통해 지난 우리 학교 진학 결과를 확인하고 진학 상담에 방향을 제시합니다.
-4. **세특 분석:** 각 교과에서 작성한 세특을 학생 맞춤으로 작성할 수 있도록 학생의 희망 계열과 작성하는 교과를 선택하고, 작성한 세특을 업로드하면, 학생부기재요령과 대학별 우수 세특을 학습한 AI가 분석하여 피드백을 해주고, 그 세특을 바탕으로 AI가 세특을 작성해드립니다. **(교과 교사용)**
-5. **수능 최저 확인하기:** 모든 대학의 수능 최저학력기준을 모은 표입니다. 관심있는 대학의 점을 누르면 상세정보가 출력됩니다.
-6. **면접 문항 생성:** 면접을 준비하는 수험생들에게 각 대학의 면접 가이드북을 학습한 AI가 맞춤 면접 문항을 제시합니다. 10문항이 제시되며 각 문항에 따른 평가 영역 및 모범 답안을 제시합니다. **\*주의: 개인 분석에서 원하는 학생 데이터를 불러온 후 진행합니다.**
-7. **모의고사 문항 분석:** 모의고사 성적표를 토대로 학생의 오답 문항을 추출해 문항별 학습 가이드 제공을 위한 기초 자료를 제공합니다. **(담임교사용)**
-8. **내신 & 모의고사 분석:** 내신점수와 모의고사 점수와의 상관관계를 그래프로 보여주며 학생별로 내신점수를 영역별로 조합하여 출력하고, 모의고사 점수를 회차에 따른 성적의 변화를 그래프로 출력합니다. **(담임교사용)**
-9. **내신 분석하기(대학별 교과 점수 확인):** 학급 학생들, 학년 전체의 성적을 분포도로 출력됩니다. 각 학생을 누르면 과목마다 성취도 및 등급이 출력되고, 과목 조합에 따라 내신 등급도 계산합니다. 또한 각 대학별로 교과전형의 점수 계산 방식을 내장하고 있어 학생마다 각 대학에서 교과전형 점수를 확인할 수 있습니다.
-10. **대학별 입결 분포도:** 주요 대학들의 전형별 입결을 시각화된 차트로 확인할 수 있습니다. 대학마다 50%cut, 70%cut, 평균 등급, 경쟁률, 추가합격 인원 등의 자세한 입학 관련 데이터를 확인할 수 있습니다.
-11. **우리 학교 모의고사 성적 현황:** '내신 & 모의고사 분석'에서 원하는 학년의 데이터를 불러온 다음 시행해야 함. 학년의 내신 성적을 업로드 한 후, 탭을 확인하면 우리 학교의 모의고사 성적 및 분석 자료를 확인할 수 있습니다.
+업로드 기능은 각 분석 탭 안으로 들어가 있습니다. (한 번 올리면 브라우저에 저장되어 다시 올릴 필요가 없습니다.)
+
+**1) 생기부 EXCEL 업로드 — 「모의서류평가」·「면접 문항 생성」 탭**
+한 칸에 아래 파일들을 **여러 개 한꺼번에** 올리면 종류를 **자동으로 분류**합니다.
+ - 인적사항: NEIS - 학급담임 - 학교생활기록부 - 학생부 항목별 조회 - 인적·학적사항 - 인적사항 → XLS 다운
+ - 교과학습발달상황(이수과목): 위 경로 - 교과학습발달상황 - 교과학습발달상황 → XLS 다운
+ - 세특·창체·행특: ① 창의적체험활동 ② 세부능력및특기사항 ③ 행동특성및종합의견 (각각 XLS 다운)
+
+**2) 학종 합불 자료 — 「학종 합불 사례 분석」 탭**
+ - 수시진학관리(결과): 탭 안의 **「스프레드시트에서 불러오기」** 버튼으로 불러옵니다(서버 연동).
+ - 성적·세특·창체·행특 엑셀: 탭 안에서 각각 업로드(보내드린 '합불합 분석.zip' 파일).
+
+**3) 모의고사 성적표 — 「모의고사 문항 분석」 탭**
+ - 성적통지표 **PDF(원본) 또는 CSV** 파일을 다중 선택하여 업로드. 학년·월은 자동 감지됩니다.
+
+**4) 내신 석차 데이터 — 「내신 점수 분석하기」 탭**
+ - NEIS - … - 교과학습발달상황 → XLS/CSV 다운 후 업로드.
+
+> **💡 업로드한 파일은 브라우저에 저장되어 다시 올리지 않아도 됩니다.**
+
+---
+
+## 🛠️ 기능 소개 (탭 순서)
+
+1. **모의서류평가:** 학생부가 각 대학 학생부종합전형에서 어떻게 평가되는지, 가이드북을 학습한 AI가 평가 영역별로 점수화하고 산출·평가 근거와 보완 방향을 제시합니다. **(담임교사용)**
+2. **학종 합불 사례 분석:** 수시진학관리와 졸업생 성적·세특을 바탕으로, 각 대학 모집요강·가이드북을 학습한 AI가 우리 학교의 합격/불합격 사례의 원인을 분석해 상담 방향을 제시합니다. **(담임교사용)**
+3. **과거 합불 사례 확인하기:** 우리 학교의 지난 대학 입시 결과를 한눈에 보는 시각화 자료로, 진학 상담 방향을 잡는 데 활용합니다.
+4. **면접 문항 생성:** 각 대학 면접 가이드북을 학습한 AI가 맞춤 면접 10문항과 문항별 평가 영역·모범 답안을 제시합니다. **\*학생 생기부를 불러오거나 PDF로 올린 뒤 진행합니다.**
+5. **우리 학교 모의고사 성적 현황:** 「종합 성적 분석하기」에서 해당 학년 데이터를 불러온 뒤 이용합니다. 성적 우수자 현황, 원점수 합 분포·급간별 통계, 선택과목·평균 분석, 과목별 분포도, 수능 최저학력기준 충족 현황을 확인합니다.
+6. **세특 작성 및 분석:** 희망 계열과 교과를 선택하고 세특을 올리면, 학생부기재요령과 우수 세특을 학습한 AI가 피드백하고 이를 바탕으로 맞춤 세특 초안을 작성합니다. **(교과 교사용)**
+7. **수능 최저 확인:** 대학별 수능 최저학력기준을 모은 표입니다. 관심 대학을 누르면 상세 기준이 출력됩니다.
+8. **모의고사 문항 분석:** 모의고사 성적표에서 학생 오답 문항을 추출해 문항별 학습 가이드 기초 자료를 제공합니다. **(담임교사용)**
+9. **종합 성적 분석하기(내신&모의고사):** 내신과 모의고사의 상관관계를 그래프로 보여주고, 학생별 내신을 영역별로 조합해 출력하며, 회차에 따른 모의고사 성적 변화를 시각화합니다. **(담임교사용)**
+10. **내신 점수 분석하기:** 학급·학년 전체 성적을 분포도로 출력합니다. 학생을 누르면 과목별 성취도·등급이 나오고, 과목 조합에 따른 내신 등급도 계산합니다.
+11. **대학별 교과 점수 확인하기:** 대학별 교과전형 점수 계산 방식을 내장하여, 학생마다 각 대학의 교과전형 환산 점수를 확인할 수 있습니다.
+12. **수시 입결 확인하기:** 대학 → 학과 → 전형 계층 선택으로 과거 수시 입결(경쟁률·컷·충원 인원 등)을 표와 차트로 확인합니다.
+13. **육각형 인재 확인하기:** 학생의 역량을 육각형(레이더) 차트로 시각화하여 강·약점을 한눈에 봅니다.
+14. **수시 전형 분석하기:** 대학별 수시 전형의 특징과 방법을 정리해 지원 전략 수립을 돕습니다.
+15. **대학별 입결 분포도:** 주요 대학들의 전형별 입결을 시각화 차트로 확인합니다. 50%cut·70%cut, 평균 등급, 경쟁률, 추가합격 인원 등 자세한 입학 데이터를 제공합니다.
+16. **수시지원상담카드 작성하기:** 학생별 지원 대학·학과·전형·전략을 카드로 작성하고, 서버(구글시트)에 저장하거나 불러올 수 있습니다.
    * 학년 - 연도 - 회차 선택 후 데이터 갱신을 합니다.
    * **성적 우수자 현황:** 한국사 과목을 제외한 국어, 수학, 영어, 탐구1, 탐구2 과목의 원점수 합, 원점수 평균, 표준점수 합, 백분위 평균을 확인합니다. 원점수, 표준점수, 백분위 각각을 기준으로 정렬할 수 있습니다.
    * **원점수 합 분포 & 급간별 인원 통계:** 급간을 설정하여 급간별 인원수를 확인합니다. 막대를 누르면 해당 학생들의 모의고사 성적을 확인할 수 있습니다.
