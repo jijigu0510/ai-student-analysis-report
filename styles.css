@@ -3558,8 +3558,17 @@ input, select, textarea, button, .btn, .btn-primary, .btn-secondary,
 }
 .tab-btn { border-radius: 0 !important; }
 
-/* 그라데이션 강조 버튼 → 평면 단색 (의미색 버튼은 인라인 색 유지) */
-.btn-primary, .btn-secondary {
+/* 그라데이션 강조 버튼 → 평면 단색.
+   라이트 모드에선 --accent-gradient가 그라데이션(배경 이미지)이라
+   background-image:none만 주면 배경이 사라져 버튼이 안 보였음.
+   → 단색 배경을 명시해 두 모드 모두 보이도록 한다. */
+.btn-primary {
+  background: var(--accent-primary) !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+.btn-primary:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.btn-secondary {
   background-image: none !important;
   box-shadow: none !important;
 }
