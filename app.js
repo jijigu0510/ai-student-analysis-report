@@ -1080,7 +1080,7 @@ document.addEventListener("DOMContentLoaded", () => {
       mockStatusEl.textContent = msg;
       mockStatusEl.style.color = color || 'var(--text-secondary)';
     };
-    setMockStatus('⏳ 성적표를 분석하는 중입니다...', '#7cb9ff');
+    setMockStatus('⏳ 성적표를 분석하는 중입니다...', 'var(--clr-h4-blue)');
     // '분석 중' 문구가 먼저 그려지도록 잠깐 양보 후 파싱 시작
     await new Promise(r => setTimeout(r, 30));
 
@@ -1089,7 +1089,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const fname = file.name.toLowerCase();
       try {
         if (fname.endsWith('.pdf')) {
-          setMockStatus(`⏳ '${file.name}' 성적표를 분석하는 중...`, '#7cb9ff');
+          setMockStatus(`⏳ '${file.name}' 성적표를 분석하는 중...`, 'var(--clr-h4-blue)');
           const { data: extracted, detected } = await parseMockPDF(file);
           if (extracted.length === 0) {
             setMockStatus(`⚠️ 분석 불가: '${file.name}' 에서 데이터를 추출하지 못했습니다. 성적통지표 원본(PDF) 형식인지 확인해 주세요.`, '#ff6b6b');
@@ -3352,7 +3352,7 @@ document.addEventListener("DOMContentLoaded", () => {
   async function loadPfDataFromGAS(year) {
     const statusEl = document.getElementById('pf-gas-status');
     const setStatus = (msg, color) => { if (statusEl) { statusEl.textContent = msg; statusEl.style.color = color || 'var(--text-secondary)'; } };
-    setStatus(`${year}년 스프레드시트에서 불러오는 중...`, '#96baff');
+    setStatus(`${year}년 스프레드시트에서 불러오는 중...`, 'var(--clr-h4-blue)');
     try {
       const res = await fetch(`${PF_GAS_URL}&action=all&year=${year}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
