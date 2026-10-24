@@ -2423,8 +2423,10 @@ body.light-mode #average-grade {
 
 /* 내용 확인하기 트리거 라이트 모드 */
 body.light-mode .detail-modal-trigger {
-  background: rgba(0, 0, 0, 0.04);
-  color: var(--text-secondary);
+  background: rgba(94, 106, 210, 0.06);
+  border-color: rgba(94, 106, 210, 0.30);
+  color: #3a3f58;
+  opacity: 0.9;   /* 라이트 배경에선 0.5가 거의 안 보여 비활성도 또렷하게 */
 }
 body.light-mode .detail-modal-trigger.active {
   background: rgba(94, 106, 210, 0.1);
