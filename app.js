@@ -789,7 +789,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const mockMonthSelect = document.getElementById('mockMonthSelect');
   const uploadMonthText = document.getElementById('uploadMonthText');
 
-  if (mockDropZone && mockFileInput) {
+  if (mockDropZone) {
     mockDropZone.addEventListener('dragover', (e) => {
       e.preventDefault();
       mockDropZone.classList.add('dragover');
@@ -804,7 +804,10 @@ document.addEventListener("DOMContentLoaded", () => {
         processMockFiles(e.dataTransfer.files);
       }
     });
-    mockDropZone.addEventListener('click', () => mockFileInput.click());
+    if (mockFileInput) mockDropZone.addEventListener('click', () => mockFileInput.click());
+  }
+  // 파일 선택 → 분석 (드롭존 유무와 무관하게 항상 연결)
+  if (mockFileInput) {
     mockFileInput.addEventListener('change', (e) => {
       if (e.target.files.length > 0) {
         processMockFiles(e.target.files);
