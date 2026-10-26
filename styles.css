@@ -3652,3 +3652,11 @@ header.header { padding: 0.75rem 0 0.5rem !important; text-align: left !importan
   .app-headbar-title { white-space: normal; }
 }
 
+/* 모의고사 학년·회차·반·이름 드롭다운: select 기본 width:100% 때문에 세로로
+   쌓이던 것을 content 폭으로 바꿔 한 줄 가로 배치 */
+#mockGradeSelect, #mockMonthSelect, #mockClassSelect, #mockStudentSelect {
+  width: auto !important;
+  min-width: 96px;
+  flex: 0 0 auto;
+}
+
