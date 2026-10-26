@@ -4860,7 +4860,8 @@ document.addEventListener("DOMContentLoaded", () => {
       try {
         const rec = await srParseRecordPdf(file);
         srApplyRecord(rec);
-        setStatus(`✅ ${rec.name || "학생"} — 이수과목 ${rec.courses.length}개 · 세특 ${rec.setuk.length}건 · 창체 ${rec.creative.length}건 · 행특 ${rec.behavior.length}건을 불러왔습니다. 주민등록번호와 주소는 수집하지 않았습니다.`, "#7ddc9a");
+        try { await StorageManager.save("individualPdfRecord", rec); } catch (_) {}   // 로컬 저장(새로고침 후 복원)
+        setStatus(`✅ ${rec.name || "학생"} — 이수과목 ${rec.courses.length}개 · 세특 ${rec.setuk.length}건 · 창체 ${rec.creative.length}건 · 행특 ${rec.behavior.length}건을 불러왔습니다. (브라우저에 저장됨 · 주민등록번호·주소는 수집하지 않음)`, "#7ddc9a");
       } catch (err) {
         console.error("[생기부 PDF]", err);
         setStatus("❌ " + err.message, "#ff8888");
@@ -9177,6 +9178,16 @@ overallEvaluation 필드는 아래 형식을 반드시 따르십시오:
           if (globalCourseJson) extractCourseData(globalCourseJson, lastStudent, true);
           if (globalBatchJsons.length > 0) extractBatchData(globalBatchJsons, lastStudent);
           console.log("[loadAllData] Restored last selected student:", lastStudent);
+        }
+      }
+
+      // 4-b. 생기부 PDF로 불러온 기록 복원 (엑셀 학생이 복원되지 않았을 때만)
+      const pdfStudentRestored = !!(lastStudent && studentSelect && Array.from(studentSelect.options).some(o => o.value === lastStudent));
+      if (!pdfStudentRestored) {
+        const savedPdfRec = await StorageManager.load("individualPdfRecord");
+        if (savedPdfRec && typeof srApplyRecord === "function") {
+          try { srApplyRecord(savedPdfRec); console.log("[loadAllData] 생기부 PDF 기록 복원"); }
+          catch (e) { console.warn("PDF 기록 복원 실패:", e); }
         }
       }
 
