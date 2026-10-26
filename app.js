@@ -900,8 +900,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (mockGasGradeSelect) { mockGasGradeSelect.value = currentMockGrade; loadGasUrlsForGrade(currentMockGrade); }
       mockSheetNames = [];
       mockCachedSheetData = {};
-      const hasData = getDataForCurrentMonth().length > 0;
-      if (hasData) { showMockResults(); } else { if (mockResultArea) mockResultArea.classList.add('hidden'); }
+      showMockResults();  // 데이터 없어도 툴바(학년/회차/반/이름 드롭다운) 유지
       refreshMockServerStatus();
     });
     // 초기 월 옵션 설정 (1학년 기본값)
@@ -937,8 +936,7 @@ document.addEventListener("DOMContentLoaded", () => {
     mockMonthSelect.addEventListener('change', (e) => {
       currentMockMonth = e.target.value;
       if (uploadMonthText) uploadMonthText.innerText = currentMockMonth;
-      const hasData = getDataForCurrentMonth().length > 0;
-      if (hasData) { showMockResults(); } else { if (mockResultArea) mockResultArea.classList.add('hidden'); }
+      showMockResults();  // 데이터 없어도 툴바 유지
       // 시트 상태 초기화
       updateSheetStatus('info', '배포된 GAS URL을 설정해 주세요.');
       mockSheetNames = [];
@@ -9186,7 +9184,16 @@ overallEvaluation 필드는 아래 형식을 반드시 따르십시오:
       const savedMockData = await StorageManager.load("mockDataByMonth");
       if (savedMockData) {
         Object.assign(mockDataByMonth, savedMockData);
-        if (getDataForCurrentMonth().length > 0) showMockResults();
+        // 저장된 데이터가 있으면 데이터가 있는 첫 회차로 맞춰 드롭다운·결과를 복원
+        const firstKey = Object.keys(mockDataByMonth).find(k => (mockDataByMonth[k] || []).length > 0);
+        if (firstKey) {
+          const [g, m] = firstKey.split('_');
+          currentMockGrade = g; currentMockMonth = m;
+          const gSel = document.getElementById('mockGradeSelect'); if (gSel) gSel.value = g;
+          updateMonthSelectForGrade(g);
+          const mSel = document.getElementById('mockMonthSelect'); if (mSel) mSel.value = m;
+          showMockResults();
+        }
       }
     } catch (e) {
       console.error("Error loading persisted data:", e);

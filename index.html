@@ -969,23 +969,6 @@
 
       <!-- 학년/회차 선택 -->
       <div style="display:flex; flex-wrap:wrap; gap:1rem; align-items:flex-end; margin-bottom:1.2rem;">
-        <div>
-          <label style="font-size:0.8rem; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">학년</label>
-          <select id="mockGradeSelect" style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.6rem 1rem;">
-            <option value="1">1학년</option>
-            <option value="2">2학년</option>
-            <option value="3">3학년</option>
-          </select>
-        </div>
-        <div>
-          <label style="font-size:0.8rem; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">회차</label>
-          <select id="mockMonthSelect" style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.6rem 1rem;">
-            <option value="3">3월 모의고사</option>
-            <option value="6">6월 모의고사</option>
-            <option value="9">9월 모의고사</option>
-            <option value="11">11월 모의고사</option>
-          </select>
-        </div>
         <div style="flex:1; min-width:260px;">
           <label for="mockFileInput" style="font-size:0.8rem; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">📄 모의고사 성적통지표 <span style="font-size:0.72rem; color:var(--clr-h4-blue);">PDF(성적통지표 원본) 또는 CSV · 다중 선택 · 누적 저장 · 학년/월 자동 감지</span></label>
           <input type="file" id="mockFileInput" accept=".csv,.pdf" multiple style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.5rem 0.8rem; width:100%; font-size:0.85rem;">
@@ -1036,6 +1019,17 @@
             <span id="mockResultText" style="font-size:0.88rem;color:var(--text-secondary);"></span>
             <select id="mockGradeFilterSelect" style="display:none;">
               <option value="all">전체 학년</option>
+            </select>
+            <select id="mockGradeSelect" title="학년" style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.4rem 0.7rem;font-size:0.83rem;">
+              <option value="1">1학년</option>
+              <option value="2">2학년</option>
+              <option value="3">3학년</option>
+            </select>
+            <select id="mockMonthSelect" title="회차" style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.4rem 0.7rem;font-size:0.83rem;">
+              <option value="3">3월 모의고사</option>
+              <option value="6">6월 모의고사</option>
+              <option value="9">9월 모의고사</option>
+              <option value="11">11월 모의고사</option>
             </select>
             <select id="mockClassSelect" style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.4rem 0.7rem;font-size:0.83rem;">
               <option value="all">전체 반</option>
