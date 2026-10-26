@@ -722,8 +722,8 @@ document.addEventListener("DOMContentLoaded", () => {
   function dataKey() { return `${currentMockGrade}_${currentMockMonth}`; }
 
   function getDataForCurrentMonth() {
-    // 현재 월의 전체 학년 데이터를 합침
-    return ['1', '2', '3'].flatMap(g => mockDataByMonth[`${g}_${currentMockMonth}`] || []);
+    // 선택한 학년+회차 데이터만 반환 (학년→회차→반→이름 계층 선택)
+    return mockDataByMonth[`${currentMockGrade}_${currentMockMonth}`] || [];
   }
 
   // 서버(Firebase) 연동 비활성화 — 모의고사 데이터는 로컬(IndexedDB)에만 저장한다.
@@ -746,7 +746,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const months = MONTHS_BY_GRADE[grade];
     const prevMonth = mockMonthSelect.value;
     const labels = { '3': '3월 모의고사', '5': '5월 모의고사', '6': '6월 모의고사', '7': '7월 모의고사', '9': '9월 모의고사', '11': '11월 모의고사' };
-    mockMonthSelect.innerHTML = months.map(m => `<option value="${m}">${labels[m]}</option>`).join('');
+    // 업로드(로컬 저장)된 회차는 ✓ 로 표시해 여러 개 중 고르기 쉽게
+    mockMonthSelect.innerHTML = months.map(m => {
+      const has = (mockDataByMonth[`${grade}_${m}`] || []).length > 0;
+      return `<option value="${m}">${labels[m]}${has ? ' ✓' : ''}</option>`;
+    }).join('');
     if (months.includes(prevMonth)) {
       mockMonthSelect.value = prevMonth;
     } else {
@@ -2826,7 +2830,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!mockResultText || !mockPreviewBody || !mockResultArea) return;
     const allData = getDataForCurrentMonth();
     const curData = mockDataByMonth[dataKey()] || [];
-    mockResultText.innerText = `${currentMockMonth}월 총 ${allData.length}개의 과목 데이터 (${currentMockGrade}학년 업로드: ${curData.length}건)`;
+    mockResultText.innerText = `${currentMockYear}년 ${currentMockMonth}월 · ${currentMockGrade}학년 — 총 ${curData.length}건 (로컬 저장)`;
 
     // 학년 드롭다운 초기화
     const mockGradeFilterSel = document.getElementById('mockGradeFilterSelect');
