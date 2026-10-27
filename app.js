@@ -5228,33 +5228,20 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    let html = `
-      <table class="course-table">
-        <thead>
-          <tr>
-            <th>과목명</th>
-            <th>단위수</th>
-            <th>등급/성취도</th>
-          </tr>
-        </thead>
-        <tbody>
-    `;
-
+    // 집약형 그리드: 과목명 · 단위 · 등급/성취도를 작은 칸으로 다열 배치
+    let html = '<div class="course-grid">';
     details.forEach(item => {
       const badgeClass = item.type === 'grade' ? `badge-grade grade-${Math.floor(item.grade)}` : 'badge-achieve';
       html += `
-        <tr>
-          <td>${item.subject}</td>
-          <td>${item.credit}</td>
-          <td><span class="${badgeClass}">${item.grade}</span></td>
-        </tr>
-      `;
+        <div class="course-item" title="${item.subject}">
+          <span class="c-subj">${item.subject}</span>
+          <span class="c-meta">
+            <span class="c-credit">${item.credit}단위</span>
+            <span class="${badgeClass}">${item.grade}</span>
+          </span>
+        </div>`;
     });
-
-    html += `
-        </tbody>
-      </table>
-    `;
+    html += '</div>';
 
     container.innerHTML = html;
   }

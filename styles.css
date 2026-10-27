@@ -3666,3 +3666,25 @@ header.header { padding: 0.75rem 0 0.5rem !important; text-align: left !importan
   grid-template-columns: 1fr;
 }
 
+/* 이수 과목 상세: 과목명·단위·등급을 작은 칸으로 다열 집약 배치 */
+.course-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(188px, 1fr));
+  gap: 6px;
+}
+.course-item {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 5px 9px;
+  background: var(--clr-inset-bg);
+  border: 1px solid var(--clr-border-subtle);
+  border-radius: 4px;
+  font-size: 0.84rem;
+  min-width: 0;
+}
+.course-item .c-subj {
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  color: var(--text-primary); min-width: 0;
+}
+.course-item .c-meta { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.course-item .c-credit { font-size: 0.74rem; color: var(--text-secondary); white-space: nowrap; }
+
