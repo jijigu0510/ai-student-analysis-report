@@ -3660,3 +3660,9 @@ header.header { padding: 0.75rem 0 0.5rem !important; text-align: left !importan
   flex: 0 0 auto;
 }
 
+/* 모의서류평가·학종 합불 사례 분석: 입력 박스와 보고서 박스를 좌우 → 위아래 배치 */
+#view-individual.main-container,
+#view-passfail.main-container {
+  grid-template-columns: 1fr;
+}
+
