@@ -3688,3 +3688,13 @@ header.header { padding: 0.75rem 0 0.5rem !important; text-align: left !importan
 .course-item .c-meta { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 .course-item .c-credit { font-size: 0.74rem; color: var(--text-secondary); white-space: nowrap; }
 
+/* 이수 과목 계열별 묶음 헤더 */
+.course-cat { margin-bottom: 12px; }
+.course-cat-head {
+  font-size: 0.84rem; font-weight: 700; color: var(--clr-h4-blue);
+  padding-bottom: 5px; margin-bottom: 6px;
+  border-bottom: 1px solid var(--clr-border-subtle);
+  display: flex; align-items: baseline; gap: 8px;
+}
+.course-cat-count { font-size: 0.72rem; font-weight: 500; color: var(--text-secondary); }
+

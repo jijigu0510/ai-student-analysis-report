@@ -5214,6 +5214,21 @@ document.addEventListener("DOMContentLoaded", () => {
   /**
    * 이수 과목 상세 표를 렌더링합니다.
    */
+  // 과목명 → 계열 분류 (국어·수학·영어·과학·사회·예체능·기타)
+  function classifyCourseCategory(name) {
+    const s = String(name || '').replace(/\s/g, '');
+    if (!s) return '기타';
+    // 외국어·한문은 기타로 먼저 처리 (국어의 '국어'가 '외국어'를 오인식하지 않도록)
+    if (/외국어|한문|일본어|중국어|독일어|프랑스어|불어|스페인어|에스파냐어|러시아어|아랍어|베트남어|라틴어/.test(s)) return '기타';
+    if (/영어|영독|영작|영미|영어권/.test(s)) return '영어';
+    if (/수학|미적분|미적|기하|확률|통계|대수/.test(s)) return '수학';
+    if (/국어|화법|작문|독서|언어와매체|매체|문학|고전|문법/.test(s)) return '국어';
+    if (/과학|물리|화학|생명|지구과학|지학|천문/.test(s)) return '과학';
+    if (/사회|한국사|세계사|동아시아사|역사|지리|경제|정치|윤리|법과|사상|세계시민/.test(s)) return '사회';
+    if (/체육|음악|미술|운동|스포츠|연극|무용|감상/.test(s)) return '예체능';
+    return '기타';
+  }
+
   function renderCourseTable(details, containerId = "course-table-container") {
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -5228,20 +5243,32 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // 집약형 그리드: 과목명 · 단위 · 등급/성취도를 작은 칸으로 다열 배치
-    let html = '<div class="course-grid">';
-    details.forEach(item => {
-      const badgeClass = item.type === 'grade' ? `badge-grade grade-${Math.floor(item.grade)}` : 'badge-achieve';
-      html += `
-        <div class="course-item" title="${item.subject}">
-          <span class="c-subj">${item.subject}</span>
-          <span class="c-meta">
-            <span class="c-credit">${item.credit}단위</span>
-            <span class="${badgeClass}">${item.grade}</span>
-          </span>
-        </div>`;
+    // 계열(국어·수학·영어·과학·사회·예체능·기타)로 묶어 집약형 그리드 표시
+    const CATS = ['국어', '수학', '영어', '과학', '사회', '예체능', '기타'];
+    const groups = {}; CATS.forEach(c => groups[c] = []);
+    details.forEach(item => { groups[classifyCourseCategory(item.subject)].push(item); });
+
+    let html = '';
+    CATS.forEach(cat => {
+      const list = groups[cat];
+      if (!list.length) return;
+      const totalCredit = list.reduce((sum, i) => sum + (Number(i.credit) || 0), 0);
+      html += `<div class="course-cat">`
+        + `<div class="course-cat-head">${cat} <span class="course-cat-count">${list.length}과목 · ${totalCredit}단위</span></div>`
+        + `<div class="course-grid">`;
+      list.forEach(item => {
+        const badgeClass = item.type === 'grade' ? `badge-grade grade-${Math.floor(item.grade)}` : 'badge-achieve';
+        html += `
+          <div class="course-item" title="${item.subject}">
+            <span class="c-subj">${item.subject}</span>
+            <span class="c-meta">
+              <span class="c-credit">${item.credit}단위</span>
+              <span class="${badgeClass}">${item.grade}</span>
+            </span>
+          </div>`;
+      });
+      html += `</div></div>`;
     });
-    html += '</div>';
 
     container.innerHTML = html;
   }
