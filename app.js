@@ -5253,8 +5253,16 @@ document.addEventListener("DOMContentLoaded", () => {
       const list = groups[cat];
       if (!list.length) return;
       const totalCredit = list.reduce((sum, i) => sum + (Number(i.credit) || 0), 0);
+      // 계열 평균 등급: 숫자 등급 과목만, 학점(단위) 가중평균
+      const gradeItems = list.filter(i => i.type === 'grade' && !isNaN(parseFloat(i.grade)));
+      let avgText = '';
+      if (gradeItems.length) {
+        const gc = gradeItems.reduce((sum, i) => sum + (Number(i.credit) || 0), 0);
+        const gw = gradeItems.reduce((sum, i) => sum + parseFloat(i.grade) * (Number(i.credit) || 0), 0);
+        if (gc > 0) avgText = ` · 평균 ${(gw / gc).toFixed(2)}등급`;
+      }
       html += `<div class="course-cat">`
-        + `<div class="course-cat-head">${cat} <span class="course-cat-count">${list.length}과목 · ${totalCredit}단위</span></div>`
+        + `<div class="course-cat-head">${cat} <span class="course-cat-count">${list.length}과목 · ${totalCredit}단위${avgText}</span></div>`
         + `<div class="course-grid">`;
       list.forEach(item => {
         const badgeClass = item.type === 'grade' ? `badge-grade grade-${Math.floor(item.grade)}` : 'badge-achieve';
