@@ -4907,6 +4907,42 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // 육각형 인재 확인하기 탭에서도 같은 파서로 생기부 PDF를 직접 받는다.
+  // 결과는 window.hxPdfRecord로 공유하고, 학생 드롭다운에 __pdf__ 항목을 추가/선택한다.
+  const hxRecordPdf = document.getElementById("hx-record-pdf");
+  const hxRecordPdfStatus = document.getElementById("hx-record-pdf-status");
+  if (hxRecordPdf) {
+    hxRecordPdf.addEventListener("change", async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const setStatus = (msg, color) => {
+        if (!hxRecordPdfStatus) return;
+        hxRecordPdfStatus.textContent = msg;
+        hxRecordPdfStatus.style.color = color || "var(--text-secondary)";
+      };
+      setStatus("PDF를 읽는 중입니다...");
+      try {
+        const rec = await srParseRecordPdf(file);
+        window.hxPdfRecord = rec;
+        const sel = document.getElementById("hx-name-sel");
+        if (sel) {
+          const label = `${rec.name || "학생"} (PDF)`;
+          let opt = Array.from(sel.options).find(o => o.value === "__pdf__");
+          if (!opt) { opt = document.createElement("option"); opt.value = "__pdf__"; sel.appendChild(opt); }
+          opt.textContent = label;
+          sel.value = "__pdf__";
+        }
+        setStatus(`✅ ${rec.name || "학생"} — 이수과목 ${rec.courses.length}개 · 세특 ${rec.setuk.length}건 · 창체 ${rec.creative.length}건 · 행특 ${rec.behavior.length}건을 불러왔습니다. 학생 드롭다운에서 "(PDF)"가 선택된 상태로 분석하기를 누르세요.`, "#7ddc9a");
+      } catch (err) {
+        console.error("[육각형 생기부 PDF]", err);
+        window.hxPdfRecord = null;
+        setStatus("❌ " + err.message, "#ff8888");
+      } finally {
+        e.target.value = "";
+      }
+    });
+  }
+
   if (excelUpload) {
     excelUpload.addEventListener("change", (e) => {
       const file = e.target.files[0];
@@ -4967,6 +5003,11 @@ document.addEventListener("DOMContentLoaded", () => {
           if (studentCount > 0) {
             localStorage.setItem("individualStudentsData", JSON.stringify(students));
             await StorageManager.save("individualStudents", students); // redundant but safe
+            // \uc721\uac01\ud615 \ud0ed\uc774 \uc5f4\ub824 \uc788\uc73c\uba74 \ud559\uc0dd \ub4dc\ub86d\ub2e4\uc6b4 \uac31\uc2e0
+            const hxView = document.getElementById("view-hexagon");
+            if (window.initHexagonTab && hxView && !hxView.classList.contains("hidden")) {
+              try { window.initHexagonTab(); } catch (e) { /* ignore */ }
+            }
             alert("\ucd1d " + studentCount + "\uba85\uc758 \uc778\uc801\uc0ac\ud56d\uc774 \ubd88\ub7ec\uc640\uc84c\uc2b5\ub2c8\ub2e4. \uc544\ub798\uc5d0\uc11c \ud559\uc0dd\uc744 \uc120\ud0dd\ud558\uc138\uc694.");
             studentSelect.focus();
           } else {
@@ -5368,7 +5409,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  ["record-excel-combined", "iv-record-excel-combined"].forEach(id => {
+  ["record-excel-combined", "iv-record-excel-combined", "hx-record-excel-combined"].forEach(id => {
     const inp = document.getElementById(id);
     if (inp) inp.addEventListener("change", (e) => handleCombinedRecordFiles(e.target.files, document.getElementById(id + "-status")));
   });

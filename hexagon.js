@@ -808,9 +808,25 @@ ${text}
     if (!targetName) { alert('학생을 선택해 주세요.'); return; }
     if (!apiKey)     { alert('상단 통합 설정에서 Gemini API 키를 입력해 주세요.'); return; }
 
-    const appData = window.getHexagonAppData ? window.getHexagonAppData() : { students: [], globalBatchJsons: [], globalCourseJson: null };
-    const records   = getStudentRecords(appData.globalBatchJsons, targetName);
-    const gradeText = getStudentGrades(appData.globalCourseJson, targetName);
+    let records, gradeText;
+    if (targetName === '__pdf__' && window.hxPdfRecord) {
+      // 생기부 PDF로 바로 분석
+      const rec = window.hxPdfRecord;
+      records = {
+        subject:  (rec.setuk    || []).join('\n\n'),
+        creative: (rec.creative || []).join('\n\n'),
+        behavior: (rec.behavior || []).join('\n\n'),
+      };
+      gradeText = (rec.courses || []).map(c => {
+        const unit = c.credit ? `(${c.credit}단위)` : '';
+        const val  = c.rank ? `${c.rank}등급` : ((c.achv || 'P').replace(/\(\d+\)/, '') || 'P');
+        return `${c.subject}${unit}: ${val}`;
+      }).join(', ');
+    } else {
+      const appData = window.getHexagonAppData ? window.getHexagonAppData() : { students: [], globalBatchJsons: [], globalCourseJson: null };
+      records   = getStudentRecords(appData.globalBatchJsons, targetName);
+      gradeText = getStudentGrades(appData.globalCourseJson, targetName);
+    }
     const fullText = [
       gradeText        ? '=== 이수과목 및 성적 ===\n' + gradeText    : '',
       records.subject  ? '=== 교과 세특 ===\n'        + records.subject  : '',
@@ -819,7 +835,7 @@ ${text}
     ].filter(Boolean).join('\n\n');
 
     if (!fullText.trim()) {
-      alert('해당 학생의 세특/창체/행특 데이터가 없습니다.\n상단 통합 파일 업로드에서 세특/비교과 파일을 먼저 올려 주세요.');
+      alert('해당 학생의 세특/창체/행특 데이터가 없습니다.\n이 탭의 "생기부 EXCEL 업로드"에서 세특/비교과 파일을 먼저 올려 주세요.');
       return;
     }
 
