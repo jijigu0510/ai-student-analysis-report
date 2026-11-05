@@ -14832,6 +14832,7 @@ ${univPromptSupplement}
   let schoolMockMathChoiceChart = null;
   let schoolMockSocialChoiceChart = null;
   let schoolMockScienceChoiceChart = null;
+  let schoolMockWholeCharts = {};
   let _currentStudentScores = [];
   let _currentDistInterval = 10;
   let _csatMinData = {};
@@ -15844,6 +15845,9 @@ ${univPromptSupplement}
   function renderSchoolMockStatus() {
     if (!compareGlobalData || !compareGlobalData.mock) return;
 
+    // 전교 통계(회차별 추이) — 회차 필터와 무관하게 모든 회차 기준으로 먼저 렌더
+    renderSchoolMockWholeStats();
+
     const gradeVal = document.getElementById('schoolMockGrade').value;
     const yearVal = document.getElementById('schoolMockYear').value;
     const roundVal = document.getElementById('schoolMockRound').value;
@@ -16515,6 +16519,179 @@ ${univPromptSupplement}
 </html>`;
 
     printWithIframe(html);
+  }
+
+  // ─── 전교 통계: 회차별 추이 (백분위/등급/원점수/표준점수) ──────────────
+  function _smMetricVal(d, metric) {
+    if (!d) return NaN;
+    let v;
+    if (metric === 'raw') v = d.raw ?? d.원점수;
+    else if (metric === 'std') v = d.std ?? d.표준점수;
+    else if (metric === 'pct') v = d.percentile ?? d.전국백분위;
+    else v = d.grade ?? d.등급;
+    v = parseFloat(v);
+    return isNaN(v) ? NaN : v;
+  }
+  // 학생별 '상위 탐구 과목' 선택 (백분위 > 표준점수 > 원점수 순으로 비교)
+  function _smPickTamgu(m) {
+    const a = m['탐구영역1'], b = m['탐구영역2'];
+    const sc = d => {
+      if (!d) return -Infinity;
+      const p = parseFloat(d.percentile ?? d.전국백분위); if (!isNaN(p)) return p;
+      const s = parseFloat(d.std ?? d.표준점수); if (!isNaN(s)) return s;
+      const r = parseFloat(d.raw ?? d.원점수); if (!isNaN(r)) return r;
+      return -Infinity;
+    };
+    const sa = sc(a), sb = sc(b);
+    if (sa === -Infinity && sb === -Infinity) return null;
+    return sb > sa ? b : a;
+  }
+
+  function renderSchoolMockWholeStats() {
+    const wrap = document.getElementById('smWholeWrap');
+    const emptyEl = document.getElementById('smWholeEmpty');
+    if (!wrap) return;
+    if (!compareGlobalData || !compareGlobalData.mock) return;
+
+    const gradeVal = document.getElementById('schoolMockGrade').value;
+    const yearVal = document.getElementById('schoolMockYear').value;
+
+    // 회차 필터 무시: 학년(+연도)만 적용해 모든 회차 취합
+    const rows = compareGlobalData.mock.filter(m =>
+      (gradeVal === 'all' || String(m.grade) === gradeVal) &&
+      (yearVal === 'all' || String(m.year) === yearVal));
+
+    const monthOf = r => { const n = parseInt(String(r).replace(/[^0-9]/g, '')); return isNaN(n) ? 99 : n; };
+
+    // (연도, 회차) 조합별로 학생 묶기
+    const keyMap = new Map();
+    rows.forEach(m => {
+      const k = m.year + '||' + m.round;
+      if (!keyMap.has(k)) keyMap.set(k, { year: m.year, round: m.round, list: [] });
+      keyMap.get(k).list.push(m);
+    });
+    const points = Array.from(keyMap.values())
+      .sort((a, b) => (a.year - b.year) || (monthOf(a.round) - monthOf(b.round)));
+
+    if (points.length === 0) {
+      if (emptyEl) emptyEl.style.display = 'block';
+      wrap.style.display = 'none';
+      Object.values(schoolMockWholeCharts).forEach(c => { try { c.destroy(); } catch (e) {} });
+      schoolMockWholeCharts = {};
+      return;
+    }
+    if (emptyEl) emptyEl.style.display = 'none';
+    wrap.style.display = 'grid';
+
+    const multiYear = new Set(points.map(p => p.year)).size > 1;
+    const labels = points.map(p => multiYear ? `${p.year} ${p.round}` : p.round);
+
+    const subjDefs = [
+      { key: '국어', color: '#5b8dee', get: m => m['국어'] },
+      { key: '수학', color: '#ff6b6b', get: m => m['수학'] },
+      { key: '영어', color: '#2ecc71', get: m => m['영어'] },
+      { key: '탐구(상위)', color: '#f39c12', get: m => _smPickTamgu(m) },
+    ];
+    const metrics = [
+      { id: 'pct', excludeEng: true, dec: 1 },
+      { id: 'grade', excludeEng: false, dec: 2 },
+      { id: 'raw', excludeEng: false, dec: 1 },
+      { id: 'std', excludeEng: true, dec: 1 },
+    ];
+    const round2 = (v, dec) => (v == null ? null : Number(v.toFixed(dec)));
+
+    metrics.forEach(met => {
+      const activeSubj = subjDefs.filter(sd => !(met.excludeEng && sd.key === '영어'));
+
+      // 과목별 회차 평균
+      const perSubj = {};
+      activeSubj.forEach(sd => {
+        perSubj[sd.key] = points.map(p => {
+          let sum = 0, cnt = 0;
+          p.list.forEach(m => {
+            const v = _smMetricVal(sd.get(m), met.id);
+            if (!isNaN(v)) { sum += v; cnt++; }
+          });
+          return cnt ? sum / cnt : null;
+        });
+      });
+      // 전체 평균 = 각 회차에서 활성 과목 평균들의 평균
+      const totalArr = points.map((p, i) => {
+        const vals = activeSubj.map(sd => perSubj[sd.key][i]).filter(v => v != null);
+        return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+      });
+
+      const isLight = document.body.classList.contains('light-mode');
+      const totalColor = isLight ? '#1e293b' : '#e2e8f0';
+
+      const datasets = activeSubj.map(sd => ({
+        label: sd.key,
+        data: perSubj[sd.key].map(v => round2(v, met.dec)),
+        borderColor: sd.color, backgroundColor: sd.color,
+        tension: 0.25, spanGaps: true, pointRadius: 3, borderWidth: 2,
+      }));
+      datasets.push({
+        label: '전체 평균',
+        data: totalArr.map(v => round2(v, met.dec)),
+        borderColor: totalColor, backgroundColor: totalColor,
+        borderDash: [6, 4], borderWidth: 3, tension: 0.25, spanGaps: true, pointRadius: 3,
+      });
+
+      _renderWholeChart(met.id, labels, datasets, met.id === 'grade');
+      _renderWholeTable(met.id, labels, datasets);
+    });
+  }
+
+  function _renderWholeChart(metricId, labels, datasets, reverseY) {
+    const canvas = document.getElementById('smWholeChart_' + metricId);
+    if (!canvas) return;
+    if (schoolMockWholeCharts[metricId]) { try { schoolMockWholeCharts[metricId].destroy(); } catch (e) {} }
+
+    const isLight = document.body.classList.contains('light-mode');
+    const tickClr = isLight ? '#444' : '#ccc';
+    const gridClr = isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.06)';
+    const ttBg = isLight ? 'rgba(30,30,50,0.92)' : 'rgba(15,23,42,0.9)';
+
+    schoolMockWholeCharts[metricId] = new Chart(canvas.getContext('2d'), {
+      type: 'line',
+      data: { labels, datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: tickClr, font: { size: 10 }, maxRotation: 45 } },
+          y: {
+            reverse: !!reverseY,
+            ticks: { color: tickClr },
+            grid: { color: gridClr }
+          }
+        },
+        plugins: {
+          legend: { labels: { color: tickClr, boxWidth: 12, font: { size: 11 } } },
+          tooltip: {
+            backgroundColor: ttBg, titleColor: '#fff', bodyColor: '#e0e0e0',
+            callbacks: { label: c => ` ${c.dataset.label}: ${c.raw == null ? '-' : c.raw}` }
+          }
+        }
+      }
+    });
+  }
+
+  function _renderWholeTable(metricId, labels, datasets) {
+    const cont = document.getElementById('smWholeTable_' + metricId);
+    if (!cont) return;
+    const th = 'padding:6px 8px; border:1px solid var(--panel-border); text-align:center; font-size:0.78rem; white-space:nowrap;';
+    const td = 'padding:6px 8px; border:1px solid var(--panel-border); text-align:center; font-size:0.78rem; white-space:nowrap;';
+    let head = `<tr style="background:rgba(124,131,253,0.1);"><th style="${th}">구분</th>` +
+      labels.map(l => `<th style="${th}">${l}</th>`).join('') + '</tr>';
+    let body = datasets.map(ds => {
+      const isTotal = ds.label === '전체 평균';
+      const nameStyle = td + (isTotal ? 'font-weight:700;color:var(--accent-primary);' : `font-weight:700;color:${ds.borderColor};`);
+      return `<tr><td style="${nameStyle}">${ds.label}</td>` +
+        ds.data.map(v => `<td style="${td}">${v == null ? '-' : v}</td>`).join('') + '</tr>';
+    }).join('');
+    cont.innerHTML = `<table style="width:100%; border-collapse:collapse; min-width:${Math.max(360, 90 + labels.length * 64)}px;"><thead>${head}</thead><tbody>${body}</tbody></table>`;
   }
 
   function renderSchoolMockDistChart(labels, data) {
