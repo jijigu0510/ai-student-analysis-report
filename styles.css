@@ -3765,3 +3765,12 @@ header.header { padding: 0.75rem 0 0.5rem !important; text-align: left !importan
 .rpt-sec.open .rpt-sec-body { display: block; }
 .rpt-sec.open { grid-column: 1 / -1; }
 .rpt-hint { font-size: 0.8rem; color: var(--text-secondary); margin: 0 0 1rem; }
+
+/* 저장된 보고서 목록 */
+.rpt-saved-list { display: flex; flex-direction: column; gap: 0.6rem; }
+.rpt-saved-row { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; border: 1px solid var(--panel-border); border-radius: 10px; padding: 0.7rem 0.9rem; background: var(--input-bg); }
+.rpt-saved-main { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; min-width: 0; }
+.rpt-saved-badge { background: var(--accent-primary); color: #fff; font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.rpt-saved-title { font-weight: 600; color: var(--text-primary); }
+.rpt-saved-date { font-size: 0.78rem; color: var(--text-secondary); }
+.rpt-saved-actions { display: flex; gap: 0.35rem; flex-shrink: 0; }

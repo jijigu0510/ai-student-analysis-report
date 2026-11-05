@@ -854,12 +854,14 @@ ${text}
     renderWordCloud(keywords);
     renderBarChart(keywords);
 
-    // 섹션 표시
-    setSection('hx-keyword-section', true);
-    setSection('hx-radar-section', true);
-    setSection('hx-loading', true);
-    setSection('hx-radar-wrap', false);
+    // 결과는 공용 보고서 모달에 표시 (탭 인라인 섹션은 숨김)
+    setSection('hx-loading', false);
     setSection('hx-error-box', false);
+    setSection('hx-radar-wrap', true);
+    if (window.ReportModal) {
+      window.ReportModal.open('육각형 인재 분석' + (targetName ? ' — ' + targetName : ''), null);
+      window.ReportModal.startProgress('AI가 6가지 역량을 분석 중입니다…');
+    }
 
     const analyzeBtn = document.getElementById('hx-analyze-btn');
     if (analyzeBtn) { analyzeBtn.disabled = true; analyzeBtn.textContent = '분석 중...'; }
@@ -870,16 +872,76 @@ ${text}
       hxCurrentReasons = result.reasons;
       renderRadarChart(result.scores);
       renderScoreCards(result.scores, result.reasons);
-      setSection('hx-loading', false);
+
+      // 키워드·레이더 섹션(인터랙티브)을 모달로 옮겨 표시
+      const ks = document.getElementById('hx-keyword-section');
+      const rs = document.getElementById('hx-radar-section');
+      setSection('hx-keyword-section', true);
+      setSection('hx-radar-section', true);
       setSection('hx-radar-wrap', true);
+      const wrap = document.createElement('div');
+      if (ks) wrap.appendChild(ks);
+      if (rs) wrap.appendChild(rs);
+
+      if (window.ReportModal) {
+        window.ReportModal.finishProgress();
+        window.ReportModal.setNode(wrap);
+        window.ReportModal.setPrint(() => hxPrintSnapshot(buildHexSnapshot(targetName), targetName));
+        // 차트 리사이즈 후 스냅샷 저장(언제든 다시 보기)
+        setTimeout(async () => {
+          try { hxBarChart && hxBarChart.resize(); hxRadarChart && hxRadarChart.resize(); } catch (e) {}
+          try {
+            const snap = buildHexSnapshot(targetName);
+            if (window.SavedReports) await window.SavedReports.save({ type: 'hexagon', title: '육각형 인재 — ' + (targetName || ''), viewHTML: snap, printHTML: snap });
+          } catch (e) { console.warn('[보고서 저장]', e); }
+        }, 350);
+      }
     } catch (err) {
       console.error('[hexagon]', err);
-      setSection('hx-loading', false);
-      const errBox = document.getElementById('hx-error-box');
-      if (errBox) { errBox.textContent = '분석 실패: ' + err.message; errBox.style.display = 'block'; }
+      if (window.ReportModal) window.ReportModal.setHTML('<div style="color:#f87171;padding:1.5rem;">분석 실패: ' + err.message + '</div>');
+      else {
+        const errBox = document.getElementById('hx-error-box');
+        if (errBox) { errBox.textContent = '분석 실패: ' + err.message; errBox.style.display = 'block'; }
+      }
     } finally {
       if (analyzeBtn) { analyzeBtn.disabled = false; analyzeBtn.textContent = '분석하기'; }
     }
+  }
+
+  // 육각형 결과를 정적 스냅샷(이미지 포함) HTML로 생성 — 저장/인쇄용
+  function buildHexSnapshot(name) {
+    const wc = document.getElementById('hx-wordcloud');
+    const bar = document.getElementById('hx-bar-chart');
+    const radar = document.getElementById('hx-radar-chart');
+    const cards = document.getElementById('hx-score-cards');
+    let barImg = '', radarImg = '';
+    try { barImg = bar ? bar.toDataURL('image/png') : ''; } catch (e) {}
+    try { radarImg = radar ? radar.toDataURL('image/png') : ''; } catch (e) {}
+    const cardsHTML = cards ? cards.innerHTML.replace(/onclick="[^"]*"/g, '') : '';
+    return `<div class="hx-snapshot">
+      <h2 style="text-align:center;margin:0 0 1rem;">🔷 육각형 인재 분석${name ? ' — ' + name : ''}</h2>
+      <h3>키워드 워드클라우드</h3>
+      <div style="line-height:2;text-align:center;padding:0.5rem;">${wc ? wc.innerHTML : ''}</div>
+      <h3 style="margin-top:1.2rem;">키워드 빈도 (상위 20개)</h3>
+      ${barImg ? `<img src="${barImg}" style="max-width:100%;display:block;margin:0 auto;">` : ''}
+      <h3 style="margin-top:1.2rem;">육각형 역량 그래프</h3>
+      ${radarImg ? `<div style="text-align:center;"><img src="${radarImg}" style="max-width:440px;width:100%;"></div>` : ''}
+      <h3 style="margin-top:1.2rem;">역량별 점수</h3>
+      <div style="display:flex;flex-direction:column;gap:0.6rem;">${cardsHTML}</div>
+    </div>`;
+  }
+
+  function hxPrintSnapshot(snapHTML, name) {
+    const w = window.open('', '_blank', 'width=900,height=900');
+    if (!w) { alert('팝업이 차단되었습니다. 팝업 허용 후 다시 시도해 주세요.'); return; }
+    w.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>육각형 인재 분석</title><style>
+      body{font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;color:#111;padding:28px;line-height:1.7;}
+      h2{text-align:center;} h3{color:#2c3e7d;border-left:4px solid #5e6ad2;padding-left:8px;margin-top:1.4rem;font-size:1.05rem;}
+      img{max-width:100%;}
+      @media print{body{padding:12px;}}
+    </style></head><body>${snapHTML}<p style="text-align:right;color:#999;font-size:10px;margin-top:14px;">출력일: ${new Date().toLocaleDateString('ko-KR')}</p></body></html>`);
+    w.document.close();
+    setTimeout(() => { try { w.focus(); w.print(); } catch (e) {} }, 500);
   }
 
   function setSection(id, visible) {

@@ -151,7 +151,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (pfReportEl) pfReportEl.classList.add("hidden");
       if (pfLoadEl) pfLoadEl.classList.add("hidden");
       ReportModal.open('학종 합불 원인 분석 보고서 — ' + (s.name || '') + ' / ' + (s.univ || ''), null);
-      ReportModal.setLoading('AI가 합불 원인을 심층 분석 중입니다…');
+      ReportModal.startProgress('AI가 합불 원인을 심층 분석 중입니다…');
 
       const promptData = {
         name: s.name,
@@ -179,14 +179,12 @@ document.addEventListener("DOMContentLoaded", () => {
         // 보고서를 '큰 섹션 카드 + 클릭 상세' 형태로 모달에 표시
         const pfWrap = document.createElement("div");
         pfWrap.appendChild(pfCriteriaEl);
-        const pfSections = buildReportSectionsHTML(report, '');
-        if (typeof pfSections === 'string') pfWrap.insertAdjacentHTML('beforeend', pfSections);
-        else pfWrap.appendChild(pfSections);
+        pfWrap.insertAdjacentHTML('beforeend', buildReportSectionsHTML(report, ''));
+        ReportModal.finishProgress();
         ReportModal.setNode(pfWrap);
 
-        // 인쇄·PDF: 기존과 동일한 형식
-        const pfPrint = () => {
-          const pfContent = `
+        // 인쇄·PDF용 본문 (기존과 동일한 형식)
+        const pfContent = `
                 <div class="print-only">
                     <h2 class='print-header' style='color:#000; text-align:center; margin-bottom:2rem; font-size:2.2rem; font-weight:800;'>수시 합불합 원인 심층 분석 리포트</h2>
                     <p style='text-align:right; color:#666; margin-bottom:1.5rem; font-size:0.9rem;'>분석 일시: ${new Date().toLocaleString('ko-KR')}</p>
@@ -216,9 +214,18 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
                 </div>
              `;
-          printWithIframe(pfContent);
-        };
-        ReportModal.setPrint(pfPrint);
+        ReportModal.setPrint(() => printWithIframe(pfContent));
+
+        // 로컬 저장 (언제든 다시 보기)
+        try {
+          await SavedReports.save({
+            type: 'passfail',
+            title: '학종 합불 — ' + (s.name || '') + ' / ' + (s.univ || '') + (s.dept ? ' (' + s.dept + ')' : ''),
+            scope: s.result || '',
+            viewHTML: pfWrap.innerHTML,
+            printHTML: pfContent
+          });
+        } catch (e) { console.warn('[보고서 저장]', e); }
       } catch (err) {
         console.error(err);
         ReportModal.setHTML(`
@@ -243,54 +250,144 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   }
 
+  // ─── 저장된 AI 보고서 (IndexedDB + localStorage 폴백) ─────────────────────
+  const SavedReports = {
+    KEY: 'savedAiReports',
+    async list() {
+      try { const a = await StorageManager.load(this.KEY); if (Array.isArray(a)) return a; } catch (e) {}
+      try { const s = localStorage.getItem(this.KEY); if (s) return JSON.parse(s); } catch (e) {}
+      return [];
+    },
+    async _saveAll(arr) {
+      try { await StorageManager.save(this.KEY, arr); } catch (e) {}
+      try { localStorage.setItem(this.KEY, JSON.stringify(arr)); } catch (e) {}
+    },
+    async save(rec) {
+      const arr = await this.list();
+      rec.id = 'r' + Date.now() + Math.random().toString(36).slice(2, 6);
+      rec.date = Date.now();
+      arr.unshift(rec);
+      await this._saveAll(arr.slice(0, 40)); // 최근 40개 유지
+      return rec.id;
+    },
+    async get(id) { return (await this.list()).find(x => x.id === id); },
+    async remove(id) { await this._saveAll((await this.list()).filter(x => x.id !== id)); }
+  };
+  window.SavedReports = SavedReports;
+
   // ─── 분석 보고서 모달 (모의서류평가 / 학종 합불 공용) ───────────────────
   const ReportModal = (function () {
     let printHandler = null;
+    let progTimer = null;
     const q = id => document.getElementById(id);
+    function clearProg() { if (progTimer) { clearInterval(progTimer); progTimer = null; } }
     function setPrint(fn) {
       printHandler = fn || null;
       const b = q('reportModalPrint');
       if (b) b.style.display = printHandler ? 'inline-block' : 'none';
     }
+    function setTitle(t) { if (t) { q('reportModalTitle').textContent = t; q('reportModalMiniTitle').textContent = t; } }
     function open(title, onPrint) {
-      if (title) { q('reportModalTitle').textContent = title; q('reportModalMiniTitle').textContent = title; }
+      setTitle(title);
       setPrint(onPrint);
       q('reportModalMini').style.display = 'none';
       q('reportModal').style.display = 'flex';
     }
     function setLoading(msg) {
+      clearProg();
       q('reportModalBody').innerHTML = `<div style="text-align:center;padding:3rem 1rem;color:var(--text-secondary);"><span class="spinner" style="display:inline-block;width:34px;height:34px;border-width:3px;"></span><p style="margin-top:1rem;">${msg || 'AI가 보고서를 작성 중입니다…'}</p></div>`;
     }
-    function setHTML(html) { q('reportModalBody').innerHTML = html; }
-    function setNode(node) { const b = q('reportModalBody'); b.innerHTML = ''; b.appendChild(node); }
-    function close() { q('reportModal').style.display = 'none'; q('reportModalMini').style.display = 'none'; }
+    // 진행률 바 (Gemini는 진행률을 주지 않으므로 경과시간 기반 추정치)
+    function startProgress(label) {
+      clearProg();
+      q('reportModalBody').innerHTML = `<div style="padding:2.6rem 1rem;text-align:center;">
+        <p id="rptProgLabel" style="color:var(--text-primary);font-weight:600;margin:0 0 1.1rem;">${label || 'AI가 보고서를 작성 중입니다…'}</p>
+        <div style="height:14px;background:var(--input-bg);border:1px solid var(--input-border);border-radius:999px;overflow:hidden;max-width:540px;margin:0 auto;">
+          <div id="rptProgBar" style="height:100%;width:0%;background:var(--accent-primary);border-radius:999px;transition:width .5s ease;"></div>
+        </div>
+        <p id="rptProgPct" style="color:var(--text-secondary);font-size:0.9rem;margin:0.6rem 0 0;font-weight:700;">0%</p>
+        <p style="color:var(--text-secondary);font-size:0.78rem;margin-top:0.3rem;">보통 15~40초 정도 걸립니다. 완료되면 보고서가 표시됩니다.</p>
+      </div>`;
+      const stages = [[12, '생기부 내용을 읽는 중…'], [32, '평가 요소별로 분석하는 중…'], [58, '보고서 문장을 작성하는 중…'], [80, '근거와 지도 제언을 정리하는 중…'], [90, '마무리하는 중…']];
+      let p = 0;
+      progTimer = setInterval(() => {
+        const bar = q('rptProgBar'); if (!bar) { clearProg(); return; }
+        const inc = p < 55 ? (Math.random() * 4 + 2) : p < 85 ? (Math.random() * 1.4 + 0.4) : 0.15;
+        p = Math.min(93, p + inc);
+        bar.style.width = p + '%';
+        const pct = q('rptProgPct'); if (pct) pct.textContent = Math.round(p) + '%';
+        const st = stages.filter(s => p >= s[0]).pop(); const lab = q('rptProgLabel'); if (st && lab) lab.textContent = st[1];
+      }, 650);
+    }
+    function finishProgress() { clearProg(); const bar = q('rptProgBar'); if (bar) bar.style.width = '100%'; const pct = q('rptProgPct'); if (pct) pct.textContent = '100%'; }
+    function setHTML(html) { clearProg(); q('reportModalBody').innerHTML = html; }
+    function setNode(node) { clearProg(); const b = q('reportModalBody'); b.innerHTML = ''; b.appendChild(node); }
+    function close() { clearProg(); q('reportModal').style.display = 'none'; q('reportModalMini').style.display = 'none'; }
     function minimize() { q('reportModal').style.display = 'none'; q('reportModalMini').style.display = 'flex'; }
     function restore() { q('reportModalMini').style.display = 'none'; q('reportModal').style.display = 'flex'; }
+
+    // 저장된 보고서 목록
+    async function openSavedList() {
+      open('📁 저장된 보고서', null);
+      const items = await SavedReports.list();
+      if (!items.length) { setHTML(`<p style="text-align:center;color:var(--text-secondary);padding:2.5rem 1rem;">저장된 보고서가 없습니다.<br>보고서를 생성하면 자동으로 저장됩니다.</p>`); return; }
+      const typeLabel = { individual: '모의서류평가', passfail: '학종 합불', mock: '모의고사', interview: '면접 문항', hexagon: '육각형 인재' };
+      const rows = items.map(it => `<div class="rpt-saved-row">
+          <div class="rpt-saved-main">
+            <span class="rpt-saved-badge">${typeLabel[it.type] || '보고서'}</span>
+            <span class="rpt-saved-title">${it.title || '제목 없음'}</span>
+            <span class="rpt-saved-date">${new Date(it.date).toLocaleString('ko-KR')}</span>
+          </div>
+          <div class="rpt-saved-actions">
+            <button type="button" class="rpt-btn" data-act="view" data-id="${it.id}">보기</button>
+            ${it.printHTML ? `<button type="button" class="rpt-btn" data-act="print" data-id="${it.id}">인쇄</button>` : ''}
+            <button type="button" class="rpt-btn" data-act="del" data-id="${it.id}">삭제</button>
+          </div>
+        </div>`).join('');
+      setHTML(`<div class="rpt-saved-list">${rows}</div>`);
+    }
+    async function viewSaved(id) {
+      const it = await SavedReports.get(id);
+      if (!it) return;
+      open(it.title || '저장된 보고서', it.printHTML ? () => printWithIframe(it.printHTML) : null);
+      setHTML(`<div style="margin-bottom:0.9rem;"><button type="button" class="rpt-btn" id="rptBackToList">← 목록으로</button></div>${it.viewHTML || ''}`);
+    }
+
+    // 본문 위임 클릭: 섹션 펼침 / 저장목록 액션 / 뒤로
+    q('reportModalBody')?.addEventListener('click', async (e) => {
+      const head = e.target.closest('.rpt-sec-head');
+      if (head) { head.parentElement.classList.toggle('open'); return; }
+      if (e.target.id === 'rptBackToList') { openSavedList(); return; }
+      const btn = e.target.closest('button[data-act]');
+      if (btn) {
+        const id = btn.dataset.id, act = btn.dataset.act;
+        if (act === 'view') viewSaved(id);
+        else if (act === 'print') { const it = await SavedReports.get(id); if (it && it.printHTML) printWithIframe(it.printHTML); }
+        else if (act === 'del') { if (confirm('이 보고서를 삭제할까요?')) { await SavedReports.remove(id); openSavedList(); } }
+      }
+    });
 
     q('reportModalClose')?.addEventListener('click', close);
     q('reportModalMin')?.addEventListener('click', minimize);
     q('reportModalRestore')?.addEventListener('click', restore);
     q('reportModalMiniClose')?.addEventListener('click', close);
+    q('reportModalSaved')?.addEventListener('click', openSavedList);
     q('reportModalPrint')?.addEventListener('click', () => { if (printHandler) printHandler(); });
     q('reportModal')?.addEventListener('click', e => { if (e.target === q('reportModal')) minimize(); });
 
-    return { open, setPrint, setLoading, setHTML, setNode, close, minimize, restore };
+    return { open, setTitle, setPrint, setLoading, startProgress, finishProgress, setHTML, setNode, close, minimize, restore, openSavedList };
   })();
   window.ReportModal = ReportModal;
 
-  // 마크다운 보고서를 '큰 섹션 카드 + 클릭 시 상세' 형태로 변환
+  // 마크다운 보고서를 '큰 섹션 카드 + 클릭 시 상세' 형태의 HTML 문자열로 변환
   function buildReportSectionsHTML(markdownText, introHTML) {
     const text = String(markdownText || '').replace(/\r/g, '');
-    // ## 또는 # 제목 기준으로 분할
-    const parts = [];
     const re = /^#{1,3}\s+(.+)$/gm;
-    let m, last = null, lastIdx = 0;
-    const marks = [];
+    let m; const marks = [];
     while ((m = re.exec(text))) marks.push({ title: m[1].trim(), start: m.index, bodyStart: m.index + m[0].length });
-    if (marks.length === 0) {
-      return `<div class="markdown-body">${marked.parse(text)}</div>`;
-    }
+    if (marks.length === 0) return `<div class="markdown-body">${marked.parse(text)}</div>`;
     const preamble = text.slice(0, marks[0].start).trim();
+    const parts = [];
     for (let i = 0; i < marks.length; i++) {
       const body = text.slice(marks[i].bodyStart, i + 1 < marks.length ? marks[i + 1].start : text.length).trim();
       parts.push({ title: marks[i].title, body });
@@ -309,14 +406,9 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="rpt-sec-body markdown-body">${marked.parse(p.body)}</div>
       </div>`;
     }).join('');
-    const wrap = document.createElement('div');
-    wrap.innerHTML = `${introHTML || ''}${preamble ? `<div class="markdown-body" style="margin-bottom:1rem;">${marked.parse(preamble)}</div>` : ''}
+    return `${introHTML || ''}${preamble ? `<div class="markdown-body" style="margin-bottom:1rem;">${marked.parse(preamble)}</div>` : ''}
       <p class="rpt-hint">아래 각 항목을 누르면 상세 설명이 펼쳐집니다.</p>
       <div class="rpt-sections">${cards}</div>`;
-    wrap.querySelectorAll('.rpt-sec-head').forEach(h => {
-      h.addEventListener('click', () => h.parentElement.classList.toggle('open'));
-    });
-    return wrap;
   }
   window.buildReportSectionsHTML = buildReportSectionsHTML;
 
@@ -3469,59 +3561,63 @@ document.addEventListener("DOMContentLoaded", () => {
   // ────────────────────────────────────────────────────────────────────────────
 
   // ─── 내장 합불 분석 보고서 (2024 / 2025 / 통합) ───────────────────────────
-  let _pfReportState = null;
   (function setupPassfailReports() {
-    const seg = document.getElementById('pfReportSeg');
-    const body = document.getElementById('pfReportBody');
-    const printBtn = document.getElementById('pfReportPrintBtn');
-    if (!seg || !body || typeof window.PASSFAIL_REPORTS === 'undefined') return;
+    const openBtn = document.getElementById('pfReportOpenBtn');
+    if (!openBtn || typeof window.PASSFAIL_REPORTS === 'undefined') return;
+    let curKey = '2024_2025';
 
-    function showReport(key) {
-      const html = window.PASSFAIL_REPORTS[key];
+    function printCurrent() {
+      const html = window.PASSFAIL_REPORTS[curKey];
       if (!html) return;
-      body.innerHTML = html;
-      _pfReportState = { html, key };
-      seg.querySelectorAll('.sm-seg').forEach(b => b.classList.toggle('active', b.dataset.report === key));
-      if (printBtn) printBtn.style.display = 'inline-block';
+      const w = window.open('', '_blank', 'width=900,height=900');
+      if (!w) { alert('팝업이 차단되었습니다. 팝업 허용 후 다시 시도해 주세요.'); return; }
+      w.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>합불 분석 보고서</title><style>
+        *,*::before,*::after{box-sizing:border-box;}
+        body{font-family:'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif;color:#111;padding:26px;background:#fff;font-size:12px;line-height:1.7;}
+        .pf-report h1{font-size:20px;text-align:center;margin:0 0 4px;}
+        .pf-report .pf-sub{text-align:center;color:#555;margin:0 0 18px;font-size:11px;}
+        .pf-report h2{font-size:15px;margin:20px 0 8px;border-left:4px solid #2563eb;padding-left:8px;color:#1e2a6e;}
+        .pf-report h3{font-size:13px;margin:12px 0 5px;color:#333;}
+        .pf-report table{width:100%;border-collapse:collapse;margin:8px 0;font-size:10.5px;}
+        .pf-report th,.pf-report td{border:1px solid #bbb;padding:5px 6px;text-align:center;}
+        .pf-report th{background:#eef0ff;}
+        .pf-report ul{margin:6px 0 10px 18px;} .pf-report li{margin:4px 0;}
+        .pf-report .pf-note{font-size:9.5px;color:#777;margin:4px 0 10px;}
+        .pf-report .pf-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:10px 0 4px;}
+        .pf-report .pf-card{border:1px solid #ccc;border-radius:8px;padding:10px;text-align:center;}
+        .pf-report .pf-card-n{font-size:17px;font-weight:800;color:#2563eb;}
+        .pf-report .pf-card-l{font-size:9.5px;color:#666;margin-top:3px;}
+        .pf-report strong{color:#1e2a6e;}
+        @media print{body{padding:12px;}}
+      </style></head><body>${window.PASSFAIL_REPORTS[curKey]}
+      <p style="text-align:right;color:#999;font-size:9px;margin-top:14px;">출력일: ${new Date().toLocaleDateString('ko-KR')}</p>
+      </body></html>`);
+      w.document.close();
+      setTimeout(() => { try { w.focus(); w.print(); } catch (e) {} }, 500);
     }
 
-    seg.querySelectorAll('.sm-seg').forEach(btn => {
-      btn.addEventListener('click', () => showReport(btn.dataset.report));
-    });
+    function render(key) {
+      curKey = key;
+      const target = document.getElementById('pfReportModalBody');
+      if (target) target.innerHTML = window.PASSFAIL_REPORTS[key] || '';
+      document.querySelectorAll('#pfReportModalSeg .sm-seg').forEach(b => b.classList.toggle('active', b.dataset.report === key));
+    }
 
-    if (printBtn) {
-      printBtn.addEventListener('click', () => {
-        if (!_pfReportState) return;
-        const w = window.open('', '_blank', 'width=900,height=900');
-        if (!w) { alert('팝업이 차단되었습니다. 팝업 허용 후 다시 시도해 주세요.'); return; }
-        w.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>합불 분석 보고서</title><style>
-          *,*::before,*::after{box-sizing:border-box;}
-          body{font-family:'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif;color:#111;padding:26px;background:#fff;font-size:12px;line-height:1.7;}
-          .pf-report h1{font-size:20px;text-align:center;margin:0 0 4px;}
-          .pf-report .pf-sub{text-align:center;color:#555;margin:0 0 18px;font-size:11px;}
-          .pf-report h2{font-size:15px;margin:20px 0 8px;border-left:4px solid #2563eb;padding-left:8px;color:#1e2a6e;}
-          .pf-report h3{font-size:13px;margin:12px 0 5px;color:#333;}
-          .pf-report table{width:100%;border-collapse:collapse;margin:8px 0;font-size:10.5px;}
-          .pf-report th,.pf-report td{border:1px solid #bbb;padding:5px 6px;text-align:center;}
-          .pf-report th{background:#eef0ff;}
-          .pf-report ul{margin:6px 0 10px 18px;} .pf-report li{margin:4px 0;}
-          .pf-report .pf-note{font-size:9.5px;color:#777;margin:4px 0 10px;}
-          .pf-report .pf-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:10px 0 4px;}
-          .pf-report .pf-card{border:1px solid #ccc;border-radius:8px;padding:10px;text-align:center;}
-          .pf-report .pf-card-n{font-size:17px;font-weight:800;color:#2563eb;}
-          .pf-report .pf-card-l{font-size:9.5px;color:#666;margin-top:3px;}
-          .pf-report strong{color:#1e2a6e;}
-          @media print{body{padding:12px;}}
-        </style></head><body>${_pfReportState.html}
-        <p style="text-align:right;color:#999;font-size:9px;margin-top:14px;">출력일: ${new Date().toLocaleDateString('ko-KR')}</p>
-        </body></html>`);
-        w.document.close();
-        setTimeout(() => { try { w.focus(); w.print(); } catch (e) {} }, 500);
+    openBtn.addEventListener('click', () => {
+      ReportModal.open('📑 합불 분석 보고서', printCurrent);
+      ReportModal.setHTML(`
+        <p style="font-size:0.85rem;color:var(--text-secondary);margin:0 0 0.9rem;">연도를 선택하면 해당 보고서가 표시됩니다. (전수 분석 · 내장 · API 키 불필요)</p>
+        <div id="pfReportModalSeg" style="display:inline-flex;border:1px solid var(--input-border);border-radius:8px;overflow:hidden;margin-bottom:1.1rem;flex-wrap:wrap;">
+          <button type="button" class="sm-seg" data-report="2024">2024학년도</button>
+          <button type="button" class="sm-seg" data-report="2025">2025학년도</button>
+          <button type="button" class="sm-seg" data-report="2024_2025">2024+2025 통합</button>
+        </div>
+        <div id="pfReportModalBody"></div>`);
+      document.querySelectorAll('#pfReportModalSeg .sm-seg').forEach(btn => {
+        btn.addEventListener('click', () => render(btn.dataset.report));
       });
-    }
-
-    // 기본으로 통합 보고서 표시
-    showReport('2024_2025');
+      render(curKey);
+    });
   })();
 
   if (pfResultsUpload) {
@@ -5760,7 +5856,7 @@ document.addEventListener("DOMContentLoaded", () => {
     reportViewer.classList.add("hidden");
     loadingState.classList.add("hidden");
     ReportModal.open('모의서류평가 분석 보고서', null);
-    ReportModal.setLoading('AI가 학생 생기부를 심층 분석 중입니다…');
+    ReportModal.startProgress('AI가 학생 생기부를 심층 분석 중입니다…');
     try {
       const rawResponse = await generateAIReport(formData);
       console.log("Raw AI Response:", rawResponse); // \ub514\ubc84\uae45\uc6a9 \ub85c\uadf8 \ucd94\uac00
@@ -5832,8 +5928,20 @@ document.addEventListener("DOMContentLoaded", () => {
       // 대시보드(종합점수·역량 카드·상세 보기)를 모달에 표시
       const dv = document.getElementById("dashboardViewer");
       dv.classList.remove("hidden");
+      ReportModal.finishProgress();
       ReportModal.setNode(dv);
       ReportModal.setPrint(window.downloadPDF);
+      // 로컬 저장 (언제든 다시 보기)
+      try {
+        const printHTML = (typeof getPrintHTML === 'function') ? getPrintHTML(reportData) : '';
+        await SavedReports.save({
+          type: 'individual',
+          title: '모의서류평가 — ' + (formData.university || '') + (formData.major ? ' ' + formData.major : ''),
+          scope: (document.getElementById('overallScore')?.textContent || '') + '점',
+          viewHTML: printHTML,
+          printHTML: printHTML
+        });
+      } catch (e) { console.warn('[보고서 저장]', e); }
     } catch (error) {
       console.error(error);
       const errBox = document.createElement("div");
@@ -11538,10 +11646,11 @@ ${fd.content}
       const ivMarkdownResult = document.getElementById("iv-markdown-result");
       const ivAnalyzeBtn = document.getElementById("iv-analyzeBtn");
 
-      ivLoadingState.classList.remove("hidden");
-      ivResultContainer.style.display = "block";
+      ivLoadingState.classList.add("hidden");
       ivMarkdownResult.innerHTML = "";
       ivAnalyzeBtn.disabled = true;
+      ReportModal.open('면접 문항 생성 — ' + (targetUniv || '') + (targetMajor ? ' / ' + targetMajor : ''), null);
+      ReportModal.startProgress('AI가 맞춤 면접 문항을 생성 중입니다…');
 
       // Special university guide content
       const gachonGuideContent = `
@@ -13636,12 +13745,25 @@ ${univPromptSupplement}
             nextDiv.remove();
           }
         });
+
+        // 모달에 표시 + 인쇄(기존 형식) + 로컬 저장
+        ReportModal.finishProgress();
+        ReportModal.setNode(ivMarkdownResult);
+        ReportModal.setPrint(() => window.exportToPdf('iv-markdown-result'));
+        try {
+          await SavedReports.save({
+            type: 'interview',
+            title: '면접 문항 — ' + (targetUniv || '') + (targetMajor ? ' / ' + targetMajor : ''),
+            scope: targetCat || '',
+            viewHTML: ivMarkdownResult.innerHTML,
+            printHTML: ivMarkdownResult.innerHTML
+          });
+        } catch (e) { console.warn('[보고서 저장]', e); }
       } catch (err) {
-        ivMarkdownResult.innerHTML = `<p style="color:var(--danger)">생성 중 오류 발생: ${err.message}</p>`;
+        ReportModal.setHTML(`<p style="color:var(--danger)">생성 중 오류 발생: ${err.message}</p>`);
       } finally {
         ivLoadingState.classList.add("hidden");
         ivAnalyzeBtn.disabled = false;
-        ivResultContainer.scrollIntoView({ behavior: "smooth" });
       }
     });
   }
@@ -16623,7 +16745,26 @@ ${univPromptSupplement}
     const summary = buildMockReportSummary(gradeVal, yearVal, roundVal);
     if (!summary) { statusEl.textContent = '해당 조건의 데이터가 없습니다.'; return; }
 
-    statusEl.innerHTML = '<span class="spinner" style="width:16px;height:16px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:6px;"></span> AI가 보고서를 작성 중입니다… (최대 1분)';
+    // 진행률 바 (경과시간 기반 추정)
+    statusEl.textContent = '';
+    let mkP = 0, mkTimer = null;
+    const mkStages = [[15, '데이터를 집계하는 중…'], [40, '과목·회차별로 분석하는 중…'], [68, '보고서를 작성하는 중…'], [88, '마무리하는 중…']];
+    bodyEl.innerHTML = `<div style="padding:2rem 1rem;text-align:center;">
+      <p id="mkProgLabel" style="color:var(--text-primary);font-weight:600;margin:0 0 1rem;">AI가 보고서를 작성 중입니다…</p>
+      <div style="height:14px;background:var(--input-bg);border:1px solid var(--input-border);border-radius:999px;overflow:hidden;max-width:520px;margin:0 auto;">
+        <div id="mkProgBar" style="height:100%;width:0%;background:var(--accent-primary);border-radius:999px;transition:width .5s ease;"></div>
+      </div>
+      <p id="mkProgPct" style="color:var(--text-secondary);font-size:0.88rem;margin:0.5rem 0 0;font-weight:700;">0%</p>
+      <p style="color:var(--text-secondary);font-size:0.78rem;margin-top:0.3rem;">보통 15~40초 정도 걸립니다.</p>
+    </div>`;
+    mkTimer = setInterval(() => {
+      const bar = document.getElementById('mkProgBar'); if (!bar) { clearInterval(mkTimer); return; }
+      const inc = mkP < 55 ? (Math.random() * 4 + 2) : mkP < 85 ? (Math.random() * 1.3 + 0.4) : 0.15;
+      mkP = Math.min(93, mkP + inc);
+      bar.style.width = mkP + '%';
+      const pct = document.getElementById('mkProgPct'); if (pct) pct.textContent = Math.round(mkP) + '%';
+      const st = mkStages.filter(s => mkP >= s[0]).pop(); const lab = document.getElementById('mkProgLabel'); if (st && lab) lab.textContent = st[1];
+    }, 650);
     section.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
     const sectionList = summary.rounds > 1
@@ -16647,12 +16788,20 @@ ${sectionList}
 
     try {
       const text = await _callGeminiMockReport(apiKey, prompt);
+      clearInterval(mkTimer);
       _mockReportState = { html: marked.parse(text), scopeLabel };
       bodyEl.innerHTML = _mockReportState.html;
       statusEl.textContent = `✓ 생성 완료 — ${scopeLabel} · 응시 ${summary.count}명 · 회차 ${summary.rounds}개`;
       if (printBtn) printBtn.style.display = 'inline-block';
+      // 로컬 저장 (언제든 다시 보기)
+      try {
+        const printHTML = `<h1 style="text-align:center;">🏫 우리학교 모의고사 AI 분석 보고서</h1><p style="text-align:center;color:#555;">${scopeLabel} | 출력일: ${new Date().toLocaleDateString('ko-KR')}</p>${_mockReportState.html}`;
+        await SavedReports.save({ type: 'mock', title: '모의고사 — ' + scopeLabel, scope: `응시 ${summary.count}명`, viewHTML: _mockReportState.html, printHTML });
+      } catch (e) { console.warn('[보고서 저장]', e); }
     } catch (err) {
+      clearInterval(mkTimer);
       console.error('[모의고사 보고서]', err);
+      bodyEl.innerHTML = '';
       statusEl.innerHTML = `<span style="color:#ef4444;">생성 실패: ${err.message}</span>`;
     }
   }

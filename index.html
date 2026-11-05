@@ -33,7 +33,7 @@
     });
   </script>
 
-  <link rel="stylesheet" href="styles.css?v=13">
+  <link rel="stylesheet" href="styles.css?v=14">
 </head>
 <body>
   <div class="app-background">
@@ -232,6 +232,7 @@
             <span class="btn-text">AI 심층 분석하기</span>
             <span class="btn-icon">✦</span>
           </button>
+          <button type="button" class="rpt-btn" style="margin-top:0.6rem;width:100%;padding:0.6rem;" onclick="ReportModal.openSavedList()">📁 저장된 보고서 보기</button>
         </form>
     </section>
     <section class="glass-panel result-section">
@@ -333,18 +334,14 @@
   </main>
   <main id="view-passfail" class="main-container view-section hidden">
     <!-- 내장 합불 분석 보고서 -->
-    <section class="glass-panel" style="padding:1.5rem; margin-bottom:1.5rem;">
-      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.6rem; margin-bottom:0.6rem;">
-        <h3 style="margin:0; color:var(--accent-primary);">📑 합불 분석 보고서 <span style="font-size:0.8rem; color:var(--text-secondary); font-weight:normal;">(전수 분석 · 내장)</span></h3>
-        <button id="pfReportPrintBtn" type="button" class="btn-primary" style="padding:0.45rem 0.9rem; background:linear-gradient(135deg,#e05fc4,#a855f7); display:none;">📄 PDF·인쇄</button>
+    <section class="glass-panel" style="padding:1.2rem 1.5rem; margin-bottom:1.5rem;">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.8rem;">
+        <div>
+          <h3 style="margin:0 0 0.2rem; color:var(--accent-primary);">📑 합불 분석 보고서 <span style="font-size:0.8rem; color:var(--text-secondary); font-weight:normal;">(전수 분석 · 내장)</span></h3>
+          <p style="margin:0; font-size:0.82rem; color:var(--text-secondary);">학교 수시 지원·합불 기록을 전수 집계한 보고서입니다. 버튼을 누르고 연도를 선택하세요. (API 키 불필요)</p>
+        </div>
+        <button id="pfReportOpenBtn" type="button" class="btn-primary" style="padding:0.6rem 1.2rem; white-space:nowrap;">📑 합불 분석 보고서 보기</button>
       </div>
-      <p style="margin:0 0 0.8rem; font-size:0.82rem; color:var(--text-secondary);">학교 수시 지원·합불 기록을 전수 집계해 미리 만들어 둔 보고서입니다. 연도를 선택하면 바로 표시됩니다. (API 키 불필요)</p>
-      <div id="pfReportSeg" style="display:inline-flex; border:1px solid var(--input-border); border-radius:8px; overflow:hidden; margin-bottom:1rem;">
-        <button type="button" class="sm-seg" data-report="2024">2024학년도</button>
-        <button type="button" class="sm-seg" data-report="2025">2025학년도</button>
-        <button type="button" class="sm-seg" data-report="2024_2025">2024+2025 통합</button>
-      </div>
-      <div id="pfReportBody"></div>
     </section>
 
     <section class="glass-panel form-section">
@@ -483,6 +480,7 @@
           <span class="btn-text">AI 합불합 원인 분석하기</span>
           <span class="btn-icon">✦</span>
         </button>
+        <button type="button" class="rpt-btn" style="margin-top:0.6rem;width:100%;padding:0.6rem;" onclick="ReportModal.openSavedList()">📁 저장된 보고서 보기</button>
       </form>
     </section>
     <section class="glass-panel result-section">
@@ -954,10 +952,11 @@
           <span class="btn-text">AI 면접 문항 생성</span>
           <span class="btn-icon">✦</span>
         </button>
+        <button type="button" class="rpt-btn" style="margin-top:0.6rem;width:100%;padding:0.6rem;" onclick="ReportModal.openSavedList()">📁 저장된 보고서 보기</button>
       </form>
     </section>
 
-    <section class="glass-panel result-section">
+    <section class="glass-panel result-section" style="display:none;">
       <div id="iv-resultContainer" style="display:none;">
         <div class="result-header">
           <h2 class="section-title">생성된 면접 문항</h2>
@@ -1399,6 +1398,7 @@
           <button id="schoolMockReportBtn" class="btn-primary" style="padding: 0.5rem 1rem; background: linear-gradient(135deg,#2563eb,#06b6d4);">
             🤖 AI 분석 보고서
           </button>
+          <button type="button" class="btn-primary" style="padding: 0.5rem 1rem; background: var(--input-bg); color: var(--text-primary); border: 1px solid var(--input-border);" onclick="ReportModal.openSavedList()">📁 저장된 보고서</button>
           <button id="schoolMockPdfBtn" class="btn-primary" style="padding: 0.5rem 1rem; background: linear-gradient(135deg,#e05fc4,#a855f7);">
             📄 PDF 다운로드
           </button>
@@ -1816,6 +1816,7 @@
           </select>
         </div>
         <button id="hx-analyze-btn" class="btn-primary" style="padding:0.6rem 1.5rem;height:fit-content;">분석하기</button>
+        <button type="button" class="rpt-btn" style="padding:0.6rem 1rem;height:fit-content;" onclick="ReportModal.openSavedList()">📁 저장된 보고서</button>
       </div>
     </section>
 
@@ -1908,6 +1909,7 @@
       <div class="rpt-modal-head">
         <span class="rpt-modal-title" id="reportModalTitle">분석 보고서</span>
         <div class="rpt-modal-actions">
+          <button type="button" id="reportModalSaved" class="rpt-btn">📁 저장된 보고서</button>
           <button type="button" id="reportModalPrint" class="rpt-btn">📄 인쇄·PDF</button>
           <button type="button" id="reportModalMin" class="rpt-btn" title="최소화">— 최소화</button>
           <button type="button" id="reportModalClose" class="rpt-btn" title="닫기">✕ 닫기</button>
@@ -4718,13 +4720,13 @@ if (document.readyState === 'loading') {
 
   </script>
   <script src="card.js?v=100" defer></script>
-  <script src="app.js?v=88"></script>
+  <script src="app.js?v=92"></script>
   <script src="grade-rank.js?v=78"></script>
   <script src="univ-score.js"></script>
   <script src="admission_dist.js?v=2"></script>
   <script src="susi_ipgyeol_data.js"></script>
   <script src="susi-ipgyeol.js?v=1"></script>
-  <script src="hexagon.js?v=5"></script>
+  <script src="hexagon.js?v=6"></script>
   <script src="admission-analysis.js?v=12"></script>
   <script type="module" src="firebase-visitors.js"></script>
 
