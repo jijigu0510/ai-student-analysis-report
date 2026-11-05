@@ -16047,6 +16047,28 @@ ${univPromptSupplement}
     if (reportBtn) reportBtn.addEventListener('click', generateMockReport);
     const reportPrintBtn = document.getElementById('schoolMockReportPrintBtn');
     if (reportPrintBtn) reportPrintBtn.addEventListener('click', printMockReport);
+
+    setupMockCollapsibles();
+  }
+
+  // 각 결과 섹션을 제목 클릭으로 접었다 펼치기
+  function setupMockCollapsibles() {
+    const sections = document.querySelectorAll('#view-school-mock-status > section.glass-panel');
+    sections.forEach((sec, idx) => {
+      if (idx === 0) return;                         // 필터·버튼 헤더 제외
+      if (sec.id === 'schoolMockReportSection') return; // 미사용(모달로 대체)
+      if (sec._collapsibleReady) return;
+      const heading = sec.querySelector('h2, h3');
+      if (!heading) return;
+      sec._collapsibleReady = true;
+      heading.style.cursor = 'pointer';
+      heading.style.userSelect = 'none';
+      const caret = document.createElement('span');
+      caret.className = 'mock-caret';
+      caret.textContent = '▾';
+      heading.appendChild(caret);
+      heading.addEventListener('click', () => sec.classList.toggle('mock-collapsed'));
+    });
   }
 
   function updateSchoolMockDropdowns() {
@@ -16731,41 +16753,12 @@ ${univPromptSupplement}
     const roundText = roundEl.options[roundEl.selectedIndex]?.text || '전체 회차';
     const scopeLabel = `${gradeText} / ${yearText} / ${roundText}`;
 
-    const section = document.getElementById('schoolMockReportSection');
-    const statusEl = document.getElementById('schoolMockReportStatus');
-    const bodyEl = document.getElementById('schoolMockReportBody');
-    const printBtn = document.getElementById('schoolMockReportPrintBtn');
-    const scopeEl = document.getElementById('schoolMockReportScope');
-
-    section.style.display = 'block';
-    if (scopeEl) scopeEl.textContent = `(${scopeLabel})`;
-    if (printBtn) printBtn.style.display = 'none';
-    bodyEl.innerHTML = '';
-
     const summary = buildMockReportSummary(gradeVal, yearVal, roundVal);
-    if (!summary) { statusEl.textContent = '해당 조건의 데이터가 없습니다.'; return; }
+    if (!summary) { alert('해당 조건의 데이터가 없습니다.'); return; }
 
-    // 진행률 바 (경과시간 기반 추정)
-    statusEl.textContent = '';
-    let mkP = 0, mkTimer = null;
-    const mkStages = [[15, '데이터를 집계하는 중…'], [40, '과목·회차별로 분석하는 중…'], [68, '보고서를 작성하는 중…'], [88, '마무리하는 중…']];
-    bodyEl.innerHTML = `<div style="padding:2rem 1rem;text-align:center;">
-      <p id="mkProgLabel" style="color:var(--text-primary);font-weight:600;margin:0 0 1rem;">AI가 보고서를 작성 중입니다…</p>
-      <div style="height:14px;background:var(--input-bg);border:1px solid var(--input-border);border-radius:999px;overflow:hidden;max-width:520px;margin:0 auto;">
-        <div id="mkProgBar" style="height:100%;width:0%;background:var(--accent-primary);border-radius:999px;transition:width .5s ease;"></div>
-      </div>
-      <p id="mkProgPct" style="color:var(--text-secondary);font-size:0.88rem;margin:0.5rem 0 0;font-weight:700;">0%</p>
-      <p style="color:var(--text-secondary);font-size:0.78rem;margin-top:0.3rem;">보통 15~40초 정도 걸립니다.</p>
-    </div>`;
-    mkTimer = setInterval(() => {
-      const bar = document.getElementById('mkProgBar'); if (!bar) { clearInterval(mkTimer); return; }
-      const inc = mkP < 55 ? (Math.random() * 4 + 2) : mkP < 85 ? (Math.random() * 1.3 + 0.4) : 0.15;
-      mkP = Math.min(93, mkP + inc);
-      bar.style.width = mkP + '%';
-      const pct = document.getElementById('mkProgPct'); if (pct) pct.textContent = Math.round(mkP) + '%';
-      const st = mkStages.filter(s => mkP >= s[0]).pop(); const lab = document.getElementById('mkProgLabel'); if (st && lab) lab.textContent = st[1];
-    }, 650);
-    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // 공용 보고서 모달 + 진행률 바
+    ReportModal.open('모의고사 AI 분석 보고서 — ' + scopeLabel, null);
+    ReportModal.startProgress('AI가 모의고사 보고서를 작성 중입니다…');
 
     const sectionList = summary.rounds > 1
       ? '## 1. 총평\n## 2. 과목별 분석 (국어·수학·영어·탐구)\n## 3. 선택과목 및 응시 경향\n## 4. 성적 분포와 상위권 현황\n## 5. 회차별 추이 분석\n## 6. 지도 제언'
@@ -16788,21 +16781,18 @@ ${sectionList}
 
     try {
       const text = await _callGeminiMockReport(apiKey, prompt);
-      clearInterval(mkTimer);
       _mockReportState = { html: marked.parse(text), scopeLabel };
-      bodyEl.innerHTML = _mockReportState.html;
-      statusEl.textContent = `✓ 생성 완료 — ${scopeLabel} · 응시 ${summary.count}명 · 회차 ${summary.rounds}개`;
-      if (printBtn) printBtn.style.display = 'inline-block';
+      ReportModal.finishProgress();
+      ReportModal.setHTML(`<div class="markdown-body">${_mockReportState.html}</div>`);
+      ReportModal.setPrint(printMockReport);
       // 로컬 저장 (언제든 다시 보기)
       try {
         const printHTML = `<h1 style="text-align:center;">🏫 우리학교 모의고사 AI 분석 보고서</h1><p style="text-align:center;color:#555;">${scopeLabel} | 출력일: ${new Date().toLocaleDateString('ko-KR')}</p>${_mockReportState.html}`;
         await SavedReports.save({ type: 'mock', title: '모의고사 — ' + scopeLabel, scope: `응시 ${summary.count}명`, viewHTML: _mockReportState.html, printHTML });
       } catch (e) { console.warn('[보고서 저장]', e); }
     } catch (err) {
-      clearInterval(mkTimer);
       console.error('[모의고사 보고서]', err);
-      bodyEl.innerHTML = '';
-      statusEl.innerHTML = `<span style="color:#ef4444;">생성 실패: ${err.message}</span>`;
+      ReportModal.setHTML(`<div style="color:#ef4444;padding:1.5rem;">생성 실패: ${err.message}</div>`);
     }
   }
 

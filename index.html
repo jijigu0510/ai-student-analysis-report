@@ -33,7 +33,7 @@
     });
   </script>
 
-  <link rel="stylesheet" href="styles.css?v=14">
+  <link rel="stylesheet" href="styles.css?v=15">
 </head>
 <body>
   <div class="app-background">
@@ -1392,16 +1392,10 @@
           <select id="schoolMockRound" class="form-select" style="width: auto;">
             <option value="all">전체 회차</option>
           </select>
-          <button id="schoolMockRefreshBtn" class="btn-primary" style="padding: 0.5rem 1rem;">
-            🔄 데이터 갱신
-          </button>
-          <button id="schoolMockReportBtn" class="btn-primary" style="padding: 0.5rem 1rem; background: linear-gradient(135deg,#2563eb,#06b6d4);">
-            🤖 AI 분석 보고서
-          </button>
-          <button type="button" class="btn-primary" style="padding: 0.5rem 1rem; background: var(--input-bg); color: var(--text-primary); border: 1px solid var(--input-border);" onclick="ReportModal.openSavedList()">📁 저장된 보고서</button>
-          <button id="schoolMockPdfBtn" class="btn-primary" style="padding: 0.5rem 1rem; background: linear-gradient(135deg,#e05fc4,#a855f7);">
-            📄 PDF 다운로드
-          </button>
+          <button id="schoolMockRefreshBtn" class="btn-primary" style="width:auto; flex:0 0 auto; padding: 0.4rem 0.7rem; font-size: 0.8rem;">🔄 데이터 갱신</button>
+          <button id="schoolMockReportBtn" class="btn-primary" style="width:auto; flex:0 0 auto; padding: 0.4rem 0.7rem; font-size: 0.8rem; background: linear-gradient(135deg,#2563eb,#06b6d4);">🤖 AI 분석 보고서</button>
+          <button type="button" class="btn-primary" style="width:auto; flex:0 0 auto; padding: 0.4rem 0.7rem; font-size: 0.8rem; background: var(--input-bg); color: var(--text-primary); border: 1px solid var(--input-border);" onclick="ReportModal.openSavedList()">📁 저장된 보고서</button>
+          <button id="schoolMockPdfBtn" class="btn-primary" style="width:auto; flex:0 0 auto; padding: 0.4rem 0.7rem; font-size: 0.8rem; background: linear-gradient(135deg,#e05fc4,#a855f7);">📄 PDF 다운로드</button>
         </div>
       </div>
     </section>
@@ -1849,21 +1843,19 @@
     <!-- 육각형 레이더 섹션 -->
     <div id="hx-radar-section" style="display:none;">
       <div id="hx-radar-wrap" style="display:none;">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;align-items:start;">
-          <!-- 레이더 차트 -->
-          <section class="glass-panel" style="padding:1.5rem 2rem;">
-            <h3 style="margin:0 0 1rem;font-size:1.1rem;color:var(--text-primary);">육각형 역량 그래프 <span style="font-size:0.8rem;color:var(--text-secondary);">(점을 클릭하면 근거 확인)</span></h3>
-            <div style="height:500px;position:relative;">
-              <canvas id="hx-radar-chart"></canvas>
-            </div>
-          </section>
+        <!-- 레이더 차트 (가로 전체) -->
+        <section class="glass-panel" style="padding:1.5rem 2rem;margin-bottom:1.5rem;">
+          <h3 style="margin:0 0 1rem;font-size:1.1rem;color:var(--text-primary);">육각형 역량 그래프 <span style="font-size:0.8rem;color:var(--text-secondary);">(점을 클릭하면 근거 확인)</span></h3>
+          <div style="height:520px;max-width:560px;margin:0 auto;position:relative;">
+            <canvas id="hx-radar-chart"></canvas>
+          </div>
+        </section>
 
-          <!-- 점수 카드 -->
-          <section class="glass-panel" style="padding:1.5rem 2rem;">
-            <h3 style="margin:0 0 1rem;font-size:1.1rem;color:var(--text-primary);">역량별 점수 <span style="font-size:0.8rem;color:var(--text-secondary);">(카드 클릭 → 근거)</span></h3>
-            <div id="hx-score-cards" style="display:flex;flex-direction:column;gap:0.75rem;"></div>
-          </section>
-        </div>
+        <!-- 점수 카드 (그래프 아래) -->
+        <section class="glass-panel" style="padding:1.5rem 2rem;">
+          <h3 style="margin:0 0 1rem;font-size:1.1rem;color:var(--text-primary);">역량별 점수 <span style="font-size:0.8rem;color:var(--text-secondary);">(카드 클릭 → 근거)</span></h3>
+          <div id="hx-score-cards" style="display:flex;flex-direction:column;gap:0.75rem;"></div>
+        </section>
       </div>
     </div>
   </main>
@@ -4720,7 +4712,7 @@ if (document.readyState === 'loading') {
 
   </script>
   <script src="card.js?v=100" defer></script>
-  <script src="app.js?v=92"></script>
+  <script src="app.js?v=93"></script>
   <script src="grade-rank.js?v=78"></script>
   <script src="univ-score.js"></script>
   <script src="admission_dist.js?v=2"></script>

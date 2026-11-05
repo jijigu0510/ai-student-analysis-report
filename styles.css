@@ -3774,3 +3774,8 @@ header.header { padding: 0.75rem 0 0.5rem !important; text-align: left !importan
 .rpt-saved-title { font-weight: 600; color: var(--text-primary); }
 .rpt-saved-date { font-size: 0.78rem; color: var(--text-secondary); }
 .rpt-saved-actions { display: flex; gap: 0.35rem; flex-shrink: 0; }
+
+/* 우리 학교 모의고사 현황 — 섹션 접기/펼치기 */
+#view-school-mock-status .mock-collapsed > *:not(:first-child) { display: none !important; }
+#view-school-mock-status .mock-caret { margin-left: 0.5rem; font-size: 0.8em; display: inline-block; transition: transform 0.2s; color: var(--text-secondary); }
+#view-school-mock-status .mock-collapsed .mock-caret { transform: rotate(-90deg); }
