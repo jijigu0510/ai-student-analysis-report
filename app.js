@@ -11539,7 +11539,12 @@ ${fd.content}
 `;
 
 
-      const rawInterviewData = (typeof interviewDocs !== 'undefined') ? interviewDocs : "";
+      // 2023~2025 대학별 면접 기출문제(interview_data.js)에서 목표 대학 기출을 추려 참고자료로 사용
+      let rawInterviewData = "";
+      if (typeof window.buildInterviewRef === 'function') {
+        try { rawInterviewData = window.buildInterviewRef(targetUniv, targetCat, targetMajor, 15000); } catch (e) { console.warn('[면접 기출 참고자료]', e); }
+      }
+      if (!rawInterviewData && typeof interviewDocs !== 'undefined') rawInterviewData = interviewDocs;
       const rawRecommendedSubjects = (typeof recommendedSubjectsDocs !== 'undefined') ? recommendedSubjectsDocs : "";
 
       // Build university-specific prompt supplement

@@ -14,7 +14,7 @@
   <script src="https://cdn.jsdelivr.net/npm/jszip/dist/jszip.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="csat_data.js"></script>
-  <script src="interview_data.js"></script>
+  <script src="interview_data.js?v=2"></script>
   <script src="recommended_subjects.js"></script>
   <!-- React & Recharts CDN for Admission Analysis Tab -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -1733,8 +1733,22 @@
       <h2 class="section-title" style="display:flex;align-items:center;gap:0.5rem;">🔷 육각형 인재 확인하기</h2>
       <p style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:1.5rem;">업로드된 교과 세특·창체·행특을 AI로 분석하여 6가지 역량의 육각형 그래프와 키워드 분포를 확인합니다.</p>
 
-      <!-- 학생 선택 -->
-      <div style="display:flex;flex-wrap:wrap;gap:0.75rem;align-items:flex-end;">
+      <!-- 생기부 PDF 업로드 -->
+      <div>
+        <label for="hx-record-pdf" style="color:var(--text-secondary);font-weight:500;display:block;margin-bottom:0.4rem;">📄 생기부 PDF 업로드 <span style="color:var(--clr-h4-blue);font-weight:normal;">(엑셀 없이 PDF 1개로 바로 분석 — 업로드 후 학생 드롭다운에서 "(PDF)" 선택)</span></label>
+        <input type="file" id="hx-record-pdf" accept=".pdf" style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.75rem 1rem;width:100%;">
+        <div id="hx-record-pdf-status" style="margin-top:0.5rem;font-size:0.82rem;color:var(--text-secondary);line-height:1.6;">주민등록번호·주소 등 인적사항은 읽지 않고, 성적·세특·창체·행특만 추출합니다.</div>
+      </div>
+
+      <!-- 생기부 EXCEL 업로드 -->
+      <div style="margin-top:1.25rem;">
+        <label for="hx-record-excel-combined" style="color:var(--text-secondary);font-weight:500;display:block;margin-bottom:0.4rem;">📊 생기부 EXCEL 업로드 <span style="color:var(--clr-h4-blue);font-weight:normal;">인적사항, 교과학습발달상황, 교과/창체/행특 세특 업로드 (여러 개 한 번에 — 분석 데이터와 연동)</span></label>
+        <input type="file" id="hx-record-excel-combined" accept=".xlsx, .xls" multiple style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.75rem 1rem;width:100%;">
+        <div id="hx-record-excel-combined-status" style="margin-top:0.5rem;font-size:0.82rem;color:var(--text-secondary);"></div>
+      </div>
+
+      <!-- 학생 선택 + 분석 -->
+      <div style="display:flex;flex-wrap:wrap;gap:0.75rem;align-items:flex-end;margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid var(--input-border);">
         <div>
           <label style="font-size:0.8rem;color:var(--text-secondary);display:block;margin-bottom:0.3rem;">학년</label>
           <select id="hx-grade-sel" style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.6rem 1rem;min-width:100px;">
@@ -1754,20 +1768,6 @@
           </select>
         </div>
         <button id="hx-analyze-btn" class="btn-primary" style="padding:0.6rem 1.5rem;height:fit-content;">분석하기</button>
-      </div>
-
-      <!-- 생기부 PDF 업로드 -->
-      <div style="margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid var(--input-border);">
-        <label for="hx-record-pdf" style="color:var(--text-secondary);font-weight:500;display:block;margin-bottom:0.4rem;">📄 생기부 PDF 업로드 <span style="color:var(--clr-h4-blue);font-weight:normal;">(엑셀 없이 PDF 1개로 바로 분석 — 업로드 후 학생 드롭다운에서 "(PDF)" 선택)</span></label>
-        <input type="file" id="hx-record-pdf" accept=".pdf" style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.75rem 1rem;width:100%;">
-        <div id="hx-record-pdf-status" style="margin-top:0.5rem;font-size:0.82rem;color:var(--text-secondary);line-height:1.6;">주민등록번호·주소 등 인적사항은 읽지 않고, 성적·세특·창체·행특만 추출합니다.</div>
-      </div>
-
-      <!-- 생기부 EXCEL 업로드 -->
-      <div style="margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid var(--input-border);">
-        <label for="hx-record-excel-combined" style="color:var(--text-secondary);font-weight:500;display:block;margin-bottom:0.4rem;">📊 생기부 EXCEL 업로드 <span style="color:var(--clr-h4-blue);font-weight:normal;">인적사항, 교과학습발달상황, 교과/창체/행특 세특 업로드 (여러 개 한 번에 — 분석 데이터와 연동)</span></label>
-        <input type="file" id="hx-record-excel-combined" accept=".xlsx, .xls" multiple style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:8px;padding:0.75rem 1rem;width:100%;">
-        <div id="hx-record-excel-combined-status" style="margin-top:0.5rem;font-size:0.82rem;color:var(--text-secondary);"></div>
       </div>
     </section>
 
@@ -4651,7 +4651,7 @@ if (document.readyState === 'loading') {
 
   </script>
   <script src="card.js?v=100" defer></script>
-  <script src="app.js?v=82"></script>
+  <script src="app.js?v=83"></script>
   <script src="grade-rank.js?v=78"></script>
   <script src="univ-score.js"></script>
   <script src="admission_dist.js?v=2"></script>
