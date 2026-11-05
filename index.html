@@ -32,7 +32,7 @@
     });
   </script>
 
-  <link rel="stylesheet" href="styles.css?v=10">
+  <link rel="stylesheet" href="styles.css?v=11">
 </head>
 <body>
   <div class="app-background">
@@ -1392,27 +1392,17 @@
       <h3 style="margin: 0 0 0.4rem; color: var(--accent-primary);">📈 전교 통계 — 회차별 추이</h3>
       <p style="margin: 0 0 1rem; font-size: 0.82rem; color: var(--text-secondary);">선택한 <strong>학년(및 연도)</strong>의 전교생 데이터를 회차별로 평균 낸 추이입니다. 탐구는 학생별 <strong>상위 과목</strong> 기준이며, 영어는 절대평가라 백분위·표준점수 그래프에는 포함되지 않습니다. (회차 필터와 무관하게 모든 회차를 표시합니다.)</p>
       <div id="smWholeEmpty" style="display:none; padding:1.5rem; text-align:center; color:var(--text-secondary);">표시할 데이터가 없습니다. 먼저 <strong>종합 성적 분석하기(내신&amp;모의고사)</strong>에서 데이터를 연동해 주세요.</div>
-      <div id="smWholeWrap" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(360px,1fr)); gap:1.5rem;">
-        <div>
-          <h4 style="margin:0 0 0.5rem; font-size:0.95rem; color:var(--text-primary);">백분위</h4>
-          <div style="height:280px; position:relative;"><canvas id="smWholeChart_pct"></canvas></div>
-          <div id="smWholeTable_pct" style="overflow-x:auto; margin-top:0.8rem;"></div>
+      <div id="smWholeWrap">
+        <!-- 세그먼트 컨트롤 -->
+        <div id="smWholeSeg" style="display:inline-flex; border:1px solid var(--input-border); border-radius:8px; overflow:hidden; margin-bottom:1rem;">
+          <button type="button" class="sm-seg" data-metric="pct">백분위</button>
+          <button type="button" class="sm-seg" data-metric="grade">등급</button>
+          <button type="button" class="sm-seg" data-metric="raw">원점수</button>
+          <button type="button" class="sm-seg" data-metric="std">표준점수</button>
         </div>
-        <div>
-          <h4 style="margin:0 0 0.5rem; font-size:0.95rem; color:var(--text-primary);">등급 <span style="font-size:0.78rem; color:var(--text-secondary); font-weight:normal;">(낮을수록 우수 · 축 반전)</span></h4>
-          <div style="height:280px; position:relative;"><canvas id="smWholeChart_grade"></canvas></div>
-          <div id="smWholeTable_grade" style="overflow-x:auto; margin-top:0.8rem;"></div>
-        </div>
-        <div>
-          <h4 style="margin:0 0 0.5rem; font-size:0.95rem; color:var(--text-primary);">원점수</h4>
-          <div style="height:280px; position:relative;"><canvas id="smWholeChart_raw"></canvas></div>
-          <div id="smWholeTable_raw" style="overflow-x:auto; margin-top:0.8rem;"></div>
-        </div>
-        <div>
-          <h4 style="margin:0 0 0.5rem; font-size:0.95rem; color:var(--text-primary);">표준점수</h4>
-          <div style="height:280px; position:relative;"><canvas id="smWholeChart_std"></canvas></div>
-          <div id="smWholeTable_std" style="overflow-x:auto; margin-top:0.8rem;"></div>
-        </div>
+        <div id="smWholeHint" style="font-size:0.78rem; color:var(--text-secondary); margin-bottom:0.6rem;"></div>
+        <div style="height:340px; position:relative;"><canvas id="smWholeChart"></canvas></div>
+        <div id="smWholeTable" style="overflow-x:auto; margin-top:0.9rem;"></div>
       </div>
     </section>
 
@@ -4680,7 +4670,7 @@ if (document.readyState === 'loading') {
 
   </script>
   <script src="card.js?v=100" defer></script>
-  <script src="app.js?v=84"></script>
+  <script src="app.js?v=85"></script>
   <script src="grade-rank.js?v=78"></script>
   <script src="univ-score.js"></script>
   <script src="admission_dist.js?v=2"></script>

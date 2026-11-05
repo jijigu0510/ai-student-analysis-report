@@ -14832,7 +14832,9 @@ ${univPromptSupplement}
   let schoolMockMathChoiceChart = null;
   let schoolMockSocialChoiceChart = null;
   let schoolMockScienceChoiceChart = null;
-  let schoolMockWholeCharts = {};
+  let schoolMockWholeChart = null;
+  let _smActiveMetric = 'pct';
+  let _smWholeComputed = null;
   let _currentStudentScores = [];
   let _currentDistInterval = 10;
   let _csatMinData = {};
@@ -15780,6 +15782,11 @@ ${univPromptSupplement}
 
     const pdfBtn = document.getElementById('schoolMockPdfBtn');
     if (pdfBtn) pdfBtn.addEventListener('click', downloadMockStatusPDF);
+
+    // 전교 통계 세그먼트(지표 전환)
+    document.querySelectorAll('#smWholeSeg .sm-seg').forEach(btn => {
+      btn.addEventListener('click', () => _smShowMetric(btn.dataset.metric));
+    });
   }
 
   function updateSchoolMockDropdowns() {
@@ -16576,12 +16583,12 @@ ${univPromptSupplement}
     if (points.length === 0) {
       if (emptyEl) emptyEl.style.display = 'block';
       wrap.style.display = 'none';
-      Object.values(schoolMockWholeCharts).forEach(c => { try { c.destroy(); } catch (e) {} });
-      schoolMockWholeCharts = {};
+      if (schoolMockWholeChart) { try { schoolMockWholeChart.destroy(); } catch (e) {} schoolMockWholeChart = null; }
+      _smWholeComputed = null;
       return;
     }
     if (emptyEl) emptyEl.style.display = 'none';
-    wrap.style.display = 'grid';
+    wrap.style.display = 'block';
 
     const multiYear = new Set(points.map(p => p.year)).size > 1;
     const labels = points.map(p => multiYear ? `${p.year} ${p.round}` : p.round);
@@ -16593,13 +16600,14 @@ ${univPromptSupplement}
       { key: '탐구(상위)', color: '#f39c12', get: m => _smPickTamgu(m) },
     ];
     const metrics = [
-      { id: 'pct', excludeEng: true, dec: 1 },
-      { id: 'grade', excludeEng: false, dec: 2 },
-      { id: 'raw', excludeEng: false, dec: 1 },
-      { id: 'std', excludeEng: true, dec: 1 },
+      { id: 'pct', excludeEng: true, dec: 1, hint: '영어·한국사는 절대평가라 백분위에 포함되지 않습니다.' },
+      { id: 'grade', excludeEng: false, dec: 2, hint: '등급은 낮을수록 우수 — 보기 편하도록 세로축을 반전했습니다.' },
+      { id: 'raw', excludeEng: false, dec: 1, hint: '원점수는 과목마다 만점이 달라 전체 평균은 참고용입니다.' },
+      { id: 'std', excludeEng: true, dec: 1, hint: '영어·한국사는 절대평가라 표준점수에 포함되지 않습니다.' },
     ];
     const round2 = (v, dec) => (v == null ? null : Number(v.toFixed(dec)));
 
+    const computed = {};
     metrics.forEach(met => {
       const activeSubj = subjDefs.filter(sd => !(met.excludeEng && sd.key === '영어'));
 
@@ -16637,22 +16645,42 @@ ${univPromptSupplement}
         borderDash: [6, 4], borderWidth: 3, tension: 0.25, spanGaps: true, pointRadius: 3,
       });
 
-      _renderWholeChart(met.id, labels, datasets, met.id === 'grade');
-      _renderWholeTable(met.id, labels, datasets);
+      computed[met.id] = { labels, datasets, reverse: met.id === 'grade', hint: met.hint };
     });
+
+    _smWholeComputed = computed;
+    _smShowMetric(_smActiveMetric);
   }
 
-  function _renderWholeChart(metricId, labels, datasets, reverseY) {
-    const canvas = document.getElementById('smWholeChart_' + metricId);
+  // 세그먼트에서 선택한 지표 하나만 단일 차트+표로 렌더
+  function _smShowMetric(metricId) {
+    if (!_smWholeComputed || !_smWholeComputed[metricId]) return;
+    _smActiveMetric = metricId;
+
+    // 세그먼트 버튼 active 표시
+    document.querySelectorAll('#smWholeSeg .sm-seg').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.metric === metricId);
+    });
+
+    const { labels, datasets, reverse, hint } = _smWholeComputed[metricId];
+    const hintEl = document.getElementById('smWholeHint');
+    if (hintEl) hintEl.textContent = hint || '';
+
+    _renderWholeChart(labels, datasets, reverse);
+    _renderWholeTable(labels, datasets);
+  }
+
+  function _renderWholeChart(labels, datasets, reverseY) {
+    const canvas = document.getElementById('smWholeChart');
     if (!canvas) return;
-    if (schoolMockWholeCharts[metricId]) { try { schoolMockWholeCharts[metricId].destroy(); } catch (e) {} }
+    if (schoolMockWholeChart) { try { schoolMockWholeChart.destroy(); } catch (e) {} }
 
     const isLight = document.body.classList.contains('light-mode');
     const tickClr = isLight ? '#444' : '#ccc';
     const gridClr = isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.06)';
     const ttBg = isLight ? 'rgba(30,30,50,0.92)' : 'rgba(15,23,42,0.9)';
 
-    schoolMockWholeCharts[metricId] = new Chart(canvas.getContext('2d'), {
+    schoolMockWholeChart = new Chart(canvas.getContext('2d'), {
       type: 'line',
       data: { labels, datasets },
       options: {
@@ -16678,8 +16706,8 @@ ${univPromptSupplement}
     });
   }
 
-  function _renderWholeTable(metricId, labels, datasets) {
-    const cont = document.getElementById('smWholeTable_' + metricId);
+  function _renderWholeTable(labels, datasets) {
+    const cont = document.getElementById('smWholeTable');
     if (!cont) return;
     const th = 'padding:6px 8px; border:1px solid var(--panel-border); text-align:center; font-size:0.78rem; white-space:nowrap;';
     const td = 'padding:6px 8px; border:1px solid var(--panel-border); text-align:center; font-size:0.78rem; white-space:nowrap;';

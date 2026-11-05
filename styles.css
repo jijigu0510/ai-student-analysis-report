@@ -3698,3 +3698,23 @@ header.header { padding: 0.75rem 0 0.5rem !important; text-align: left !importan
 }
 .course-cat-count { font-size: 0.72rem; font-weight: 500; color: var(--text-secondary); }
 
+
+/* 전교 통계 세그먼트 컨트롤 */
+#smWholeSeg .sm-seg {
+  appearance: none;
+  border: none;
+  border-right: 1px solid var(--input-border);
+  background: var(--input-bg);
+  color: var(--text-secondary);
+  padding: 0.5rem 1.1rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+#smWholeSeg .sm-seg:last-child { border-right: none; }
+#smWholeSeg .sm-seg:hover { background: var(--clr-h4-blue); color: #fff; }
+#smWholeSeg .sm-seg.active {
+  background: var(--accent-primary);
+  color: #fff;
+}
