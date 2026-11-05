@@ -149,7 +149,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (pfEmptyEl) pfEmptyEl.classList.add("hidden");
       if (pfReportEl) pfReportEl.classList.add("hidden");
-      if (pfLoadEl) pfLoadEl.classList.remove("hidden");
+      if (pfLoadEl) pfLoadEl.classList.add("hidden");
+      ReportModal.open('학종 합불 원인 분석 보고서 — ' + (s.name || '') + ' / ' + (s.univ || ''), null);
+      ReportModal.setLoading('AI가 합불 원인을 심층 분석 중입니다…');
 
       const promptData = {
         name: s.name,
@@ -168,28 +170,23 @@ document.addEventListener("DOMContentLoaded", () => {
       try {
         const report = await generateAIReportPF(promptData, apiKey);
 
-        if (pfReportEl) {
-          // 대학별 서류평가 기준 패널 삽입
-          const pfCriteriaEl = document.createElement("div");
-          pfCriteriaEl.id = "pfUniCriteriaPanel";
-          pfReportEl.innerHTML = "";
-          pfReportEl.appendChild(pfCriteriaEl);
-          renderUniCriteria(s.univ, pfCriteriaEl);
+        // 대학별 서류평가 기준 패널
+        const pfCriteriaEl = document.createElement("div");
+        pfCriteriaEl.id = "pfUniCriteriaPanel";
+        pfCriteriaEl.style.marginBottom = "1rem";
+        renderUniCriteria(s.univ, pfCriteriaEl);
 
-          // 리포트 본문
-          const pfReportContent = document.createElement("div");
-          pfReportContent.className = "markdown-body";
-          pfReportContent.innerHTML = marked.parse(report);
-          pfReportEl.appendChild(pfReportContent);
-          pfReportEl.classList.remove("hidden");
-        }
-        document.getElementById("pf-pdfAction")?.classList.remove("hidden");
+        // 보고서를 '큰 섹션 카드 + 클릭 상세' 형태로 모달에 표시
+        const pfWrap = document.createElement("div");
+        pfWrap.appendChild(pfCriteriaEl);
+        const pfSections = buildReportSectionsHTML(report, '');
+        if (typeof pfSections === 'string') pfWrap.insertAdjacentHTML('beforeend', pfSections);
+        else pfWrap.appendChild(pfSections);
+        ReportModal.setNode(pfWrap);
 
-        // Setup PF PDF download
-        const pfPdfBtn = document.getElementById("pf-pdfDownloadBtn");
-        if (pfPdfBtn) {
-          pfPdfBtn.onclick = () => {
-            const pfContent = `
+        // 인쇄·PDF: 기존과 동일한 형식
+        const pfPrint = () => {
+          const pfContent = `
                 <div class="print-only">
                     <h2 class='print-header' style='color:#000; text-align:center; margin-bottom:2rem; font-size:2.2rem; font-weight:800;'>수시 합불합 원인 심층 분석 리포트</h2>
                     <p style='text-align:right; color:#666; margin-bottom:1.5rem; font-size:0.9rem;'>분석 일시: ${new Date().toLocaleString('ko-KR')}</p>
@@ -219,20 +216,17 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
                 </div>
              `;
-            printWithIframe(pfContent);
-          };
-        }
+          printWithIframe(pfContent);
+        };
+        ReportModal.setPrint(pfPrint);
       } catch (err) {
         console.error(err);
-        if (pfReportEl) {
-          pfReportEl.innerHTML = `
-             <div style='color:var(--error-color);padding:20px;background:rgba(255, 71, 87, 0.05);border-radius:12px;border:1px solid rgba(255, 71, 87, 0.2);'>
-               <h3 style="margin-top:0;">⚠️ 분석 실패</h3>
-               <div style="white-space: pre-wrap; background:rgba(0,0,0,0.2); padding:15px; border-radius:8px; font-family:monospace; font-size:0.9rem; margin-bottom:15px; border:1px solid rgba(255,255,255,0.1); line-height:1.5;">${err.message}</div>
-             </div>
-           `;
-          pfReportEl.classList.remove("hidden");
-        }
+        ReportModal.setHTML(`
+           <div style='color:var(--error-color);padding:20px;background:rgba(255, 71, 87, 0.05);border-radius:12px;border:1px solid rgba(255, 71, 87, 0.2);'>
+             <h3 style="margin-top:0;">⚠️ 분석 실패</h3>
+             <div style="white-space: pre-wrap; background:rgba(0,0,0,0.2); padding:15px; border-radius:8px; font-family:monospace; font-size:0.9rem; margin-bottom:15px; border:1px solid rgba(255,255,255,0.1); line-height:1.5;">${err.message}</div>
+           </div>
+         `);
       } finally {
         if (pfLoadEl) pfLoadEl.classList.add("hidden");
         pfBtn.disabled = false;
@@ -248,6 +242,83 @@ document.addEventListener("DOMContentLoaded", () => {
       if (e.target === globalModal) globalModal.classList.add("hidden");
     };
   }
+
+  // ─── 분석 보고서 모달 (모의서류평가 / 학종 합불 공용) ───────────────────
+  const ReportModal = (function () {
+    let printHandler = null;
+    const q = id => document.getElementById(id);
+    function setPrint(fn) {
+      printHandler = fn || null;
+      const b = q('reportModalPrint');
+      if (b) b.style.display = printHandler ? 'inline-block' : 'none';
+    }
+    function open(title, onPrint) {
+      if (title) { q('reportModalTitle').textContent = title; q('reportModalMiniTitle').textContent = title; }
+      setPrint(onPrint);
+      q('reportModalMini').style.display = 'none';
+      q('reportModal').style.display = 'flex';
+    }
+    function setLoading(msg) {
+      q('reportModalBody').innerHTML = `<div style="text-align:center;padding:3rem 1rem;color:var(--text-secondary);"><span class="spinner" style="display:inline-block;width:34px;height:34px;border-width:3px;"></span><p style="margin-top:1rem;">${msg || 'AI가 보고서를 작성 중입니다…'}</p></div>`;
+    }
+    function setHTML(html) { q('reportModalBody').innerHTML = html; }
+    function setNode(node) { const b = q('reportModalBody'); b.innerHTML = ''; b.appendChild(node); }
+    function close() { q('reportModal').style.display = 'none'; q('reportModalMini').style.display = 'none'; }
+    function minimize() { q('reportModal').style.display = 'none'; q('reportModalMini').style.display = 'flex'; }
+    function restore() { q('reportModalMini').style.display = 'none'; q('reportModal').style.display = 'flex'; }
+
+    q('reportModalClose')?.addEventListener('click', close);
+    q('reportModalMin')?.addEventListener('click', minimize);
+    q('reportModalRestore')?.addEventListener('click', restore);
+    q('reportModalMiniClose')?.addEventListener('click', close);
+    q('reportModalPrint')?.addEventListener('click', () => { if (printHandler) printHandler(); });
+    q('reportModal')?.addEventListener('click', e => { if (e.target === q('reportModal')) minimize(); });
+
+    return { open, setPrint, setLoading, setHTML, setNode, close, minimize, restore };
+  })();
+  window.ReportModal = ReportModal;
+
+  // 마크다운 보고서를 '큰 섹션 카드 + 클릭 시 상세' 형태로 변환
+  function buildReportSectionsHTML(markdownText, introHTML) {
+    const text = String(markdownText || '').replace(/\r/g, '');
+    // ## 또는 # 제목 기준으로 분할
+    const parts = [];
+    const re = /^#{1,3}\s+(.+)$/gm;
+    let m, last = null, lastIdx = 0;
+    const marks = [];
+    while ((m = re.exec(text))) marks.push({ title: m[1].trim(), start: m.index, bodyStart: m.index + m[0].length });
+    if (marks.length === 0) {
+      return `<div class="markdown-body">${marked.parse(text)}</div>`;
+    }
+    const preamble = text.slice(0, marks[0].start).trim();
+    for (let i = 0; i < marks.length; i++) {
+      const body = text.slice(marks[i].bodyStart, i + 1 < marks.length ? marks[i + 1].start : text.length).trim();
+      parts.push({ title: marks[i].title, body });
+    }
+    const esc = s => String(s).replace(/[#*_`>\-]/g, '').replace(/\s+/g, ' ').trim();
+    const cards = parts.map((p, i) => {
+      const preview = esc(p.body).slice(0, 90);
+      return `<div class="rpt-sec" data-idx="${i}">
+        <div class="rpt-sec-head">
+          <div class="rpt-sec-titles">
+            <div class="rpt-sec-title">${marked.parseInline ? marked.parseInline(p.title) : p.title}</div>
+            <div class="rpt-sec-preview">${preview}${preview.length >= 90 ? '…' : ''}</div>
+          </div>
+          <span class="rpt-sec-caret">▶</span>
+        </div>
+        <div class="rpt-sec-body markdown-body">${marked.parse(p.body)}</div>
+      </div>`;
+    }).join('');
+    const wrap = document.createElement('div');
+    wrap.innerHTML = `${introHTML || ''}${preamble ? `<div class="markdown-body" style="margin-bottom:1rem;">${marked.parse(preamble)}</div>` : ''}
+      <p class="rpt-hint">아래 각 항목을 누르면 상세 설명이 펼쳐집니다.</p>
+      <div class="rpt-sections">${cards}</div>`;
+    wrap.querySelectorAll('.rpt-sec-head').forEach(h => {
+      h.addEventListener('click', () => h.parentElement.classList.toggle('open'));
+    });
+    return wrap;
+  }
+  window.buildReportSectionsHTML = buildReportSectionsHTML;
 
   // --- Pass/Fail 상세 모달 오픈 함수 (전역) ---
   window.openPfDetailModal = function (title, inputId) {
@@ -3397,6 +3468,62 @@ document.addEventListener("DOMContentLoaded", () => {
   window.loadPfDataFromGAS = loadPfDataFromGAS;
   // ────────────────────────────────────────────────────────────────────────────
 
+  // ─── 내장 합불 분석 보고서 (2024 / 2025 / 통합) ───────────────────────────
+  let _pfReportState = null;
+  (function setupPassfailReports() {
+    const seg = document.getElementById('pfReportSeg');
+    const body = document.getElementById('pfReportBody');
+    const printBtn = document.getElementById('pfReportPrintBtn');
+    if (!seg || !body || typeof window.PASSFAIL_REPORTS === 'undefined') return;
+
+    function showReport(key) {
+      const html = window.PASSFAIL_REPORTS[key];
+      if (!html) return;
+      body.innerHTML = html;
+      _pfReportState = { html, key };
+      seg.querySelectorAll('.sm-seg').forEach(b => b.classList.toggle('active', b.dataset.report === key));
+      if (printBtn) printBtn.style.display = 'inline-block';
+    }
+
+    seg.querySelectorAll('.sm-seg').forEach(btn => {
+      btn.addEventListener('click', () => showReport(btn.dataset.report));
+    });
+
+    if (printBtn) {
+      printBtn.addEventListener('click', () => {
+        if (!_pfReportState) return;
+        const w = window.open('', '_blank', 'width=900,height=900');
+        if (!w) { alert('팝업이 차단되었습니다. 팝업 허용 후 다시 시도해 주세요.'); return; }
+        w.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>합불 분석 보고서</title><style>
+          *,*::before,*::after{box-sizing:border-box;}
+          body{font-family:'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif;color:#111;padding:26px;background:#fff;font-size:12px;line-height:1.7;}
+          .pf-report h1{font-size:20px;text-align:center;margin:0 0 4px;}
+          .pf-report .pf-sub{text-align:center;color:#555;margin:0 0 18px;font-size:11px;}
+          .pf-report h2{font-size:15px;margin:20px 0 8px;border-left:4px solid #2563eb;padding-left:8px;color:#1e2a6e;}
+          .pf-report h3{font-size:13px;margin:12px 0 5px;color:#333;}
+          .pf-report table{width:100%;border-collapse:collapse;margin:8px 0;font-size:10.5px;}
+          .pf-report th,.pf-report td{border:1px solid #bbb;padding:5px 6px;text-align:center;}
+          .pf-report th{background:#eef0ff;}
+          .pf-report ul{margin:6px 0 10px 18px;} .pf-report li{margin:4px 0;}
+          .pf-report .pf-note{font-size:9.5px;color:#777;margin:4px 0 10px;}
+          .pf-report .pf-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:10px 0 4px;}
+          .pf-report .pf-card{border:1px solid #ccc;border-radius:8px;padding:10px;text-align:center;}
+          .pf-report .pf-card-n{font-size:17px;font-weight:800;color:#2563eb;}
+          .pf-report .pf-card-l{font-size:9.5px;color:#666;margin-top:3px;}
+          .pf-report strong{color:#1e2a6e;}
+          @media print{body{padding:12px;}}
+        </style></head><body>${_pfReportState.html}
+        <p style="text-align:right;color:#999;font-size:9px;margin-top:14px;">출력일: ${new Date().toLocaleDateString('ko-KR')}</p>
+        </body></html>`);
+        w.document.close();
+        setTimeout(() => { try { w.focus(); w.print(); } catch (e) {} }, 500);
+      });
+    }
+
+    // 기본으로 통합 보고서 표시
+    showReport('2024_2025');
+  })();
+
   if (pfResultsUpload) {
     pfResultsUpload.addEventListener("change", (e) => {
       const file = e.target.files[0];
@@ -5631,8 +5758,9 @@ document.addEventListener("DOMContentLoaded", () => {
     analyzeBtn.innerHTML = "<span class='spinner' style='width:20px;height:20px;border-width:2px;margin:0;'></span> \uc2ec\uce35 \ubd84\uc11d \uc911...";
     emptyState.classList.add("hidden");
     reportViewer.classList.add("hidden");
-    loadingState.classList.remove("hidden");
-    if (window.innerWidth <= 992) document.querySelector(".result-section").scrollIntoView({ behavior: "smooth" });
+    loadingState.classList.add("hidden");
+    ReportModal.open('모의서류평가 분석 보고서', null);
+    ReportModal.setLoading('AI가 학생 생기부를 심층 분석 중입니다…');
     try {
       const rawResponse = await generateAIReport(formData);
       console.log("Raw AI Response:", rawResponse); // \ub514\ubc84\uae45\uc6a9 \ub85c\uadf8 \ucd94\uac00
@@ -5701,7 +5829,11 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("analysisModal").onclick = (ev) => { if (ev.target === document.getElementById("analysisModal")) document.getElementById("analysisModal").classList.add("hidden"); };
       loadingState.classList.add("hidden");
       reportViewer.classList.add("hidden");
-      document.getElementById("dashboardViewer").classList.remove("hidden");
+      // 대시보드(종합점수·역량 카드·상세 보기)를 모달에 표시
+      const dv = document.getElementById("dashboardViewer");
+      dv.classList.remove("hidden");
+      ReportModal.setNode(dv);
+      ReportModal.setPrint(window.downloadPDF);
     } catch (error) {
       console.error(error);
       const errBox = document.createElement("div");
@@ -5724,9 +5856,8 @@ document.addEventListener("DOMContentLoaded", () => {
       `;
 
       document.getElementById("dashboardViewer").classList.add("hidden");
-      reportViewer.innerHTML = "";
-      reportViewer.appendChild(errBox);
-      reportViewer.classList.remove("hidden");
+      ReportModal.setPrint(null);
+      ReportModal.setHTML(errBox.outerHTML);
       loadingState.classList.add("hidden");
     } finally {
       analyzeBtn.disabled = false;
@@ -14835,6 +14966,7 @@ ${univPromptSupplement}
   let schoolMockWholeChart = null;
   let _smActiveMetric = 'pct';
   let _smWholeComputed = null;
+  let _mockReportState = null;
   let _currentStudentScores = [];
   let _currentDistInterval = 10;
   let _csatMinData = {};
@@ -15787,6 +15919,12 @@ ${univPromptSupplement}
     document.querySelectorAll('#smWholeSeg .sm-seg').forEach(btn => {
       btn.addEventListener('click', () => _smShowMetric(btn.dataset.metric));
     });
+
+    // AI 분석 보고서
+    const reportBtn = document.getElementById('schoolMockReportBtn');
+    if (reportBtn) reportBtn.addEventListener('click', generateMockReport);
+    const reportPrintBtn = document.getElementById('schoolMockReportPrintBtn');
+    if (reportPrintBtn) reportPrintBtn.addEventListener('click', printMockReport);
   }
 
   function updateSchoolMockDropdowns() {
@@ -16358,6 +16496,193 @@ ${univPromptSupplement}
   }
 
   // ─── 우리학교 모의고사 성적 현황 PDF 다운로드 ────────────────────
+  // ─── AI 분석 보고서 (연도·회차 선택 / 전체) ──────────────────────────
+  function buildMockReportSummary(gradeVal, yearVal, roundVal) {
+    const rows = compareGlobalData.mock.filter(m =>
+      (gradeVal === 'all' || String(m.grade) === gradeVal) &&
+      (yearVal === 'all' || String(m.year) === yearVal) &&
+      (roundVal === 'all' || String(m.round) === roundVal));
+    if (!rows.length) return null;
+
+    const monthOf = r => { const n = parseInt(String(r).replace(/[^0-9]/g, '')); return isNaN(n) ? 99 : n; };
+    const roundKeys = [...new Set(rows.map(m => m.year + '||' + m.round))]
+      .map(k => { const [y, r] = k.split('||'); return { year: +y, round: r }; })
+      .sort((a, b) => a.year - b.year || monthOf(a.round) - monthOf(b.round));
+
+    const subjects = [
+      { key: '국어', label: '국어' }, { key: '수학', label: '수학' }, { key: '영어', label: '영어' },
+      { key: '한국사', label: '한국사' }, { key: '탐구(상위)', label: '탐구(상위)' },
+    ];
+    const getD = (m, key) => key === '탐구(상위)' ? _smPickTamgu(m) : m[key];
+    const avg = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
+    const fmt = v => v == null ? '-' : (Math.round(v * 10) / 10);
+
+    const lines = [];
+    lines.push(`[응시 인원] 총 ${rows.length}명 (회차 ${roundKeys.length}개: ${roundKeys.map(k => k.year + ' ' + k.round).join(', ')})`);
+
+    lines.push('\n[과목별 평균]');
+    subjects.forEach(s => {
+      const raws = [], stds = [], pcts = [], grs = [];
+      rows.forEach(m => {
+        const d = getD(m, s.key);
+        let v;
+        v = _smMetricVal(d, 'raw'); if (!isNaN(v)) raws.push(v);
+        v = _smMetricVal(d, 'std'); if (!isNaN(v)) stds.push(v);
+        v = _smMetricVal(d, 'pct'); if (!isNaN(v)) pcts.push(v);
+        v = _smMetricVal(d, 'grade'); if (!isNaN(v)) grs.push(v);
+      });
+      lines.push(`- ${s.label}: 원점수 ${fmt(avg(raws))}, 표준점수 ${fmt(avg(stds))}, 백분위 ${fmt(avg(pcts))}, 평균등급 ${fmt(avg(grs))}`);
+    });
+
+    lines.push('\n[과목별 등급 분포 (1~9등급 인원)]');
+    subjects.forEach(s => {
+      const dist = {};
+      rows.forEach(m => { const g = _smMetricVal(getD(m, s.key), 'grade'); if (!isNaN(g)) { const gg = Math.round(g); dist[gg] = (dist[gg] || 0) + 1; } });
+      lines.push(`- ${s.label}: ` + [1, 2, 3, 4, 5, 6, 7, 8, 9].map(g => `${g}등급 ${dist[g] || 0}`).join(', '));
+    });
+
+    lines.push('\n[주요 선택과목 분포]');
+    [['국어', '국어'], ['수학', '수학'], ['탐구영역1', '탐구1'], ['탐구영역2', '탐구2']].forEach(([dom, label]) => {
+      const cnt = {};
+      rows.forEach(m => { const nm = ((m[dom] && m[dom].subjectName) || '').trim(); if (nm) cnt[nm] = (cnt[nm] || 0) + 1; });
+      const top = Object.entries(cnt).sort((a, b) => b[1] - a[1]);
+      if (top.length) lines.push(`- ${label}: ` + top.map(([n, c]) => `${n} ${c}명`).join(', '));
+    });
+
+    if (roundKeys.length > 1) {
+      lines.push('\n[회차별 추이 — 평균]');
+      roundKeys.forEach(rk => {
+        const sub = rows.filter(m => m.year === rk.year && m.round === rk.round);
+        const kor = avg(sub.map(m => _smMetricVal(m['국어'], 'pct')).filter(v => !isNaN(v)));
+        const mat = avg(sub.map(m => _smMetricVal(m['수학'], 'pct')).filter(v => !isNaN(v)));
+        const tam = avg(sub.map(m => _smMetricVal(_smPickTamgu(m), 'pct')).filter(v => !isNaN(v)));
+        const eng = avg(sub.map(m => _smMetricVal(m['영어'], 'grade')).filter(v => !isNaN(v)));
+        lines.push(`- ${rk.year} ${rk.round} (${sub.length}명): 국어 백분위 ${fmt(kor)}, 수학 백분위 ${fmt(mat)}, 탐구(상위) 백분위 ${fmt(tam)}, 영어 평균등급 ${fmt(eng)}`);
+      });
+    }
+
+    const scored = rows.map(m => {
+      const vals = [_smMetricVal(m['국어'], 'raw'), _smMetricVal(m['수학'], 'raw'), _smMetricVal(m['영어'], 'raw'), _smMetricVal(_smPickTamgu(m), 'raw')].filter(v => !isNaN(v));
+      return { m, sum: vals.reduce((a, b) => a + b, 0) };
+    }).sort((a, b) => b.sum - a.sum);
+    lines.push('\n[원점수 합(국·수·영·탐상위) 상위 5]');
+    scored.slice(0, 5).forEach((e, i) => {
+      lines.push(`- ${i + 1}위 ${e.m.classNum}반 ${e.m.name} (${e.m.year} ${e.m.round}): 합 ${Math.round(e.sum)}`);
+    });
+
+    return { text: lines.join('\n'), count: rows.length, rounds: roundKeys.length };
+  }
+
+  async function _callGeminiMockReport(apiKey, prompt) {
+    const body = { contents: [{ role: 'user', parts: [{ text: prompt }] }], generationConfig: { temperature: 0.5, maxOutputTokens: 8192 } };
+    const models = ['gemini-3.1-pro', 'gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.5-flash-lite'];
+    let lastErr;
+    for (const model of models) {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      try {
+        const ctrl = new AbortController();
+        const t = setTimeout(() => ctrl.abort(), 60000);
+        const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: ctrl.signal });
+        clearTimeout(t);
+        if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(`(${model}) ` + (e?.error?.message || res.statusText)); }
+        const data = await res.json();
+        const cand = data?.candidates?.[0];
+        const text = (cand?.content?.parts || []).map(p => p.text || '').join('');
+        if (!text.trim()) { if (cand?.finishReason === 'MAX_TOKENS') throw new Error(`응답이 토큰 제한으로 잘렸습니다 (${model})`); throw new Error('빈 응답'); }
+        return text.trim();
+      } catch (err) { lastErr = err; console.warn('[모의고사 보고서]', model, err.message); }
+    }
+    throw lastErr || new Error('모든 모델 호출에 실패했습니다.');
+  }
+
+  async function generateMockReport() {
+    if (!compareGlobalData || !compareGlobalData.mock) { alert('먼저 종합 성적 분석에서 데이터를 연동해 주세요.'); return; }
+    const apiKey = (document.getElementById('uni-api-key')?.value || document.getElementById('api-key')?.value || '').trim();
+    if (!apiKey) { alert('상단 API Key를 먼저 입력해 주세요.'); return; }
+
+    const gradeEl = document.getElementById('schoolMockGrade');
+    const yearEl = document.getElementById('schoolMockYear');
+    const roundEl = document.getElementById('schoolMockRound');
+    const gradeVal = gradeEl.value, yearVal = yearEl.value, roundVal = roundEl.value;
+    const gradeText = gradeEl.options[gradeEl.selectedIndex]?.text || '전체 학년';
+    const yearText = yearEl.options[yearEl.selectedIndex]?.text || '전체 연도';
+    const roundText = roundEl.options[roundEl.selectedIndex]?.text || '전체 회차';
+    const scopeLabel = `${gradeText} / ${yearText} / ${roundText}`;
+
+    const section = document.getElementById('schoolMockReportSection');
+    const statusEl = document.getElementById('schoolMockReportStatus');
+    const bodyEl = document.getElementById('schoolMockReportBody');
+    const printBtn = document.getElementById('schoolMockReportPrintBtn');
+    const scopeEl = document.getElementById('schoolMockReportScope');
+
+    section.style.display = 'block';
+    if (scopeEl) scopeEl.textContent = `(${scopeLabel})`;
+    if (printBtn) printBtn.style.display = 'none';
+    bodyEl.innerHTML = '';
+
+    const summary = buildMockReportSummary(gradeVal, yearVal, roundVal);
+    if (!summary) { statusEl.textContent = '해당 조건의 데이터가 없습니다.'; return; }
+
+    statusEl.innerHTML = '<span class="spinner" style="width:16px;height:16px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:6px;"></span> AI가 보고서를 작성 중입니다… (최대 1분)';
+    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    const sectionList = summary.rounds > 1
+      ? '## 1. 총평\n## 2. 과목별 분석 (국어·수학·영어·탐구)\n## 3. 선택과목 및 응시 경향\n## 4. 성적 분포와 상위권 현황\n## 5. 회차별 추이 분석\n## 6. 지도 제언'
+      : '## 1. 총평\n## 2. 과목별 분석 (국어·수학·영어·탐구)\n## 3. 선택과목 및 응시 경향\n## 4. 성적 분포와 상위권 현황\n## 5. 지도 제언';
+
+    const prompt = `당신은 대한민국 고등학교 진학지도 전문가이자 교육 데이터 분석가입니다.
+아래는 '${scopeLabel}' 범위의 우리 학교 모의고사 성적 집계 데이터입니다. 이 데이터를 근거로 학교(학년) 차원의 분석 보고서를 한국어 마크다운으로 작성하세요.
+
+[집계 데이터]
+${summary.text}
+
+[작성 지침]
+- 반드시 위에 주어진 수치에만 근거하여 구체적으로 서술하고, 데이터에 없는 수치를 임의로 지어내지 마세요.
+- 아래 섹션 구성을 그대로 따르세요:
+${sectionList}
+- 수치 비교가 필요한 곳은 마크다운 표를 활용하세요.
+- 코드블록(\`\`\`)은 쓰지 마세요.
+- 각 과목의 강·약점, 학생들의 과목 선택 경향, 상위권 분포 특징을 짚고, 교사·학교가 실천할 수 있는 구체적 지도 제언으로 마무리하세요.
+- 영어·한국사는 절대평가라 백분위·표준점수가 없다는 점을 감안해 등급 중심으로 해석하세요.`;
+
+    try {
+      const text = await _callGeminiMockReport(apiKey, prompt);
+      _mockReportState = { html: marked.parse(text), scopeLabel };
+      bodyEl.innerHTML = _mockReportState.html;
+      statusEl.textContent = `✓ 생성 완료 — ${scopeLabel} · 응시 ${summary.count}명 · 회차 ${summary.rounds}개`;
+      if (printBtn) printBtn.style.display = 'inline-block';
+    } catch (err) {
+      console.error('[모의고사 보고서]', err);
+      statusEl.innerHTML = `<span style="color:#ef4444;">생성 실패: ${err.message}</span>`;
+    }
+  }
+
+  function printMockReport() {
+    if (!_mockReportState) return;
+    const w = window.open('', '_blank', 'width=900,height=900');
+    if (!w) { alert('팝업이 차단되었습니다. 팝업 허용 후 다시 시도해 주세요.'); return; }
+    w.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>우리학교 모의고사 AI 분석 보고서</title><style>
+      *,*::before,*::after{box-sizing:border-box;}
+      body{font-family:'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif;color:#111;padding:28px;line-height:1.75;font-size:12px;background:#fff;}
+      h1{font-size:20px;text-align:center;margin:0 0 4px;}
+      .subtitle{text-align:center;color:#555;margin:0 0 20px;font-size:11px;}
+      h2{font-size:15px;margin:20px 0 8px;border-left:4px solid #2563eb;padding-left:8px;color:#1e2a6e;}
+      h3{font-size:13px;margin:14px 0 6px;color:#333;}
+      table{width:100%;border-collapse:collapse;margin:8px 0;font-size:11px;}
+      th,td{border:1px solid #bbb;padding:5px 7px;text-align:center;}
+      th{background:#eef0ff;}
+      ul,ol{margin:6px 0 10px 18px;} li{margin:3px 0;}
+      strong{color:#1e2a6e;}
+      @media print{body{padding:12px;}}
+    </style></head><body>
+      <h1>🏫 우리학교 모의고사 AI 분석 보고서</h1>
+      <p class="subtitle">${_mockReportState.scopeLabel} &nbsp;|&nbsp; 출력일: ${new Date().toLocaleDateString('ko-KR')}</p>
+      ${_mockReportState.html}
+    </body></html>`);
+    w.document.close();
+    setTimeout(() => { try { w.focus(); w.print(); } catch (e) {} }, 500);
+  }
+
   function downloadMockStatusPDF() {
     if (!_currentStudentScores.length) {
       alert('먼저 데이터를 불러오세요.');
