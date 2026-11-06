@@ -1695,6 +1695,15 @@ document.addEventListener("DOMContentLoaded", () => {
       if (/^사회탐구/.test(nosp)) lastAnswerSubj = '사회탐구';
       else if (/^과학탐구/.test(nosp)) lastAnswerSubj = '과학탐구';
 
+      // 과목 라벨 줄이 바로 위 '정답' 숫자 줄과 병합되는 좁은 레이아웃(예: 10월) 대응:
+      // 왼쪽 라벨 열(x<70) 셀들을 이어붙여 영어/한국사이면 병합돼도 문맥을 잡는다.
+      // ("영어"가 "영"+"어" 2셀로 분리되는 경우도 커버)
+      {
+        const leftLabel = line.cells.filter(c => c.x < 70).map(c => c.str).join('').replace(/\s/g, '');
+        if (leftLabel === '영어') lastAnswerSubj = '영어';
+        else if (leftLabel === '한국사') lastAnswerSubj = '한국사';
+      }
+
       const oxCells = line.cells.filter(c => c.str === 'O' || c.str === 'X');
       const aeCells = line.cells.filter(c => /^[A-E]$/.test(c.str));
       const oxCount = oxCells.length, aeCount = aeCells.length;
