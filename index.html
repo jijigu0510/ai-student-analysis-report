@@ -1011,12 +1011,8 @@
             </select>
           </div>
           <div style="display:flex;flex-direction:column;gap:0.5rem;">
-            <div id="gasCell3" style="display:flex;align-items:center;gap:0.5rem;"><span style="min-width:80px;font-size:0.8rem;color:var(--text-secondary);">3월 GAS URL</span><input id="mockGasUrl_3" type="text" placeholder="GAS 배포 URL" style="flex:1;background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:6px;padding:0.4rem 0.7rem;font-size:0.8rem;"></div>
-            <div id="gasCell5" style="display:none;align-items:center;gap:0.5rem;"><span style="min-width:80px;font-size:0.8rem;color:var(--text-secondary);">5월 GAS URL</span><input id="mockGasUrl_5" type="text" placeholder="GAS 배포 URL" style="flex:1;background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:6px;padding:0.4rem 0.7rem;font-size:0.8rem;"></div>
-            <div id="gasCell6" style="display:flex;align-items:center;gap:0.5rem;"><span style="min-width:80px;font-size:0.8rem;color:var(--text-secondary);">6월 GAS URL</span><input id="mockGasUrl_6" type="text" placeholder="GAS 배포 URL" style="flex:1;background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:6px;padding:0.4rem 0.7rem;font-size:0.8rem;"></div>
-            <div id="gasCell7" style="display:none;align-items:center;gap:0.5rem;"><span style="min-width:80px;font-size:0.8rem;color:var(--text-secondary);">7월 GAS URL</span><input id="mockGasUrl_7" type="text" placeholder="GAS 배포 URL" style="flex:1;background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:6px;padding:0.4rem 0.7rem;font-size:0.8rem;"></div>
-            <div id="gasCell9" style="display:flex;align-items:center;gap:0.5rem;"><span style="min-width:80px;font-size:0.8rem;color:var(--text-secondary);">9월 GAS URL</span><input id="mockGasUrl_9" type="text" placeholder="GAS 배포 URL" style="flex:1;background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:6px;padding:0.4rem 0.7rem;font-size:0.8rem;"></div>
-            <div id="gasCell11" style="display:flex;align-items:center;gap:0.5rem;"><span style="min-width:80px;font-size:0.8rem;color:var(--text-secondary);">11월 GAS URL</span><input id="mockGasUrl_11" type="text" placeholder="GAS 배포 URL" style="flex:1;background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:6px;padding:0.4rem 0.7rem;font-size:0.8rem;"></div>
+            <div style="display:flex;align-items:center;gap:0.5rem;"><span style="min-width:90px;font-size:0.8rem;color:var(--text-secondary);">학년 통합 GAS URL</span><input id="mockGasUrl_grade" type="text" placeholder="이 학년의 스프레드시트(모든 회차 포함) GAS 배포 URL" style="flex:1;background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-primary);border-radius:6px;padding:0.4rem 0.7rem;font-size:0.8rem;"></div>
+            <p style="margin:0.2rem 0 0;font-size:0.74rem;color:var(--text-secondary);line-height:1.6;">※ 학년별로 <strong>하나의 스프레드시트</strong>만 연동합니다. 그 시트 안에 <strong>‘연도/월/과목’</strong> 이름의 시트(예: <code>2026/3/국어(화법과작문)</code>)로 회차를 구분해 넣어 주세요.</p>
           </div>
           <div style="display:flex;gap:0.5rem;margin-top:0.8rem;">
             <button id="mockLoadSheetsBtn" style="background:rgba(56,189,248,0.15);border:1px solid rgba(56,189,248,0.35);color:#38bdf8;padding:0.4rem 0.9rem;border-radius:8px;cursor:pointer;font-size:0.8rem;font-weight:600;">🔗 스프레드시트 연결</button>
@@ -4712,7 +4708,7 @@ if (document.readyState === 'loading') {
 
   </script>
   <script src="card.js?v=100" defer></script>
-  <script src="app.js?v=93"></script>
+  <script src="app.js?v=95"></script>
   <script src="grade-rank.js?v=78"></script>
   <script src="univ-score.js"></script>
   <script src="admission_dist.js?v=2"></script>

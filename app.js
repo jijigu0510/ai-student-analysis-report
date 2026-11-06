@@ -86,19 +86,18 @@ window.addEventListener('DOMContentLoaded', function () {
     return res;
   };
 })();
-// Firebase에서 GAS URL을 받아오는 콜백 — urls = { '1': {'3': url, ...}, '2': {...}, '3': {...} }
+// Firebase에서 GAS URL을 받아오는 콜백
+//  신규: urls = { '1': { url }, '2': { url }, '3': { url } }  (학년별 단일 URL)
+//  구버전: urls = { '1': { '3': url, ... }, ... }  (월별) → 3월 URL을 학년 URL로 승계
 window.onFirebaseGasUrls = function (urls) {
   if (!urls) return;
   ['1', '2', '3'].forEach(grade => {
-    const gradeUrls = urls[grade];
-    if (!gradeUrls) return;
-    Object.keys(gradeUrls).forEach(month => {
-      const serverUrl = gradeUrls[month] || '';
-      if (!serverUrl) return;
-      if (window.__isDirectGasUrl(serverUrl)) return; // 옛 직접 주소는 건너뜀
-      // 서버 데이터를 우선하여 localStorage 갱신
-      localStorage.setItem(`mockGasUrl_${grade}_${month}`, serverUrl);
-    });
+    const g = urls[grade];
+    if (!g) return;
+    let single = typeof g === 'string' ? g : g.url;
+    if (!single && typeof g === 'object') single = g['3'] || Object.values(g).find(Boolean) || '';
+    if (!single || window.__isDirectGasUrl(single)) return;
+    localStorage.setItem(`mockGasUrl_${grade}`, single);
   });
   // 현재 설정 패널에 열려 있다면 입력창 갱신
   const mockGasGradeSelect = document.getElementById('mockGasGradeSelect');
@@ -879,7 +878,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentMockMonth = '3';
   let currentMockGrade = '1';
   let currentMockYear = String(new Date().getFullYear());  // 성적통지표에서 감지한 모의고사 연도
-  const MONTHS_BY_GRADE = { '1': ['3', '6', '9', '11'], '2': ['3', '6', '9', '11'], '3': ['3', '5', '6', '7', '9', '11'] };
+  const MONTHS_BY_GRADE = { '1': ['3', '6', '9', '11'], '2': ['3', '6', '9', '11'], '3': ['3', '4', '5', '6', '7', '9', '10', '11'] };
   const mockServerData = {}; // { '${grade}_${month}': { count, uploadedAt } }
 
   function dataKey() { return `${currentMockGrade}_${currentMockMonth}`; }
@@ -906,17 +905,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function updateMonthSelectForGrade(grade) {
     if (!mockMonthSelect) return;
-    const months = MONTHS_BY_GRADE[grade];
+    const fixed = MONTHS_BY_GRADE[grade] || [];
+    // 고정 목록 + 업로드(로컬 저장)된 데이터가 있는 회차(목록에 없어도 자동 포함)
+    const dataMonths = Object.keys(mockDataByMonth)
+      .filter(k => k.startsWith(grade + '_') && (mockDataByMonth[k] || []).length > 0)
+      .map(k => k.split('_')[1]);
+    const months = [...new Set([...fixed, ...dataMonths])].sort((a, b) => Number(a) - Number(b));
     const prevMonth = mockMonthSelect.value;
-    const labels = { '3': '3월 모의고사', '5': '5월 모의고사', '6': '6월 모의고사', '7': '7월 모의고사', '9': '9월 모의고사', '11': '11월 모의고사' };
-    // 업로드(로컬 저장)된 회차는 ✓ 로 표시해 여러 개 중 고르기 쉽게
+    // 업로드된 회차는 ✓ 로 표시해 여러 개 중 고르기 쉽게
     mockMonthSelect.innerHTML = months.map(m => {
       const has = (mockDataByMonth[`${grade}_${m}`] || []).length > 0;
-      return `<option value="${m}">${labels[m]}${has ? ' ✓' : ''}</option>`;
+      return `<option value="${m}">${m}월 모의고사${has ? ' ✓' : ''}</option>`;
     }).join('');
     if (months.includes(prevMonth)) {
       mockMonthSelect.value = prevMonth;
-    } else {
+    } else if (months.length) {
       currentMockMonth = months[0];
       mockMonthSelect.value = currentMockMonth;
     }
@@ -1109,33 +1112,30 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // 학년/월별 GAS URL 관리
+  // 학년별 '하나의 스프레드시트'를 연동한다. (한 시트 안에 '연도/월/과목' 이름의
+  // 시트들을 두고 회차를 구분 — 월별로 URL을 나누지 않는다.)
+  // 기본값은 기존 배포(mock_X_3)를 학년 통합 스프레드시트로 재사용한다.
   const DEFAULT_MOCK_GAS_URLS = {
-    "1_3": "/api/gas?t=mock_1_3",
-    "2_3": "/api/gas?t=mock_2_3",
-    "3_3": "/api/gas?t=mock_3_3",
-    "3_5": "/api/gas?t=mock_3_5"
+    "1": "/api/gas?t=mock_1_3",
+    "2": "/api/gas?t=mock_2_3",
+    "3": "/api/gas?t=mock_3_3"
   };
 
+  // grade만으로 URL 결정 (month 인자는 하위호환을 위해 받되 무시)
   function getMockGasUrl(grade, month) {
-    const key = `mockGasUrl_${grade}_${month}`;
-    const stored = localStorage.getItem(key);
+    const stored = localStorage.getItem(`mockGasUrl_${grade}`);
     if (stored && stored.trim() !== "" && !window.__isDirectGasUrl(stored)) return stored;
-    return DEFAULT_MOCK_GAS_URLS[`${grade}_${month}`] || "";
+    // 구버전(월별) 저장값 폴백: 3월 → 해당 학년 통합 URL로 승계
+    const legacy = localStorage.getItem(`mockGasUrl_${grade}_3`);
+    if (legacy && legacy.trim() !== "" && !window.__isDirectGasUrl(legacy)) return legacy;
+    return DEFAULT_MOCK_GAS_URLS[grade] || "";
   }
 
   window.loadGasUrlsForGrade = loadGasUrlsForGrade;
 
   function loadGasUrlsForGrade(grade) {
-    const months = MONTHS_BY_GRADE[grade] || [];
-    ['3', '5', '6', '7', '9', '11'].forEach(m => {
-      const el = document.getElementById(`mockGasUrl_${m}`);
-      if (el) el.value = months.includes(m) ? getMockGasUrl(grade, m) : '';
-    });
-    // 5월/7월 셀은 3학년만 표시
-    ['5', '7'].forEach(m => {
-      const cell = document.getElementById(`gasCell${m}`);
-      if (cell) cell.style.display = grade === '3' ? 'flex' : 'none';
-    });
+    const el = document.getElementById('mockGasUrl_grade');
+    if (el) el.value = getMockGasUrl(grade);
   }
 
   const mockGasGradeSelectEl = document.getElementById('mockGasGradeSelect');
@@ -1148,16 +1148,11 @@ document.addEventListener("DOMContentLoaded", () => {
     mockGasUrlSaveBtn.addEventListener('click', async () => {
       const mockGasGradeSelect = document.getElementById('mockGasGradeSelect');
       const grade = mockGasGradeSelect ? mockGasGradeSelect.value : '1';
-      const months = MONTHS_BY_GRADE[grade] || [];
-      const urls = {};
-      months.forEach(m => {
-        const el = document.getElementById(`mockGasUrl_${m}`);
-        const val = el ? el.value.trim() : '';
-        localStorage.setItem(`mockGasUrl_${grade}_${m}`, val);
-        urls[m] = val;
-      });
+      const el = document.getElementById('mockGasUrl_grade');
+      const val = el ? el.value.trim() : '';
+      localStorage.setItem(`mockGasUrl_${grade}`, val);
       if (typeof window.firebaseGasSave === 'function') {
-        try { await window.firebaseGasSave(grade, urls); }
+        try { await window.firebaseGasSave(grade, { url: val }); }
         catch (e) { console.warn('[Firebase] GAS URL 저장 실패:', e.message); }
       }
       alert(`${grade}학년 연동 설정이 저장되었습니다.`);
