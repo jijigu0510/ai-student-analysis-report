@@ -1249,6 +1249,9 @@ document.addEventListener("DOMContentLoaded", () => {
           for (const rec of extracted) {
             const grade = (detected && detected.grade) || rec.학년 || currentMockGrade;
             const month = (detected && detected.month) || currentMockMonth;
+            const year = (detected && detected.year) || currentMockYear;
+            // 레코드에 실제 연도·월을 심어, 나중에 어떤 뷰에서 분석하든 그 회차 시트로 매칭
+            rec.학년 = grade; rec.월 = month; rec.연도 = year;
             const key = `${grade}_${month}`;
             if (!grouped[key]) grouped[key] = [];
             grouped[key].push(rec);
@@ -2074,12 +2077,18 @@ document.addEventListener("DOMContentLoaded", () => {
    *  시트명은 "연도/월/과목" 형식(예: 2026/5/국어(화법과작문)).
    *  감지한 연도+월('2026/5/')로 먼저 후보를 거른 뒤, 과목 부분으로 매칭한다.
    *  (연도/월 접두 시트가 하나도 없으면 전체 시트명으로 폴백) */
-  function matchSubjectToSheet(subjectName) {
+  function matchSubjectToSheet(subjectName, year, month) {
     if (!mockSheetNames || mockSheetNames.length === 0) return null;
     const normSubj = normalizeSubjectName(subjectName);
 
-    const prefix = `${currentMockYear}/${currentMockMonth}/`;
+    const yy = year || currentMockYear;
+    const mm = month || currentMockMonth;
+    const prefix = `${yy}/${mm}/`;
     const prefixed = mockSheetNames.filter(s => s.startsWith(prefix));
+    // 날짜형 시트(연도/월/과목)를 쓰는 스프레드시트에서 해당 월 시트가 없으면
+    // 다른 월 시트로 매칭하지 않는다(10월인데 3월로 분석되는 오분석 방지).
+    const anyDated = mockSheetNames.some(s => /^\d{4}\/\d{1,2}\//.test(s));
+    if (anyDated && prefixed.length === 0) return null;
     const pool = prefixed.length ? prefixed : mockSheetNames;
     // 매칭에 쓸 과목 부분(접두 "연도/월/" 제거). 접두 시트가 없으면 시트명 전체 사용.
     const subjPart = (s) => prefixed.length ? s.slice(prefix.length) : s;
@@ -2237,12 +2246,15 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!names || names.length === 0) throw new Error('시트 목록을 가져올 수 없습니다.');
       }
 
-      // 과목 → 시트 매칭
-      const matchedSheet = matchSubjectToSheet(subjectName);
+      // 과목 → 시트 매칭 (레코드의 실제 연도·월 기준)
+      const recYear = studentRecord.연도 || currentMockYear;
+      const recMonth = studentRecord.월 || currentMockMonth;
+      const matchedSheet = matchSubjectToSheet(subjectName, recYear, recMonth);
       if (!matchedSheet) {
         throw new Error(
-          `'${subjectName}'에 해당하는 시트를 찾을 수 없습니다.\n`
-          + `스프레드시트의 시트 이름: ${mockSheetNames.join(', ')}`
+          `'${recYear}/${recMonth}/${subjectName}'에 해당하는 시트를 찾을 수 없습니다.\n`
+          + `(해당 회차 시트가 스프레드시트에 있는지 확인해 주세요)\n`
+          + `시트 목록: ${mockSheetNames.join(', ')}`
         );
       }
 
@@ -2266,7 +2278,7 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error('오답 분석 오류:', err);
       alert('분석 중 오류가 발생했습니다:\n' + err.message);
     } finally {
-      if (btnEl) { btnEl.disabled = false; btnEl.innerHTML = '📊 스프레드시트 오답 분석'; }
+      if (btnEl) { btnEl.disabled = false; btnEl.innerHTML = '📊 문항별 오답 분석'; }
     }
   }
 
@@ -2385,9 +2397,62 @@ document.addEventListener("DOMContentLoaded", () => {
               </div>
           </div>`;
 
-    modalBody.innerHTML = studentInfoHtml + summaryHtml + tableHtml;
+    // ── 과목별 인쇄·PDF용 본문(라이트 테마) 구성 ──
+    const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const printRows = analysisItems.map(it => `<tr>
+        <td style="text-align:center;font-weight:700;">${esc(it.번호)}번</td>
+        <td>${esc(it.대분류) || '-'}</td><td>${esc(it.소분류) || '-'}</td>
+        <td>${esc(it.평가요소) || '-'}</td><td>${esc(it.특이사항) || '-'}</td>
+        <td>${esc(it.분석내용) || '-'}</td>
+        <td style="text-align:center;">${it.배점 && it.배점 !== '-' ? esc(it.배점) + '점' : '-'}</td>
+      </tr>`).join('');
+    const printHtml = `
+      <h1>📊 모의고사 오답 분석</h1>
+      <p class="sub">${esc(studentRecord.성명)} · ${esc(studentRecord.학년)}학년 ${esc(studentRecord.반)}반 ${esc(studentRecord.번호)}번
+        | ${esc(studentRecord.과목)} <small>(${esc(sheetName)})</small>
+        | 원점수 ${esc(studentRecord.원점수) || '-'} / ${esc(studentRecord.등급) || '-'}등급
+        | 오답 ${analysisItems.length}문항</p>
+      <h2>대분류별 오답 요약</h2>
+      <ul>${catEntries.map(([c, n]) => `<li><strong>${esc(c)}</strong>: ${n.join(', ')} <small>(${n.length})</small></li>`).join('')}</ul>
+      <h2>배점별 오답 요약</h2>
+      <ul>${pointEntries.map(([p, n]) => `<li><strong>${esc(p)}점</strong>: ${n.join(', ')} <small>(${n.length})</small></li>`).join('')}</ul>
+      <h2>오답 문항 상세</h2>
+      <table><thead><tr><th>문항</th><th>대분류</th><th>소분류</th><th>평가요소</th><th>특이사항</th><th>분석내용</th><th>배점</th></tr></thead><tbody>${printRows}</tbody></table>`;
+    _mockSubjectPrint = { title: `${studentRecord.성명}_${studentRecord.과목}_오답분석`, html: printHtml };
+
+    const printBtnHtml = `
+      <div style="text-align:right; margin-bottom:0.8rem;">
+        <button type="button" class="btn-primary" style="padding:0.45rem 0.9rem; font-size:0.85rem; background:linear-gradient(135deg,#e05fc4,#a855f7);" onclick="window.printMockSubjectAnalysis()">🖨️ 인쇄·PDF</button>
+      </div>`;
+
+    modalBody.innerHTML = printBtnHtml + studentInfoHtml + summaryHtml + tableHtml;
     modal.classList.remove('hidden');
   }
+
+  // 과목별 오답 분석 인쇄·PDF (현재 모달에 표시된 분석 기준)
+  let _mockSubjectPrint = null;
+  window.printMockSubjectAnalysis = function () {
+    if (!_mockSubjectPrint) return;
+    const w = window.open('', '_blank', 'width=900,height=900');
+    if (!w) { alert('팝업이 차단되었습니다. 팝업 허용 후 다시 시도해 주세요.'); return; }
+    w.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>모의고사 오답 분석</title><style>
+      *,*::before,*::after{box-sizing:border-box;}
+      body{font-family:'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif;color:#111;padding:26px;line-height:1.6;font-size:12px;background:#fff;}
+      h1{font-size:19px;text-align:center;margin:0 0 4px;}
+      .sub{text-align:center;color:#555;font-size:11px;margin:0 0 16px;}
+      h2{font-size:14px;color:#1e2a6e;border-left:4px solid #2563eb;padding-left:8px;margin:18px 0 6px;}
+      table{width:100%;border-collapse:collapse;font-size:10.5px;margin:6px 0;}
+      th,td{border:1px solid #bbb;padding:5px 6px;text-align:left;vertical-align:top;}
+      th{background:#eef0ff;}
+      ul{margin:4px 0 8px 18px;} li{margin:3px 0;}
+      small{color:#777;}
+      @media print{body{padding:12px;}}
+    </style></head><body>${_mockSubjectPrint.html}
+    <p style="text-align:right;color:#999;font-size:9px;margin-top:12px;">출력일: ${new Date().toLocaleDateString('ko-KR')}</p>
+    </body></html>`);
+    w.document.close();
+    setTimeout(() => { try { w.focus(); w.print(); } catch (e) {} }, 500);
+  };
 
   // =========================================================================
 
@@ -2521,7 +2586,7 @@ document.addEventListener("DOMContentLoaded", () => {
                              transition:background 0.2s, border-color 0.2s;"
                       onmouseover="this.style.background='rgba(99,102,241,0.3)'"
                       onmouseout="this.style.background='rgba(99,102,241,0.15)'">
-                      📊 스프레드시트 오답 분석
+                      📊 문항별 오답 분석
                   </button>
               </div>
           `;
@@ -3138,7 +3203,7 @@ document.addEventListener("DOMContentLoaded", () => {
           try {
             // 시트 목록 확인 및 매칭
             if (mockSheetNames.length === 0) await connectToGoogleSheet();
-            const matchedSheet = matchSubjectToSheet(d.과목);
+            const matchedSheet = matchSubjectToSheet(d.과목, d.연도, d.월);
 
             if (matchedSheet) {
               const sheetRows = await fetchSubjectSheetData(matchedSheet);
@@ -9501,6 +9566,14 @@ overallEvaluation 필드는 아래 형식을 반드시 따르십시오:
       const savedMockData = await StorageManager.load("mockDataByMonth");
       if (savedMockData) {
         Object.assign(mockDataByMonth, savedMockData);
+        // 과거 저장분 호환: 레코드에 월(키 기준)·연도(없으면 현재값) 백필
+        Object.keys(mockDataByMonth).forEach(k => {
+          const m = k.split('_')[1];
+          (mockDataByMonth[k] || []).forEach(rec => {
+            if (!rec.월) rec.월 = m;
+            if (!rec.연도) rec.연도 = currentMockYear;
+          });
+        });
         // 저장된 데이터가 있으면 데이터가 있는 첫 회차로 맞춰 드롭다운·결과를 복원
         const firstKey = Object.keys(mockDataByMonth).find(k => (mockDataByMonth[k] || []).length > 0);
         if (firstKey) {
