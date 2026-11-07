@@ -75,6 +75,7 @@
       <div class="app-subbar">
         <p class="app-subbar-desc">클릭 한 번으로 시각화하는 우리 학교만의 맞춤형 입시 대시보드</p>
         <div class="app-apikey">
+          <button type="button" id="globalSavedReportsBtn" onclick="ReportModal.openSavedList()" style="background:var(--input-bg); border:1px solid var(--input-border); color:var(--text-primary); border-radius:8px; padding:0.35rem 0.7rem; font-size:0.82rem; font-weight:600; cursor:pointer; white-space:nowrap;">📁 저장된 보고서</button>
           <label for="uni-api-key">🔑 API Key</label>
           <input type="password" id="uni-api-key" placeholder="AI Studio에서 발급받은 Gemini API 키 입력...">
         </div>
@@ -1096,6 +1097,7 @@
 
       <!-- 개인 리포트 뷰 -->
       <div id="mockIndividualView" class="hidden">
+        <div id="mockCsatMinBox" style="display:none; margin-bottom:1.2rem;"></div>
         <div id="individualReportGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1rem;"></div>
       </div>
     </div>
@@ -4708,7 +4710,7 @@ if (document.readyState === 'loading') {
 
   </script>
   <script src="card.js?v=100" defer></script>
-  <script src="app.js?v=100"></script>
+  <script src="app.js?v=102"></script>
   <script src="grade-rank.js?v=78"></script>
   <script src="univ-score.js"></script>
   <script src="admission_dist.js?v=2"></script>

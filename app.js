@@ -1,6 +1,17 @@
 ﻿
 
 console.log('[APP] v8 loaded');
+
+// AI 보고서의 마크다운을 렌더하되, 변환되지 않고 남는 볼드 기호(**)는 결과에서 제거한다.
+// (정상 볼드 **텍스트**는 marked가 <strong>으로 변환하므로 '**'가 남지 않고, AI가 '** 텍스트 **'
+//  처럼 공백을 넣어 변환되지 않은 '**'만 사라진다. marked.parse가 재정의 불가라 호출부에서 사용.)
+window.mdClean = function (s) {
+  const txt = String(s == null ? '' : s);
+  try {
+    const p = (window.marked && window.marked.parse) ? window.marked.parse.bind(window.marked) : null;
+    return p ? String(p(txt)).replace(/\*\*/g, '') : txt;
+  } catch (e) { return txt; }
+};
 // 직접 GAS 주소(script.google.com)는 더 이상 사용하지 않는다.
 // 서버 프록시(/api/gas)를 거치도록, 저장된 옛 주소는 무시한다.
 window.__isDirectGasUrl = function (u) {
@@ -206,7 +217,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
                     
                     <div class='markdown-body' style='color:#111; line-height:1.8; font-size:1.05rem;'>
-                        ${marked.parse(report)}
+                        ${mdClean(report)}
                     </div>
                     <div style='margin-top:4rem; text-align:center; border-top:1px solid #eee; padding-top:2rem; color:#999; font-size:0.8rem;'>
                         본 리포트는 인공지능 분석 결과이며, 실제 입시 결과와는 차이가 있을 수 있습니다.
@@ -384,7 +395,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const re = /^#{1,3}\s+(.+)$/gm;
     let m; const marks = [];
     while ((m = re.exec(text))) marks.push({ title: m[1].trim(), start: m.index, bodyStart: m.index + m[0].length });
-    if (marks.length === 0) return `<div class="markdown-body">${marked.parse(text)}</div>`;
+    if (marks.length === 0) return `<div class="markdown-body">${mdClean(text)}</div>`;
     const preamble = text.slice(0, marks[0].start).trim();
     const parts = [];
     for (let i = 0; i < marks.length; i++) {
@@ -402,10 +413,10 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
           <span class="rpt-sec-caret">▶</span>
         </div>
-        <div class="rpt-sec-body markdown-body">${marked.parse(p.body)}</div>
+        <div class="rpt-sec-body markdown-body">${mdClean(p.body)}</div>
       </div>`;
     }).join('');
-    return `${introHTML || ''}${preamble ? `<div class="markdown-body" style="margin-bottom:1rem;">${marked.parse(preamble)}</div>` : ''}
+    return `${introHTML || ''}${preamble ? `<div class="markdown-body" style="margin-bottom:1rem;">${mdClean(preamble)}</div>` : ''}
       <p class="rpt-hint">아래 각 항목을 누르면 상세 설명이 펼쳐집니다.</p>
       <div class="rpt-sections">${cards}</div>`;
   }
@@ -2489,7 +2500,7 @@ ${lines.join('\n')}
 
     try {
       const text = await _callGeminiMockReport(apiKey, prompt);
-      const html = marked.parse(text);
+      const html = mdClean(text);
       window.ReportModal.finishProgress();
       window.ReportModal.setHTML(`<div class="markdown-body">${html}</div>`);
       const printHTML = `<h1 style="text-align:center;">📊 ${s.성명} — ${s.과목} 문항별 AI 분석</h1>`
@@ -2681,6 +2692,82 @@ ${lines.join('\n')}
     });
   }
 
+  // ─── 선택 학생의 모의고사 등급 × 수능 최저 데이터 연동 ──────────────────
+  // 과목별 레코드에서 국/수/영/탐구/한국사 등급을 모아 학생 성적 객체를 만든다.
+  function buildStudentGradesFromRecords(records) {
+    const s = {};
+    const tangu = [];
+    const L2 = /제2외국어|한문|일본어|중국어|프랑스어|독일어|스페인어|러시아어|아랍어|베트남어|라틴어/;
+    (records || []).forEach(r => {
+      const g = parseFloat(r.등급);
+      if (isNaN(g)) return;
+      const subj = String(r.과목 || '');
+      if (/^국어/.test(subj)) { if (!s['국어'] || g < s['국어'].grade) s['국어'] = { grade: g, subjectName: subj }; }
+      else if (/^수학/.test(subj)) { if (!s['수학'] || g < s['수학'].grade) s['수학'] = { grade: g, subjectName: subj }; }
+      else if (/^영어/.test(subj)) { if (!s['영어'] || g < s['영어'].grade) s['영어'] = { grade: g, subjectName: subj }; }
+      else if (/^한국사/.test(subj)) { s['한국사'] = { grade: g }; }
+      else if (L2.test(subj)) { /* 제2외국어/한문은 최저 합 산정 제외 */ }
+      else tangu.push({ grade: g, subjectName: subj }); // 그 외는 탐구로 간주
+    });
+    tangu.sort((a, b) => a.grade - b.grade); // 좋은 등급(작은 수) 먼저
+    if (tangu[0]) s['탐구영역1'] = tangu[0];
+    if (tangu[1]) s['탐구영역2'] = tangu[1];
+    return s;
+  }
+
+  function renderStudentCsatMin(records) {
+    const box = document.getElementById('mockCsatMinBox');
+    if (!box) return;
+    if (typeof csatData === 'undefined' || !Array.isArray(csatData)) { box.style.display = 'none'; return; }
+
+    const s = buildStudentGradesFromRecords(records);
+    const bestByN = {};
+    [2, 3, 4].forEach(n => { bestByN[n] = _bestNCombo(s, n); });
+    if (!bestByN[2] && !bestByN[3] && !bestByN[4]) { box.style.display = 'none'; return; }
+
+    const han = s['한국사'] ? s['한국사'].grade : null;
+    const met = [], near = [];
+    const seen = new Set();
+    csatData.forEach(item => {
+      const n = parseInt(item.과목수), m = parseInt(item.등급합);
+      if (!n || !m) return;
+      const best = bestByN[n];
+      if (!best) return;
+      const dk = `${item.대학}|${item.학과}|${item.전형명 || item.전형}|${n}|${m}`;
+      if (seen.has(dk)) return;
+      const rec = { 대학: item.대학, 학과: item.학과, 전형: item.전형명 || item.전형 || '', 기준: `${n}개 합 ${m}`, sum: best.sum, need: best.sum - m };
+      if (best.sum <= m) { seen.add(dk); met.push(rec); }
+      else if (best.sum - m <= 2) { seen.add(dk); near.push(rec); } // 조금만 더
+    });
+    met.sort((a, b) => a.sum - b.sum || String(a.대학).localeCompare(String(b.대학), 'ko'));
+    near.sort((a, b) => a.need - b.need || String(a.대학).localeCompare(String(b.대학), 'ko'));
+
+    const bestLine = [2, 3, 4].map(n => bestByN[n] ? `${n}합 <strong>${bestByN[n].sum}</strong>` : null).filter(Boolean).join(' · ');
+    const rowHtml = (r, isNear) => `<div style="display:flex; justify-content:space-between; gap:0.6rem; padding:0.4rem 0.6rem; border-bottom:1px solid var(--panel-border); font-size:0.82rem;">
+        <span><strong>${r.대학}</strong> <span style="color:var(--text-secondary);">${r.학과 || ''}${r.전형 ? ' · ' + r.전형 : ''}</span></span>
+        <span style="white-space:nowrap; color:var(--text-secondary);">${r.기준}${isNear ? ` <span style="color:#f59e0b;">(−${r.need}등급)</span>` : ''}</span>
+      </div>`;
+    const listBox = (title, color, arr, isNear) => `
+      <div style="flex:1; min-width:280px;">
+        <div style="font-weight:700; color:${color}; margin-bottom:0.4rem;">${title} <span style="font-size:0.8rem; color:var(--text-secondary);">(${arr.length})</span></div>
+        <div style="max-height:280px; overflow-y:auto; border:1px solid var(--panel-border); border-radius:8px;">
+          ${arr.length ? arr.map(r => rowHtml(r, isNear)).join('') : `<div style="padding:0.8rem; color:var(--text-secondary); font-size:0.82rem;">해당 없음</div>`}
+        </div>
+      </div>`;
+
+    box.style.display = 'block';
+    box.innerHTML = `
+      <section class="glass-panel" style="padding:1.2rem 1.4rem;">
+        <h3 style="margin:0 0 0.3rem; color:var(--accent-primary);">🎯 수능 최저 충족 분석 <span style="font-size:0.8rem; color:var(--text-secondary); font-weight:normal;">(모의고사 등급 × 수능 최저 데이터)</span></h3>
+        <p style="margin:0 0 0.9rem; font-size:0.82rem; color:var(--text-secondary);">학생 최저 등급합: ${bestLine || '-'}${han != null ? ` · 한국사 ${han}등급` : ''} <span style="opacity:0.75;">— 국·수·영·탐(1) 중 best 조합 기준. ‘−N등급’은 그 합을 N만큼 더 올리면 충족.</span></p>
+        <div style="display:flex; flex-wrap:wrap; gap:1rem;">
+          ${listBox('✅ 현재 충족', '#34d399', met, false)}
+          ${listBox('🔸 조금만 더 노력하면 충족', '#fbbf24', near, true)}
+        </div>
+        <p style="margin:0.8rem 0 0; font-size:0.74rem; color:var(--text-secondary);">※ ‘N개 합’ 기준만 기계적으로 비교한 참고용입니다. 한국사·영어 별도 조건, 탐구 2과목 반영, 과목 지정 등 세부 요건은 각 대학 모집요강을 확인하세요.</p>
+      </section>`;
+  }
+
   function renderFilteredMockData() {
     if (!mockPreviewBody) return;
     const mockGradeFilterSel = document.getElementById('mockGradeFilterSelect');
@@ -2730,6 +2817,7 @@ ${lines.join('\n')}
     } else {
       if (mockTableView) mockTableView.classList.add('hidden');
       if (mockIndividualView) mockIndividualView.classList.remove('hidden');
+      renderStudentCsatMin(filtered);
       renderIndividualReport(filtered);
     }
 
@@ -6027,7 +6115,7 @@ ${lines.join('\n')}
           .replace(/==([^=]+)==/g, '<span class="eval-highlight">$1</span>');
       }
       const overallRaw = applyEvalHighlight(reportData.overallEvaluation);
-      document.getElementById("overallText").innerHTML = marked.parse(overallRaw);
+      document.getElementById("overallText").innerHTML = mdClean(overallRaw);
 
 
       document.getElementById("academicScore").textContent = reportData.competencies?.academic?.score || "-";
@@ -6053,11 +6141,11 @@ ${lines.join('\n')}
           document.getElementById("modalTitle").textContent = title + " \uc0c1\uc138 \ubd84\uc11d";
           document.getElementById("modalBody").innerHTML =
             "<div style='background:rgba(255,255,255,0.05);padding:15px;border-radius:8px;margin-bottom:20px;border-left:4px solid var(--accent-primary)'>" +
-            "<h4 style='margin-top:0;color:#96baff;margin-bottom:8px'>\ud3c9\uac00 \uc694\uc57d</h4>" + marked.parse(applyEvalHighlight(compData.evaluation) || "\ud3c9\uac00 \ub0b4\uc6a9\uc774 \uc5c6\uc2b5\ub2c8\ub2e4.") + "</div>" +
+            "<h4 style='margin-top:0;color:#96baff;margin-bottom:8px'>\ud3c9\uac00 \uc694\uc57d</h4>" + mdClean(applyEvalHighlight(compData.evaluation) || "\ud3c9\uac00 \ub0b4\uc6a9\uc774 \uc5c6\uc2b5\ub2c8\ub2e4.") + "</div>" +
             (compData.scoreJustification ?
               "<div style='background:rgba(150,186,255,0.08);padding:15px;border-radius:8px;margin-bottom:20px;border-left:4px solid var(--success-color)'>" +
-              "<h4 style='margin-top:0;color:var(--success-color);margin-bottom:8px'>\uc810\uc218 \uc0b0\ucd9c \uadfc\uac70</h4>" + marked.parse(applyEvalHighlight(compData.scoreJustification)) + "</div>" : "") +
-            "<div style='padding:0 5px'><h4 style='color:#96baff;margin-bottom:10px'>\uadfc\uac70 \ud65c\ub3d9 \uc790\ub8cc</h4>" + marked.parse(applyEvalHighlight(evidenceText)) + "</div>";
+              "<h4 style='margin-top:0;color:var(--success-color);margin-bottom:8px'>\uc810\uc218 \uc0b0\ucd9c \uadfc\uac70</h4>" + mdClean(applyEvalHighlight(compData.scoreJustification)) + "</div>" : "") +
+            "<div style='padding:0 5px'><h4 style='color:#96baff;margin-bottom:10px'>\uadfc\uac70 \ud65c\ub3d9 \uc790\ub8cc</h4>" + mdClean(applyEvalHighlight(evidenceText)) + "</div>";
           document.getElementById("analysisModal").classList.remove("hidden");
         };
       };
@@ -9506,12 +9594,12 @@ overallEvaluation 필드는 아래 형식을 반드시 따르십시오:
 
       <div class="uni-criteria-section" style="margin-bottom: 2.5rem; background: #fff; padding: 1.5rem; border-radius: 12px; border: 1px solid #eee; page-break-inside: avoid;">
         <h3 style="font-size: 1.4rem; color: #333; margin-bottom: 1.2rem; border-left: 6px solid #5e6ad2; padding-left: 1rem;">대학별 평가 주안점 (분석 기준)</h3>
-        <div class="markdown-body" style="font-size: 0.85rem; color: #555; line-height: 1.6;">${marked.parse((() => { const f = universityEvalCriteria[uni]?.factors; return Array.isArray(f) ? f.map(x => `${x.name}(${x.weight}%): ${x.details || ''}`).join('\n') : String(f || '일반적인 학생부종합전형 평가 기준을 적용하여 분석되었습니다.'); })())}</div>
+        <div class="markdown-body" style="font-size: 0.85rem; color: #555; line-height: 1.6;">${mdClean((() => { const f = universityEvalCriteria[uni]?.factors; return Array.isArray(f) ? f.map(x => `${x.name}(${x.weight}%): ${x.details || ''}`).join('\n') : String(f || '일반적인 학생부종합전형 평가 기준을 적용하여 분석되었습니다.'); })())}</div>
       </div>
 
       <div class="overall-evaluation" style="margin-bottom: 2.5rem; background: var(--clr-inset-bg); padding: 2rem; border-radius: 12px; border: 1px solid var(--panel-border);">
         <h3 style="font-size: 1.4rem; color: #333; margin-bottom: 1.2rem; border-left: 6px solid #5e6ad2; padding-left: 1rem;">종합 평가 의견</h3>
-        <div class="markdown-body" style="color: #111; line-height: 1.8;">${marked.parse((data.overallEvaluation || "").replace(/\n?(?=## )/g, '\n\n').replace(/==([^=]+)==/g, '<span class="eval-highlight">$1</span>'))}</div>
+        <div class="markdown-body" style="color: #111; line-height: 1.8;">${mdClean((data.overallEvaluation || "").replace(/\n?(?=## )/g, '\n\n').replace(/==([^=]+)==/g, '<span class="eval-highlight">$1</span>'))}</div>
       </div>
     `;
 
@@ -9535,18 +9623,18 @@ overallEvaluation 필드는 아래 형식을 반드시 따르십시오:
             
             <div style="margin-bottom: 1.8rem;">
               <h4 style="font-size: 1.15rem; color: #444; margin-bottom: 0.6rem; font-weight: 700;">상세 평가</h4>
-              <div class="markdown-body" style="color: #222; line-height: 1.7;">${marked.parse(compData.evaluation || "")}</div>
+              <div class="markdown-body" style="color: #222; line-height: 1.7;">${mdClean(compData.evaluation || "")}</div>
             </div>
 
             ${compData.scoreJustification ? `
             <div style="margin-bottom: 1.8rem;">
               <h4 style="font-size: 1.15rem; color: #444; margin-bottom: 0.6rem; font-weight: 700;">점수 산출 근거</h4>
-              <div class="markdown-body" style="color: #222; line-height: 1.7;">${marked.parse(compData.scoreJustification)}</div>
+              <div class="markdown-body" style="color: #222; line-height: 1.7;">${mdClean(compData.scoreJustification)}</div>
             </div>` : ""}
 
             <div style="margin-bottom: 1.2rem;">
               <h4 style="font-size: 1.15rem; color: #444; margin-bottom: 0.6rem; font-weight: 700;">근거 활동 자료</h4>
-              <div class="markdown-body" style="color: #222; line-height: 1.7;">${marked.parse(evidenceText)}</div>
+              <div class="markdown-body" style="color: #222; line-height: 1.7;">${mdClean(evidenceText)}</div>
             </div>
           </div>
         `;
@@ -10852,10 +10940,10 @@ ${fd.content}
     const score = parseInt(data.totalScore) || 0;
     scoreEl.style.color = score >= 80 ? "#4ade80" : score >= 60 ? "#facc15" : "#f87171";
 
-    document.getElementById("st-scoreJustification").innerHTML = marked.parse(data.scoreJustification || "");
-    document.getElementById("st-strengths").innerHTML = marked.parse(data.strengths || "");
-    document.getElementById("st-improvements").innerHTML = marked.parse(data.improvements || "");
-    document.getElementById("st-rewrite").innerHTML = marked.parse(data.rewriteSuggestion || "");
+    document.getElementById("st-scoreJustification").innerHTML = mdClean(data.scoreJustification || "");
+    document.getElementById("st-strengths").innerHTML = mdClean(data.strengths || "");
+    document.getElementById("st-improvements").innerHTML = mdClean(data.improvements || "");
+    document.getElementById("st-rewrite").innerHTML = mdClean(data.rewriteSuggestion || "");
 
     // 5대 핵심 관점 체크리스트
     const pcEl = document.getElementById("st-perspectiveCheck");
@@ -10891,7 +10979,7 @@ ${fd.content}
     if (srEl) {
       const text = data.strategicRewrite || "";
       const charCount = text.length;
-      srEl.innerHTML = `<div style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:0.5rem;text-align:right;">${charCount}자</div>` + marked.parse(text);
+      srEl.innerHTML = `<div style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:0.5rem;text-align:right;">${charCount}자</div>` + mdClean(text);
     }
 
     const modalMap = {
@@ -10908,10 +10996,10 @@ ${fd.content}
           `<h4 style="margin:0 0 8px;color:#96baff">${info.title} (${info.note})</h4>` +
           `<p style="margin:0;font-size:1.4rem;font-weight:700;color:#fff">${info.score ?? "-"}\uc810</p>` +
           `</div>` +
-          marked.parse(data.scoreJustification || "") +
+          mdClean(data.scoreJustification || "") +
           `<hr style="margin:1rem 0;border-color:var(--glass-border)">` +
           `<h4 style="color:#96baff">\uac1c\uc120 \uc81c\uc548</h4>` +
-          marked.parse(data.improvements || "");
+          mdClean(data.improvements || "");
         document.getElementById("modalTitle").textContent = info.title + " \uc0c1\uc138 \ubd84\uc11d";
         document.getElementById("modalBody").innerHTML = bodyHtml;
         document.getElementById("analysisModal").classList.remove("hidden");
@@ -11476,7 +11564,7 @@ ${fd.content}
       document.getElementById('sd-rationaleLoading')?.classList.add('hidden');
       const el = document.getElementById('sd-rationale');
       if (!el) return;
-      el.innerHTML = (window.marked ? marked.parse(mdText) : mdText);
+      el.innerHTML = (window.marked ? mdClean(mdText) : mdText);
       el.classList.remove('hidden');
     }
 
@@ -13671,7 +13759,7 @@ ${univPromptSupplement}
           </div>`;
         }
 
-        ivMarkdownResult.innerHTML = guideBannerHtml + (typeof marked !== 'undefined' ? marked.parse(resultText) : resultText);
+        ivMarkdownResult.innerHTML = guideBannerHtml + (typeof marked !== 'undefined' ? mdClean(resultText) : resultText);
 
         // Post-process: Style Overall Analysis Opinion
         ivMarkdownResult.querySelectorAll('h2').forEach(h2 => {
@@ -15190,7 +15278,7 @@ ${univPromptSupplement}
   window.exportManualToPdf = function () {
     let parsedHtml = "";
     if (typeof marked !== 'undefined') {
-      parsedHtml = marked.parse(PROJECT_MANUAL_MD);
+      parsedHtml = mdClean(PROJECT_MANUAL_MD);
     } else {
       parsedHtml = "<p>마크다운 파서를 불러올 수 없습니다. 인터넷이 연결되어 있는지 확인해주세요.</p>";
     }
@@ -16938,7 +17026,7 @@ ${sectionList}
 
     try {
       const text = await _callGeminiMockReport(apiKey, prompt);
-      _mockReportState = { html: marked.parse(text), scopeLabel };
+      _mockReportState = { html: mdClean(text), scopeLabel };
       ReportModal.finishProgress();
       ReportModal.setHTML(`<div class="markdown-body">${_mockReportState.html}</div>`);
       ReportModal.setPrint(printMockReport);
