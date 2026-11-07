@@ -330,7 +330,7 @@ document.addEventListener("DOMContentLoaded", () => {
       open('📁 저장된 보고서', null);
       const items = await SavedReports.list();
       if (!items.length) { setHTML(`<p style="text-align:center;color:var(--text-secondary);padding:2.5rem 1rem;">저장된 보고서가 없습니다.<br>보고서를 생성하면 자동으로 저장됩니다.</p>`); return; }
-      const typeLabel = { individual: '모의서류평가', passfail: '학종 합불', mock: '모의고사', interview: '면접 문항', hexagon: '육각형 인재' };
+      const typeLabel = { individual: '모의서류평가', passfail: '학종 합불', mock: '모의고사', interview: '면접 문항', hexagon: '육각형 인재', 'mock-subject': '문항별 분석' };
       const rows = items.map(it => `<div class="rpt-saved-row">
           <div class="rpt-saved-main">
             <span class="rpt-saved-badge">${typeLabel[it.type] || '보고서'}</span>
@@ -2419,9 +2419,12 @@ document.addEventListener("DOMContentLoaded", () => {
       <h2>오답 문항 상세</h2>
       <table><thead><tr><th>문항</th><th>대분류</th><th>소분류</th><th>평가요소</th><th>특이사항</th><th>분석내용</th><th>배점</th></tr></thead><tbody>${printRows}</tbody></table>`;
     _mockSubjectPrint = { title: `${studentRecord.성명}_${studentRecord.과목}_오답분석`, html: printHtml };
+    // AI 분석 보고서용 데이터 보관
+    _mockSubjectAnalysisData = { studentRecord, sheetName, analysisItems, catEntries, pointEntries };
 
     const printBtnHtml = `
-      <div style="text-align:right; margin-bottom:0.8rem;">
+      <div style="text-align:right; margin-bottom:0.8rem; display:flex; gap:0.5rem; justify-content:flex-end; flex-wrap:wrap;">
+        <button type="button" class="btn-primary" style="padding:0.45rem 0.9rem; font-size:0.85rem; background:linear-gradient(135deg,#2563eb,#06b6d4);" onclick="window.generateMockSubjectReport()">🤖 AI 분석 보고서</button>
         <button type="button" class="btn-primary" style="padding:0.45rem 0.9rem; font-size:0.85rem; background:linear-gradient(135deg,#e05fc4,#a855f7);" onclick="window.printMockSubjectAnalysis()">🖨️ 인쇄·PDF</button>
       </div>`;
 
@@ -2431,6 +2434,83 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 과목별 오답 분석 인쇄·PDF (현재 모달에 표시된 분석 기준)
   let _mockSubjectPrint = null;
+  let _mockSubjectAnalysisData = null;
+
+  // 과목별 AI 분석 보고서 (API 키 사용) — 공용 보고서 모달에 표시
+  async function generateMockSubjectReport() {
+    if (!_mockSubjectAnalysisData) { alert('먼저 과목별 오답 분석을 실행해 주세요.'); return; }
+    const apiKey = (document.getElementById('uni-api-key')?.value || document.getElementById('api-key')?.value || '').trim();
+    if (!apiKey) { alert('상단 API Key를 먼저 입력해 주세요.'); return; }
+    if (!window.ReportModal || typeof _callGeminiMockReport !== 'function') { alert('보고서 기능을 사용할 수 없습니다. 새로고침 후 다시 시도해 주세요.'); return; }
+
+    const { studentRecord: s, sheetName, analysisItems, catEntries, pointEntries } = _mockSubjectAnalysisData;
+    const title = `문항별 AI 분석 — ${s.성명} / ${s.과목}`;
+
+    // 표 모달을 닫고(겹침 방지) 공용 보고서 모달을 연다
+    const am = document.getElementById('analysisModal');
+    if (am) am.classList.add('hidden');
+    window.ReportModal.open(title, null);
+    window.ReportModal.startProgress('AI가 오답을 분석해 학습 진단 보고서를 작성 중입니다…');
+
+    const lines = [];
+    lines.push(`[학생] ${s.성명} ${s.학년}학년 ${s.반}반 ${s.번호}번`);
+    lines.push(`[과목] ${s.과목} (${sheetName}) · 원점수 ${s.원점수 || '-'} / ${s.등급 || '-'}등급 · 오답 ${analysisItems.length}문항`);
+    lines.push('\n[대분류별 오답]');
+    catEntries.forEach(([c, n]) => lines.push(`- ${c}: ${n.join(', ')} (${n.length}문항)`));
+    lines.push('\n[배점별 오답]');
+    pointEntries.forEach(([p, n]) => lines.push(`- ${p}점: ${n.join(', ')} (${n.length}문항)`));
+    lines.push('\n[오답 문항 상세]');
+    analysisItems.forEach(it => {
+      const parts = [];
+      if (it.대분류 && it.대분류 !== '-') parts.push('대분류:' + it.대분류);
+      if (it.소분류 && it.소분류 !== '-') parts.push('소분류:' + it.소분류);
+      if (it.평가요소 && it.평가요소 !== '-') parts.push('평가요소:' + it.평가요소);
+      if (it.배점 && it.배점 !== '-') parts.push('배점:' + it.배점);
+      if (it.특이사항 && it.특이사항 !== '-') parts.push('특이사항:' + it.특이사항);
+      if (it.분석내용 && it.분석내용 !== '-') parts.push('분석내용:' + it.분석내용);
+      lines.push(`- ${it.번호}번: ${parts.join(' | ') || '세부정보 없음'}`);
+    });
+
+    const prompt = `당신은 대한민국 고등학교 진학지도·학습코칭 전문가입니다.
+아래는 한 학생의 모의고사 '${s.과목}' 오답 문항 분석 자료입니다. 이 자료만 근거로 학생 맞춤 학습 진단 보고서를 한국어 마크다운으로 작성하세요.
+
+[자료]
+${lines.join('\n')}
+
+[작성 지침]
+- 아래 섹션 구성을 그대로 따르세요:
+## 1. 총평
+## 2. 취약 영역 분석 (대분류·소분류·평가요소 기준)
+## 3. 오답 난이도(배점) 경향
+## 4. 맞춤 학습 제언
+- 반드시 위 자료의 대분류/소분류/평가요소/문항번호를 구체적으로 인용하고, 자료에 없는 내용은 지어내지 마세요.
+- 비교가 필요하면 마크다운 표를 쓰고, 코드블록(\`\`\`)은 쓰지 마세요.
+- 학생이 다음 시험까지 실천할 수 있는 구체적 학습 전략으로 마무리하세요.`;
+
+    try {
+      const text = await _callGeminiMockReport(apiKey, prompt);
+      const html = marked.parse(text);
+      window.ReportModal.finishProgress();
+      window.ReportModal.setHTML(`<div class="markdown-body">${html}</div>`);
+      const printHTML = `<h1 style="text-align:center;">📊 ${s.성명} — ${s.과목} 문항별 AI 분석</h1>`
+        + `<p style="text-align:center;color:#555;">${s.학년}학년 ${s.반}반 ${s.번호}번 · ${sheetName} · 원점수 ${s.원점수 || '-'} / ${s.등급 || '-'}등급 | 출력일 ${new Date().toLocaleDateString('ko-KR')}</p>${html}`;
+      window.ReportModal.setPrint(() => printWithIframe(printHTML));
+      try {
+        await window.SavedReports.save({
+          type: 'mock-subject',
+          title,
+          scope: `${s.과목} · 오답 ${analysisItems.length}문항`,
+          viewHTML: `<div class="markdown-body">${html}</div>`,
+          printHTML
+        });
+      } catch (e) { console.warn('[보고서 저장]', e); }
+    } catch (err) {
+      console.error('[문항별 AI 보고서]', err);
+      window.ReportModal.setHTML(`<div style="color:#ef4444;padding:1.5rem;">생성 실패: ${err.message}</div>`);
+    }
+  }
+  window.generateMockSubjectReport = generateMockSubjectReport;
+
   window.printMockSubjectAnalysis = function () {
     if (!_mockSubjectPrint) return;
     const w = window.open('', '_blank', 'width=900,height=900');
