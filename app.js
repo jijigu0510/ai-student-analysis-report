@@ -341,7 +341,7 @@ document.addEventListener("DOMContentLoaded", () => {
       open('📁 저장된 보고서', null);
       const items = await SavedReports.list();
       if (!items.length) { setHTML(`<p style="text-align:center;color:var(--text-secondary);padding:2.5rem 1rem;">저장된 보고서가 없습니다.<br>보고서를 생성하면 자동으로 저장됩니다.</p>`); return; }
-      const typeLabel = { individual: '모의서류평가', passfail: '학종 합불', mock: '모의고사', interview: '면접 문항', hexagon: '육각형 인재', 'mock-subject': '문항별 분석' };
+      const typeLabel = { individual: '모의서류평가', passfail: '학종 합불', mock: '모의고사', interview: '면접 문항', hexagon: '육각형 인재', 'mock-subject': '문항별 분석', 'mock-dev': '회차별 발전' };
       const rows = items.map(it => `<div class="rpt-saved-row">
           <div class="rpt-saved-main">
             <span class="rpt-saved-badge">${typeLabel[it.type] || '보고서'}</span>
@@ -2768,6 +2768,195 @@ ${lines.join('\n')}
       </section>`;
   }
 
+  // ─── 학생 회차별 발전 추이 (업로드된 모든 월 종합) ──────────────────────
+  let mockDevChart = null;
+  let _mockDevState = null;
+  const _DEV_SUBJS = [
+    { key: '국어', color: '#5b8dee' }, { key: '수학', color: '#ff6b6b' },
+    { key: '영어', color: '#2ecc71' }, { key: '탐구', color: '#f39c12' },
+    { key: '한국사', color: '#a78bfa' }
+  ];
+
+  function renderStudentDevelopment(filtered) {
+    const sec = document.getElementById('mockDevSection');
+    if (!sec) return;
+    if (!filtered || !filtered.length) { sec.style.display = 'none'; return; }
+    const f0 = filtered[0];
+    const grade = String(f0.학년), ban = String(f0.반), num = String(f0.번호), name = f0.성명;
+
+    const L2 = /제2외국어|한문|일본어|중국어|프랑스어|독일어|스페인어|러시아어|아랍어|베트남어|라틴어/;
+    const monthOf = x => { const n = parseInt(String(x).replace(/[^0-9]/g, '')); return isNaN(n) ? 99 : n; };
+
+    // 업로드된 모든 월에서 이 학생의 과목별 등급 수집
+    const points = [];
+    Object.keys(mockDataByMonth).forEach(key => {
+      if (!key.startsWith(grade + '_')) return;
+      const recs = (mockDataByMonth[key] || []).filter(r => String(r.반) === ban && String(r.번호) === num && r.성명 === name);
+      if (!recs.length) return;
+      const month = key.split('_')[1];
+      const pt = { month, year: recs[0].연도 || '' };
+      recs.forEach(r => {
+        const g = parseFloat(r.등급); if (isNaN(g)) return;
+        const subj = String(r.과목 || '');
+        if (/^국어/.test(subj)) pt['국어'] = g;
+        else if (/^수학/.test(subj)) pt['수학'] = g;
+        else if (/^영어/.test(subj)) pt['영어'] = g;
+        else if (/^한국사/.test(subj)) pt['한국사'] = g;
+        else if (!L2.test(subj)) { if (pt['탐구'] == null || g < pt['탐구']) pt['탐구'] = g; }
+      });
+      points.push(pt);
+    });
+    points.sort((a, b) => (Number(a.year) - Number(b.year)) || (monthOf(a.month) - monthOf(b.month)));
+    if (points.length < 1) { sec.style.display = 'none'; return; }
+
+    const labels = points.map(p => `${p.month}월`);
+    const datasets = _DEV_SUBJS.map(s => ({
+      label: s.key, data: points.map(p => p[s.key] != null ? p[s.key] : null),
+      borderColor: s.color, backgroundColor: s.color, tension: 0.25, spanGaps: true, pointRadius: 4, borderWidth: 2
+    }));
+
+    const th = 'padding:6px 8px;border:1px solid var(--panel-border);text-align:center;font-size:0.8rem;white-space:nowrap;';
+    const headRow = `<tr style="background:rgba(124,131,253,0.1);"><th style="${th}">과목</th>${labels.map(l => `<th style="${th}">${l}</th>`).join('')}<th style="${th}">변화</th></tr>`;
+    const bodyRows = _DEV_SUBJS.map(s => {
+      const vals = points.map(p => (p[s.key] != null ? p[s.key] : null));
+      const present = vals.filter(v => v != null);
+      let change = '-', color = 'var(--text-secondary)';
+      if (present.length >= 2) {
+        const diff = present[0] - present[present.length - 1]; // 처음→끝, 양수면 등급 숫자 감소=상승
+        if (diff > 0) { change = `▲ ${diff}등급 상승`; color = '#34d399'; }
+        else if (diff < 0) { change = `▼ ${Math.abs(diff)}등급 하락`; color = '#f87171'; }
+        else { change = '─ 유지'; }
+      }
+      return `<tr><td style="${th}font-weight:700;color:${s.color};">${s.key}</td>${vals.map(v => `<td style="${th}">${v != null ? v + '등급' : '-'}</td>`).join('')}<td style="${th}color:${color};font-weight:600;">${change}</td></tr>`;
+    }).join('');
+
+    _mockDevState = { name, grade, ban, num, points, labels };
+
+    sec.style.display = 'block';
+    sec.innerHTML = `
+      <section class="glass-panel" style="padding:1.3rem 1.5rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.6rem;margin-bottom:0.6rem;">
+          <h3 style="margin:0;color:var(--accent-primary);">📈 회차별 발전 추이 <span style="font-size:0.8rem;color:var(--text-secondary);font-weight:normal;">(${name} · 업로드된 모든 회차 종합)</span></h3>
+          <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+            <button type="button" class="rpt-btn" onclick="window.generateMockDevReport()">🤖 AI 발전 분석 보고서</button>
+            <button type="button" class="rpt-btn" onclick="window.printStudentDevelopment()">🖨️ 인쇄·PDF</button>
+          </div>
+        </div>
+        ${points.length < 2 ? `<p style="font-size:0.82rem;color:#fbbf24;margin:0 0 0.6rem;">※ 회차가 1개뿐이라 추이 비교가 제한적입니다. 여러 회차(월)를 업로드하면 발전 추이가 보입니다.</p>` : ''}
+        <div style="height:300px;position:relative;margin-bottom:1rem;"><canvas id="mockDevChart"></canvas></div>
+        <div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;"><thead>${headRow}</thead><tbody>${bodyRows}</tbody></table></div>
+        <p style="margin:0.6rem 0 0;font-size:0.74rem;color:var(--text-secondary);">※ 등급은 낮을수록 우수 — 세로축은 1등급이 위로 가도록 반전. 탐구는 상위 과목(가장 좋은 등급) 기준. ‘변화’는 첫 회차 → 마지막 회차 비교.</p>
+      </section>`;
+
+    const canvas = document.getElementById('mockDevChart');
+    if (canvas && window.Chart) {
+      if (mockDevChart) { try { mockDevChart.destroy(); } catch (e) {} }
+      const isLight = document.body.classList.contains('light-mode');
+      const tickClr = isLight ? '#444' : '#ccc';
+      const gridClr = isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.06)';
+      mockDevChart = new Chart(canvas.getContext('2d'), {
+        type: 'line', data: { labels, datasets },
+        options: {
+          responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+          scales: {
+            x: { grid: { display: false }, ticks: { color: tickClr } },
+            y: { reverse: true, min: 1, max: 9, ticks: { color: tickClr, stepSize: 1 }, grid: { color: gridClr } }
+          },
+          plugins: {
+            legend: { labels: { color: tickClr, boxWidth: 12, font: { size: 11 } } },
+            tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${c.raw == null ? '-' : c.raw + '등급'}` } }
+          }
+        }
+      });
+    }
+  }
+
+  // 회차별 발전 AI 분석 보고서 (API 키 사용)
+  async function generateMockDevReport() {
+    if (!_mockDevState) { alert('먼저 학생을 선택해 발전 추이를 확인해 주세요.'); return; }
+    const apiKey = (document.getElementById('uni-api-key')?.value || document.getElementById('api-key')?.value || '').trim();
+    if (!apiKey) { alert('상단 API Key를 먼저 입력해 주세요.'); return; }
+    if (!window.ReportModal || typeof _callGeminiMockReport !== 'function') { alert('보고서 기능을 사용할 수 없습니다. 새로고침 후 다시 시도해 주세요.'); return; }
+
+    const { name, grade, points } = _mockDevState;
+    const title = `회차별 발전 분석 — ${name}`;
+    window.ReportModal.open(title, null);
+    window.ReportModal.startProgress('AI가 회차별 성적 발전 추이를 분석 중입니다…');
+
+    const lines = [];
+    lines.push(`[학생] ${name} (${grade}학년)`);
+    lines.push(`[회차] ${points.map(p => p.month + '월').join(', ')}`);
+    _DEV_SUBJS.forEach(s => {
+      lines.push(`- ${s.key}: ${points.map(p => `${p.month}월 ${p[s.key] != null ? p[s.key] + '등급' : '-'}`).join(' → ')}`);
+    });
+
+    const prompt = `당신은 대한민국 고등학교 진학지도 전문가입니다.
+아래는 한 학생의 모의고사 과목별 등급이 회차(월)가 지나며 어떻게 변했는지입니다. 등급은 낮을수록 우수합니다.
+이 자료만 근거로 학생 맞춤 '성적 발전 분석' 보고서를 한국어 마크다운으로 작성하세요.
+
+[자료]
+${lines.join('\n')}
+
+[작성 지침]
+- 아래 섹션 구성을 그대로 따르세요:
+## 1. 총평
+## 2. 과목별 발전 분석 (국어·수학·영어·탐구·한국사)
+## 3. 상승·정체·하락 과목 진단
+## 4. 다음 회차를 위한 맞춤 학습 제언
+- 반드시 위 등급 변화(몇 월에 몇 등급 → 몇 등급)를 구체적으로 인용하고, 자료에 없는 내용은 지어내지 마세요.
+- 표가 도움이 되면 마크다운 표를 쓰고, 코드블록(\`\`\`)은 쓰지 마세요.`;
+
+    try {
+      const text = await _callGeminiMockReport(apiKey, prompt);
+      const html = mdClean(text);
+      window.ReportModal.finishProgress();
+      window.ReportModal.setHTML(`<div class="markdown-body">${html}</div>`);
+      const printHTML = `<h1 style="text-align:center;">📈 ${name} — 회차별 발전 분석</h1>`
+        + `<p style="text-align:center;color:#555;">${grade}학년 · ${points.map(p => p.month + '월').join(', ')} | 출력일 ${new Date().toLocaleDateString('ko-KR')}</p>${html}`;
+      window.ReportModal.setPrint(() => printWithIframe(printHTML));
+      try {
+        await window.SavedReports.save({ type: 'mock-dev', title, scope: `${points.length}개 회차`, viewHTML: `<div class="markdown-body">${html}</div>`, printHTML });
+      } catch (e) { console.warn('[보고서 저장]', e); }
+    } catch (err) {
+      console.error('[발전 분석 보고서]', err);
+      window.ReportModal.setHTML(`<div style="color:#ef4444;padding:1.5rem;">생성 실패: ${err.message}</div>`);
+    }
+  }
+  window.generateMockDevReport = generateMockDevReport;
+
+  // 발전 추이(표+그래프) 인쇄·PDF
+  window.printStudentDevelopment = function () {
+    if (!_mockDevState) return;
+    const { name, grade, points, labels } = _mockDevState;
+    let chartImg = '';
+    try { const c = document.getElementById('mockDevChart'); if (c) chartImg = c.toDataURL('image/png'); } catch (e) {}
+    const th = 'border:1px solid #bbb;padding:5px 7px;text-align:center;';
+    const head = `<tr><th style="${th}background:#eef0ff;">과목</th>${labels.map(l => `<th style="${th}background:#eef0ff;">${l}</th>`).join('')}<th style="${th}background:#eef0ff;">변화</th></tr>`;
+    const body = _DEV_SUBJS.map(s => {
+      const vals = points.map(p => (p[s.key] != null ? p[s.key] : null));
+      const present = vals.filter(v => v != null);
+      let change = '-';
+      if (present.length >= 2) { const diff = present[0] - present[present.length - 1]; change = diff > 0 ? `▲ ${diff}등급 상승` : diff < 0 ? `▼ ${Math.abs(diff)}등급 하락` : '─ 유지'; }
+      return `<tr><td style="${th}font-weight:700;">${s.key}</td>${vals.map(v => `<td style="${th}">${v != null ? v + '등급' : '-'}</td>`).join('')}<td style="${th}">${change}</td></tr>`;
+    }).join('');
+    const w = window.open('', '_blank', 'width=900,height=900');
+    if (!w) { alert('팝업이 차단되었습니다. 팝업 허용 후 다시 시도해 주세요.'); return; }
+    w.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>회차별 발전 추이</title><style>
+      body{font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;color:#111;padding:26px;font-size:12px;}
+      h1{font-size:19px;text-align:center;margin:0 0 4px;} .sub{text-align:center;color:#555;font-size:11px;margin:0 0 16px;}
+      table{width:100%;border-collapse:collapse;font-size:11px;margin-top:10px;} img{max-width:100%;}
+      @media print{body{padding:12px;}}
+    </style></head><body>
+      <h1>📈 ${name} — 회차별 발전 추이</h1>
+      <p class="sub">${grade}학년 · ${labels.join(', ')} | 출력일: ${new Date().toLocaleDateString('ko-KR')}</p>
+      ${chartImg ? `<div style="text-align:center;"><img src="${chartImg}" style="max-width:700px;"></div>` : ''}
+      <table><thead>${head}</thead><tbody>${body}</tbody></table>
+      <p style="font-size:9.5px;color:#777;margin-top:10px;">※ 등급은 낮을수록 우수. 탐구는 상위 과목 기준.</p>
+    </body></html>`);
+    w.document.close();
+    setTimeout(() => { try { w.focus(); w.print(); } catch (e) {} }, 500);
+  };
+
   function renderFilteredMockData() {
     if (!mockPreviewBody) return;
     const mockGradeFilterSel = document.getElementById('mockGradeFilterSelect');
@@ -2819,6 +3008,7 @@ ${lines.join('\n')}
       if (mockIndividualView) mockIndividualView.classList.remove('hidden');
       renderStudentCsatMin(filtered);
       renderIndividualReport(filtered);
+      renderStudentDevelopment(filtered);
     }
 
     // 요약 카드 표시 로직
@@ -16962,6 +17152,221 @@ ${univPromptSupplement}
     return { text: lines.join('\n'), count: rows.length, rounds: roundKeys.length };
   }
 
+  // ── 모의고사 보고서용 '핵심 지표' 시각화 블록 (표 + 가로 막대 그래프) ──
+  // 선택 회차 기준: 직전 회차 대비 + 이전 전체 회차 평균 대비 증감, 과목별 학력 분포(가로 막대)
+  const _MOCK_BANDS = [
+    { label: '상위권', sub: '1~2', keys: [1, 2], c: '#1971c2' },
+    { label: '중상위권', sub: '3~4', keys: [3, 4], c: '#4dabf7' },
+    { label: '중위권', sub: '5', keys: [5], c: '#ffd43b' },
+    { label: '중하위권', sub: '6~7', keys: [6, 7], c: '#ff922b' },
+    { label: '하위권', sub: '8~9', keys: [8, 9], c: '#fa5252' },
+  ];
+
+  function buildMockReportVisualBlock(gradeVal, yearVal, roundVal) {
+    if (!compareGlobalData || !compareGlobalData.mock) return null;
+    const all = compareGlobalData.mock.filter(m => gradeVal === 'all' || String(m.grade) === gradeVal);
+    if (!all.length) return null;
+
+    const monthOf = r => { const n = parseInt(String(r).replace(/[^0-9]/g, '')); return isNaN(n) ? 99 : n; };
+    const roundKeys = [...new Set(all.map(m => m.year + '||' + m.round))]
+      .map(k => { const [y, r] = k.split('||'); return { year: +y, round: r }; })
+      .sort((a, b) => a.year - b.year || monthOf(a.round) - monthOf(b.round));
+
+    const specific = (yearVal !== 'all' && roundVal !== 'all');
+    let curRows, prevRows, priorRows, curLabel, prevLabel, priorLabel, priorCount = 0, hasComp = false;
+    if (specific) {
+      const idx = roundKeys.findIndex(k => String(k.year) === String(yearVal) && String(k.round) === String(roundVal));
+      curRows = all.filter(m => String(m.year) === String(yearVal) && String(m.round) === String(roundVal));
+      const prev = idx > 0 ? roundKeys[idx - 1] : null;
+      prevRows = prev ? all.filter(m => String(m.year) === String(prev.year) && String(m.round) === String(prev.round)) : [];
+      const priorK = idx > 0 ? roundKeys.slice(0, idx) : [];
+      priorCount = priorK.length;
+      priorRows = priorK.length ? all.filter(m => priorK.some(k => String(k.year) === String(m.year) && String(k.round) === String(m.round))) : [];
+      curLabel = `${yearVal} ${roundVal}`;
+      prevLabel = prev ? `${prev.year} ${prev.round}` : '-';
+      priorLabel = priorK.length ? `이전 ${priorK.length}개 회차 평균` : '-';
+      hasComp = idx > 0;
+    } else {
+      curRows = all.filter(m =>
+        (yearVal === 'all' || String(m.year) === String(yearVal)) &&
+        (roundVal === 'all' || String(m.round) === String(roundVal)));
+      prevRows = []; priorRows = [];
+      curLabel = '선택 범위 전체'; prevLabel = '-'; priorLabel = '-';
+    }
+    if (!curRows || !curRows.length) return null;
+
+    const avg = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : NaN;
+    const mk = (key, nameFilter) => (m) => {
+      const d = m[key]; if (!d) return null;
+      if (nameFilter && String(d.subjectName || '').trim() !== nameFilter) return null;
+      return { pct: _smMetricVal(d, 'pct'), grade: _smMetricVal(d, 'grade') };
+    };
+    const mkTamgu = (name) => (m) => {
+      for (const f of ['탐구영역1', '탐구영역2']) { const d = m[f]; if (d && String(d.subjectName || '').trim() === name) return { pct: _smMetricVal(d, 'pct'), grade: _smMetricVal(d, 'grade') }; }
+      return null;
+    };
+    const aggregate = (rows, extract) => {
+      const pcts = [], grs = [], gc = {};
+      rows.forEach(m => {
+        const r = extract(m); if (!r) return;
+        if (!isNaN(r.pct)) pcts.push(r.pct);
+        if (!isNaN(r.grade)) { grs.push(r.grade); const gg = Math.round(r.grade); if (gg >= 1 && gg <= 9) gc[gg] = (gc[gg] || 0) + 1; }
+      });
+      return { n: grs.length, pct: avg(pcts), grade: avg(grs), gc, total: grs.length };
+    };
+    const choiceNames = (key) => {
+      const c = {}; curRows.forEach(m => { const nm = String((m[key] && m[key].subjectName) || '').trim(); if (nm) c[nm] = (c[nm] || 0) + 1; });
+      return Object.entries(c).sort((a, b) => b[1] - a[1]).map(e => e[0]);
+    };
+    const tamguNames = () => {
+      const c = {}; curRows.forEach(m => { for (const f of ['탐구영역1', '탐구영역2']) { const nm = String((m[f] && m[f].subjectName) || '').trim(); if (nm) c[nm] = (c[nm] || 0) + 1; } });
+      return Object.entries(c).filter(e => e[1] >= 3).sort((a, b) => b[1] - a[1]).map(e => e[0]);
+    };
+
+    const rowDefs = [];
+    rowDefs.push({ label: '국어', extract: mk('국어'), main: true });
+    choiceNames('국어').forEach(nm => rowDefs.push({ label: nm, extract: mk('국어', nm), indent: true }));
+    rowDefs.push({ label: '수학', extract: mk('수학'), main: true });
+    choiceNames('수학').forEach(nm => rowDefs.push({ label: nm, extract: mk('수학', nm), indent: true }));
+    rowDefs.push({ label: '영어', extract: mk('영어'), main: true, abs: true });
+    rowDefs.push({ label: '한국사', extract: mk('한국사'), main: true, abs: true });
+    tamguNames().forEach(nm => rowDefs.push({ label: nm, extract: mkTamgu(nm), tamgu: true }));
+
+    const f1 = v => isNaN(v) ? '–' : v.toFixed(1);
+    const f2 = v => isNaN(v) ? '–' : v.toFixed(2);
+    const pctBand = (gc, total, keys) => total ? (keys.reduce((s, k) => s + (gc[k] || 0), 0) / total * 100) : NaN;
+    const deltaCell = (cur, base, dec) => {
+      if (isNaN(cur) || isNaN(base)) return '<span style="color:#adb5bd;">–</span>';
+      const r = +(cur - base).toFixed(dec);
+      if (r === 0) return `<span style="color:#868e96;">0${dec ? '.' + '0'.repeat(dec) : ''}</span>`;
+      const up = r > 0;
+      return `<span style="color:${up ? '#e03131' : '#1c7ed6'};font-weight:700;">${up ? '▲' : '▼'}${Math.abs(r).toFixed(dec)}</span>`;
+    };
+
+    // 각 행 집계
+    const computed = rowDefs.map(rd => ({
+      rd,
+      cur: aggregate(curRows, rd.extract),
+      prev: hasComp ? aggregate(prevRows, rd.extract) : null,
+      prior: hasComp ? aggregate(priorRows, rd.extract) : null,
+    })).filter(c => c.cur.n > 0);
+    if (!computed.length) return null;
+
+    // ── 핵심 지표 비교표 ──
+    const th = 'style="border:1px solid #c9ccd6;padding:5px 6px;background:#eef1fb;font-size:11px;color:#1e2a6e;white-space:nowrap;"';
+    const tdC = 'style="border:1px solid #d7dae3;padding:4px 6px;text-align:center;font-size:11px;"';
+    const compHead = hasComp
+      ? `<th ${th}>직전대비</th><th ${th}>이전평균대비</th>` : '';
+    const tableRows = computed.map(c => {
+      const { rd, cur, prev, prior } = c;
+      const nameCell = rd.main
+        ? `<td style="border:1px solid #d7dae3;padding:4px 8px;text-align:left;font-size:11px;font-weight:700;background:#f7f8ff;">${rd.label}</td>`
+        : `<td style="border:1px solid #d7dae3;padding:4px 8px 4px 18px;text-align:left;font-size:11px;color:#444;">${rd.tamgu ? '· ' : '└ '}${rd.label}</td>`;
+      const pctCur = rd.abs ? '–' : f1(cur.pct);
+      const pctComp = hasComp
+        ? `<td ${tdC}>${rd.abs ? '<span style="color:#adb5bd;">–</span>' : deltaCell(cur.pct, prev.pct, 1)}</td><td ${tdC}>${rd.abs ? '<span style="color:#adb5bd;">–</span>' : deltaCell(cur.pct, prior.pct, 1)}</td>` : '';
+      const grComp = hasComp
+        ? `<td ${tdC}>${deltaCell(cur.grade, prev.grade, 2)}</td><td ${tdC}>${deltaCell(cur.grade, prior.grade, 2)}</td>` : '';
+      const top12 = pctBand(cur.gc, cur.total, [1, 2]);
+      const bot79 = pctBand(cur.gc, cur.total, [8, 9]);
+      return `<tr>${nameCell}<td ${tdC}>${cur.n}</td><td ${tdC}>${pctCur}</td>${pctComp}<td ${tdC}>${f2(cur.grade)}</td>${grComp}<td ${tdC}>${isNaN(top12) ? '–' : top12.toFixed(0) + '%'}</td><td ${tdC}>${isNaN(bot79) ? '–' : bot79.toFixed(0) + '%'}</td></tr>`;
+    }).join('');
+
+    const compCaption = hasComp
+      ? `<div style="font-size:10.5px;color:#555;margin:2px 0 8px;">현재: <b>${curLabel}</b> · 직전: <b>${prevLabel}</b> · 이전평균: <b>${priorLabel}</b> &nbsp;|&nbsp; <span style="color:#e03131;">▲</span> 상승 · <span style="color:#1c7ed6;">▼</span> 하락 (등급은 낮을수록 우수)</div>`
+      : `<div style="font-size:10.5px;color:#555;margin:2px 0 8px;">범위: <b>${curLabel}</b> — 특정 연도·회차를 선택하면 직전 회차 및 이전 평균과의 증감이 함께 표시됩니다.</div>`;
+
+    const compTable = `<h3 style="font-size:14px;margin:4px 0 4px;color:#1e2a6e;">① 영역·과목별 핵심 지표${hasComp ? ' (직전·이전평균 대비)' : ''}</h3>
+      ${compCaption}
+      <div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;margin-bottom:6px;">
+        <thead><tr>
+          <th ${th} style="border:1px solid #c9ccd6;padding:5px 8px;background:#eef1fb;font-size:11px;color:#1e2a6e;text-align:left;">영역·과목</th>
+          <th ${th}>응시</th><th ${th}>평균<br>백분위</th>${compHead}<th ${th}>평균<br>등급</th>${compHead}<th ${th}>1~2<br>등급</th><th ${th}>7~9<br>등급</th>
+        </tr></thead>
+        <tbody>${tableRows}</tbody>
+      </table></div>
+      <div style="font-size:10px;color:#888;margin-bottom:14px;">※ 영어·한국사는 절대평가로 등급만 비교합니다. 탐구는 응시 3명 이상 과목만 표시합니다.</div>`;
+
+    // ── 학력 분포 가로 막대 ──
+    const legend = _MOCK_BANDS.map(b => `<span style="display:inline-flex;align-items:center;gap:4px;margin-right:12px;font-size:10.5px;color:#444;"><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:${b.c};-webkit-print-color-adjust:exact;print-color-adjust:exact;"></span>${b.label}(${b.sub})</span>`).join('');
+    const bandBar = (gc, total) => {
+      if (!total) return '<div style="color:#aaa;font-size:10.5px;">데이터 없음</div>';
+      return `<div style="display:flex;height:20px;border-radius:5px;overflow:hidden;border:1px solid #dee2e6;background:#f1f3f5;">${
+        _MOCK_BANDS.map(b => {
+          const n = b.keys.reduce((s, k) => s + (gc[k] || 0), 0);
+          const p = n / total * 100;
+          if (p <= 0) return '';
+          return `<div title="${b.label} ${n}명 ${p.toFixed(0)}%" style="width:${p}%;background:${b.c};color:#fff;font-size:9.5px;line-height:20px;text-align:center;overflow:hidden;white-space:nowrap;-webkit-print-color-adjust:exact;print-color-adjust:exact;">${p >= 11 ? p.toFixed(0) : ''}</div>`;
+        }).join('')
+      }</div>`;
+    };
+    const distRows = computed.map(c => {
+      const nm = c.rd.main ? `<b>${c.rd.label}</b>` : `<span style="color:#555;">${c.rd.indent ? '└ ' : '· '}${c.rd.label}</span>`;
+      return `<div style="display:grid;grid-template-columns:118px 1fr;gap:8px;align-items:center;margin-bottom:5px;">
+        <div style="font-size:11px;text-align:right;">${nm} <span style="color:#999;font-size:9.5px;">${c.cur.total}명</span></div>
+        ${bandBar(c.cur.gc, c.cur.total)}
+      </div>`;
+    }).join('');
+    const distSection = `<h3 style="font-size:14px;margin:16px 0 4px;color:#1e2a6e;">② 과목별 학력 분포</h3>
+      <div style="margin:4px 0 8px;">${legend}</div>
+      ${distRows}`;
+
+    // ── 선택과목 응시 분포 (국어·수학·탐구) ──
+    const choiceSectionRows = [['국어', '국어'], ['수학', '수학']].map(([key, lbl]) => {
+      const c = {}; let tot = 0;
+      curRows.forEach(m => { const nm = String((m[key] && m[key].subjectName) || '').trim(); if (nm) { c[nm] = (c[nm] || 0) + 1; tot++; } });
+      if (!tot) return '';
+      const palette = ['#5b8dee', '#ff6b6b', '#2ecc71', '#f39c12', '#a78bfa', '#20c997'];
+      const segs = Object.entries(c).sort((a, b) => b[1] - a[1]);
+      const bar = `<div style="display:flex;height:20px;border-radius:5px;overflow:hidden;border:1px solid #dee2e6;">${
+        segs.map((e, i) => { const p = e[1] / tot * 100; return `<div title="${e[0]} ${e[1]}명 ${p.toFixed(0)}%" style="width:${p}%;background:${palette[i % palette.length]};color:#fff;font-size:9.5px;line-height:20px;text-align:center;overflow:hidden;white-space:nowrap;-webkit-print-color-adjust:exact;print-color-adjust:exact;">${p >= 14 ? e[0] + ' ' + p.toFixed(0) + '%' : ''}</div>`; }).join('')
+      }</div>`;
+      const tags = segs.map((e, i) => `<span style="display:inline-flex;align-items:center;gap:3px;margin-right:10px;font-size:10px;color:#444;"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${palette[i % palette.length]};-webkit-print-color-adjust:exact;print-color-adjust:exact;"></span>${e[0]} ${e[1]}명</span>`).join('');
+      return `<div style="margin-bottom:10px;"><div style="font-size:11px;font-weight:700;margin-bottom:3px;">${lbl} 선택과목 (${tot}명)</div>${bar}<div style="margin-top:3px;">${tags}</div></div>`;
+    }).filter(Boolean).join('');
+    const tamguCnt = {}; let tamguTot = 0;
+    curRows.forEach(m => { for (const f of ['탐구영역1', '탐구영역2']) { const nm = String((m[f] && m[f].subjectName) || '').trim(); if (nm) { tamguCnt[nm] = (tamguCnt[nm] || 0) + 1; tamguTot++; } } });
+    let tamguSection = '';
+    if (tamguTot) {
+      const palette = ['#5b8dee', '#ff6b6b', '#2ecc71', '#f39c12', '#a78bfa', '#20c997', '#e64980', '#15aabf', '#fab005', '#7950f2'];
+      const segs = Object.entries(tamguCnt).sort((a, b) => b[1] - a[1]);
+      const tags = segs.map((e, i) => `<span style="display:inline-flex;align-items:center;gap:3px;margin:0 10px 4px 0;font-size:10px;color:#444;"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${palette[i % palette.length]};-webkit-print-color-adjust:exact;print-color-adjust:exact;"></span>${e[0]} ${e[1]}명</span>`).join('');
+      const bar = `<div style="display:flex;height:20px;border-radius:5px;overflow:hidden;border:1px solid #dee2e6;">${
+        segs.map((e, i) => { const p = e[1] / tamguTot * 100; return `<div title="${e[0]} ${e[1]}명 ${p.toFixed(0)}%" style="width:${p}%;background:${palette[i % palette.length]};-webkit-print-color-adjust:exact;print-color-adjust:exact;"></div>`; }).join('')
+      }</div>`;
+      tamguSection = `<div style="margin-bottom:6px;"><div style="font-size:11px;font-weight:700;margin-bottom:3px;">탐구 선택과목 (연인원 ${tamguTot}명)</div>${bar}<div style="margin-top:4px;">${tags}</div></div>`;
+    }
+    const choiceSection = (choiceSectionRows || tamguSection)
+      ? `<h3 style="font-size:14px;margin:16px 0 6px;color:#1e2a6e;">③ 선택과목 응시 분포</h3>${choiceSectionRows}${tamguSection}` : '';
+
+    const html = `<div class="mock-visual-block" style="background:#fff;color:#111;border:1px solid #e3e6ef;border-radius:10px;padding:16px 18px;margin-bottom:16px;">
+      <div style="font-size:15px;font-weight:800;color:#1e2a6e;margin-bottom:2px;">📊 핵심 지표 분석 <span style="font-size:11px;font-weight:500;color:#777;">(데이터 기반 자동 산출)</span></div>
+      <div style="border-top:2px solid #2563eb;margin:6px 0 12px;"></div>
+      ${compTable}
+      ${distSection}
+      ${choiceSection}
+    </div>`;
+
+    // AI 프롬프트용 텍스트
+    const tlines = [];
+    tlines.push(`[핵심 지표 — ${curLabel}${hasComp ? ` / 직전: ${prevLabel} / 이전평균: ${priorLabel}` : ''}]`);
+    computed.forEach(c => {
+      const { rd, cur, prev, prior } = c;
+      let s = `- ${rd.label}: 응시 ${cur.n}명, 평균등급 ${f2(cur.grade)}`;
+      if (!rd.abs) s += `, 평균백분위 ${f1(cur.pct)}`;
+      if (hasComp) {
+        const dg = isNaN(cur.grade) || isNaN(prev.grade) ? null : (cur.grade - prev.grade);
+        const dgp = isNaN(cur.grade) || isNaN(prior.grade) ? null : (cur.grade - prior.grade);
+        s += ` | 등급 직전대비 ${dg == null ? '-' : (dg > 0 ? '+' : '') + dg.toFixed(2)}, 이전평균대비 ${dgp == null ? '-' : (dgp > 0 ? '+' : '') + dgp.toFixed(2)}`;
+      }
+      const top12 = pctBand(cur.gc, cur.total, [1, 2]);
+      const bot79 = pctBand(cur.gc, cur.total, [8, 9]);
+      s += ` | 1~2등급 ${isNaN(top12) ? '-' : top12.toFixed(0) + '%'}, 7~9등급 ${isNaN(bot79) ? '-' : bot79.toFixed(0) + '%'}`;
+      tlines.push(s);
+    });
+    return { html, text: tlines.join('\n'), hasComp, curLabel };
+  }
+
   async function _callGeminiMockReport(apiKey, prompt) {
     const body = { contents: [{ role: 'user', parts: [{ text: prompt }] }], generationConfig: { temperature: 0.5, maxOutputTokens: 8192 } };
     const models = ['gemini-3.1-pro', 'gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.5-flash-lite'];
@@ -17000,6 +17405,8 @@ ${univPromptSupplement}
 
     const summary = buildMockReportSummary(gradeVal, yearVal, roundVal);
     if (!summary) { alert('해당 조건의 데이터가 없습니다.'); return; }
+    const visual = buildMockReportVisualBlock(gradeVal, yearVal, roundVal);
+    const visualHTML = visual ? visual.html : '';
 
     // 공용 보고서 모달 + 진행률 바
     ReportModal.open('모의고사 AI 분석 보고서 — ' + scopeLabel, null);
@@ -17014,7 +17421,7 @@ ${univPromptSupplement}
 
 [집계 데이터]
 ${summary.text}
-
+${visual ? '\n' + visual.text + '\n' : ''}
 [작성 지침]
 - 반드시 위에 주어진 수치에만 근거하여 구체적으로 서술하고, 데이터에 없는 수치를 임의로 지어내지 마세요.
 - 아래 섹션 구성을 그대로 따르세요:
@@ -17022,18 +17429,20 @@ ${sectionList}
 - 수치 비교가 필요한 곳은 마크다운 표를 활용하세요.
 - 코드블록(\`\`\`)은 쓰지 마세요.
 - 각 과목의 강·약점, 학생들의 과목 선택 경향, 상위권 분포 특징을 짚고, 교사·학교가 실천할 수 있는 구체적 지도 제언으로 마무리하세요.
-- 영어·한국사는 절대평가라 백분위·표준점수가 없다는 점을 감안해 등급 중심으로 해석하세요.`;
+- 영어·한국사는 절대평가라 백분위·표준점수가 없다는 점을 감안해 등급 중심으로 해석하세요.
+- 보고서 맨 위에는 '핵심 지표 분석'(직전 회차 대비·이전 회차 평균 대비 증감, 과목별 학력 분포 가로 막대, 선택과목 분포) 표·그래프가 이미 자동으로 삽입되어 있습니다. 같은 수치를 단순 나열하지 말고, 그 데이터가 의미하는 바(상승·하락의 원인 추정, 상·하위권 쏠림, 선택과목 유불리 등)를 해석·진단하는 데 집중하세요.
+- '[핵심 지표]'에 제공된 직전 회차 대비와 이전 평균 대비 증감을 반드시 함께 언급하며, 일시적 변동인지 추세적 변화인지 구분해 서술하세요.`;
 
     try {
       const text = await _callGeminiMockReport(apiKey, prompt);
-      _mockReportState = { html: mdClean(text), scopeLabel };
+      _mockReportState = { html: mdClean(text), visualHTML, scopeLabel };
       ReportModal.finishProgress();
-      ReportModal.setHTML(`<div class="markdown-body">${_mockReportState.html}</div>`);
+      ReportModal.setHTML(`${visualHTML}<div class="markdown-body">${_mockReportState.html}</div>`);
       ReportModal.setPrint(printMockReport);
       // 로컬 저장 (언제든 다시 보기)
       try {
-        const printHTML = `<h1 style="text-align:center;">🏫 우리학교 모의고사 AI 분석 보고서</h1><p style="text-align:center;color:#555;">${scopeLabel} | 출력일: ${new Date().toLocaleDateString('ko-KR')}</p>${_mockReportState.html}`;
-        await SavedReports.save({ type: 'mock', title: '모의고사 — ' + scopeLabel, scope: `응시 ${summary.count}명`, viewHTML: _mockReportState.html, printHTML });
+        const printHTML = `<h1 style="text-align:center;">🏫 우리학교 모의고사 AI 분석 보고서</h1><p style="text-align:center;color:#555;">${scopeLabel} | 출력일: ${new Date().toLocaleDateString('ko-KR')}</p>${visualHTML}${_mockReportState.html}`;
+        await SavedReports.save({ type: 'mock', title: '모의고사 — ' + scopeLabel, scope: `응시 ${summary.count}명`, viewHTML: `${visualHTML}${_mockReportState.html}`, printHTML });
       } catch (e) { console.warn('[보고서 저장]', e); }
     } catch (err) {
       console.error('[모의고사 보고서]', err);
@@ -17047,7 +17456,7 @@ ${sectionList}
     if (!w) { alert('팝업이 차단되었습니다. 팝업 허용 후 다시 시도해 주세요.'); return; }
     w.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>우리학교 모의고사 AI 분석 보고서</title><style>
       *,*::before,*::after{box-sizing:border-box;}
-      body{font-family:'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif;color:#111;padding:28px;line-height:1.75;font-size:12px;background:#fff;}
+      body{font-family:'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif;color:#111;padding:28px;line-height:1.75;font-size:12px;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
       h1{font-size:20px;text-align:center;margin:0 0 4px;}
       .subtitle{text-align:center;color:#555;margin:0 0 20px;font-size:11px;}
       h2{font-size:15px;margin:20px 0 8px;border-left:4px solid #2563eb;padding-left:8px;color:#1e2a6e;}
@@ -17061,6 +17470,7 @@ ${sectionList}
     </style></head><body>
       <h1>🏫 우리학교 모의고사 AI 분석 보고서</h1>
       <p class="subtitle">${_mockReportState.scopeLabel} &nbsp;|&nbsp; 출력일: ${new Date().toLocaleDateString('ko-KR')}</p>
+      ${_mockReportState.visualHTML || ''}
       ${_mockReportState.html}
     </body></html>`);
     w.document.close();
