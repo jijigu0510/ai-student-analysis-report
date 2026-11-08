@@ -2435,8 +2435,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const printBtnHtml = `
       <div style="text-align:right; margin-bottom:0.8rem; display:flex; gap:0.5rem; justify-content:flex-end; flex-wrap:wrap;">
-        <button type="button" class="btn-primary" style="padding:0.45rem 0.9rem; font-size:0.85rem; background:linear-gradient(135deg,#2563eb,#06b6d4);" onclick="window.generateMockSubjectReport()">🤖 AI 분석 보고서</button>
-        <button type="button" class="btn-primary" style="padding:0.45rem 0.9rem; font-size:0.85rem; background:linear-gradient(135deg,#e05fc4,#a855f7);" onclick="window.printMockSubjectAnalysis()">🖨️ 인쇄·PDF</button>
+        <button type="button" class="btn-primary" style="width:auto; margin-top:0; padding:0.45rem 0.9rem; font-size:0.85rem; background:linear-gradient(135deg,#2563eb,#06b6d4);" onclick="window.generateMockSubjectReport()">🤖 AI 분석 보고서</button>
+        <button type="button" class="btn-primary" style="width:auto; margin-top:0; padding:0.45rem 0.9rem; font-size:0.85rem; background:linear-gradient(135deg,#e05fc4,#a855f7);" onclick="window.printMockSubjectAnalysis()">🖨️ 인쇄·PDF</button>
       </div>`;
 
     modalBody.innerHTML = printBtnHtml + studentInfoHtml + summaryHtml + tableHtml;
