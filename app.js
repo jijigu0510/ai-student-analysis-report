@@ -1608,14 +1608,46 @@ document.addEventListener("DOMContentLoaded", () => {
     // ── 4. Answer analysis: find question-number header rows ──
     // Header row: ≥5 sequential integers, max >5 and ≤50, NO O/X cells in same row
     const qColMaps = [];
+    // 2열 그리드 헤더에서 좌/우 블록 경계 x 계산 (두 번째 '1'과 그 바로 왼쪽 번호의 중간)
+    const dualGridSplitX = (entries) => {
+      const sorted = [...entries].sort((a, b) => a.x - b.x);
+      const q1Idx = sorted.map((e, i) => e.n === 1 ? i : -1).filter(i => i >= 0);
+      if (q1Idx.length < 2) return null;
+      const r = q1Idx[q1Idx.length - 1];
+      return r > 0 ? (sorted[r].x + sorted[r - 1].x) / 2 : sorted[r].x - 8;
+    };
+    // 헤더 행에서 "10 11 12 13 14 15 16 17"처럼 여러 번호가 한 텍스트 셀로 묶인 경우(2학년 탐구 그리드 등)
+    // → 이웃 단일 번호 셀 사이를 등간격 보간해 개별 번호 셀로 분해
+    const expandHeaderNums = (cells) => {
+      const out = [];
+      for (let i = 0; i < cells.length; i++) {
+        const c = cells[i];
+        if (/^\d+$/.test(c.str)) { out.push({ str: c.str, x: c.x }); continue; }
+        if (!/^\d+(\s+\d+)+$/.test(c.str)) continue;
+        const toks = c.str.trim().split(/\s+/);
+        const prev = (i > 0 && /^\d+$/.test(cells[i - 1].str)) ? cells[i - 1] : null;
+        const next = (i + 1 < cells.length && /^\d+$/.test(cells[i + 1].str)) ? cells[i + 1] : null;
+        if (prev && next) {
+          const step = (next.x - prev.x) / (toks.length + 1);
+          toks.forEach((t, k) => out.push({ str: t, x: prev.x + step * (k + 1) }));
+        } else {
+          const step = (c.w > 0 ? c.w : 14 * toks.length) / toks.length;
+          toks.forEach((t, k) => out.push({ str: t, x: c.x + step * k }));
+        }
+      }
+      return out;
+    };
     for (const line of lines) {
       const oxCheck = line.cells.filter(c => c.str === 'O' || c.str === 'X');
       if (oxCheck.length >= 3) continue; // 채점결과 row, not a header
-      const numCells = line.cells.filter(c => /^\d+$/.test(c.str));
+      const numCells = expandHeaderNums(line.cells);
       if (numCells.length < 5) continue;
       const nums = numCells.map(c => parseInt(c.str));
       const maxN = Math.max(...nums);
       if (maxN <= 10 || maxN > 50) continue;
+      // 문항 헤더는 항상 1번부터 시작 — "수학 22 23 … 30" 같은 단답형 번호 라벨 줄은 헤더가 아님
+      // (이 줄을 헤더로 잡으면 바로 아래 영어 채점결과가 22~30 열에 잘못 스냅됨)
+      if (Math.min(...nums) !== 1) continue;
       const sorted = [...nums].sort((a, b) => a - b);
       const uniq = [...new Set(sorted)];
       // 탐구 2열 그리드(1-20이 좌우로 두 번 반복)는 중복 제거 후 순열 체크
@@ -1624,7 +1656,12 @@ document.addEventListener("DOMContentLoaded", () => {
       let seq = 0;
       for (let i = 1; i < seqArr.length; i++) if (seqArr[i] === seqArr[i - 1] + 1) seq++;
       if (seq >= seqArr.length * 0.6) {
-        qColMaps.push({ y: line.y, entries: numCells.map(c => ({ x: c.x, n: parseInt(c.str) })) });
+        const entries = numCells.map(c => ({ x: c.x, n: parseInt(c.str) }));
+        // 2열 그리드(1번이 두 곳에 등장): 좌/우 경계 x = 오른쪽 블록의 1번과 그 바로 왼쪽 번호 사이
+        const dual = entries.filter(e => e.n === 1).length >= 2;
+        const splitX = dual ? dualGridSplitX(entries) : null;
+        const maxN = Math.max(...entries.map(e => e.n));
+        qColMaps.push({ y: line.y, entries, dual, splitX, maxN });
       }
     }
 
@@ -1676,7 +1713,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (q1s.length >= 2) {
           tangoSubjs[0].x = q1s[0].x;
           tangoSubjs[1].x = q1s[q1s.length - 1].x;
-          tangoXSplit = (q1s[0].x + q1s[q1s.length - 1].x) / 2;
+          tangoXSplit = h.splitX != null ? h.splitX : (q1s[0].x + q1s[q1s.length - 1].x) / 2;
           break;
         }
       }
@@ -1691,7 +1728,8 @@ document.addEventListener("DOMContentLoaded", () => {
     let mathDandapMap = {}; // { oxCellX: qNum, ... }
     let mathDandapSubj = '';
 
-    for (const line of lines) {
+    for (let li = 0; li < lines.length; li++) {
+      const line = lines[li];
       const nosp = line.text.replace(/\s/g, '');
 
       // Track subject context from label-only lines that precede 채점결과 rows
@@ -1701,7 +1739,8 @@ document.addEventListener("DOMContentLoaded", () => {
       if (/^수학정답/.test(nosp)) { lastAnswerSubj = Object.keys(scores).find(k => k.startsWith('수학')) || '수학'; continue; }
       if (/^탐구정답/.test(nosp)) { lastAnswerSubj = '탐구'; continue; }
       // 1/2학년: 순수 레이블 행 (OX 없는 과목 표기)
-      if (/^국어$/.test(nosp)) { lastAnswerSubj = Object.keys(scores).find(k => k.startsWith('국어')) || '국어'; continue; }
+      // 2학년 10월 등: "국어" 라벨이 정답 숫자 행과 한 줄로 병합("국어2423...")되는 경우도 인식
+      if (/^국어$/.test(nosp) || /^국어\d/.test(nosp)) { lastAnswerSubj = Object.keys(scores).find(k => k.startsWith('국어')) || '국어'; continue; }
       if (/^수학$/.test(nosp) || /^수학\d/.test(nosp)) { lastAnswerSubj = Object.keys(scores).find(k => k.startsWith('수학')) || '수학'; continue; }
       if (/^사회$/.test(nosp)) { lastAnswerSubj = Object.keys(scores).find(k => k === '사회' || k === '통합사회') || '사회'; continue; }
       if (/^과학$/.test(nosp)) { lastAnswerSubj = Object.keys(scores).find(k => k === '과학' || k === '통합과학') || '과학'; continue; }
@@ -1716,9 +1755,21 @@ document.addEventListener("DOMContentLoaded", () => {
         const leftLabel = line.cells.filter(c => c.x < 70).map(c => c.str).join('').replace(/\s/g, '');
         if (leftLabel === '영어') lastAnswerSubj = '영어';
         else if (leftLabel === '한국사') lastAnswerSubj = '한국사';
+        else if (leftLabel === '국어') lastAnswerSubj = Object.keys(scores).find(k => k.startsWith('국어')) || '국어';
+        else if (leftLabel === '수학') lastAnswerSubj = Object.keys(scores).find(k => k.startsWith('수학')) || '수학';
+        else if (leftLabel === '탐구') lastAnswerSubj = '탐구';
       }
 
       const oxCells = line.cells.filter(c => c.str === 'O' || c.str === 'X');
+      // "채점결과 O"처럼 라벨과 1번 OX가 한 셀로 묶인 경우 → 1번 열 위치의 OX 셀로 분리
+      {
+        const merged = line.cells.find(c => /^채점결과\s+[OX]$/.test(c.str));
+        if (merged) {
+          const hdr = qColMaps.filter(h => h.y >= line.y).sort((a, b) => (a.y - line.y) - (b.y - line.y))[0];
+          const q1x = hdr ? Math.min(...hdr.entries.map(e => e.x)) : merged.x + merged.w - 4;
+          oxCells.unshift({ str: merged.str.slice(-1), x: q1x, w: 5 });
+        }
+      }
       const aeCells = line.cells.filter(c => /^[A-E]$/.test(c.str));
       const oxCount = oxCells.length, aeCount = aeCells.length;
 
@@ -1789,7 +1840,12 @@ document.addEventListener("DOMContentLoaded", () => {
           if (bestQ === null) continue;
 
           let finalSubj = subjName, finalQ = bestQ;
-          if (isTango && tangoSubjs.length >= 2) {
+          if (isTango && tangoSubjs.length >= 2 && h.dual) {
+            // 좌우 각각 1~N번이 반복되는 2열 그리드: 번호가 아니라 x 위치로 과목 결정
+            const sx = h.splitX != null ? h.splitX : tangoXSplit;
+            finalSubj = cell.x <= sx ? tangoSubjs[0].name : tangoSubjs[1].name;
+            finalQ = bestQ;
+          } else if (isTango && tangoSubjs.length >= 2) {
             if (cell.x <= tangoXSplit || bestQ <= 20) {
               finalSubj = tangoSubjs[0].name;
               finalQ = bestQ <= 20 ? bestQ : bestQ - 20;
@@ -1804,7 +1860,9 @@ document.addEventListener("DOMContentLoaded", () => {
             finalQ = (finalQ - 1) % 20 + 1;
           }
           // 과목 최대 문항 수 초과 시 다음 헤더로 시도
-          if (finalQ > subjectMaxQ || finalQ < 1) continue;
+          // (2열 탐구 그리드는 헤더 자체의 최대 번호까지 허용 — 2학년 사회/과학 25문항 등)
+          const maxQ = (isTango && h.dual) ? Math.max(subjectMaxQ, h.maxN) : subjectMaxQ;
+          if (finalQ > maxQ || finalQ < 1) continue;
           return { finalSubj, finalQ };
         }
         return null;
@@ -1816,12 +1874,26 @@ document.addEventListener("DOMContentLoaded", () => {
         if (isMathCtx) {
           mathDandapMap = {};
           mathDandapSubj = subjName;
-          const numCells16_30 = line.cells.filter(c => /^\d+$/.test(c.str) && +c.str >= 16 && +c.str <= 30);
+          // 단답형 번호(16~30)가 같은 행에 인라인으로 있는 레이아웃(3학년) 우선,
+          // 없으면 바로 위 정답 행(2학년 10월: "22 B20 23 BB6 ...")에서 번호를 가져와 OX 열과 짝지음
+          const pick16_30 = cells => cells.filter(c => /^\d+$/.test(c.str) && +c.str >= 16 && +c.str <= 30);
+          let numCells16_30 = pick16_30(line.cells);
+          if (numCells16_30.length < 2) {
+            for (let back = 1; back <= 2 && li - back >= 0; back++) {
+              const prevLine = lines[li - back];
+              if (Math.abs(prevLine.y - line.y) > 16) break;
+              const cand = pick16_30(prevLine.cells).sort((a, b) => a.x - b.x);
+              // 오름차순 연속 번호(22,23,...)일 때만 단답형 라벨로 인정
+              let asc = cand.length >= 2;
+              for (let k = 1; k < cand.length && asc; k++) if (+cand[k].str !== +cand[k - 1].str + 1) asc = false;
+              if (asc) { numCells16_30 = cand; break; }
+            }
+          }
           const dandapOXSet = new Set(); // 인라인 쌍에 사용된 OX 셀 (그리드 처리 제외용)
           for (const numCell of numCells16_30) {
             const qn = +numCell.str;
-            // 번호 셀 바로 오른쪽(40px 이내) OX 셀 탐색
-            const paired = oxCells.filter(c => c.x > numCell.x && c.x - numCell.x <= 40)
+            // 번호 셀 바로 오른쪽(45px 이내) OX 셀 탐색
+            const paired = oxCells.filter(c => c.x > numCell.x && c.x - numCell.x <= 45 && !dandapOXSet.has(c))
                                    .sort((a, b) => a.x - b.x)[0];
             if (paired) {
               dandapOXSet.add(paired);
