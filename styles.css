@@ -788,6 +788,51 @@ textarea::-webkit-scrollbar-thumb {
   margin: 2rem 0;
 }
 
+/* AI 보고서 마크다운 표 — 구분선·헤더 배경·줄무늬 (공용 보고서 모달 포함) */
+.markdown-body table,
+.rpt-modal-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.6rem 0 1.1rem;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+.markdown-body th, .markdown-body td,
+.rpt-modal-body th, .rpt-modal-body td {
+  border: 1px solid rgba(148, 163, 184, 0.38);
+  padding: 0.5rem 0.65rem;
+  text-align: left;
+  vertical-align: top;
+}
+.markdown-body th,
+.rpt-modal-body th {
+  background: rgba(124, 131, 253, 0.16);
+  color: var(--text-primary);
+  font-weight: 700;
+  white-space: nowrap;
+}
+.markdown-body tbody tr:nth-child(even) td,
+.rpt-modal-body tbody tr:nth-child(even) td {
+  background: rgba(255, 255, 255, 0.035);
+}
+.markdown-body td:first-child,
+.rpt-modal-body td:first-child {
+  white-space: nowrap;
+  font-weight: 600;
+}
+body.light-mode .markdown-body th, body.light-mode .markdown-body td,
+body.light-mode .rpt-modal-body th, body.light-mode .rpt-modal-body td {
+  border-color: rgba(94, 106, 210, 0.32);
+}
+body.light-mode .markdown-body th,
+body.light-mode .rpt-modal-body th {
+  background: rgba(94, 106, 210, 0.10);
+}
+body.light-mode .markdown-body tbody tr:nth-child(even) td,
+body.light-mode .rpt-modal-body tbody tr:nth-child(even) td {
+  background: rgba(94, 106, 210, 0.04);
+}
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }

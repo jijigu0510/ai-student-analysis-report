@@ -1555,8 +1555,9 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log(`[DBG] ${cleanSubj} y=${Math.round(line.y)} n=${dataCells.length} [${dataCells.slice(0,8).map(c=>`${c.str}@${Math.round(c.x)}`).join(',')}]`);
 
       const sd = {};
-      // 원점수(득점): x≈155-205
-      const rawCell = dataCells.find(c => c.x >= 155 && c.x <= 205 && /^\d+$/.test(c.str));
+      // 원점수(득점): x≈155-205 — 1/2학년 사회·과학은 소수점(40.5, 31.5 등)으로 표기되므로 소수 허용
+      // (정수만 찾으면 폴백이 다음 정수인 표준점수를 원점수로 잘못 잡음)
+      const rawCell = dataCells.find(c => c.x >= 155 && c.x <= 205 && /^\d+(\.\d+)?$/.test(c.str));
       if (rawCell) {
         sd.원점수 = rawCell.str;
       } else {
@@ -9791,6 +9792,13 @@ overallEvaluation 필드는 아래 형식을 반드시 따르십시오:
           .markdown-body p { margin: 0.5em 0; white-space: pre-wrap; word-break: keep-all; }
           .eval-highlight { background: rgba(255, 220, 0, 0.35); color: #7a5800; padding: 1px 4px; border-radius: 3px; font-weight: 600; }
           .print-header { border-bottom: 2px solid #5e6ad2; padding-bottom: 1rem; margin-bottom: 2rem; }
+          /* AI 보고서 마크다운 표: 화면과 동일하게 구분선 출력 (CDN 미로드 시에도 적용) */
+          table { width: 100%; border-collapse: collapse; margin: 0.6em 0 1em; font-size: 13px; line-height: 1.5; page-break-inside: auto; }
+          th, td { border: 1px solid #9aa3b5; padding: 6px 8px; text-align: left; vertical-align: top; }
+          th { background: #eef0fb; font-weight: 700; white-space: nowrap; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          tbody tr:nth-child(even) td { background: #f7f8fc; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          td:first-child { white-space: nowrap; font-weight: 600; }
+          tr { page-break-inside: avoid; }
           .blur-name { filter: blur(4px); }
           .total-score-box { background: #5e6ad2 !important; color: white !important; padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; }
           @media print {
