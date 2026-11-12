@@ -2,6 +2,9 @@
 
 console.log('[APP] v8 loaded');
 
+// 모든 인쇄·PDF 공통 여백: 좌우 20mm, 상하 15mm (@page). 인쇄 시 본문 자체 여백은 0으로 통일한다.
+window.PRINT_PAGE_CSS = '@page{size:A4;margin:15mm 20mm;}@media print{html,body{margin:0 !important;padding:0 !important;}}';
+
 // AI 보고서의 마크다운을 렌더하되, 변환되지 않고 남는 볼드 기호(**)는 결과에서 제거한다.
 // (정상 볼드 **텍스트**는 marked가 <strong>으로 변환하므로 '**'가 남지 않고, AI가 '** 텍스트 **'
 //  처럼 공백을 넣어 변환되지 않은 '**'만 사라진다. marked.parse가 재정의 불가라 호출부에서 사용.)
@@ -707,20 +710,39 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // --- Tab Container Toggle Logic ---
+  // --- 탭 드로어(왼쪽에서 펼치고 닫기) ---
+  // 기본은 닫힘. ☰(헤더)·왼쪽 가장자리 손잡이로 열고, 닫기 버튼·배경 클릭·ESC·탭 선택으로 닫힌다.
   const toggleTabsBtn = document.getElementById("toggle-tabs-btn");
   const showTabsBtn = document.getElementById("show-tabs-btn");
+  const drawerOpenBtn = document.getElementById("drawer-open-btn");
+  const drawerBackdrop = document.getElementById("drawer-backdrop");
   const mainTabsContainer = document.getElementById("main-tabs-container");
 
-  if (toggleTabsBtn && mainTabsContainer && showTabsBtn) {
-    toggleTabsBtn.addEventListener("click", () => {
-      mainTabsContainer.style.display = "none";
-      showTabsBtn.style.display = "block";
-    });
+  function setDrawer(open) {
+    document.body.classList.toggle("drawer-open", !!open);
+    if (drawerOpenBtn) drawerOpenBtn.setAttribute("aria-expanded", open ? "true" : "false");
+    if (mainTabsContainer) mainTabsContainer.setAttribute("aria-hidden", open ? "false" : "true");
+    if (open && mainTabsContainer) {
+      const act = mainTabsContainer.querySelector(".tab-btn.active");
+      if (act && act.scrollIntoView) { try { act.scrollIntoView({ block: "nearest" }); } catch (e) {} }
+    }
+  }
+  window.openTabDrawer = () => setDrawer(true);
+  window.closeTabDrawer = () => setDrawer(false);
 
-    showTabsBtn.addEventListener("click", () => {
-      mainTabsContainer.style.display = "flex";
-      showTabsBtn.style.display = "none";
+  if (mainTabsContainer) {
+    setDrawer(false);
+    if (toggleTabsBtn) toggleTabsBtn.addEventListener("click", () => setDrawer(false));
+    if (showTabsBtn) showTabsBtn.addEventListener("click", () => setDrawer(true));
+    if (drawerOpenBtn) drawerOpenBtn.addEventListener("click", () => setDrawer(true));
+    if (drawerBackdrop) drawerBackdrop.addEventListener("click", () => setDrawer(false));
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && document.body.classList.contains("drawer-open")) setDrawer(false);
+    });
+    // 탭을 고르면 드로어를 닫는다(탭별 click 핸들러가 먼저 실행된 뒤 버블링으로 도달).
+    mainTabsContainer.addEventListener("click", (e) => {
+      const btn = e.target.closest(".tab-btn");
+      if (btn && btn.id !== "toggle-tabs-btn" && !btn.classList.contains("disabled")) setDrawer(false);
     });
   }
 
@@ -2599,7 +2621,7 @@ ${lines.join('\n')}
     if (!_mockSubjectPrint) return;
     const w = window.open('', '_blank', 'width=900,height=900');
     if (!w) { alert('팝업이 차단되었습니다. 팝업 허용 후 다시 시도해 주세요.'); return; }
-    w.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>모의고사 오답 분석</title><style>
+    w.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>모의고사 오답 분석</title><style>${window.PRINT_PAGE_CSS}
       *,*::before,*::after{box-sizing:border-box;}
       body{font-family:'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif;color:#111;padding:26px;line-height:1.6;font-size:12px;background:#fff;}
       h1{font-size:19px;text-align:center;margin:0 0 4px;}
@@ -3014,7 +3036,7 @@ ${lines.join('\n')}
     }).join('');
     const w = window.open('', '_blank', 'width=900,height=900');
     if (!w) { alert('팝업이 차단되었습니다. 팝업 허용 후 다시 시도해 주세요.'); return; }
-    w.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>회차별 발전 추이</title><style>
+    w.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>회차별 발전 추이</title><style>${window.PRINT_PAGE_CSS}
       body{font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;color:#111;padding:26px;font-size:12px;}
       h1{font-size:19px;text-align:center;margin:0 0 4px;} .sub{text-align:center;color:#555;font-size:11px;margin:0 0 16px;}
       table{width:100%;border-collapse:collapse;font-size:11px;margin-top:10px;} img{max-width:100%;}
@@ -3744,7 +3766,7 @@ ${lines.join('\n')}
       printWin.document.write(`<!DOCTYPE html><html lang="ko"><head>
           <meta charset="UTF-8">
           <title>${currentMockMonth}월 모의고사 개별 리포트 - ${first.성명}</title>
-          <style>
+          <style>${window.PRINT_PAGE_CSS}
             @page { size: A4; margin: 15mm 20mm; }
             body { font-family: 'Malgun Gothic', sans-serif; color: #333; line-height: 1.5; margin: 0; padding: 0; background: #fff; -webkit-print-color-adjust: exact; }
             .container { max-width: 800px; margin: 0 auto; }
@@ -4071,7 +4093,7 @@ ${lines.join('\n')}
       if (!html) return;
       const w = window.open('', '_blank', 'width=900,height=900');
       if (!w) { alert('팝업이 차단되었습니다. 팝업 허용 후 다시 시도해 주세요.'); return; }
-      w.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>합불 분석 보고서</title><style>
+      w.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>합불 분석 보고서</title><style>${window.PRINT_PAGE_CSS}
         *,*::before,*::after{box-sizing:border-box;}
         body{font-family:'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif;color:#111;padding:26px;background:#fff;font-size:12px;line-height:1.7;}
         .pf-report h1{font-size:20px;text-align:center;margin:0 0 4px;}
@@ -9769,7 +9791,7 @@ overallEvaluation 필드는 아래 형식을 반드시 따르십시오:
       <head>
         <title>학생 분석 리포트 - 부안고등학교</title>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.2.0/github-markdown.min.css">
-        <style>
+        <style>${window.PRINT_PAGE_CSS}
           @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Outfit:wght@400;600;700;800&display=swap');
           body { 
             padding: 40px; 
@@ -14364,7 +14386,7 @@ ${univPromptSupplement}
     printWin.document.write(`<!DOCTYPE html><html lang="ko"><head>
       <meta charset="UTF-8">
       <title>가천대학교 면접 가이드</title>
-      <style>
+      <style>${window.PRINT_PAGE_CSS}
         body { font-family: 'Malgun Gothic', sans-serif; color: #333; padding: 2rem 3rem; line-height: 1.8; }
         h1 { color: #00796b; border-bottom: 3px solid #00796b; padding-bottom: 0.5rem; }
         h2 { color: #004d40; margin-top: 1.8rem; }
@@ -14480,7 +14502,7 @@ ${univPromptSupplement}
     printWin.document.write(`<!DOCTYPE html><html lang="ko"><head>
       <meta charset="UTF-8">
       <title>서울시립대학교 면접 가이드</title>
-      <style>
+      <style>${window.PRINT_PAGE_CSS}
         body { font-family: 'Malgun Gothic', sans-serif; color: #333; padding: 2rem 3rem; line-height: 1.8; }
         h1 { color: #3c3fa0; border-bottom: 3px solid #3c3fa0; padding-bottom: 0.5rem; }
         h2 { color: #2c3e7d; margin-top: 1.8rem; }
@@ -14578,7 +14600,7 @@ ${univPromptSupplement}
     printWin.document.write(`<!DOCTYPE html><html lang="ko"><head>
       <meta charset="UTF-8">
       <title>숭실대학교 면접 가이드</title>
-      <style>
+      <style>${window.PRINT_PAGE_CSS}
         body { font-family:'Malgun Gothic',sans-serif; color:#333; padding:2rem 3rem; line-height:1.8; }
         h1 { color:#c82333; border-bottom:3px solid #c82333; padding-bottom:0.5rem; }
         h2 { color:#a71d2a; margin-top:1.8rem; }
@@ -14668,7 +14690,7 @@ ${univPromptSupplement}
     printWin.document.write(`<!DOCTYPE html><html lang="ko"><head>
       <meta charset="UTF-8">
       <title>한국외국어대학교 면접 가이드</title>
-      <style>
+      <style>${window.PRINT_PAGE_CSS}
         body { font-family:'Malgun Gothic',sans-serif; color:#333; padding:2rem 3rem; line-height:1.8; }
         h1 { color:#002147; border-bottom:3px solid #002147; padding-bottom:0.5rem; }
         h2 { color:#003366; margin-top:1.8rem; }
@@ -14763,7 +14785,7 @@ ${univPromptSupplement}
     printWin.document.write(`<!DOCTYPE html><html lang="ko"><head>
       <meta charset="UTF-8">
       <title>세종대학교 면접 가이드</title>
-      <style>
+      <style>${window.PRINT_PAGE_CSS}
         body { font-family:'Malgun Gothic',sans-serif; color:#333; padding:2rem 3rem; line-height:1.8; }
         h1 { color:#512da8; border-bottom:3px solid #512da8; padding-bottom:0.5rem; }
         h2 { color:#4527a0; margin-top:1.8rem; }
@@ -14854,7 +14876,7 @@ ${univPromptSupplement}
     printWin.document.write(`<!DOCTYPE html><html lang="ko"><head>
       <meta charset="UTF-8">
       <title>건국대학교 면접 가이드</title>
-      <style>
+      <style>${window.PRINT_PAGE_CSS}
         body { font-family:'Malgun Gothic',sans-serif; color:#333; padding:2rem 3rem; line-height:1.8; }
         h1 { color:#2e7d32; border-bottom:3px solid #2e7d32; padding-bottom:0.5rem; }
         h2 { color:#1b5e20; margin-top:1.8rem; }
@@ -14945,7 +14967,7 @@ ${univPromptSupplement}
     printWin.document.write(`<!DOCTYPE html><html lang="ko"><head>
       <meta charset="UTF-8">
       <title>중앙대학교 면접 가이드</title>
-      <style>
+      <style>${window.PRINT_PAGE_CSS}
         body { font-family:'Malgun Gothic',sans-serif; color:#333; padding:2rem 3rem; line-height:1.8; }
         h1 { color:#004a98; border-bottom:3px solid #004a98; padding-bottom:0.5rem; }
         h2 { color:#003366; margin-top:1.8rem; }
@@ -15037,7 +15059,7 @@ ${univPromptSupplement}
     printWin.document.write(`<!DOCTYPE html><html lang="ko"><head>
       <meta charset="UTF-8">
       <title>경희대학교 면접 가이드</title>
-      <style>
+      <style>${window.PRINT_PAGE_CSS}
         body { font-family:'Malgun Gothic',sans-serif; color:#333; padding:2rem 3rem; line-height:1.8; }
         h1 { color:#a71d2a; border-bottom:3px solid #a71d2a; padding-bottom:0.5rem; }
         h2 { color:#c62828; margin-top:1.8rem; }
@@ -15123,7 +15145,7 @@ ${univPromptSupplement}
 
   window.printSeoulTechGuide = function () {
     const printWin = window.open("", "_blank", "width=900,height=700");
-    printWin.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>서울과학기술대학교 면접 가이드</title><style>body{font-family:'Malgun Gothic',sans-serif;padding:2rem;line-height:1.8;}h1{color:#37474f;border-bottom:3px solid #37474f;}h2{color:#263238;margin-top:1.5rem;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;padding:10px;text-align:left;}th{background:#f8f9fa;}</style></head><body><h1>🎓 서울과학기술대학교 면접 가이드</h1><h2>1. 평가 비중 (40:35:25)</h2><table><tr><th>진로역량</th><th>학업역량</th><th>공동체역량</th></tr><tr><td>40%</td><td>35%</td><td>25%</td></tr></table><h2>2. 핵심 포인트</h2><p>과기대는 <strong>성적 공개 면접</strong>입니다. 활동의 결과보다 <strong>'동기(Why)'</strong>와 <strong>'적용 원리(Logic)'</strong>를 논리적으로 설명하는 것이 중요합니다.</p></body></html>`);
+    printWin.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>서울과학기술대학교 면접 가이드</title><style>${window.PRINT_PAGE_CSS}body{font-family:'Malgun Gothic',sans-serif;padding:2rem;line-height:1.8;}h1{color:#37474f;border-bottom:3px solid #37474f;}h2{color:#263238;margin-top:1.5rem;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;padding:10px;text-align:left;}th{background:#f8f9fa;}</style></head><body><h1>🎓 서울과학기술대학교 면접 가이드</h1><h2>1. 평가 비중 (40:35:25)</h2><table><tr><th>진로역량</th><th>학업역량</th><th>공동체역량</th></tr><tr><td>40%</td><td>35%</td><td>25%</td></tr></table><h2>2. 핵심 포인트</h2><p>과기대는 <strong>성적 공개 면접</strong>입니다. 활동의 결과보다 <strong>'동기(Why)'</strong>와 <strong>'적용 원리(Logic)'</strong>를 논리적으로 설명하는 것이 중요합니다.</p></body></html>`);
     printWin.document.close();
     printWin.focus();
     setTimeout(() => { printWin.print(); }, 500);
@@ -15155,7 +15177,7 @@ ${univPromptSupplement}
 
   window.printSogangGuide = function () {
     const printWin = window.open("", "_blank", "width=900,height=700");
-    printWin.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>서강대학교 면접 가이드</title><style>body{font-family:'Malgun Gothic',sans-serif;padding:2rem;line-height:1.8;}h1{color:#901319;border-bottom:3px solid #901319;}h2{color:#b71c1c;margin-top:1.5rem;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;padding:10px;text-align:left;}th{background:#f8f9fa;}</style></head><body><h1>🎓 서강대학교 면접 가이드</h1><h2>1. 평가 비중 (50:30:20)</h2><table><tr><th>학업역량</th><th>성장가능성</th><th>공동체역량</th></tr><tr><td>50%</td><td>30%</td><td>20%</td></tr></table><h2>2. 핵심 포인트</h2><p>서강대는 <strong>다전공제도</strong>를 기반으로 융합적 인재를 선호합니다. 활동의 결과보다 <strong>성장 과정</strong>과 <strong>실패를 통한 깨달음</strong>을 어필하세요.</p></body></html>`);
+    printWin.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>서강대학교 면접 가이드</title><style>${window.PRINT_PAGE_CSS}body{font-family:'Malgun Gothic',sans-serif;padding:2rem;line-height:1.8;}h1{color:#901319;border-bottom:3px solid #901319;}h2{color:#b71c1c;margin-top:1.5rem;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;padding:10px;text-align:left;}th{background:#f8f9fa;}</style></head><body><h1>🎓 서강대학교 면접 가이드</h1><h2>1. 평가 비중 (50:30:20)</h2><table><tr><th>학업역량</th><th>성장가능성</th><th>공동체역량</th></tr><tr><td>50%</td><td>30%</td><td>20%</td></tr></table><h2>2. 핵심 포인트</h2><p>서강대는 <strong>다전공제도</strong>를 기반으로 융합적 인재를 선호합니다. 활동의 결과보다 <strong>성장 과정</strong>과 <strong>실패를 통한 깨달음</strong>을 어필하세요.</p></body></html>`);
     printWin.document.close();
     printWin.focus();
     setTimeout(() => { printWin.print(); }, 500);
@@ -15187,7 +15209,7 @@ ${univPromptSupplement}
 
   window.printSkkuGuide = function () {
     const printWin = window.open("", "_blank", "width=900,height=700");
-    printWin.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>성균관대학교 면접 가이드</title><style>body{font-family:'Malgun Gothic',sans-serif;padding:2rem;line-height:1.8;}h1{color:#004424;border-bottom:3px solid #004424;}h2{color:#1b5e20;margin-top:1.5rem;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;padding:10px;text-align:left;}th{background:#f8f9fa;}</style></head><body><h1>🎓 성균관대학교 면접 가이드</h1><h2>1. 평가 비중 (40:40:20)</h2><table><tr><th>탐구역량</th><th>학업역량</th><th>잠재역량</th></tr><tr><td>40%</td><td>40%</td><td>20%</td></tr></table><h2>2. 핵심 포인트</h2><p>성균관대는 <strong>'탐구의 확장성'</strong>을 가장 중요하게 봅니다. 꼬리 질문에 대비하여 탐구 내용의 본질과 원리를 명확히 답변하세요.</p></body></html>`);
+    printWin.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>성균관대학교 면접 가이드</title><style>${window.PRINT_PAGE_CSS}body{font-family:'Malgun Gothic',sans-serif;padding:2rem;line-height:1.8;}h1{color:#004424;border-bottom:3px solid #004424;}h2{color:#1b5e20;margin-top:1.5rem;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;padding:10px;text-align:left;}th{background:#f8f9fa;}</style></head><body><h1>🎓 성균관대학교 면접 가이드</h1><h2>1. 평가 비중 (40:40:20)</h2><table><tr><th>탐구역량</th><th>학업역량</th><th>잠재역량</th></tr><tr><td>40%</td><td>40%</td><td>20%</td></tr></table><h2>2. 핵심 포인트</h2><p>성균관대는 <strong>'탐구의 확장성'</strong>을 가장 중요하게 봅니다. 꼬리 질문에 대비하여 탐구 내용의 본질과 원리를 명확히 답변하세요.</p></body></html>`);
     printWin.document.close();
     printWin.focus();
     setTimeout(() => { printWin.print(); }, 500);
@@ -15220,7 +15242,7 @@ ${univPromptSupplement}
 
   window.printHanyangGuide = function () {
     const printWin = window.open("", "_blank", "width=900,height=700");
-    printWin.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>한양대학교 면접 가이드</title><style>body{font-family:'Malgun Gothic',sans-serif;padding:2rem;line-height:1.8;}h1{color:#002366;border-bottom:3px solid #002366;}h2{color:#0d47a1;margin-top:1.5rem;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;padding:10px;text-align:left;}th{background:#f8f9fa;}</style></head><body><h1>🎓 한양대학교 면접 가이드</h1><h2>1. 평가 항목</h2><p>심층학업(40%), 기초학업(35%), 진로탐구(15%), 공동체(10%)</p><h2>2. 핵심 포인트</h2><p>한양대는 <strong>비판적 사고</strong>를 중시합니다. 답변 시 '결과'보다는 자신의 <strong>'논리적 근거'</strong>와 <strong>'창의적 대안'</strong>을 포함하세요.</p></body></html>`);
+    printWin.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>한양대학교 면접 가이드</title><style>${window.PRINT_PAGE_CSS}body{font-family:'Malgun Gothic',sans-serif;padding:2rem;line-height:1.8;}h1{color:#002366;border-bottom:3px solid #002366;}h2{color:#0d47a1;margin-top:1.5rem;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;padding:10px;text-align:left;}th{background:#f8f9fa;}</style></head><body><h1>🎓 한양대학교 면접 가이드</h1><h2>1. 평가 항목</h2><p>심층학업(40%), 기초학업(35%), 진로탐구(15%), 공동체(10%)</p><h2>2. 핵심 포인트</h2><p>한양대는 <strong>비판적 사고</strong>를 중시합니다. 답변 시 '결과'보다는 자신의 <strong>'논리적 근거'</strong>와 <strong>'창의적 대안'</strong>을 포함하세요.</p></body></html>`);
     printWin.document.close();
     printWin.focus();
     setTimeout(() => { printWin.print(); }, 500);
@@ -15252,7 +15274,7 @@ ${univPromptSupplement}
 
   window.printKnueGuide = function () {
     const printWin = window.open("", "_blank", "width=900,height=700");
-    printWin.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>한국교원대학교 면접 가이드</title><style>body{font-family:'Malgun Gothic',sans-serif;padding:2rem;line-height:1.8;}h1{color:#1b5e20;border-bottom:3px solid #1b5e20;}h2{color:#2e7d32;margin-top:1.5rem;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;padding:10px;text-align:left;}th{background:#f8f9fa;}</style></head><body><h1>🎓 한국교원대학교 면접 가이드</h1><h2>1. 평가 비중 (40:30:30)</h2><p>교직적합성(40%), 학업역량(30%), 교직인성(30%)</p><h2>2. 핵심 포인트</h2><p>단순 지식 전달자가 아닌 <strong>학생과 공감하고 소통하는 교사의 자질</strong>을 보여주세요. 멘토링이나 봉사 경험을 구체적으로 답변하세요.</p></body></html>`);
+    printWin.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>한국교원대학교 면접 가이드</title><style>${window.PRINT_PAGE_CSS}body{font-family:'Malgun Gothic',sans-serif;padding:2rem;line-height:1.8;}h1{color:#1b5e20;border-bottom:3px solid #1b5e20;}h2{color:#2e7d32;margin-top:1.5rem;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;padding:10px;text-align:left;}th{background:#f8f9fa;}</style></head><body><h1>🎓 한국교원대학교 면접 가이드</h1><h2>1. 평가 비중 (40:30:30)</h2><p>교직적합성(40%), 학업역량(30%), 교직인성(30%)</p><h2>2. 핵심 포인트</h2><p>단순 지식 전달자가 아닌 <strong>학생과 공감하고 소통하는 교사의 자질</strong>을 보여주세요. 멘토링이나 봉사 경험을 구체적으로 답변하세요.</p></body></html>`);
     printWin.document.close();
     printWin.focus();
     setTimeout(() => { printWin.print(); }, 500);
@@ -15294,7 +15316,7 @@ ${univPromptSupplement}
 
   window.printKwangwoonGuide = function () {
     const printWin = window.open("", "_blank", "width=900,height=700");
-    printWin.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>광운대학교 면접 가이드</title><style>body{font-family:'Malgun Gothic',sans-serif;padding:2rem;line-height:1.8;}h1{color:#b71c1c;border-bottom:3px solid #b71c1c;}h2{color:#d32f2f;margin-top:1.5rem;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;padding:10px;text-align:left;}th{background:#fff5f5;}</style></head><body><h1>🎓 광운대학교 면접 가이드</h1><h2>1. 평가 항목 및 비중</h2><p>발전가능성(45%), 종합사고력(30%), 인성(25%)</p><h2>2. 주요 특징</h2><p>면접 비중이 40%로 확대되었습니다. 면접관에게 <strong>성적이 공개</strong>되므로, 활동의 결과뿐만 아니라 <strong>'이유'</strong>와 <strong>'과정'</strong>을 논리적으로 설명하는 연습이 필수적입니다.</p></body></html>`);
+    printWin.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>광운대학교 면접 가이드</title><style>${window.PRINT_PAGE_CSS}body{font-family:'Malgun Gothic',sans-serif;padding:2rem;line-height:1.8;}h1{color:#b71c1c;border-bottom:3px solid #b71c1c;}h2{color:#d32f2f;margin-top:1.5rem;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;padding:10px;text-align:left;}th{background:#fff5f5;}</style></head><body><h1>🎓 광운대학교 면접 가이드</h1><h2>1. 평가 항목 및 비중</h2><p>발전가능성(45%), 종합사고력(30%), 인성(25%)</p><h2>2. 주요 특징</h2><p>면접 비중이 40%로 확대되었습니다. 면접관에게 <strong>성적이 공개</strong>되므로, 활동의 결과뿐만 아니라 <strong>'이유'</strong>와 <strong>'과정'</strong>을 논리적으로 설명하는 연습이 필수적입니다.</p></body></html>`);
     printWin.document.close();
     printWin.focus();
     setTimeout(() => { printWin.print(); }, 500);
@@ -15337,7 +15359,7 @@ ${univPromptSupplement}
 
   window.printDonggukGuide = function () {
     const printWin = window.open("", "_blank", "width=900,height=700");
-    printWin.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>동국대학교 면접 가이드</title><style>body{font-family:'Malgun Gothic',sans-serif;padding:2rem;line-height:1.8;}h1{color:#bf360c;border-bottom:3px solid #bf360c;}h2{color:#e65100;margin-top:1.5rem;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;padding:10px;text-align:left;}th{background:#fff3e0;}</style></head><body><h1>🎓 동국대학교 면접 가이드 (DoDream)</h1><h2>1. 평가 항목 및 비중</h2><p>전공적합성(30%), 발전가능성(30%), 전형취지적합성(20%), 인성 및 사회성(20%)</p><h2>2. 주요 포인트</h2><p>면접의 실질 영향력이 매우 높습니다(인문 40%, 자연 46%). <strong>'출결'</strong>을 비롯한 학교 생활의 성실성과 <strong>'지원 학과에 대한 심화 이해'</strong>를 답변에 반드시 녹여내세요.</p></body></html>`);
+    printWin.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>동국대학교 면접 가이드</title><style>${window.PRINT_PAGE_CSS}body{font-family:'Malgun Gothic',sans-serif;padding:2rem;line-height:1.8;}h1{color:#bf360c;border-bottom:3px solid #bf360c;}h2{color:#e65100;margin-top:1.5rem;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;padding:10px;text-align:left;}th{background:#fff3e0;}</style></head><body><h1>🎓 동국대학교 면접 가이드 (DoDream)</h1><h2>1. 평가 항목 및 비중</h2><p>전공적합성(30%), 발전가능성(30%), 전형취지적합성(20%), 인성 및 사회성(20%)</p><h2>2. 주요 포인트</h2><p>면접의 실질 영향력이 매우 높습니다(인문 40%, 자연 46%). <strong>'출결'</strong>을 비롯한 학교 생활의 성실성과 <strong>'지원 학과에 대한 심화 이해'</strong>를 답변에 반드시 녹여내세요.</p></body></html>`);
     printWin.document.close();
     printWin.focus();
     setTimeout(() => { printWin.print(); }, 500);
@@ -15392,7 +15414,7 @@ ${univPromptSupplement}
 
   window.printYonseiGuide = function () {
     const printWin = window.open("", "_blank", "width=900,height=700");
-    printWin.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>연세대학교 면접 가이드</title><style>body{font-family:'Malgun Gothic',sans-serif;padding:2rem;line-height:1.8;}h1{color:#00366f;border-bottom:3px solid #00366f;}h2{color:#0050a0;margin-top:1.5rem;}.warn{background:#fff3cd;border-left:5px solid #f0ad4e;padding:12px 15px;margin:1rem 0;}</style></head><body><h1>📄 연세대학교 면접 가이드 (제시문 기반)</h1><div class="warn"><strong>⚠️ 연세대 면접은 학생부 확인 면접이 아니라 '제시문 기반' 면접입니다.</strong><br>활동우수형·국제형(국내고)·국제인재·기회균형 전 전형이 제시문 기반으로 진행됩니다.</div><h2>1. 진행 방식</h2><p>제시문을 읽고 답변을 준비하는 시간 → <strong>비대면 현장 녹화</strong> 방식으로 답변 녹화. 면접관이 아닌 <strong>태블릿에 비친 자기 모습</strong>을 보며 답변합니다. (활동우수형 면접 40%, 1단계 4배수)</p><h2>2. 평가 요소</h2><p>논리적 사고력 / 창의적 사고력 / 의사소통 능력</p><h2>3. 절대 원칙</h2><p>답변은 <strong>반드시 제시문에 근거</strong>해야 합니다. 제시문을 벗어나 개인 경험이나 학생부 활동을 장황하게 말하는 것은 감점 요인입니다. 정답보다 <strong>논리 전개 과정</strong>이 핵심입니다.</p><h2>4. 공식 가이드북 꿀팁</h2><ul><li>제한 시간을 정해놓고 제시문 정리 + 답변 연습</li><li>스마트폰·태블릿으로 얼굴 보며 녹화 연습 (현장 녹화 대비)</li><li>입학처 '선행학습영향평가 결과 보고서'에서 전년도 기출 확인</li></ul><p style="font-size:0.85rem;color:#777;margin-top:2rem;">출처: 2027학년도 학생부종합전형 안내서</p></body></html>`);
+    printWin.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>연세대학교 면접 가이드</title><style>${window.PRINT_PAGE_CSS}body{font-family:'Malgun Gothic',sans-serif;padding:2rem;line-height:1.8;}h1{color:#00366f;border-bottom:3px solid #00366f;}h2{color:#0050a0;margin-top:1.5rem;}.warn{background:#fff3cd;border-left:5px solid #f0ad4e;padding:12px 15px;margin:1rem 0;}</style></head><body><h1>📄 연세대학교 면접 가이드 (제시문 기반)</h1><div class="warn"><strong>⚠️ 연세대 면접은 학생부 확인 면접이 아니라 '제시문 기반' 면접입니다.</strong><br>활동우수형·국제형(국내고)·국제인재·기회균형 전 전형이 제시문 기반으로 진행됩니다.</div><h2>1. 진행 방식</h2><p>제시문을 읽고 답변을 준비하는 시간 → <strong>비대면 현장 녹화</strong> 방식으로 답변 녹화. 면접관이 아닌 <strong>태블릿에 비친 자기 모습</strong>을 보며 답변합니다. (활동우수형 면접 40%, 1단계 4배수)</p><h2>2. 평가 요소</h2><p>논리적 사고력 / 창의적 사고력 / 의사소통 능력</p><h2>3. 절대 원칙</h2><p>답변은 <strong>반드시 제시문에 근거</strong>해야 합니다. 제시문을 벗어나 개인 경험이나 학생부 활동을 장황하게 말하는 것은 감점 요인입니다. 정답보다 <strong>논리 전개 과정</strong>이 핵심입니다.</p><h2>4. 공식 가이드북 꿀팁</h2><ul><li>제한 시간을 정해놓고 제시문 정리 + 답변 연습</li><li>스마트폰·태블릿으로 얼굴 보며 녹화 연습 (현장 녹화 대비)</li><li>입학처 '선행학습영향평가 결과 보고서'에서 전년도 기출 확인</li></ul><p style="font-size:0.85rem;color:#777;margin-top:2rem;">출처: 2027학년도 학생부종합전형 안내서</p></body></html>`);
     printWin.document.close();
     printWin.focus();
     setTimeout(() => { printWin.print(); }, 500);
@@ -15446,7 +15468,7 @@ ${univPromptSupplement}
 
   window.printSookmyungGuide = function () {
     const printWin = window.open("", "_blank", "width=900,height=700");
-    printWin.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>숙명여자대학교 면접 가이드</title><style>body{font-family:'Malgun Gothic',sans-serif;padding:2rem;line-height:1.8;}h1{color:#4a2d5c;border-bottom:3px solid #6a3d82;}h2{color:#6a3d82;margin-top:1.5rem;}.tip{background:#f3e8f8;border-left:5px solid #9b6bb5;padding:12px 15px;margin:1rem 0;}</style></head><body><h1>🎓 숙명여자대학교 면접 가이드</h1><div class="tip"><strong>면접 40% — 역전이 자주 일어나는 전형입니다.</strong><br>1단계 순위가 낮아도 면접에서 우수한 평가를 받아 최초합격한 사례가 상당수 있습니다.</div><h2>1. 면접 구조</h2><p>숙명인재(면접형)·소프트웨어인재 등 / 1단계 3배수(특수교육대상자 4배수) / 2단계 면접 40% / 제출서류(학생부) 기반 면접</p><h2>2. 평가 항목</h2><p><strong>진로역량</strong> — 학생부 활동 질의응답으로 진로탐색 및 전공선택 과정 확인, 추가 질문으로 이해력·논리적 사고력·다양한 관점 평가<br><strong>의사소통능력 및 태도</strong> — 면접 태도, 의사소통능력, 협업, 배려, 가치관</p><h2>3. 출제 범위의 한계</h2><p>학생부에 기재된 전공 관련 수업·수행평가·탐구활동의 이해도를 확인하는 질문은 가능하지만, <strong>단독 교과 지식 질문</strong>과 <strong>고교 교육과정을 벗어난 활동 질문</strong>은 하지 않습니다.</p><h2>4. 준비 전략</h2><ul><li>학생부 숙지가 최우선 — 활동의 계기·배운 것·느낀 점 정리</li><li>화려한 말솜씨보다 질문 의도 파악과 논리적 답변</li><li>서술식 답변 암기 대신 <strong>키워드 중심 정리</strong></li><li>모의면접으로 본인의 언어로 전달하는 연습</li></ul><p style="font-size:0.85rem;color:#777;margin-top:2rem;">출처: 2027학년도 입학전형안내</p></body></html>`);
+    printWin.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>숙명여자대학교 면접 가이드</title><style>${window.PRINT_PAGE_CSS}body{font-family:'Malgun Gothic',sans-serif;padding:2rem;line-height:1.8;}h1{color:#4a2d5c;border-bottom:3px solid #6a3d82;}h2{color:#6a3d82;margin-top:1.5rem;}.tip{background:#f3e8f8;border-left:5px solid #9b6bb5;padding:12px 15px;margin:1rem 0;}</style></head><body><h1>🎓 숙명여자대학교 면접 가이드</h1><div class="tip"><strong>면접 40% — 역전이 자주 일어나는 전형입니다.</strong><br>1단계 순위가 낮아도 면접에서 우수한 평가를 받아 최초합격한 사례가 상당수 있습니다.</div><h2>1. 면접 구조</h2><p>숙명인재(면접형)·소프트웨어인재 등 / 1단계 3배수(특수교육대상자 4배수) / 2단계 면접 40% / 제출서류(학생부) 기반 면접</p><h2>2. 평가 항목</h2><p><strong>진로역량</strong> — 학생부 활동 질의응답으로 진로탐색 및 전공선택 과정 확인, 추가 질문으로 이해력·논리적 사고력·다양한 관점 평가<br><strong>의사소통능력 및 태도</strong> — 면접 태도, 의사소통능력, 협업, 배려, 가치관</p><h2>3. 출제 범위의 한계</h2><p>학생부에 기재된 전공 관련 수업·수행평가·탐구활동의 이해도를 확인하는 질문은 가능하지만, <strong>단독 교과 지식 질문</strong>과 <strong>고교 교육과정을 벗어난 활동 질문</strong>은 하지 않습니다.</p><h2>4. 준비 전략</h2><ul><li>학생부 숙지가 최우선 — 활동의 계기·배운 것·느낀 점 정리</li><li>화려한 말솜씨보다 질문 의도 파악과 논리적 답변</li><li>서술식 답변 암기 대신 <strong>키워드 중심 정리</strong></li><li>모의면접으로 본인의 언어로 전달하는 연습</li></ul><p style="font-size:0.85rem;color:#777;margin-top:2rem;">출처: 2027학년도 입학전형안내</p></body></html>`);
     printWin.document.close();
     printWin.focus();
     setTimeout(() => { printWin.print(); }, 500);
@@ -15465,7 +15487,7 @@ ${univPromptSupplement}
     printWin.document.write(`<!DOCTYPE html><html lang="ko"><head>
       <meta charset="UTF-8">
       <title>면접 문항</title>
-      <style>
+      <style>${window.PRINT_PAGE_CSS}
         body { font-family: 'Malgun Gothic', sans-serif; color: #222; padding: 2rem 3rem; line-height: 1.8; font-size: 13pt; }
         h1 { color: #3c3fa0; border-bottom: 2px solid #3c3fa0; padding-bottom: 0.4rem; font-size: 1.5rem; }
         h2 { color: #2c3e7d; font-size: 1.3rem; margin-top: 1.8rem; }
@@ -15562,7 +15584,7 @@ ${univPromptSupplement}
     printWin.document.write(`<!DOCTYPE html><html lang="ko"><head>
       <meta charset="UTF-8">
       <title>부안고등학교 진학지도 프로그램 설명서</title>
-      <style>
+      <style>${window.PRINT_PAGE_CSS}
         body { font-family: 'Malgun Gothic', sans-serif; color: #222; padding: 2.5rem 3rem; line-height: 1.8; font-size: 11pt; background: #fafafa; }
         .container { max-width: 800px; margin: 0 auto; background: #fff; padding: 2rem 3rem; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-radius: 8px; border-top: 5px solid #3c3fa0; }
         h1 { color: #3c3fa0; border-bottom: 2px solid #3c3fa0; padding-bottom: 0.8rem; font-size: 1.8rem; margin-bottom: 1.5rem; text-align: center; }
@@ -17534,7 +17556,7 @@ ${sectionList}
     if (!_mockReportState) return;
     const w = window.open('', '_blank', 'width=900,height=900');
     if (!w) { alert('팝업이 차단되었습니다. 팝업 허용 후 다시 시도해 주세요.'); return; }
-    w.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>우리학교 모의고사 AI 분석 보고서</title><style>
+    w.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>우리학교 모의고사 AI 분석 보고서</title><style>${window.PRINT_PAGE_CSS}
       *,*::before,*::after{box-sizing:border-box;}
       body{font-family:'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif;color:#111;padding:28px;line-height:1.75;font-size:12px;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
       h1{font-size:20px;text-align:center;margin:0 0 4px;}
@@ -17633,7 +17655,7 @@ ${sectionList}
 <head>
   <meta charset="UTF-8">
   <title>우리학교 모의고사 성적 현황</title>
-  <style>
+  <style>${window.PRINT_PAGE_CSS}
     *, *::before, *::after { box-sizing: border-box; }
     :root {
       --panel-border: #bbb;

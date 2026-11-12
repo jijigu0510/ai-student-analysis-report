@@ -33,7 +33,7 @@
     });
   </script>
 
-  <link rel="stylesheet" href="styles.css?v=16">
+  <link rel="stylesheet" href="styles.css?v=18">
 </head>
 <body>
   <div class="app-background">
@@ -47,7 +47,10 @@
     <div class="container app-topbars" style="position: relative; z-index: 1;">
       <!-- 상단 바: 제목(좌) + 방문 현황·초기화(우) -->
       <div class="app-headbar">
-        <h1 class="app-headbar-title"><span class="gradient-text">부안고등학교</span> 진학지도 프로그램</h1>
+        <div class="app-headbar-left">
+          <button type="button" id="drawer-open-btn" class="drawer-open-btn" title="메뉴 열기" aria-label="메뉴 열기" aria-controls="main-tabs-container" aria-expanded="false">☰</button>
+          <h1 class="app-headbar-title"><span class="gradient-text">부안고등학교</span> 진학지도 프로그램</h1>
+        </div>
         <div class="app-headbar-right">
           <div id="visitor-counter" class="visitor-counter">
             <div class="visitor-item">
@@ -89,14 +92,16 @@
     </div>
   </header>
 
-  <!-- 탭이 숨겨졌을 때 다시 여는 컴팩트 버튼 -->
-  <button id="show-tabs-btn" class="tab-toggle-float" title="메뉴 열기" style="display: none;">▶</button>
+  <!-- 드로어가 닫혀 있을 때 화면 왼쪽 가장자리에 붙는 메뉴 손잡이 -->
+  <button id="show-tabs-btn" class="tab-toggle-float" title="메뉴 열기" aria-label="메뉴 열기">☰<span class="tab-toggle-float-text">메뉴</span></button>
+  <!-- 드로어 뒤 어두운 배경(클릭하면 닫힘) -->
+  <div id="drawer-backdrop" class="drawer-backdrop" aria-hidden="true"></div>
 
   <div class="app-layout">
-    <div class="tabs-container" id="main-tabs-container" style="display: flex; flex-direction: column; justify-content: space-between; transition: margin-left 0.3s ease;">
+    <div class="tabs-container" id="main-tabs-container" role="dialog" aria-label="메뉴" style="display: flex; flex-direction: column; justify-content: space-between;">
       <nav class="app-tabs">
-        <button id="toggle-tabs-btn" class="tab-btn" title="탭 숨기기" style="text-align:center; font-weight:700; color:var(--accent-primary); border-bottom: 1px solid var(--panel-border); display:flex; justify-content:center; align-items:center; gap:0.3rem; padding: 0.4rem;">
-           <span class="btn-text">◀ 숨기기</span>
+        <button id="toggle-tabs-btn" class="tab-btn" title="메뉴 닫기" style="text-align:center; font-weight:700; color:var(--accent-primary); border-bottom: 1px solid var(--panel-border); display:flex; justify-content:center; align-items:center; gap:0.3rem; padding: 0.4rem;">
+           <span class="btn-text">◀ 메뉴 닫기</span>
         </button>
         <button id="tab-individual" class="tab-btn active">모의서류평가</button>
         <button id="tab-passfail" class="tab-btn">학종 합불 사례 분석</button>
@@ -4711,7 +4716,7 @@ if (document.readyState === 'loading') {
 
   </script>
   <script src="card.js?v=100" defer></script>
-  <script src="app.js?v=108"></script>
+  <script src="app.js?v=110"></script>
   <script src="grade-rank.js?v=78"></script>
   <script src="univ-score.js"></script>
   <script src="admission_dist.js?v=2"></script>
