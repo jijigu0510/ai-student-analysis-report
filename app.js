@@ -2545,6 +2545,62 @@ document.addEventListener("DOMContentLoaded", () => {
   let _mockSubjectPrint = null;
   let _mockSubjectAnalysisData = null;
 
+  // AI 보고서 첫 장: 오답 분석 모달의 내용(성적·오답 수·대분류/배점별 요약·오답 문항 표)을
+  // 화면·인쇄·저장 어디서나 같은 모습이 되도록 인라인 스타일의 흰 카드로 만든다.
+  function buildMockSubjectOverviewHTML(d) {
+    const { studentRecord: s, sheetName, analysisItems, catEntries, pointEntries } = d;
+    const esc = v => String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const th = 'border:1px solid #c9cde8;background:#eef0fb;padding:6px 8px;font-size:11.5px;font-weight:700;color:#1e2a6e;text-align:left;white-space:nowrap;-webkit-print-color-adjust:exact;print-color-adjust:exact;';
+    const td = 'border:1px solid #d9dcea;padding:6px 8px;font-size:11.5px;vertical-align:top;color:#222;';
+    const kpi = (label, value, color) => `
+      <div style="flex:1 1 120px;min-width:120px;border:1px solid #e3e6ef;border-radius:8px;padding:8px 12px;background:#f8f9fe;">
+        <div style="font-size:10.5px;color:#666;">${label}</div>
+        <div style="font-size:16px;font-weight:800;color:${color || '#1e2a6e'};margin-top:2px;">${value}</div>
+      </div>`;
+    const totalLost = pointEntries.reduce((a, [p, n]) => a + (parseFloat(p) || 0) * n.length, 0);
+    const sumBox = (title, color, bg, rows) => `
+      <div style="flex:1 1 260px;min-width:240px;border:1px solid ${color}33;background:${bg};border-radius:8px;padding:10px 12px;">
+        <div style="font-size:12.5px;font-weight:800;color:${color};margin-bottom:6px;">${title}</div>
+        <table style="width:100%;border-collapse:collapse;">${rows}</table>
+      </div>`;
+    const catRows = catEntries.map(([c, n]) => `<tr>
+        <td style="${td}white-space:nowrap;font-weight:700;">${esc(c)}</td>
+        <td style="${td}">${n.join(', ')}</td>
+        <td style="${td}text-align:center;white-space:nowrap;">${n.length}문항</td></tr>`).join('');
+    const ptRows = pointEntries.map(([p, n]) => `<tr>
+        <td style="${td}white-space:nowrap;font-weight:700;">${esc(p)}점</td>
+        <td style="${td}">${n.join(', ')}</td>
+        <td style="${td}text-align:center;white-space:nowrap;">${n.length}문항 · <span style="color:#d6336c;font-weight:700;">−${(parseFloat(p) || 0) * n.length}점</span></td></tr>`).join('');
+    const itemRows = analysisItems.map((it, i) => `<tr style="background:${i % 2 ? '#f7f8fc' : '#fff'};-webkit-print-color-adjust:exact;print-color-adjust:exact;page-break-inside:avoid;">
+        <td style="${td}text-align:center;font-weight:800;color:#2563eb;white-space:nowrap;">${esc(it.번호)}번</td>
+        <td style="${td}white-space:nowrap;">${esc(it.대분류) || '-'}</td>
+        <td style="${td}">${esc(it.소분류) || '-'}</td>
+        <td style="${td}">${esc(it.평가요소) || '-'}</td>
+        <td style="${td}">${esc(it.특이사항) || '-'}</td>
+        <td style="${td}">${esc(it.분석내용) || '-'}</td>
+        <td style="${td}text-align:center;white-space:nowrap;">${it.배점 && it.배점 !== '-' ? esc(it.배점) + '점' : '-'}</td></tr>`).join('');
+    return `<div class="mock-visual-block mock-subject-overview" style="background:#fff;color:#111;border:1px solid #e3e6ef;border-radius:10px;padding:16px 18px;margin-bottom:16px;line-height:1.5;">
+      <div style="font-size:15px;font-weight:800;color:#1e2a6e;border-left:5px solid #5e6ad2;padding-left:10px;margin-bottom:10px;">📊 오답 분석 개요 — ${esc(s.성명)} · ${esc(s.과목)}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+        ${kpi('학생', `${esc(s.성명)} <span style="font-size:11px;color:#666;font-weight:500;">${esc(s.학년)}학년 ${esc(s.반)}반 ${esc(s.번호)}번</span>`)}
+        ${kpi('과목 (시트)', `${esc(s.과목)} <span style="font-size:11px;color:#666;font-weight:500;">${esc(sheetName)}</span>`)}
+        ${kpi('원점수 / 등급', `${esc(s.원점수) || '-'}점 / ${esc(s.등급) || '-'}등급`)}
+        ${kpi('오답 문항 수', `${analysisItems.length}문항 <span style="font-size:11px;color:#d6336c;font-weight:700;">(−${totalLost}점)</span>`, '#d6336c')}
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+        ${sumBox('📌 대분류별 오답 요약', '#4f46e5', '#f3f3ff', catRows)}
+        ${sumBox('📉 배점별 오답 요약', '#dc2626', '#fff5f5', ptRows)}
+      </div>
+      <div style="font-size:12.5px;font-weight:800;color:#1e2a6e;margin:4px 0 6px;">📋 오답 문항 상세</div>
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;">
+          <thead><tr><th style="${th}">문항</th><th style="${th}">대분류</th><th style="${th}">소분류</th><th style="${th}">평가요소</th><th style="${th}">특이사항</th><th style="${th}">분석내용</th><th style="${th}">배점</th></tr></thead>
+          <tbody>${itemRows}</tbody>
+        </table>
+      </div>
+    </div>`;
+  }
+
   // 과목별 AI 분석 보고서 (API 키 사용) — 공용 보고서 모달에 표시
   async function generateMockSubjectReport() {
     if (!_mockSubjectAnalysisData) { alert('먼저 과목별 오답 분석을 실행해 주세요.'); return; }
@@ -2618,17 +2674,23 @@ ${lines.join('\n')}
     try {
       const text = await _callGeminiMockReport(apiKey, prompt);
       const html = mdClean(text);
+      // 첫 장: 오답 분석 모달의 내용(성적·오답 수·요약·표), 그 다음부터 AI 분석
+      const overviewHTML = buildMockSubjectOverviewHTML(_mockSubjectAnalysisData);
+      const aiHeading = `<div style="font-size:15px;font-weight:800;color:#1e2a6e;border-left:5px solid #5e6ad2;padding-left:10px;margin:4px 0 10px;">🤖 AI 학습 진단 보고서</div>`;
+      const viewHTML = `${overviewHTML}<div class="markdown-body">${html}</div>`;
       window.ReportModal.finishProgress();
-      window.ReportModal.setHTML(`<div class="markdown-body">${html}</div>`);
+      window.ReportModal.setHTML(viewHTML);
       const printHTML = `<h1 style="text-align:center;">📊 ${s.성명} — ${s.과목} 문항별 AI 분석</h1>`
-        + `<p style="text-align:center;color:#555;">${s.학년}학년 ${s.반}반 ${s.번호}번 · ${sheetName} · 원점수 ${s.원점수 || '-'} / ${s.등급 || '-'}등급 | 출력일 ${new Date().toLocaleDateString('ko-KR')}</p>${html}`;
+        + `<p style="text-align:center;color:#555;">${s.학년}학년 ${s.반}반 ${s.번호}번 · ${sheetName} · 원점수 ${s.원점수 || '-'} / ${s.등급 || '-'}등급 | 출력일 ${new Date().toLocaleDateString('ko-KR')}</p>`
+        + overviewHTML
+        + `<div style="page-break-before:always;"></div>${aiHeading}${html}`;
       window.ReportModal.setPrint(() => printWithIframe(printHTML));
       try {
         await window.SavedReports.save({
           type: 'mock-subject',
           title,
           scope: `${s.과목} · 오답 ${analysisItems.length}문항`,
-          viewHTML: `<div class="markdown-body">${html}</div>`,
+          viewHTML,
           printHTML
         });
       } catch (e) { console.warn('[보고서 저장]', e); }
