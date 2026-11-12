@@ -561,6 +561,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const allViews = [viewIndividual, viewPassFail, viewPassFailExamples, viewSetech, viewSubjectPath, viewCsat, viewInterview, viewMockExam, viewGpaMockCompare, viewGradeRank, viewUnivScore, viewAdmissionDist, viewSusiIpgyeol, viewSchoolMockStatus, viewHexagon, viewAdmissionAnalysis, viewCard].filter(Boolean);
 
   function switchTabTo(activeTab, activeView) {
+    // 상단 고정 바의 제목을 현재 탭 이름으로 갱신
+    const topTitle = document.getElementById("current-tab-title");
+    if (topTitle && activeTab) topTitle.textContent = activeTab.textContent.trim();
     allTabs.forEach(t => t.classList.remove("active"));
     allViews.forEach(v => {
       v.classList.add("hidden");
@@ -2583,15 +2586,34 @@ document.addEventListener("DOMContentLoaded", () => {
 [자료]
 ${lines.join('\n')}
 
-[작성 지침]
-- 아래 섹션 구성을 그대로 따르세요:
-## 1. 총평
-## 2. 취약 영역 분석 (대분류·소분류·평가요소 기준)
+[작성 지침 — 형식]
+- 줄글 문단은 쓰지 마세요. 모든 내용은 **개조식(글머리 기호 '-' 목록)**으로, 한 항목은 1~2문장 이내로 짧게 씁니다.
+- 핵심 결론·취약 영역명·문항 번호·수치·꼭 실천할 행동은 **굵게(\`**텍스트**\`)** 표시하세요. 항목마다 1곳 정도, 과하지 않게.
+- 섹션은 '## ', 섹션 안의 소제목은 '### '을 사용해 위계를 분명히 하세요. 소제목 아래에는 반드시 목록이나 표가 옵니다.
+- 비교·정리가 필요한 곳(영역별 오답 수, 배점별 분포, 학습 계획)은 마크다운 표를 적극 쓰세요. 코드블록(\`\`\`)은 쓰지 마세요.
+- 자료에 없는 내용은 지어내지 말고, 대분류/소분류/평가요소/문항번호를 구체적으로 인용하세요.
+
+[작성 지침 — 섹션 구성 (그대로 따르세요)]
+## 1. 핵심 요약
+- 한눈에 보는 결론 3~4개 항목 (가장 취약한 영역, 오답의 성격, 최우선 과제 — 각 항목의 핵심어는 굵게)
+
+## 2. 취약 영역 분석
+### 2-1. 영역별 오답 현황
+- 표: 대분류 | 소분류(또는 평가요소) | 오답 문항 | 문항 수 | 진단 한 줄
+### 2-2. 영역별 진단
+- 대분류마다 소제목 없이 '- **대분류명(문항 번호)**: 진단' 형태의 항목으로, 왜 틀렸을 가능성이 큰지와 평가요소를 연결해 설명
+
 ## 3. 오답 난이도(배점) 경향
+- 표: 배점 | 오답 문항 | 문항 수 | 해석
+- 아래에 핵심 해석 2~3개 항목 (예: 고배점 집중 여부, 기본 문항 실수 여부)
+
 ## 4. 맞춤 학습 제언
-- 반드시 위 자료의 대분류/소분류/평가요소/문항번호를 구체적으로 인용하고, 자료에 없는 내용은 지어내지 마세요.
-- 비교가 필요하면 마크다운 표를 쓰고, 코드블록(\`\`\`)은 쓰지 마세요.
-- 학생이 다음 시험까지 실천할 수 있는 구체적 학습 전략으로 마무리하세요.`;
+### 4-1. 최우선 보완 과제 (3개 이내)
+- 항목마다 '**과제명** — 대상 영역/문항 → 구체적 방법'
+### 4-2. 다음 시험까지 실천 계획
+- 표: 시기(1~2주차 / 3~4주차 / 시험 직전) | 할 일 | 점검 기준
+### 4-3. 시험 당일 체크리스트
+- 실수 방지·시간 배분 등 3~5개 항목`;
 
     try {
       const text = await _callGeminiMockReport(apiKey, prompt);
@@ -9807,11 +9829,16 @@ overallEvaluation 필드는 아래 형식을 반드시 따르십시오:
             color: #111;
             box-sizing: border-box;
           }
-          .markdown-body h1 { font-size: 1.5em; }
-          .markdown-body h2 { font-size: 1.3em; }
-          .markdown-body h3 { font-size: 1.15em; }
-          .markdown-body h4 { font-size: 1.0em; }
+          /* 보고서 가독성: 소제목 크기 위계·굵은 강조·목록 간격 */
+          .markdown-body h1 { font-size: 1.55em; }
+          .markdown-body h2 { font-size: 1.38em; font-weight: 800; color: #1e2a6e; border-left: 5px solid #5e6ad2; border-bottom: 1px solid #c9cde8; padding: 0.15em 0 0.25em 0.55em; margin: 1.5em 0 0.7em; page-break-after: avoid; }
+          .markdown-body h3 { font-size: 1.18em; font-weight: 700; color: #2c3a8c; margin: 1.2em 0 0.5em; padding-bottom: 0.15em; border-bottom: 1px dashed #d4d8ee; page-break-after: avoid; }
+          .markdown-body h4 { font-size: 1.05em; font-weight: 700; color: #333; }
           .markdown-body p { margin: 0.5em 0; white-space: pre-wrap; word-break: keep-all; }
+          .markdown-body ul, .markdown-body ol { padding-left: 1.4em; margin: 0.3em 0 0.9em; }
+          .markdown-body li { margin: 0.32em 0; line-height: 1.65; word-break: keep-all; }
+          .markdown-body li > ul, .markdown-body li > ol { margin: 0.25em 0 0.3em; }
+          .markdown-body strong { font-weight: 800; color: #1b2a7a; background: rgba(94,106,210,0.10); padding: 0 3px; border-radius: 3px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           .eval-highlight { background: rgba(255, 220, 0, 0.35); color: #7a5800; padding: 1px 4px; border-radius: 3px; font-weight: 600; }
           .print-header { border-bottom: 2px solid #5e6ad2; padding-bottom: 1rem; margin-bottom: 2rem; }
           /* AI 보고서 마크다운 표: 화면과 동일하게 구분선 출력 (CDN 미로드 시에도 적용) */

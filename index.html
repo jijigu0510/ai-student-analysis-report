@@ -33,23 +33,20 @@
     });
   </script>
 
-  <link rel="stylesheet" href="styles.css?v=18">
+  <link rel="stylesheet" href="styles.css?v=21">
 </head>
 <body>
   <div class="app-background">
     <div class="glow-orb orb-1"></div>
     <div class="glow-orb orb-2"></div>
   </div>
-  <header class="header" style="position: relative; overflow: hidden;">
-    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.12; pointer-events: none; z-index: 0;">
-      <img src="부안고등학교%20로고.png" alt="부안고 워터마크" style="height: 140px; width: auto; filter: grayscale(100%);">
-    </div>
-    <div class="container app-topbars" style="position: relative; z-index: 1;">
-      <!-- 상단 바: 제목(좌) + 방문 현황·초기화(우) -->
+  <!-- 상단 고정 바: ☰ + 현재 탭 이름(좌) / 방문 현황·저장된 보고서·API Key·초기화(우) — 어떤 탭에서도 항상 보임 -->
+  <header class="header app-topnav">
+    <div class="container app-topbars">
       <div class="app-headbar">
         <div class="app-headbar-left">
           <button type="button" id="drawer-open-btn" class="drawer-open-btn" title="메뉴 열기" aria-label="메뉴 열기" aria-controls="main-tabs-container" aria-expanded="false">☰</button>
-          <h1 class="app-headbar-title"><span class="gradient-text">부안고등학교</span> 진학지도 프로그램</h1>
+          <h1 class="app-headbar-title" id="current-tab-title">모의서류평가</h1>
         </div>
         <div class="app-headbar-right">
           <div id="visitor-counter" class="visitor-counter">
@@ -71,16 +68,12 @@
               <span class="visitor-unit">명</span>
             </div>
           </div>
+          <button type="button" id="globalSavedReportsBtn" class="topnav-btn" onclick="ReportModal.openSavedList()">📁 저장된 보고서</button>
+          <div class="app-apikey">
+            <label for="uni-api-key">🔑 API Key</label>
+            <input type="password" id="uni-api-key" placeholder="Gemini API 키 입력">
+          </div>
           <button id="reset-data-btn" class="btn-secondary" title="모든 데이터를 초기화하고 저장된 정보를 삭제합니다.">데이터 초기화</button>
-        </div>
-      </div>
-      <!-- 하단 바: 부제목(좌) + API Key(우) -->
-      <div class="app-subbar">
-        <p class="app-subbar-desc">클릭 한 번으로 시각화하는 우리 학교만의 맞춤형 입시 대시보드</p>
-        <div class="app-apikey">
-          <button type="button" id="globalSavedReportsBtn" onclick="ReportModal.openSavedList()" style="background:var(--input-bg); border:1px solid var(--input-border); color:var(--text-primary); border-radius:8px; padding:0.35rem 0.7rem; font-size:0.82rem; font-weight:600; cursor:pointer; white-space:nowrap;">📁 저장된 보고서</button>
-          <label for="uni-api-key">🔑 API Key</label>
-          <input type="password" id="uni-api-key" placeholder="AI Studio에서 발급받은 Gemini API 키 입력...">
         </div>
       </div>
 
@@ -98,11 +91,18 @@
   <div id="drawer-backdrop" class="drawer-backdrop" aria-hidden="true"></div>
 
   <div class="app-layout">
-    <div class="tabs-container" id="main-tabs-container" role="dialog" aria-label="메뉴" style="display: flex; flex-direction: column; justify-content: space-between;">
+    <div class="tabs-container" id="main-tabs-container" role="dialog" aria-label="메뉴" style="display: flex; flex-direction: column;">
+      <!-- 드로어 상단: 로고 + 프로그램 제목 + 닫기 -->
+      <div class="drawer-brand">
+        <img src="부안고등학교%20로고.png" alt="" class="drawer-brand-logo">
+        <div class="drawer-brand-text">
+          <span class="drawer-brand-school gradient-text">부안고등학교</span>
+          <span class="drawer-brand-name">진학지도 프로그램</span>
+        </div>
+        <button id="toggle-tabs-btn" type="button" class="drawer-close-btn" title="메뉴 닫기" aria-label="메뉴 닫기">⇤</button>
+      </div>
+      <div class="drawer-section-label">메뉴</div>
       <nav class="app-tabs">
-        <button id="toggle-tabs-btn" class="tab-btn" title="메뉴 닫기" style="text-align:center; font-weight:700; color:var(--accent-primary); border-bottom: 1px solid var(--panel-border); display:flex; justify-content:center; align-items:center; gap:0.3rem; padding: 0.4rem;">
-           <span class="btn-text">◀ 메뉴 닫기</span>
-        </button>
         <button id="tab-individual" class="tab-btn active">모의서류평가</button>
         <button id="tab-passfail" class="tab-btn">학종 합불 사례 분석</button>
         <button id="tab-passfail-examples" class="tab-btn">과거 합불 사례 확인하기</button>
@@ -4716,7 +4716,7 @@ if (document.readyState === 'loading') {
 
   </script>
   <script src="card.js?v=100" defer></script>
-  <script src="app.js?v=110"></script>
+  <script src="app.js?v=112"></script>
   <script src="grade-rank.js?v=78"></script>
   <script src="univ-score.js"></script>
   <script src="admission_dist.js?v=2"></script>

@@ -3846,7 +3846,8 @@ body.drawer-open .tabs-container {
   box-shadow: 8px 0 32px rgba(0,0,0,0.35);
   transition: transform 0.28s ease, visibility 0s, box-shadow 0.28s ease;
 }
-.tabs-container .app-tabs { border-radius: 0 !important; border: none !important; }
+/* 드로어 안의 탭 목록은 줄어들지 않게(flex-shrink:0) + overflow:hidden 해제 → 컨테이너가 스크롤을 맡는다 */
+.tabs-container .app-tabs { border-radius: 0 !important; border: none !important; flex: 0 0 auto !important; overflow: visible !important; min-height: 0; padding-bottom: 2rem; }
 .tabs-container .app-tabs .tab-btn { padding: 0.72rem 0.9rem !important; font-size: 0.82rem !important; }
 #toggle-tabs-btn { position: sticky; top: 0; z-index: 1; background: var(--panel-bg) !important; }
 
@@ -3876,9 +3877,105 @@ body.light-mode .drawer-backdrop { background: rgba(30, 36, 70, 0.35); }
 .tab-toggle-float {
   display: flex !important; flex-direction: column; align-items: center; gap: 0.25rem;
   top: 140px !important; padding: 0.55rem 0.4rem !important; font-size: 1rem;
-  z-index: 1200 !important;
+  z-index: 960 !important; /* 모달 아래, 헤더 위 */
   transition: opacity 0.2s, transform 0.28s ease;
 }
 .tab-toggle-float-text { font-size: 0.66rem; font-weight: 600; writing-mode: vertical-rl; letter-spacing: 0.1em; }
 body.drawer-open .tab-toggle-float { opacity: 0; pointer-events: none; transform: translateX(-100%); }
 @media print { .tabs-container, .drawer-backdrop, .tab-toggle-float, .drawer-open-btn { display: none !important; } }
+
+/* =============== 보고서 모달 마크다운 가독성 (문항별 AI 분석 등) =============== */
+/* 소제목 크기 위계를 키우고, 굵은 강조는 배경 하이라이트로, 목록 간격은 넉넉하게 */
+.rpt-modal-body .markdown-body { font-size: 0.98rem; line-height: 1.75; }
+.rpt-modal-body .markdown-body h2 {
+  font-size: 1.5rem; font-weight: 800; letter-spacing: -0.2px;
+  margin: 2rem 0 0.9rem; padding: 0.25rem 0 0.4rem 0.8rem;
+  border-left: 5px solid #7c83fd; border-bottom: 1px solid var(--panel-border);
+}
+.rpt-modal-body .markdown-body h2:first-child { margin-top: 0.2rem; }
+.rpt-modal-body .markdown-body h3 {
+  font-size: 1.22rem; font-weight: 700; color: #a9c4ff;
+  margin: 1.5rem 0 0.6rem; padding-bottom: 0.2rem;
+  border-bottom: 1px dashed rgba(148,163,184,0.35);
+}
+.rpt-modal-body .markdown-body h4 { font-size: 1.05rem; font-weight: 700; margin: 1.1rem 0 0.4rem; }
+.rpt-modal-body .markdown-body ul, .rpt-modal-body .markdown-body ol { padding-left: 1.45rem; margin: 0.3rem 0 1.1rem; }
+.rpt-modal-body .markdown-body li { margin: 0.42rem 0; word-break: keep-all; }
+.rpt-modal-body .markdown-body li::marker { color: #7c83fd; }
+.rpt-modal-body .markdown-body li > ul, .rpt-modal-body .markdown-body li > ol { margin: 0.3rem 0 0.4rem; }
+.rpt-modal-body .markdown-body strong {
+  font-weight: 800; color: #cfe0ff;
+  background: rgba(124,131,253,0.22); padding: 0 4px; border-radius: 4px;
+}
+.rpt-modal-body .markdown-body p { margin: 0.45rem 0 0.9rem; }
+body.light-mode .rpt-modal-body .markdown-body h2 { border-left-color: #5e6ad2; }
+body.light-mode .rpt-modal-body .markdown-body h3 { color: #2c3a8c; border-bottom-color: rgba(94,106,210,0.35); }
+body.light-mode .rpt-modal-body .markdown-body li::marker { color: #5e6ad2; }
+body.light-mode .rpt-modal-body .markdown-body strong { color: #1b2a7a; background: rgba(94,106,210,0.12); }
+
+/* =============== 상단 고정 바 + 드로어 브랜드 (AI Studio 스타일) =============== */
+/* 헤더: 화면 상단에 고정되는 한 줄 바. 좌: ☰ + 현재 탭 이름 / 우: 방문현황·저장된 보고서·API Key·초기화 */
+header.header.app-topnav {
+  position: sticky; top: 0; z-index: 950; /* 보고서 모달(980)·기타 모달(1000+)보다 아래 */
+  padding: 0 !important; margin: 0;
+  background: var(--panel-bg); border-bottom: 1px solid var(--panel-border);
+  box-shadow: 0 2px 14px rgba(0,0,0,0.18);
+}
+.app-topnav .app-topbars { padding: 0 !important; }
+.app-topnav .app-headbar {
+  border: none !important; border-radius: 0 !important; background: transparent !important;
+  padding: 0.45rem 1rem 0.45rem 0.9rem; gap: 0.8rem; min-height: 52px;
+  flex-direction: row !important; align-items: center !important; justify-content: space-between !important;
+}
+.app-topnav .app-headbar-left { flex: 1 1 auto; min-width: 0; gap: 0.6rem; width: auto !important; }
+.app-topnav .app-headbar-title {
+  font-size: 1.05rem; font-weight: 700; letter-spacing: -0.2px; color: var(--text-primary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.app-topnav .app-headbar-right { flex: 0 1 auto; flex-wrap: wrap; justify-content: flex-end; gap: 0.5rem; row-gap: 0.35rem; }
+.app-topnav .topnav-btn {
+  background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-primary);
+  border-radius: 2px; padding: 0.3rem 0.65rem; font-size: 0.76rem; font-weight: 600; cursor: pointer; white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+.app-topnav .topnav-btn:hover { background: var(--accent-primary); color: #fff; border-color: transparent; }
+.app-topnav .app-apikey { gap: 0.35rem; }
+.app-topnav .app-apikey input { width: 200px; max-width: 30vw; padding: 0.3rem 0.55rem; }
+.app-topnav .visitor-counter { padding: 0.15rem 0.3rem; }
+.app-topnav .visitor-item { padding: 0 0.4rem; }
+.app-topnav #globalAlert { margin: 0 !important; border-radius: 0 !important; }
+/* 헤더가 고정되므로 가장자리 손잡이는 헤더 아래에서 시작 */
+.tab-toggle-float { top: 70px !important; }
+
+/* 드로어 상단 브랜드: 로고 + 제목 + 닫기 */
+.drawer-brand {
+  position: sticky; top: 0; z-index: 2;
+  display: flex; align-items: center; gap: 0.6rem;
+  padding: 0.7rem 0.6rem 0.7rem 0.9rem; min-height: 52px;
+  background: var(--panel-bg); border-bottom: 1px solid var(--panel-border);
+}
+.drawer-brand-logo { width: 30px; height: 30px; object-fit: contain; flex-shrink: 0; border-radius: 6px; background: rgba(255,255,255,0.9); padding: 2px; }
+.drawer-brand-text { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; flex: 1 1 auto; }
+.drawer-brand-school { font-size: 0.78rem; font-weight: 800; letter-spacing: -0.2px; }
+.drawer-brand-name { font-size: 0.98rem; font-weight: 800; color: var(--text-primary); letter-spacing: -0.3px; white-space: nowrap; }
+.drawer-close-btn {
+  flex-shrink: 0; width: 1.9rem; height: 1.9rem; border-radius: 2px;
+  border: 1px solid transparent; background: transparent; color: var(--text-secondary);
+  font-size: 1.05rem; line-height: 1; cursor: pointer; transition: background 0.15s, color 0.15s;
+}
+.drawer-close-btn:hover { background: rgba(124,131,253,0.18); color: var(--accent-primary); border-color: var(--panel-border); }
+.drawer-section-label { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.12em; color: var(--text-secondary); padding: 0.8rem 0.95rem 0.3rem; text-transform: uppercase; }
+#toggle-tabs-btn { position: static; }
+/* 드로어 안 탭: 아이콘 없는 메뉴 행답게 여백 조금 더 */
+.tabs-container .app-tabs .tab-btn { padding: 0.68rem 0.95rem !important; font-size: 0.84rem !important; border-bottom-color: transparent !important; }
+.tabs-container .app-tabs .tab-btn.active { background: rgba(124,131,253,0.16) !important; }
+body.light-mode .tabs-container .app-tabs .tab-btn.active { background: rgba(94,106,210,0.12) !important; }
+
+/* 좁은 화면: 우측 도구는 두 줄로 감싸고, API 입력은 남은 폭을 사용 */
+@media (max-width: 760px) {
+  .app-topnav .app-headbar { flex-wrap: wrap; padding: 0.4rem 0.7rem; }
+  .app-topnav .app-headbar-left { flex: 1 1 100%; }
+  .app-topnav .app-headbar-right { flex: 1 1 100%; justify-content: flex-start; }
+  .app-topnav .app-apikey { flex: 1 1 160px; }
+  .app-topnav .app-apikey input { width: 100%; max-width: 100%; }
+}
